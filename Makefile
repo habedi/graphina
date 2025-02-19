@@ -5,7 +5,7 @@ BINARY = target/release/$(BINARY_NAME)
 PATH := /snap/bin:$(PATH)
 DEBUG_GRAPHINA = 1
 RUST_LOG = info
-RUST_BACKTRACE = 1
+RUST_BACKTRACE = full
 
 # Default target
 .DEFAULT_GOAL := help
@@ -22,7 +22,7 @@ format: ## Format Rust files
 .PHONY: test
 test: format ## Run tests
 	@echo "Running tests..."
-	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo test -- --nocapture
+	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test -- --nocapture
 
 .PHONY: coverage
 coverage: format ## Generate test coverage report

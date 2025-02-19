@@ -1,11 +1,11 @@
 [package]
 name = "graphina"
-version = "0.1.0"
-description = "A Rust library for graph data science."
+version = "0.2.0"
+description = "A graph data science library for Rust"
 repository = "https://github.com/habedi/graphina"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
-keywords = ["graph", "data-science", "graph-algorithms", "graph-analytics"]
+keywords = ["graph-theory", "data-science", "graph-algorithms", "graph-analytics"]
 authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
 homepage = "https://github.com/habedi/graphina"
 documentation = "https://docs.rs/graphina"
@@ -13,13 +13,9 @@ categories = ["data-structures", "algorithms"]
 edition = "2021"
 rust-version = "1.83"
 
-[workspace]
-members = []
-
 resolver = "2"
 
 include = [
-    "assets/**/*",
     "docs/**/*",
     "src/**/*",
     "Cargo.toml",
@@ -44,8 +40,12 @@ binaries = []
 ctor = "0.2.9"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
-petgraph = { version = "0.7.1", features = ["graphmap", "stable_graph", "matrix_graph", "serde-1", "rayon"] }
 rand = "0.9.0"
+sprs = "0.11.3"
+ordered-float = "5.0.0"
+rayon = "1.10.0"
+nalgebra = "0.33.2"
+petgraph = { version = "0.7.1", features = ["graphmap", "stable_graph", "matrix_graph", "serde-1", "rayon"] }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }

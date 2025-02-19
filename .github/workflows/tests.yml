@@ -1,8 +1,11 @@
-name: Tests
+name: Run Tests
 
 on:
   workflow_dispatch: { } # Allow manual execution
   workflow_call: # Make this workflow callable from other workflows
+  push:
+    tags:
+      - 'v*' # Trigger on version tags
 
 jobs:
   build:

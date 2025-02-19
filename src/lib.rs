@@ -1,8 +1,6 @@
-#![allow(dead_code)]
-
+pub mod approximation;
 pub mod centrality;
-pub mod clustering;
-pub mod common;
-pub mod graph;
+pub mod community;
+pub mod core;
+pub mod links;
 pub mod logging;
-pub mod traversal;
