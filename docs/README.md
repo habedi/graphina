@@ -1,5 +1,4 @@
-# Project Documentation
+# Graphina Documentation
 
-Put your project documentation here.
+To be updated.
 
-<img src="../assets/logos/rustacean-flat-noshadow.svg" align="center" width="25%"/>

@@ -1,9 +1,11 @@
 # Variables
-PKG = github.com/habedi/template-rust-project
+PKG = github.com/habedi/graphina
 BINARY_NAME = $(or $(PROJ_BINARY), $(notdir $(PKG)))
 BINARY = target/release/$(BINARY_NAME)
 PATH := /snap/bin:$(PATH)
-DEBUG_PROJ = 1
+DEBUG_GRAPHINA = 1
+RUST_LOG = info
+RUST_BACKTRACE = 1
 
 # Default target
 .DEFAULT_GOAL := help
@@ -20,22 +22,22 @@ format: ## Format Rust files
 .PHONY: test
 test: format ## Run tests
 	@echo "Running tests..."
-	DEBUG_PROJ=$(DEBUG_PROJ) cargo test -- --nocapture
+	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo test -- --nocapture
 
 .PHONY: coverage
 coverage: format ## Generate test coverage report
 	@echo "Generating test coverage report..."
-	DEBUG_PROJ=$(DEBUG_PROJ) cargo tarpaulin --out Xml --out Html
+	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --out Xml --out Html
 
 .PHONY: build
 build: format ## Build the binary for the current platform
 	@echo "Building the project..."
-	DEBUG_PROJ=$(DEBUG_PROJ) cargo build --release
+	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo build --release
 
 .PHONY: run
 run: build ## Build and run the binary
 	@echo "Running the $(BINARY) binary..."
-	DEBUG_PROJ=$(DEBUG_PROJ) ./$(BINARY)
+	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) ./$(BINARY)
 
 .PHONY: clean
 clean: ## Remove generated and temporary files
@@ -60,7 +62,7 @@ install-deps: install-snap ## Install development dependencies
 .PHONY: lint
 lint: format ## Run linters on Rust files
 	@echo "Linting Rust files..."
-	DEBUG_PROJ=$(DEBUG_PROJ) cargo clippy -- -D warnings
+	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -- -D warnings
 
 .PHONY: publish
 publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to be set)
@@ -70,7 +72,7 @@ publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to b
 .PHONY: bench
 bench: ## Run benchmarks
 	@echo "Running benchmarks..."
-	DEBUG_PROJ=$(DEBUG_PROJ) cargo bench
+	DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench
 
 .PHONY: audit
 audit: ## Run security audit on Rust dependencies
