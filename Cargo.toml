@@ -1,0 +1,61 @@
+[package]
+name = "template-rust-project"
+version = "0.2.4"
+description = "A template for Rust projects"
+repository = "https://github.com/habedi/template-rust-project"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["project-template", "rust", "library", "application"]
+authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
+homepage = "https://github.com/habedi/template-rust-project"
+documentation = "https://docs.rs/template-rust-project"
+categories = ["development-tools"]
+edition = "2021"
+rust-version = "1.83"
+
+[workspace]
+members = []
+
+resolver = "2"
+
+include = [
+    "assets/**/*",
+    "docs/**/*",
+    "src/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+]
+
+[lib]
+name = "template_rust_project"
+path = "src/lib.rs"
+
+[[bin]]
+name = "template-rust-project"
+path = "src/main.rs"
+
+[features]
+default = []  # No features enabled by default
+binaries = []
+
+[dependencies]
+ctor = "0.2.9"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "project_benchmarks"
+harness = false
+
+[profile.release]
+strip = "symbols"
+codegen-units = 1
+lto = true
+
+[profile.bench]
+debug = true
