@@ -1,5 +1,5 @@
 /*!
-# Graph Input/Output Module
+# Input/Output (I/O) Routines
 
 This module provides functions to read from and write to files containing graph representations.
 Specifically, it supports:
@@ -12,8 +12,8 @@ Specifically, it supports:
   - Reading an adjacency list from a file into a graph.
   - Writing a graph's adjacency list to a file.
 
-Each function leverages the core graph abstraction defined in [`crate::core::types`](../core/types.rs)
-and uses the custom exception [`GraphinaException`](../exceptions/index.html#graphinaexception) for detailed error reporting.
+Functions use the core graph abstraction defined in [`crate::core::types`](../core/types.rs)
+and use the custom exception [`GraphinaException`](../exceptions/index.html#graphinaexception) for reporting errors.
 
 The input files support comments (lines or inline comments beginning with `#` are ignored)
 and allow for optional weight specifications. If a weight is missing, a default of `1.0` is used.

@@ -1,39 +1,27 @@
-// File: src/core/paths.rs
-
 /*!
-# Graphina Core Paths Module
+# Shortest Paths Algorithms
 
-This module provides a suite of shortest‑paths algorithms for the Graphina library.
-It supports single‑source and all‑pairs computations via classical algorithms including:
+This module provides a collection of shortest‑paths algorithms for the Graphina library.
+It supports single‑source and all‑pairs computations via (classical) algorithms including:
 
 - **Dijkstra’s Algorithm:**
   Computes single‑source shortest paths for graphs with nonnegative weights.
-  **Time Complexity:** \(O(E \log V)\)
-  **Space Complexity:** \(O(V)\)
 
 - **Bellman–Ford Algorithm:**
   Computes single‑source shortest paths even with negative weights and detects negative cycles.
-  **Time Complexity:** \(O(VE)\)
 
 - **A\* (A-Star) Algorithm:**
   Finds a shortest path from a source to a target using an admissible heuristic.
-  **Time Complexity:** Worst-case \(O(E \log V)\)
-  **Space Complexity:** \(O(V)\)
 
 - **Floyd–Warshall Algorithm:**
   Computes all‑pairs shortest paths using dynamic programming.
-  **Time Complexity:** \(O(V^3)\)
-  **Space Complexity:** \(O(V^2)\)
 
 - **Johnson’s Algorithm:**
-  Computes all‑pairs shortest paths for sparse graphs (even with negative edge weights) by reweighting the graph and then running Dijkstra’s algorithm from each node.
-  **Time Complexity:** \(O(VE \log V)\) (assuming a binary heap)
-  **Space Complexity:** \(O(V^2)\)
+  Computes all‑pairs shortest paths for sparse graphs (even with negative edge weights) by re-weighting the graph and then running Dijkstra’s algorithm from each node.
 
 - **Iterative Deepening A\* (IDA\*):**
   A recursive, depth‑first variant of A\* search specialized for graphs with `f64` weights.
-  **Time Complexity:** Exponential in the worst‑case
-  **Space Complexity:** \(O(V)\)
+  The f64 is used instead of a generic weight type to simplify the implementation.
 
 ## Error Handling
 
@@ -42,7 +30,7 @@ For example, algorithms that require nonnegative edge weights will panic with a 
 if a negative weight is encountered.
 
 The API of this module is fixed (returning Options or vectors) and does not use `Result` for errors.
-Users should ensure that inputs meet the preconditions as described.
+Users should make sure that inputs meet the preconditions as described in the documentation.
 
 */
 
@@ -275,7 +263,6 @@ where
     let n = graph.node_count();
     let mut dist = vec![vec![None; n]; n];
 
-    // Instead of a range loop, iterate with enumerate:
     for (i, row) in dist.iter_mut().enumerate().take(n) {
         row[i] = Some(W::from(0u8));
     }
@@ -302,7 +289,6 @@ where
             }
         }
     }
-    // Replace the range loop with enumerate:
     for (i, row) in dist.iter().enumerate().take(n) {
         if let Some(dii) = row[i] {
             if dii < W::from(0u8) {
@@ -323,7 +309,7 @@ where
 ///
 /// # Complexity
 ///
-/// - **Time:** \(O(VE \log V)\) (assuming a binary heap for Dijkstra)
+/// - **Time:** \(O(VE \log V)\) (implementation uses a binary heap)
 /// - **Space:** \(O(V^2)\)
 pub fn johnson<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Option<Vec<Vec<Option<W>>>>
 where

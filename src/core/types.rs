@@ -1,9 +1,8 @@
-// File: src/core/types.rs
-
 /*!
-This module defines the core types and abstractions for Graphina.
+# Graphina Graph Types
 
-It wraps petgraph’s StableGraph (which does not recycle indices) and provides a uniform API
+This module defines the core graph types supported by Graphina.
+The `BaseGraph` struct is a wrapper around petgraph’s `StableGraph` that provides a uniform API
 for both directed and undirected graphs. In addition to the standard API (which returns simple
 results such as booleans or Options), additional “try_…” variants are provided that return rich
 errors using custom exceptions defined in `src/core/exceptions.rs`.
@@ -17,11 +16,12 @@ use graphina::core::types::{Graph, NodeId};
 
 let mut g = Graph::<i32, f64>::new();
 let n1 = g.add_node(10);
-// Using the simple API:
+
+// Using the result-returning API:
 let success = g.update_node(n1, 20);
 assert!(success);
 
-// Using the error-returning API:
+// Using the try_… API:
 g.try_update_node(n1, 30).expect("Node update should succeed");
 ```
 */
@@ -45,7 +45,7 @@ pub struct Directed;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Undirected;
 
-/// Implements `Default` for directed graphs, enabling petgraph's constructors.
+/// Implements `Default` for directed graphs.
 impl Default for Directed {
     fn default() -> Self {
         Directed
@@ -453,10 +453,10 @@ where
     }
 }
 
-/// Type alias for a directed graph.
+/// Type alias for a directed graph. This is a `BaseGraph` with `Directed` edge type.
 pub type Digraph<A, W> = BaseGraph<A, W, Directed>;
 pub type DigraphMarker = Directed;
 
-/// Type alias for an undirected graph.
+/// Type alias for an undirected graph. This is a `BaseGraph` with `Undirected` edge type.
 pub type Graph<A, W> = BaseGraph<A, W, Undirected>;
 pub type GraphMarker = Undirected;

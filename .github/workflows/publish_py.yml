@@ -1,0 +1,41 @@
+name: Publish to PyPI
+
+on:
+  workflow_dispatch: # Enable manual runs
+  push:
+    tags:
+      - 'v*' # Trigger on version tags
+
+jobs:
+
+  #  # Run tests before publishing
+  #  call_tests:
+  #    uses: ./.github/workflows/tests_py.yml
+
+  publish_to_pypi:
+    runs-on: ubuntu-latest
+    #    needs: call_tests
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip make
+          pip install poetry
+
+      - name: Install Python Dependencies
+        run: |
+          poetry install --no-root
+
+      - name: Build and Publish Package
+        run: |
+          poetry run make wheel-manylinux
+          PYPI_TOKEN=${{ secrets.PYPI_API_TOKEN }} poetry run make publish_py

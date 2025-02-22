@@ -1,0 +1,15 @@
+[package]
+name = "pygraphina"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "pygraphina"
+crate-type = ["cdylib"]
+doc = false
+
+[dependencies]
+pyo3 = { version = "0.18", features = ["abi3-py39", "extension-module"] }
+graphina = { path = "../" }
+

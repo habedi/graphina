@@ -16,6 +16,10 @@ trim_trailing_whitespace = true # Remove trailing whitespace
 [*.rs]
 max_line_length = 100
 
+# Python files
+[*.py]
+max_line_length = 100
+
 # Markdown files
 [*.md]
 max_line_length = 120
@@ -27,5 +31,9 @@ indent_size = 2
 
 # YAML files
 [*.{yaml,yml}]
+indent_size = 2
+
+# TOML files
+[*.toml]
 indent_size = 2
 

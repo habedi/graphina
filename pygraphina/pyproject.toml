@@ -1,0 +1,41 @@
+##########################################################################
+## Maturin configuration
+##########################################################################
+
+[build-system]
+requires = ["maturin>=1.0,<2.0", "setuptools", "wheel"]
+build-backend = "maturin"
+
+[project]
+name = "pygraphina"
+description = "Python bindings for the Graphina library"
+authors = [{ name = "Hassan Abedi", email = "hassan.abedi.t@gmail.com" }]
+maintainers = [{ name = "Hassan Abedi", email = "hassan.abedi.t@gmail.com" }]
+keywords = ["graph-theory", "data-science", "graph-algorithms", "graph-analytics"]
+requires-python = ">=3.9"
+license = { text = "MIT" }
+readme = "README.md"
+dynamic = ['version']
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+homepage = "https://github.com/habedi/graphina"
+documentation = "https://github.com/habedi/graphina"
+repository = "https://github.com/habedi/graphina"
+
+[tool.maturin]
+module-name = "pygraphina"
+bindings = "pyo3"
+features = ["pyo3/extension-module"]
+include = [{ path = ".", format = "sdist" }]
+strip = true
+release = true

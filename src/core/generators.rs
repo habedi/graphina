@@ -1,7 +1,5 @@
-// File: src/core/generators.rs
-
 /*!
-# Graph Generators for Graphina
+# Graph Generators
 
 This module provides various graph generators that create classic graphs such as
 Erdős–Rényi, complete, bipartite, star, cycle, Watts–Strogatz small-world, and

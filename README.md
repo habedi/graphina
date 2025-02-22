@@ -1,4 +1,13 @@
-# Graphina
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="logo.png">
+    <source media="(prefers-color-scheme: dark)" srcset="logo.png">
+    <img alt="template-rust-project logo" src="logo.png" height="50%" width="50%">
+  </picture>
+</div>
+<br>
+
+## Graphina
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=popout-square&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
 [![Lint](https://img.shields.io/github/actions/workflow/status/habedi/graphina/lint.yml?label=lints&style=popout-square&logo=github)](https://github.com/habedi/graphina/actions/workflows/lint.yml)
@@ -18,25 +27,30 @@ social, transportation, and biological networks.
 Compared to other Rust graph libraries like [petgraph](https://github.com/petgraph/petgraph)
 and [rustworkx](https://www.rustworkx.org/), Graphina aims to provide a more high-level API and a wide range of
 ready-to-use algorithms for network analysis and graph mining tasks.
+The main goal is to make Graphina as feature-rich as [NetworkX](https://networkx.org/),
+but with the performance of Rust.
+
+Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
+Check out [pygraphina](pygraphina/) directory for more details.
 
 > [!IMPORTANT]
 > Graphina is in the early stages of development, so breaking changes may occur.
+> Bugs and API inconsistencies are also expected, and the algorithms may not yet be optimized for performance.
 
-## Structure
+### Structure
 
-Graphina consists of two main parts: a core library and extensions.
+Graphina consists of two main parts: a *core library* and *extensions*.
 The core library provides the basic data structures and algorithms for working with graphs.
 The extensions are modules outside the core library that contain more advanced algorithms for specific tasks like
 community detection, link prediction, and calculating node and edge centrality scores.
 
-The extensions are designed to be independent of each other,
-and depend on the core library for the basic graph operations.
+The extensions are independent of each other. However, they depend on the core library for the basic graph operations.
 
-### Graphina Core
+#### Graphina Core
 
-| Module                                   | Features/Algorithms                                                                                                                                                                           | Status | Notes                                             |
+| Module                                   | Feature/Algorithm                                                                                                                                                                             | Status | Notes                                             |
 |------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|---------------------------------------------------|
-| [**Types**](src/core/types.rs)           | <ul><li>Directed and undirected graphs</li><li>Weighted and unweighted graphs</li></ul>                                                                                                       | Tested | Core graph types                                  |
+| [**Types**](src/core/types.rs)           | <ul><li>Directed and undirected graphs</li><li>Weighted and unweighted graphs</li></ul>                                                                                                       | Tested | Graph types that Graphina supports                |                                 
 | [**Exceptions**](src/core/exceptions.rs) | <ul><li>List of exceptions</li></ul>                                                                                                                                                          | Tested | Custom error types for Graphina                   |
 | [**IO**](src/core/io.rs)                 | <ul><li>Edge list</li><li>Adjacency list</li></ul>                                                                                                                                            | Tested | I/O routines for reading/writing graph data       |
 | [**Generators**](src/core/generators.rs) | <ul><li>Erdős–Rényi graph</li><li>Watts–Strogatz graph</li><li>Barabási–Albert graph</li><li>Complete graph</li><li>Bipartite graph</li><li>Star graph</li><li>Cycle graph</li></ul>          | Tested | Graph generators for random and structured graphs |
@@ -44,20 +58,20 @@ and depend on the core library for the basic graph operations.
 | [**MST**](src/core/mst.rs)               | <ul><li>Prim’s algorithm</li><li>Kruskal’s algorithm</li><li>Borůvka’s algorithm</li></ul>                                                                                                    | Tested | Minimum spanning tree algorithms                  |
 | [**Traversal**](src/core/traversal.rs)   | <ul><li>Breadth-first search (BFS)</li><li>Depth-first search (DFS)</li><li>Iterative deepening DFS</li><li>Bidirectional search</li></ul>                                                    | Tested | Graph traversal algorithms                        |
 
-### Extensions
+#### Extensions
 
-| Module                                               | Features/Algorithms                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Status | Notes                                                     |
+| Module                                               | Feature/Algorithm                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status | Notes                                                     |
 |------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|-----------------------------------------------------------|
-| [**Centrality**](src/centrality/algorithms.rs)       | <ul><li>Degree centrality</li><li>Closeness centrality</li><li>Betweenness centrality</li><li>Eigenvector centrality</li><li>PageRank centrality</li><li>Katz centrality</li><li>Harmonic centrality</li><li>Local/global reaching centrality</li><li>VoteRank centrality</li><li>Laplacian centrality</li></ul>                                                                                                                                                                                                                                                                                                                     |        | Centrality measures                                       |
-| [**Links**](src/links/algorithms.rs)                 | <ul><li>Resource allocation index</li><li>Jaccard coefficient</li><li>Adamic–Adar index</li><li>Preferential attachment</li><li>CN Soundarajan–Hopcroft</li><li>RA Index Soundarajan–Hopcroft</li><li>Within–inter-cluster ratio</li><li>Common neighbor centrality</li></ul>                                                                                                                                                                                                                                                                                                                                                        |        | Link prediction algorithms                                |
-| [**Community**](src/community/algorithms.rs)         | <ul><li>Label Propagation</li><li>Louvain Method</li><li>Girvan–Newman algorithm</li><li>Spectral Clustering</li><li>Personalized PageRank</li><li>Infomap</li><li>Connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                    |        | Community detection and clustering algorithms             |
+| [**Centrality**](src/centrality/algorithms.rs)       | <ul><li>Degree centrality</li><li>Closeness centrality</li><li>Betweenness centrality</li><li>Eigenvector centrality</li><li>PageRank centrality</li><li>Katz centrality</li><li>Harmonic centrality</li><li>Local/global reaching centrality</li><li>Voterank centrality</li><li>Laplacian centrality</li></ul>                                                                                                                                                                                                                                                                                                                     |        | Centrality measures                                       |
+| [**Links**](src/links/algorithms.rs)                 | <ul><li>Resource allocation index</li><li>Jaccard coefficient</li><li>Adamic–Adar index</li><li>Preferential attachment</li><li>CN Soundarajan–Hopcroft</li><li>RA index Soundarajan–Hopcroft</li><li>Within–inter-cluster ratio</li><li>Common neighbor centrality</li></ul>                                                                                                                                                                                                                                                                                                                                                        |        | Link prediction algorithms                                |
+| [**Community**](src/community/algorithms.rs)         | <ul><li>Label propagation</li><li>Louvain method</li><li>Girvan–Newman algorithm</li><li>Spectral clustering</li><li>Personalized PageRank</li><li>Infomap</li><li>Connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                    |        | Community detection and clustering algorithms             |
 | [**Approximation**](src/approximation/algorithms.rs) | <ul><li>Local node connectivity (BFS-based)</li><li>Maximum independent set (greedy with neighbor caching)</li><li>Maximum clique (greedy heuristic)</li><li>Clique removal</li><li>Large clique size</li><li>Average clustering coefficient</li><li>Densest subgraph (greedy peeling)</li><li>Diameter lower bound</li><li>Minimum weighted vertex cover (greedy re‑evaluated)</li><li>Minimum maximal matching (greedy)</li><li>Approximate Ramsey R2</li><li>TSP approximations (greedy, simulated annealing, threshold accepting, Christofides placeholder)</li><li>Treewidth decompositions (min degree, min fill-in)</li></ul> |        | Approximations and heuristic methods for NP‑hard problems |
 
 > [!NOTE]
-> Status shows whether the module is tested and benchmarked.
+> Status shows whether the module is `Tested` and `Benchmarked`.
 > Empty status means the module is implemented but not tested and benchmarked yet.
 
-## Installation
+### Installation
 
 ```
 cargo add graphina
@@ -65,19 +79,54 @@ cargo add graphina
 
 *Graphina requires Rust 1.83 or later.*
 
-## Documentation
+### Documentation
 
 See the [docs](docs/README.md) for the latest documentation.
 
 Check out the [docs.rs/graphina](https://docs.rs/graphina) for the latest API documentation.
 
-## Contributing
+#### Simple Example
+
+```rust
+use graphina::core::types::Graph;
+
+fn main() {
+    // Create a new directed graph
+    let mut graph = Graph::new();
+
+    // Add nodes and edges to the graph
+    let n0 = graph.add_node(0);
+    let n1 = graph.add_node(1);
+    let n2 = graph.add_node(2);
+    let n3 = graph.add_node(3);
+    graph.add_edge(n0, n1, 1.0);
+    graph.add_edge(n1, n2, 1.0);
+    graph.add_edge(n2, n3, 2.0);
+
+    // Get the neighbors of node 1
+    for neighbor in graph.neighbors(n1) {
+        println!("Node 1 has neighbor: {}", neighbor.index());
+    }
+}
+```
+
+See the [test](tests/) directory for more usage examples.
+
+### Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to make a contribution.
 
-## License
+### Logo
 
-This project is licensed under either of these:
+The mascot is named "Graphina the Dinosaur".
+As the name implies, she's a dinosaur, however, she herself thinks she's a dragon.
+The logo was created using Gimp, ComfyUI, and a Flux Schnell v2 model.
+
+### Licensing
+
+Graphina is licensed under either of these:
 
 * MIT License ([LICENSE-MIT](LICENSE-MIT))
 * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
+
+PyGraphina is licensed under the MIT License ([LICENSE](pygraphina/LICENSE)).

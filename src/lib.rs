@@ -3,4 +3,4 @@ pub mod centrality;
 pub mod community;
 pub mod core;
 pub mod links;
-pub mod logging;
+mod settings;

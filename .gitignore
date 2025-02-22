@@ -64,16 +64,14 @@ tmp/
 *.wal
 *.sqlite
 
-# Dependency lock files (uncomment to ignore)
-poetry.lock
-
 # Rust specific
 /target/
 .cargo-ok
 cobertura.xml
 tarpaulin-report.html
 
-# Comment out the next line if you want to checkin your lock file for Cargo
+# Dependency lock files (uncomment to ignore)
+poetry.lock
 Cargo.lock
 
 # Miscellaneous files and directories to ignore
@@ -82,3 +80,7 @@ Cargo.lock
 tmp_*
 temp_*
 output_*
+*.so
+.benchmarks/
+ci.yml
+src/main.rs

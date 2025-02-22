@@ -1,10 +1,8 @@
-// File: src/core/exceptions.rs
-
 /*!
-# Graphina Exceptions
+# Custom Error Types
 
 This module defines the custom error types for Graphina. These exceptions are used
-throughout the library to indicate various failure conditions and provide detailed
+throughout the library to show various failure conditions and provide specific
 error information. Each exception implements the standard [`Error`](std::error::Error)
 and [`Display`](std::fmt::Display) traits.
 
@@ -24,7 +22,7 @@ use std::fmt;
 
 /// Base exception for Graphina.
 ///
-/// This error type serves as a general exception that can be used for non-specific error cases.
+/// This error type is used as a general exception that can be used for non-specific error cases.
 #[derive(Debug)]
 pub struct GraphinaException {
     /// Detailed error message.
@@ -82,9 +80,9 @@ impl fmt::Display for GraphinaError {
 
 impl Error for GraphinaError {}
 
-/// Exception raised when a null graph is provided to an algorithm that cannot use it.
+/// Exception raised when a graph is provided to an algorithm that cannot use it.
 ///
-/// This error indicates that an algorithm received an invalid (null) graph input.
+/// This error indicates that an algorithm received an invalid graph input like a null/empty graph.
 #[derive(Debug)]
 pub struct GraphinaPointlessConcept {
     /// Detailed error message.
@@ -136,7 +134,7 @@ impl Error for GraphinaAlgorithmError {}
 
 /// Exception raised when no feasible solution exists.
 ///
-/// This error indicates that an algorithm failed to find a viable solution.
+/// This error indicates that an algorithm failed to find a viable solution (e.g., optimization).
 #[derive(Debug)]
 pub struct GraphinaUnfeasible {
     /// Detailed error message.
@@ -188,7 +186,7 @@ impl Error for GraphinaNoPath {}
 
 /// Exception raised when no cycle exists in a graph.
 ///
-/// This error is used when an algorithm expects a cycle but none is found.
+/// This error is used when an algorithm expects a cycle but none is found in the graph.
 #[derive(Debug)]
 pub struct GraphinaNoCycle {
     /// Detailed error message.
@@ -266,7 +264,7 @@ impl Error for HasACycle {}
 
 /// Exception raised when an optimization problem is unbounded.
 ///
-/// This error is used when an algorithm detects that the solution is unbounded.
+/// This error is used when an algorithm detects that the solution is unbounded (e.g., linear programming).
 #[derive(Debug)]
 pub struct GraphinaUnbounded {
     /// Detailed error message.
@@ -318,7 +316,7 @@ impl Error for GraphinaNotImplemented {}
 
 /// Raised when more than one valid solution exists for an intermediary step.
 ///
-/// This error is used when an algorithm encounters ambiguity during a computation.
+/// This error is used when an algorithm encounters ambiguity during a computational step (e.g., optimization).
 #[derive(Debug)]
 pub struct AmbiguousSolution {
     /// Detailed error message.
@@ -368,7 +366,7 @@ impl fmt::Display for ExceededMaxIterations {
 
 impl Error for ExceededMaxIterations {}
 
-/// Raised when the power iteration method fails to converge within the iteration limit.
+/// Raised when the power iteration method fails to converge within the iteration limit (e.g., PageRank).
 ///
 /// This error includes the number of iterations attempted before failure.
 #[derive(Debug)]

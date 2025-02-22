@@ -1,26 +1,18 @@
-// File: src/core/mst.rs
-
 /*!
-# Graphina MST Module
+# Minimum Spanning Tree Algorithms
 
 This module implements multiple Minimum Spanning Tree (MST) algorithms for the Graphina library.
 It provides the following algorithms:
 
-- **Borůvka’s Algorithm (Parallel):**
-  A parallel implementation using Rayon to process each component concurrently.
-  - **Time Complexity:** Approximately \(O(E \log V)\) in practice (parallelism may reduce runtime).
-  - **Space Complexity:** \(O(E + V)\)
-
-- **Kruskal’s Algorithm:**
-  Sorts all edges and uses a union–find data structure to avoid cycles.
-  - **Time Complexity:** \(O(E \log E)\) (dominated by sorting)
-  - **Space Complexity:** \(O(E + V)\)
-
 - **Prim’s Algorithm:**
   A greedy approach that grows the MST by adding the minimum edge at each step.
   It computes an MST forest (covering all connected components).
-  - **Time Complexity:** \(O(E \log V)\) per connected component.
-  - **Space Complexity:** \(O(V)\)
+
+- **Kruskal’s Algorithm:**
+  Sorts all edges and uses a union–find data structure to avoid cycles.
+
+- **Borůvka’s Algorithm (Parallel):**
+  A parallel implementation using Rayon to process each component concurrently.
 
 **Note:** The weight type `W` must implement `Ord`. If you wish to use floating‑point weights (e.g. `f32` or `f64`), consider wrapping them in a type that provides a total order (e.g. [`ordered_float::OrderedFloat`](https://docs.rs/ordered-float/)).
 
@@ -106,7 +98,7 @@ pub struct MstEdge<W> {
 ///
 /// # Complexity
 ///
-/// - **Time Complexity:** Approximately \(O(E \log V)\) in practice (parallelism may reduce runtime).
+/// - **Time Complexity:** Approximately \(O(E \log V)\) in practice (using parallelism can reduce runtime).
 /// - **Space Complexity:** \(O(E + V)\)
 ///
 /// # Returns

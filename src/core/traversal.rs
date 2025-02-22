@@ -1,16 +1,22 @@
-// File: src/core/traversal.rs
-
 /*!
 # Graph Traversal Algorithms
 
-This module implements a collection of graph traversal algorithms for Graphina. These include:
+This module implements a collection of graph traversal algorithms for Graphina graphs.
+The algorithms include:
 
-- **Breadth-First Search (BFS):** Traverses a graph level-by-level starting from a specified node.
-- **Depth-First Search (DFS):** Recursively explores a graph from a starting node.
-- **Iterative Deepening Depth-First Search (IDDFS):** Combines the space efficiency of DFS with the optimality of BFS by iteratively deepening the search.
-- **Bidirectional Search:** Simultaneously searches from the start and target nodes, potentially reducing search time by meeting in the middle.
+- **Breadth-First Search (BFS):**
+  Traverses a graph level-by-level starting from a specified node.
 
-These algorithms work on graphs defined by the core types in [`crate::core::types`](../core/types.rs), which provide a unified API for both directed and undirected graphs.
+- **Depth-First Search (DFS):**
+  Recursively traverses a graph depth-first starting from a specified node.
+
+- **Iterative Deepening Depth-First Search (IDDFS):**
+  Combines the space efficiency of DFS with the optimality of BFS by iteratively deepening the search.
+
+- **Bidirectional Search:**
+  Simultaneously searches from the start and target nodes, potentially reducing search time by meeting in the middle.
+
+The algorithms work on graphs defined by the core types in [`crate::core::types`](../core/types.rs).
 
 For the search-based algorithms that find a path (IDDFS and Bidirectional Search), additional "try" variants are provided that return a `Result` and use the custom exception [`GraphinaNoPath`](../exceptions/index.html#graphinanoPath) if no valid path exists.
 */
@@ -27,6 +33,11 @@ use std::collections::{HashMap, HashSet, VecDeque};
 ///
 /// * `graph` - A reference to a graph that implements `BaseGraph`.
 /// * `start` - The starting node identifier.
+///
+/// # Complexity
+///
+/// - **Time:** O(V + E)
+/// - **Space:** O(V)
 ///
 /// # Example
 ///
@@ -73,6 +84,11 @@ where
 ///
 /// * `graph` - A reference to a graph that implements `BaseGraph`.
 /// * `start` - The starting node identifier.
+///
+/// # Complexity
+///
+/// - **Time:** O(V + E)
+/// - **Space:** O(V)
 ///
 /// # Example
 ///
@@ -140,6 +156,11 @@ fn dfs_util<A, W, Ty>(
 /// # Returns
 ///
 /// An `Option` containing the path as a vector of `NodeId` if found, or `None` if no path exists within the given depth.
+///
+/// # Complexity
+///
+/// - **Time:** In the worst-case, O(b^d) where `b` is the branching factor and `d` is the depth of the solution.
+/// - **Space:** O(d), where `d` is the maximum search depth.
 ///
 /// # Example
 ///
@@ -279,6 +300,11 @@ where
 /// * `graph` - A reference to a graph that implements `BaseGraph`.
 /// * `start` - The starting node identifier.
 /// * `target` - The target node identifier.
+///
+/// # Complexity
+///
+/// - **Time:** On average O(b^(d/2)), but in the worst-case O(b^d) where `b` is the branching factor and `d` is the distance between nodes.
+/// - **Space:** O(b^(d/2)), where `b` is the branching factor and `d` is the distance between nodes.
 ///
 /// # Returns
 ///

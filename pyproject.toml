@@ -1,0 +1,77 @@
+[tool.poetry]
+name = "graphina"
+version = "0.1.0"
+description = "Python environment for the Graphina library"
+authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
+maintainers = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+maturin = { extras = ["zig"], version = "^1.8.2" }
+poetry-dynamic-versioning = "^1.4.0"
+pytest = "^8.0.1"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.14.0"
+pytest-benchmark = "^5.1.0"
+mypy = "^1.11.1"
+ruff = "^0.9.3"
+twine = "^6.1.0"
+pygraphina = "^0.1.0"
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+disallow_untyped_calls = true
+strict_optional = true
+warn_redundant_casts = true
+
+# Ruff configuration
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv"
+]
+line-length = 100
+indent-width = 4
+src = ["pygraphina"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["ANN", "D", "E", "F", "I"]
+ignore = [
+    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"
+]
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"pygraphina/tests/**/*.py" = []
