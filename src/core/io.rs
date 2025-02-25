@@ -12,7 +12,7 @@ Specifically, it supports:
   - Reading an adjacency list from a file into a graph.
   - Writing a graph's adjacency list to a file.
 
-Functions use the core graph abstraction defined in [`crate::core::types`](../core/types.rs)
+Functions use the core graph abstractions defined in [`crate::core::types`](../core/types.rs)
 and use the custom exception [`GraphinaException`](../exceptions/index.html#graphinaexception) for reporting errors.
 
 The input files support comments (lines or inline comments beginning with `#` are ignored)

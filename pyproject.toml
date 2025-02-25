@@ -16,7 +16,6 @@ pytest-benchmark = "^5.1.0"
 mypy = "^1.11.1"
 ruff = "^0.9.3"
 twine = "^6.1.0"
-pygraphina = "^0.1.0"
 
 [tool.mypy]
 python_version = "3.9"
@@ -28,27 +27,27 @@ warn_redundant_casts = true
 # Ruff configuration
 [tool.ruff]
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv"
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv"
 ]
 line-length = 100
 indent-width = 4
@@ -58,7 +57,7 @@ target-version = "py39"
 [tool.ruff.lint]
 select = ["ANN", "D", "E", "F", "I"]
 ignore = [
-    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"
+  "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"
 ]
 fixable = ["ALL"]
 unfixable = []

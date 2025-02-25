@@ -1,6 +1,5 @@
 use ctor::ctor;
 use tracing::Level;
-use tracing_subscriber;
 
 #[ctor]
 fn set_debug_level() {

@@ -1,7 +1,7 @@
 /*!
 # Graph Traversal Algorithms
 
-This module implements a collection of graph traversal algorithms for Graphina graphs.
+This module implements a collection of graph traversal algorithms for the graph types defined in `src/core/types.rs`.
 The algorithms include:
 
 - **Breadth-First Search (BFS):**
@@ -15,8 +15,6 @@ The algorithms include:
 
 - **Bidirectional Search:**
   Simultaneously searches from the start and target nodes, potentially reducing search time by meeting in the middle.
-
-The algorithms work on graphs defined by the core types in [`crate::core::types`](../core/types.rs).
 
 For the search-based algorithms that find a path (IDDFS and Bidirectional Search), additional "try" variants are provided that return a `Result` and use the custom exception [`GraphinaNoPath`](../exceptions/index.html#graphinanoPath) if no valid path exists.
 */
