@@ -9,7 +9,7 @@ to `u32` and edge weights to `f32`.
 
 Most generators use a seeded random number generator for reproducibility. In case of
 invalid parameters (e.g. probability out of [0, 1] or insufficient nodes), functions
-return a `Result` with a relevant exception from `src/core/exceptions.rs`.
+return a `Result` with a relevant exception from `graphina::core::exceptions`.
 
 # Examples
 

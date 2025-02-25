@@ -1,24 +1,22 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="logo.png">
-    <source media="(prefers-color-scheme: dark)" srcset="logo.png">
-    <img alt="template-rust-project logo" src="logo.png" height="50%" width="50%">
+    <img alt="Graphina the Dinosaur" src="logo.png" height="50%" width="50%">
   </picture>
 </div>
-<br>
 
 ## Graphina
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=popout-square&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
-[![Lint](https://img.shields.io/github/actions/workflow/status/habedi/graphina/lint.yml?label=lints&style=popout-square&logo=github)](https://github.com/habedi/graphina/actions/workflows/lint.yml)
-[![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=popout-square&logo=codecov)](https://codecov.io/gh/habedi/graphina)
-[![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=popout-square&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
-[![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=popout-square&color=fc8d62&logo=rust)](https://crates.io/crates/graphina)
-[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=popout-square&logo=docs.rs)](https://docs.rs/graphina)
-[![Downloads](https://img.shields.io/crates/d/graphina?style=popout-square&logo=rust)](https://crates.io/crates/graphina)
-[![MSRV](https://img.shields.io/badge/MSRV-1.83.0-orange?style=popout-square&logo=rust&label=msrv)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
-[![Docs](https://img.shields.io/badge/docs-latest-3776ab?style=flat&logo=readthedocs)](docs)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&logo=open-source-initiative)](https://github.com/habedi/graphina)
+[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&color=4caf50&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
+[![Lints](https://img.shields.io/github/actions/workflow/status/habedi/graphina/lint.yml?label=lints&style=flat&labelColor=282c34&color=4caf50&logo=github)](https://github.com/habedi/graphina/actions/workflows/lint.yml)
+[![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&labelColor=282c34&color=ffca28&logo=codecov)](https://codecov.io/gh/habedi/graphina)
+[![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=flat&labelColor=282c34&color=4caf50&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
+[![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=f46623&logo=rust)](https://crates.io/crates/graphina)
+[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
+[![Downloads](https://img.shields.io/crates/d/graphina?style=flat&labelColor=282c34&color=4caf50&logo=rust)](https://crates.io/crates/graphina)
+[![MSRV](https://img.shields.io/badge/MSRV-1.83.0-007ec6?label=msrv&style=flat&labelColor=282c34&logo=rust)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
+[![Status: Alpha](https://img.shields.io/badge/status-alpha-ec407a.svg?style=flat&labelColor=282c34)](https://github.com/habedi/graphina)
+[![Docs](https://img.shields.io/badge/docs-latest-3776ab?style=flat&labelColor=282c34&logo=readthedocs)](docs)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
 Graphina is a graph data science library for Rust.
 It provides the common data structures and algorithms used for analyzing the graphs of real-world networks such as
@@ -73,8 +71,15 @@ The extensions are independent of each other. However, they depend on the core l
 
 ### Installation
 
-```
+```shell
 cargo add graphina
+```
+
+Or add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+graphina = "0.1"
 ```
 
 *Graphina requires Rust 1.83 or later.*
