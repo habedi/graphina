@@ -1,6 +1,6 @@
 [package]
 name = "pygraphina"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 publish = false
 
@@ -11,5 +11,5 @@ doc = false
 
 [dependencies]
 pyo3 = { version = "0.18", features = ["abi3-py39", "extension-module"] }
-graphina = { path = "../" }
+graphina = { path = ".." }
 
