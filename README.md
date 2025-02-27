@@ -9,14 +9,14 @@
 
 ## Graphina
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=popout-square&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
-[![Lint](https://img.shields.io/github/actions/workflow/status/habedi/graphina/lint.yml?label=lints&style=popout-square&logo=github)](https://github.com/habedi/graphina/actions/workflows/lint.yml)
-[![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=popout-square&logo=codecov)](https://codecov.io/gh/habedi/graphina)
-[![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=popout-square&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
-[![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=popout-square&color=fc8d62&logo=rust)](https://crates.io/crates/graphina)
-[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=popout-square&logo=docs.rs)](https://docs.rs/graphina)
-[![Downloads](https://img.shields.io/crates/d/graphina?style=popout-square&logo=rust)](https://crates.io/crates/graphina)
-[![MSRV](https://img.shields.io/badge/MSRV-1.83.0-orange?style=popout-square&logo=rust&label=msrv)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
+[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
+[![Lint](https://img.shields.io/github/actions/workflow/status/habedi/graphina/lint.yml?label=lints&style=flat&logo=github)](https://github.com/habedi/graphina/actions/workflows/lint.yml)
+[![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&logo=codecov)](https://codecov.io/gh/habedi/graphina)
+[![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=flat&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
+[![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&color=fc8d62&logo=rust)](https://crates.io/crates/graphina)
+[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&logo=docs.rs)](https://docs.rs/graphina)
+[![Downloads](https://img.shields.io/crates/d/graphina?style=flat&logo=rust)](https://crates.io/crates/graphina)
+[![MSRV](https://img.shields.io/badge/MSRV-1.83.0-orange?style=flat&logo=rust&label=msrv)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
 [![Docs](https://img.shields.io/badge/docs-latest-3776ab?style=flat&logo=readthedocs)](docs)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
