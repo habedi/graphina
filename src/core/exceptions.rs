@@ -3,7 +3,7 @@
 
 This module defines the custom error types for Graphina. These exceptions are used
 throughout the library to show various failure conditions and provide specific
-error information. Each exception implements the standard [`Error`](std::error::Error)
+error information. Each exception implements the standard `std::error::Error`
 and [`Display`](std::fmt::Display) traits.
 
 ## Usage
