@@ -16,7 +16,9 @@ The algorithms include:
 - **Bidirectional Search:**
   Simultaneously searches from the start and target nodes, potentially reducing search time by meeting in the middle.
 
-For the search-based algorithms that find a path (IDDFS and Bidirectional Search), additional "try" variants are provided that return a `Result` and use the custom exception [`GraphinaNoPath`](../exceptions/index.html#graphinanoPath) if no valid path exists.
+For the search-based algorithms that find a path (IDDFS and Bidirectional Search), additional "try"
+variants are provided that return a `Result` and use the custom exception
+`graphina::core::exceptions::GraphinaNoPath` if no valid path exists.
 */
 
 use crate::core::exceptions::GraphinaNoPath;

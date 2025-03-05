@@ -21,7 +21,7 @@ They use a union–find (disjoint-set) data structure with path compression and 
 
 ## Error Handling
 
-If the input graph is empty, algorithms will panic with a `GraphinaException` from [`graphina::core::exceptions`](../exceptions/index.html).
+If the input graph is empty, algorithms will panic with a `GraphinaException` from `graphina::core::exceptions`.
 Also, additional invariants are not checked, and the algorithms assume that the input graph is valid.
 If a required condition is violated, the algorithm will signal the error via a panic using a custom exception.
 */
