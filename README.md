@@ -17,6 +17,7 @@
 [![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&logo=docs.rs)](https://docs.rs/graphina)
 [![Downloads](https://img.shields.io/crates/d/graphina?style=flat&logo=rust)](https://crates.io/crates/graphina)
 [![MSRV](https://img.shields.io/badge/MSRV-1.83.0-orange?style=flat&logo=rust&label=msrv)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
+[![Status: Alpha](https://img.shields.io/badge/status-alpha-pink.svg)](https://github.com/habedi/graphina)
 [![Docs](https://img.shields.io/badge/docs-latest-3776ab?style=flat&logo=readthedocs)](docs)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
