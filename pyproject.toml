@@ -6,19 +6,21 @@ authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
 maintainers = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 maturin = { extras = ["zig"], version = "^1.8.2" }
 poetry-dynamic-versioning = "^1.4.0"
-pytest = "^8.0.1"
+pytest = "^8.3.5"
 pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 pytest-benchmark = "^5.1.0"
 mypy = "^1.11.1"
-ruff = "^0.9.3"
+ruff = "^0.9.10"
 twine = "^6.1.0"
+huggingface-hub = "^0.29.3"
+networkx = "^3.4.2"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 ignore_missing_imports = true
 disallow_untyped_calls = true
 strict_optional = true
@@ -52,7 +54,7 @@ exclude = [
 line-length = 100
 indent-width = 4
 src = ["pygraphina"]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["ANN", "D", "E", "F", "I"]
