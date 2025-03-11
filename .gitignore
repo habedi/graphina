@@ -84,3 +84,4 @@ output_*
 .benchmarks/
 ci.yml
 src/main.rs
+tests/testdata/*.txt
