@@ -51,12 +51,19 @@ name = "project_benchmarks"
 harness = false
 
 [profile.release]
-strip = "symbols"
+strip = "debuginfo"
+panic = "abort"
 codegen-units = 1
 lto = true
 
 [profile.bench]
 debug = true
+
+[profile.test]
+debug = true
+
+[profile.example]
+inherits = "release"
 
 [package.metadata.rustfmt]
 max_width = 100

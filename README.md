@@ -125,6 +125,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to make a contribution
 
 The mascot is named "Graphina the Dinosaur".
 As the name implies, she's a dinosaur, however, she herself thinks she's a dragon.
+
 The logo was created using Gimp, ComfyUI, and a Flux Schnell v2 model.
 
 ### Licensing
