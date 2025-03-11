@@ -9,6 +9,8 @@ RUST_BACKTRACE  := full
 WHEEL_DIR       := dist
 PYGRAPHINA_DIR  := pygraphina
 TEST_DATA_DIR  := tests/testdata
+SHELL           := /bin/bash
+MSRV			:= 1.83
 
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
@@ -106,6 +108,26 @@ fix_lint: ## Fix the linter warnings
 nextest: ## Run tests using nextest
 	@echo "Running tests using nextest..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run
+
+.PHONY: testdata
+testdata: ## Download the datasets used in tests
+	@echo "Downloading test data..."
+	@$(SHELL) $(TEST_DATA_DIR)/download_datasets.sh $(TEST_DATA_DIR)
+
+.PHONY: install-msrv
+install-msrv: ## Install the minimum supported Rust version (MSRV) for development
+	@echo "Installing the minimum supported Rust version..."
+	@rustup toolchain install $(MSRV)
+	@rustup default $(MSRV)
+
+.PHONY: run-examples
+run-examples: ## Run all the scripts in the examples directory one by one
+	@echo "Running all example scripts..."
+	@for example in examples/*.rs; do \
+		example_name=$$(basename $$example .rs); \
+		echo "Running example: $$example_name"; \
+		cargo run --example $$example_name; \
+	done
 
 ########################################################################################
 ## Python targets
