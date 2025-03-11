@@ -12,8 +12,8 @@ Specifically, it supports:
   - Reading an adjacency list from a file into a graph.
   - Writing a graph's adjacency list to a file.
 
-Functions use the core graph abstractions defined in [`crate::core::types`](../core/types.rs)
-and use the custom exception [`GraphinaException`](../exceptions/index.html#graphinaexception) for reporting errors.
+Functions use the core graph abstractions defined in `graphina::core::types`.
+and use the custom exception `graphina::core::exceptions::GraphinaException` for reporting errors.
 
 The input files support comments (lines or inline comments beginning with `#` are ignored)
 and allow for optional weight specifications. If a weight is missing, a default of `1.0` is used.
@@ -44,7 +44,7 @@ use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
 /// # Returns
 ///
 /// * `Result<()>` - An `io::Result` indicating success or failure. Failure can occur due to I/O errors,
-///   or if any token fails to parse, in which case a [`GraphinaException`](../exceptions/index.html#graphinaexception)
+///   or if any token fails to parse, in which case a `graphina::core::exceptions::GraphinaException`
 ///   is returned as part of the error message.
 ///
 /// # Example

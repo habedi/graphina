@@ -25,7 +25,7 @@ It supports single‑source and all‑pairs computations via (classical) algorit
 
 ## Error Handling
 
-Preconditions for each algorithm are enforced at runtime using custom exceptions from `src/core/exceptions.rs`.
+Preconditions for each algorithm are enforced at runtime using custom exceptions from `graphina::core::exceptions`.
 For example, algorithms that require nonnegative edge weights will panic with a `GraphinaException`
 if a negative weight is encountered.
 

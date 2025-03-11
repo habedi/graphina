@@ -8,6 +8,7 @@ RUST_LOG        := info
 RUST_BACKTRACE  := full
 WHEEL_DIR       := dist
 PYGRAPHINA_DIR  := pygraphina
+TEST_DATA_DIR  := tests/testdata
 
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
@@ -69,6 +70,7 @@ install-deps: install-snap ## Install development dependencies
 	@rustup component add rustfmt clippy
 	@cargo install cargo-tarpaulin
 	@cargo install cargo-audit
+	@cargo install cargo-nextest
 
 .PHONY: lint
 lint: format ## Run linters on Rust files
@@ -89,6 +91,21 @@ bench: ## Run benchmarks
 audit: ## Run security audit on Rust dependencies
 	@echo "Running security audit..."
 	@cargo audit
+
+.PHONY: doc
+doc: format ## Generate the documentation
+	@echo "Generating documentation..."
+	@cargo doc --no-deps --document-private-items
+
+.PHONY: fix-lint
+fix_lint: ## Fix the linter warnings
+	@echo "Fixing linter warnings..."
+	@cargo clippy --fix --allow-dirty --allow-staged
+
+.PHONY: nextest
+nextest: ## Run tests using nextest
+	@echo "Running tests using nextest..."
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run
 
 ########################################################################################
 ## Python targets

@@ -33,7 +33,7 @@ default = []  # No features enabled by default
 binaries = []
 
 [dependencies]
-ctor = "0.3.6"
+ctor = "0.4.1"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 rand = "0.9.0"
@@ -51,12 +51,19 @@ name = "project_benchmarks"
 harness = false
 
 [profile.release]
-strip = "symbols"
+strip = "debuginfo"
+panic = "abort"
 codegen-units = 1
 lto = true
 
 [profile.bench]
 debug = true
+
+[profile.test]
+debug = true
+
+[profile.example]
+inherits = "release"
 
 [package.metadata.rustfmt]
 max_width = 100
