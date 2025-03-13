@@ -7,7 +7,7 @@ maintainers = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-maturin = { extras = ["zig"], version = "^1.8.2" }
+maturin = { extras = ["zig"], version = "^1.8.3" }
 poetry-dynamic-versioning = "^1.4.0"
 pytest = "^8.3.5"
 pytest-cov = "^6.0.0"

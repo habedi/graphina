@@ -171,7 +171,8 @@ impl PyGraph {
 
 /// The Python module declaration.
 #[pymodule]
-fn pygraphina(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    // Bound is from pyo3::prelude
     m.add_class::<PyGraph>()?;
     Ok(())
 }

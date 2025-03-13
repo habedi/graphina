@@ -136,7 +136,8 @@ run-examples: ## Run all the scripts in the examples directory one by one
 .PHONY: develop_py
 develop_py: ## Build and install PyGraphina in the current Python environment
 	@echo "Building and installing PyGraphina..."
-	@(cd $(PYGRAPHINA_DIR) && maturin develop)
+	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && maturin develop)
 
 .PHONY: wheel
 wheel: ## Build the wheel file for PyGraphina
