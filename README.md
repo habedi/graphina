@@ -17,7 +17,6 @@
 [![MSRV](https://img.shields.io/badge/MSRV-1.83.0-007ec6?label=msrv&style=flat&labelColor=282c34&logo=rust)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
 [![Docs](https://img.shields.io/badge/docs-latest-3776ab?style=flat&labelColor=282c34&logo=readthedocs)](docs)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
-[![Status: Alpha](https://img.shields.io/badge/status-alpha-ec407a.svg?style=flat&labelColor=282c34)](https://github.com/habedi/graphina)
 
 Graphina is a graph data science library for Rust.
 It provides the common data structures and algorithms used for analyzing the graphs of real-world networks such as
@@ -47,11 +46,11 @@ The extensions are independent of each other. However, they depend on the core l
 
 #### Graphina Core
 
-| Module                                   | Feature/Algorithm                                                                                                                                                                             | Status | Notes                                             |
+| Module                                   | Feature or Algorithm                                                                                                                                                                          | Status | Notes                                             |
 |------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|---------------------------------------------------|
 | [**Types**](src/core/types.rs)           | <ul><li>Directed and undirected graphs</li><li>Weighted and unweighted graphs</li></ul>                                                                                                       | Tested | Graph types that Graphina supports                |                                 
 | [**Exceptions**](src/core/exceptions.rs) | <ul><li>List of exceptions</li></ul>                                                                                                                                                          | Tested | Custom error types for Graphina                   |
-| [**IO**](src/core/io.rs)                 | <ul><li>Edge list</li><li>Adjacency list</li></ul>                                                                                                                                            | Tested | I/O routines for reading/writing graph data       |
+| [**IO**](src/core/io.rs)                 | <ul><li>Edge list</li><li>Adjacency list</li></ul>                                                                                                                                            | Tested | I/O routines for reading and writing graph data   |
 | [**Generators**](src/core/generators.rs) | <ul><li>Erdős–Rényi graph</li><li>Watts–Strogatz graph</li><li>Barabási–Albert graph</li><li>Complete graph</li><li>Bipartite graph</li><li>Star graph</li><li>Cycle graph</li></ul>          | Tested | Graph generators for random and structured graphs |
 | [**Paths**](src/core/paths.rs)           | <ul><li>Dijkstra’s algorithm</li><li>Bellman–Ford algorithm</li><li>Floyd–Warshall algorithm</li><li>Johnson’s algorithm</li><li>A* search algorithm</li><li>Iterative deepening A*</li></ul> | Tested | Shortest paths algorithms                         |
 | [**MST**](src/core/mst.rs)               | <ul><li>Prim’s algorithm</li><li>Kruskal’s algorithm</li><li>Borůvka’s algorithm</li></ul>                                                                                                    | Tested | Minimum spanning tree algorithms                  |
