@@ -38,4 +38,4 @@ jobs:
       - name: Build and Publish Package
         run: |
           poetry run make wheel-manylinux
-          PYPI_TOKEN=${{ secrets.PYPI_API_TOKEN }} poetry run make publish_py
+          PYPI_TOKEN=${{ secrets.PYPI_API_TOKEN }} poetry run make publish-py
