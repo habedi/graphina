@@ -3,12 +3,10 @@ name = "graphina"
 version = "0.1.0"
 description = "Python environment for the Graphina library"
 authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
-maintainers = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 maturin = { extras = ["zig"], version = "^1.8.3" }
-poetry-dynamic-versioning = "^1.4.0"
 pytest = "^8.3.5"
 pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
