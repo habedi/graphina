@@ -12,7 +12,7 @@ description = "Python bindings for the Graphina library"
 authors = [{ name = "Hassan Abedi", email = "hassan.abedi.t@gmail.com" }]
 maintainers = [{ name = "Hassan Abedi", email = "hassan.abedi.t@gmail.com" }]
 keywords = ["graph-theory", "data-science", "graph-algorithms", "graph-analytics"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 readme = "README.md"
 dynamic = ['version']

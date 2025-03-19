@@ -1,6 +1,6 @@
 # Variables
-PKG             := github.com/habedi/graphina
-BINARY_NAME     := $(or $(PROJ_BINARY), $(notdir $(PKG)))
+REPO             := github.com/habedi/graphina
+BINARY_NAME     := $(or $(PROJ_BINARY), $(notdir $(REPO)))
 BINARY          := target/release/$(BINARY_NAME)
 PATH            := /snap/bin:$(PATH)
 DEBUG_GRAPHINA  := 1
@@ -9,6 +9,8 @@ RUST_BACKTRACE  := full
 WHEEL_DIR       := dist
 PYGRAPHINA_DIR  := pygraphina
 TEST_DATA_DIR  := tests/testdata
+SHELL           := /bin/bash
+MSRV			:= 1.83
 
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
@@ -17,7 +19,7 @@ WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/
 .DEFAULT_GOAL := help
 
 .PHONY: help
-help: ## Show the list of available targets with their descriptions
+help: ## Show the help message for each target
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -33,7 +35,8 @@ format: ## Format Rust files
 .PHONY: test
 test: format ## Run the tests
 	@echo "Running tests..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test -- --nocapture
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --all-targets \
+	--workspace -- --nocapture
 
 .PHONY: coverage
 coverage: format ## Generate test coverage report
@@ -98,23 +101,44 @@ doc: format ## Generate the documentation
 	@cargo doc --no-deps --document-private-items
 
 .PHONY: fix-lint
-fix_lint: ## Fix the linter warnings
+fix-lint: ## Fix the linter warnings
 	@echo "Fixing linter warnings..."
-	@cargo clippy --fix --allow-dirty --allow-staged
+	@cargo clippy --fix --allow-dirty --all-targets --workspace --all-features -- -D warnings
 
 .PHONY: nextest
 nextest: ## Run tests using nextest
 	@echo "Running tests using nextest..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run
 
+.PHONY: testdata
+testdata: ## Download the datasets used in tests
+	@echo "Downloading test data..."
+	@$(SHELL) $(TEST_DATA_DIR)/download_datasets.sh $(TEST_DATA_DIR)
+
+.PHONY: install-msrv
+install-msrv: ## Install the minimum supported Rust version (MSRV) for development
+	@echo "Installing the minimum supported Rust version..."
+	@rustup toolchain install $(MSRV)
+	@rustup default $(MSRV)
+
+.PHONY: run-examples
+run-examples: ## Run all the scripts in the examples directory one by one
+	@echo "Running all example scripts..."
+	@for example in examples/*.rs; do \
+		example_name=$$(basename $$example .rs); \
+		echo "Running example: $$example_name"; \
+		cargo run --example $$example_name; \
+	done
+
 ########################################################################################
 ## Python targets
 ########################################################################################
 
-.PHONY: develop_py
-develop_py: ## Build and install PyGraphina in the current Python environment
+.PHONY: develop-py
+develop-py: ## Build and install PyGraphina in the current Python environment
 	@echo "Building and installing PyGraphina..."
-	@(cd $(PYGRAPHINA_DIR) && maturin develop)
+	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && maturin develop)
 
 .PHONY: wheel
 wheel: ## Build the wheel file for PyGraphina
@@ -126,12 +150,13 @@ wheel-manylinux: ## Build the manylinux wheel file for PyGraphina (using Zig)
 	@echo "Building the manylinux PyGraphina wheel..."
 	@(cd $(PYGRAPHINA_DIR) && maturin build --release --out $(WHEEL_DIR) --auditwheel check --zig)
 
-.PHONY: test_py
-test_py: develop_py ## Run Python tests
+.PHONY: test-py
+test-py: develop-py ## Run Python tests
 	@echo "Running Python tests..."
 	@poetry run pytest $(PYGRAPHINA_DIR)/tests
 
-publish_py: wheel ## Publish the PyGraphina wheel to PyPI (requires PYPI_TOKEN to be set)
+.PHONY: publish-py
+publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PYPI_TOKEN to be set)
 	@echo "Publishing PyGraphina to PyPI..."
 	@if [ -z "$(WHEEL_FILE)" ]; then \
 		echo "Error: No wheel file found. Please run 'make wheel' first."; \
@@ -140,7 +165,7 @@ publish_py: wheel ## Publish the PyGraphina wheel to PyPI (requires PYPI_TOKEN t
 	@echo "Found wheel file: $(WHEEL_FILE)"
 	@twine upload -u __token__ -p $(PYPI_TOKEN) $(WHEEL_FILE)
 
-.PHONY: generate_ci
-generate_ci: ## Generate CI configuration files (GitHub Actions workflow)
+.PHONY: generate-ci
+generate-ci: ## Generate CI configuration files (GitHub Actions workflow)
 	@echo "Generating CI configuration files..."
 	@(cd $(PYGRAPHINA_DIR) && maturin generate-ci --zig --pytest --platform all -o ../.github/workflows/ci.yml github)

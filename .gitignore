@@ -84,3 +84,16 @@ output_*
 .benchmarks/
 ci.yml
 src/main.rs
+
+# Ignore files in the tests/testdata/[graphina-graphs] directory
+tests/testdata/*.txt
+tests/testdata/*.csv
+tests/testdata/*.json
+tests/testdata/*.parquet
+tests/testdata/*.gitattributes
+tests/testdata/graphina-graphs/*.gitattributes
+tests/testdata/graphina-graphs/*.md
+tests/testdata/graphina-graphs/*.txt
+tests/testdata/graphina-graphs/*.csv
+tests/testdata/graphina-graphs/*.json
+tests/testdata/graphina-graphs/*.parquet
