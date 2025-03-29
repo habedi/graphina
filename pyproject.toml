@@ -3,7 +3,6 @@ name = "graphina"
 version = "0.1.0"
 description = "Python environment for the Graphina library"
 authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
-maintainers = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
