@@ -91,6 +91,18 @@ fn test_girvan_newman() {
 }
 
 #[test]
+fn test_spectral_embeddings() {
+    let graph = sample_graph();
+    let dim = 4;
+    let embeddings = spectral_embeddings(&graph, dim);
+    assert_eq!(embeddings.len(), graph.node_count());
+    for embedding in embeddings {
+        assert_eq!(embedding.len(), dim);
+    }
+}
+
+
+#[test]
 fn test_spectral_clustering() {
     let graph = sample_graph();
     let communities = spectral_clustering(&graph, 2, Some(42));

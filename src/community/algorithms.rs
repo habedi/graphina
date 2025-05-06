@@ -329,25 +329,25 @@ fn compute_edge_betweenness(
 // 4. Production-Level Spectral Clustering
 ////////////////////////////////////////////////////////////////////////
 
-/// Production-level Spectral Clustering.
+/// Production-level Spectral embeddings.
 ///
 /// Constructs the unnormalized Laplacian from the weighted adjacency matrix,
 /// computes the smallest `k` eigenvectors via nalgebra’s symmetric eigen-decomposition,
-/// and clusters the rows of the eigenvector matrix using a k-means routine.
+/// and returns, for each node _n_, an embedding vector of dimensionality `k` consisting
+/// of the nth eigenvector value for the `k`th eigenvector.
+/// If k > the number of nodes in the graph, this routine will panic.
 ///
 /// **Time Complexity:** Dominated by the eigen-decomposition (≈ O(n³) worst-case).
 ///
 /// # Parameters
-/// - `k`: Number of clusters.
-/// - `seed`: Optional seed for the RNG used in k-means.
+/// - `k`: embedding dimensionality (number of eigenvectors). Must be <= |nodes|, or panic.
 ///
 /// # Returns
-/// A vector of communities, where each community is a vector of `NodeId`s.
-pub fn spectral_clustering<A, W, Ty>(
+/// A vector of weight vectors, where each weight vector is the embedding for the nth node.
+pub fn spectral_embeddings<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
-    k: usize,
-    seed: Option<u64>,
-) -> Vec<Vec<NodeId>>
+    k: usize
+) -> Vec<Vec<f64>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
@@ -374,6 +374,34 @@ where
             *val = eig.eigenvectors[(i, j)];
         }
     }
+    embedding
+}
+
+
+/// Production-level Spectral Clustering.
+///
+/// Constructs the unnormalized Laplacian from the weighted adjacency matrix,
+/// computes the smallest `k` eigenvectors via nalgebra’s symmetric eigen-decomposition,
+/// and clusters the rows of the eigenvector matrix using a k-means routine.
+///
+/// **Time Complexity:** Dominated by the eigen-decomposition (≈ O(n³) worst-case).
+///
+/// # Parameters
+/// - `k`: Number of clusters.
+/// - `seed`: Optional seed for the RNG used in k-means.
+///
+/// # Returns
+/// A vector of communities, where each community is a vector of `NodeId`s.
+pub fn spectral_clustering<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    k: usize,
+    seed: Option<u64>,
+) -> Vec<Vec<NodeId>>
+where
+    W: Copy + PartialOrd + Into<f64> + From<u8>,
+    Ty: GraphConstructor<A, W>,
+{
+    let embedding = spectral_embeddings(graph, k);
     k_means(&embedding, k, seed)
 }
 
