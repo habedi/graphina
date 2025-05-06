@@ -1,11 +1,14 @@
 name: Run Tests
 
 on:
-  workflow_dispatch: { } # Allow manual execution
-  workflow_call: # Make this workflow callable from other workflows
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    branches:
+      - main
   push:
     tags:
-      - 'v*' # Trigger on version tags
+      - 'v*'
 
 jobs:
   build:
@@ -14,7 +17,7 @@ jobs:
     strategy:
       matrix:
         # Define the Rust versions to test against
-        rust-version: [ "1.83.0", "1.84.0", "beta", "stable" ]
+        rust-version: [ "1.83.0", "1.84.0", "stable", "beta" ]
 
     steps:
       - name: Checkout Repository
@@ -32,7 +35,7 @@ jobs:
           make install-deps
 
       - name: Run Tests and Generate Coverage Report
-        run: make coverage # Generates a coverage report
+        run: make coverage
 
       - name: Upload Coverage Reports to Codecov
         uses: codecov/codecov-action@v5
