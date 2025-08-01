@@ -31,6 +31,9 @@ where
     W: Copy,
     Ty: GraphConstructor<A, W>,
 {
+    if !<Ty as GraphConstructor<A, W>>::is_directed() {
+        return out_degree_centrality(graph);
+    }
     let n = graph.node_count();
     let mut degree = vec![0; n];
     // Out–degree.
@@ -50,6 +53,9 @@ where
     W: Copy,
     Ty: GraphConstructor<A, W>,
 {
+    if !<Ty as GraphConstructor<A, W>>::is_directed() {
+        return out_degree_centrality(graph);
+    }
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
     for (_u, v, _w) in graph.edges() {

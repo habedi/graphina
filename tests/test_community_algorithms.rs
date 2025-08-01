@@ -101,7 +101,6 @@ fn test_spectral_embeddings() {
     }
 }
 
-
 #[test]
 fn test_spectral_clustering() {
     let graph = sample_graph();

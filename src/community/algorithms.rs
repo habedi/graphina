@@ -344,10 +344,7 @@ fn compute_edge_betweenness(
 ///
 /// # Returns
 /// A vector of weight vectors, where each weight vector is the embedding for the nth node.
-pub fn spectral_embeddings<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-    k: usize
-) -> Vec<Vec<f64>>
+pub fn spectral_embeddings<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, k: usize) -> Vec<Vec<f64>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
@@ -376,7 +373,6 @@ where
     }
     embedding
 }
-
 
 /// Production-level Spectral Clustering.
 ///
