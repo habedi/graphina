@@ -32,7 +32,7 @@ where
     Ty: GraphConstructor<A, W>,
 {
     if !<Ty as GraphConstructor<A, W>>::is_directed() {
-        return out_degree_centrality(&graph);
+        return out_degree_centrality(graph);
     }
     let n = graph.node_count();
     let mut degree = vec![0; n];
@@ -54,7 +54,7 @@ where
     Ty: GraphConstructor<A, W>,
 {
     if !<Ty as GraphConstructor<A, W>>::is_directed() {
-        return out_degree_centrality(&graph);
+        return out_degree_centrality(graph);
     }
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
