@@ -2,7 +2,6 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-// Import the core types from Graphina.
 use graphina::core::types::{Graph, NodeId};
 
 /// A Python-accessible Graph class wrapping Graphina's core undirected graph.
@@ -12,11 +11,9 @@ use graphina::core::types::{Graph, NodeId};
 /// to the Graphina `NodeId`s.
 #[pyclass]
 struct PyGraph {
-    /// The underlying Graphina graph.
     graph: Graph<i64, f64>,
-    /// Mapping from Python-level node IDs to internal NodeId values.
-    mapping: HashMap<usize, NodeId>,
-    /// The next Python-level node ID to assign.
+    py_to_internal: HashMap<usize, NodeId>,
+    internal_to_py: HashMap<NodeId, usize>,
     next_id: usize,
 }
 
@@ -30,7 +27,8 @@ impl PyGraph {
     fn new() -> Self {
         PyGraph {
             graph: Graph::new(),
-            mapping: HashMap::new(),
+            py_to_internal: HashMap::new(),
+            internal_to_py: HashMap::new(),
             next_id: 0,
         }
     }
@@ -44,7 +42,8 @@ impl PyGraph {
     fn add_node(&mut self, attr: i64) -> usize {
         let node_id = self.graph.add_node(attr);
         let py_id = self.next_id;
-        self.mapping.insert(py_id, node_id);
+        self.py_to_internal.insert(py_id, node_id);
+        self.internal_to_py.insert(node_id, py_id);
         self.next_id += 1;
         py_id
     }
@@ -56,11 +55,11 @@ impl PyGraph {
     /// Example:
     ///     >>> success = g.update_node(0, 100)
     fn update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<bool> {
-        let node_id = self
-            .mapping
-            .get(&py_node)
-            .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
-        Ok(self.graph.update_node(*node_id, new_attr))
+        if let Some(node_id) = self.py_to_internal.get(&py_node) {
+            Ok(self.graph.update_node(*node_id, new_attr))
+        } else {
+            Ok(false)
+        }
     }
 
     /// Attempts to update the attribute of an existing node.
@@ -71,12 +70,12 @@ impl PyGraph {
     ///     >>> g.try_update_node(0, 200)
     fn try_update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
         let node_id = self
-            .mapping
+            .py_to_internal
             .get(&py_node)
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
         self.graph
             .try_update_node(*node_id, new_attr)
-            .map_err(|e| PyValueError::new_err(format!("Error: {:?}", e)))
+            .map_err(|e| PyValueError::new_err(format!("Error: {}", e)))
     }
 
     /// Adds an edge between two nodes with the given weight.
@@ -87,11 +86,11 @@ impl PyGraph {
     ///     >>> edge_id = g.add_edge(0, 1, 3.14)
     fn add_edge(&mut self, source: usize, target: usize, weight: f64) -> PyResult<usize> {
         let s_id = self
-            .mapping
+            .py_to_internal
             .get(&source)
             .ok_or_else(|| PyValueError::new_err("Invalid source node id"))?;
         let t_id = self
-            .mapping
+            .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
         let edge = self.graph.add_edge(*s_id, *t_id, weight);
@@ -105,13 +104,16 @@ impl PyGraph {
     /// Example:
     ///     >>> attr = g.remove_node(0)
     fn remove_node(&mut self, py_node: usize) -> PyResult<Option<i64>> {
-        let node_id = self
-            .mapping
-            .get(&py_node)
-            .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
-        let result = self.graph.remove_node(*node_id);
-        self.mapping.remove(&py_node);
-        Ok(result)
+        if let Some(node_id) = self.py_to_internal.get(&py_node).copied() {
+            let result = self.graph.remove_node(node_id);
+            if result.is_some() {
+                self.py_to_internal.remove(&py_node);
+                self.internal_to_py.remove(&node_id);
+            }
+            Ok(result)
+        } else {
+            Ok(None)
+        }
     }
 
     /// Attempts to remove a node from the graph.
@@ -122,14 +124,18 @@ impl PyGraph {
     ///     >>> attr = g.try_remove_node(0)
     fn try_remove_node(&mut self, py_node: usize) -> PyResult<i64> {
         let node_id = self
-            .mapping
+            .py_to_internal
             .get(&py_node)
+            .copied()
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
         let result = self
             .graph
-            .try_remove_node(*node_id)
-            .map_err(|e| PyValueError::new_err(format!("Error: {:?}", e)))?;
-        self.mapping.remove(&py_node);
+            .try_remove_node(node_id)
+            .map_err(|e| PyValueError::new_err(format!("Error: {}", e)))?;
+
+        self.py_to_internal.remove(&py_node);
+        self.internal_to_py.remove(&node_id);
+
         Ok(result)
     }
 
@@ -155,16 +161,16 @@ impl PyGraph {
     ///     >>> neighbors = g.neighbors(0)
     fn neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
         let node_id = self
-            .mapping
+            .py_to_internal
             .get(&py_node)
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
-        let mut result = Vec::new();
-        // Iterate over neighbors and reverse-search the mapping for their Python-level IDs.
-        for neighbor in self.graph.neighbors(*node_id) {
-            if let Some((&py_id, _)) = self.mapping.iter().find(|(_, &v)| v == neighbor) {
-                result.push(py_id);
-            }
-        }
+
+        let result = self
+            .graph
+            .neighbors(*node_id)
+            .filter_map(|internal_neighbor| self.internal_to_py.get(&internal_neighbor).copied())
+            .collect();
+
         Ok(result)
     }
 }
@@ -172,7 +178,6 @@ impl PyGraph {
 /// The Python module declaration.
 #[pymodule]
 fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // Bound is from pyo3::prelude
     m.add_class::<PyGraph>()?;
     Ok(())
 }

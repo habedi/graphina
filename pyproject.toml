@@ -25,8 +25,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["pygraphina"]
-testpaths = ["tests"]
+testpaths = ["pygraphina/tests"]
 addopts = [
   "--tb=short",
   "--cov=pygraphina",
