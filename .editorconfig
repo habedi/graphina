@@ -36,4 +36,3 @@ indent_size = 2
 # TOML files
 [*.toml]
 indent_size = 2
-

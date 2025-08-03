@@ -47,11 +47,7 @@ where
             .iter()
             .map(|w| {
                 let deg = graph.neighbors(*w).count();
-                if deg > 0 {
-                    1.0 / deg as f64
-                } else {
-                    0.0
-                }
+                if deg > 0 { 1.0 / deg as f64 } else { 0.0 }
             })
             .sum();
         results.push(((u, v), score));
