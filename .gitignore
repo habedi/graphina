@@ -73,17 +73,7 @@ tarpaulin-report.html
 # Dependency lock files (uncomment to ignore)
 poetry.lock
 Cargo.lock
-
-# Miscellaneous files and directories to ignore
-# Add any additional file patterns a directory names that should be ignored down here
-.DS_Store
-tmp_*
-temp_*
-output_*
-*.so
-.benchmarks/
-ci.yml
-src/main.rs
+#uv.lock
 
 # Ignore files in the tests/testdata/[graphina-graphs] directory
 tests/testdata/*.txt
@@ -97,3 +87,15 @@ tests/testdata/graphina-graphs/*.txt
 tests/testdata/graphina-graphs/*.csv
 tests/testdata/graphina-graphs/*.json
 tests/testdata/graphina-graphs/*.parquet
+
+# Miscellaneous files and directories to ignore
+# Add any additional file patterns a directory names that should be ignored down here
+.DS_Store
+tmp_*
+temp_*
+output_*
+*.so
+.benchmarks/
+ci.yml
+src/main.rs
+*_output.txt

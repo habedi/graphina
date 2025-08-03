@@ -11,7 +11,7 @@ homepage = "https://github.com/habedi/graphina"
 documentation = "https://docs.rs/graphina"
 categories = ["data-structures", "algorithms"]
 edition = "2024"
-rust-version = "1.86"
+rust-version = "1.86.0"
 
 resolver = "2"
 
