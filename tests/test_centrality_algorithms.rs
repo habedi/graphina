@@ -1,5 +1,3 @@
-// File: tests/centrality_algorithms_tests.rs
-
 use graphina::centrality::algorithms::*;
 use graphina::core::types::Digraph;
 use ordered_float::OrderedFloat;
@@ -62,7 +60,7 @@ fn test_degree_centrality() {
 #[test]
 fn test_closeness_centrality() {
     let graph = build_test_graph_ordered();
-    let closeness = closeness_centrality(&graph);
+    let closeness = closeness_centrality(&graph).unwrap();
     // In our strongly connected graph with all edges = 1.0,
     // each node's distances: two neighbors at 1 and one at 2 -> sum = 4.
     // Closeness = (n-1)/sum = 3/4 = 0.75.
@@ -116,7 +114,7 @@ fn test_katz_centrality() {
 #[test]
 fn test_harmonic_centrality() {
     let graph = build_test_graph_ordered();
-    let hc = harmonic_centrality(&graph);
+    let hc = harmonic_centrality(&graph).unwrap();
     // For our graph, for each node: distances: two neighbors at 1 and one at 2, so harmonic centrality ~ 1/1 + 1/1 + 1/2 = 2.5.
     for score in hc {
         assert!(approx_eq(score, 2.5, 1e-6));

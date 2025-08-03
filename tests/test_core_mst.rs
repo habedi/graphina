@@ -2,14 +2,6 @@ use graphina::core::mst::{boruvka_mst, kruskal_mst, prim_mst};
 use graphina::core::types::Graph;
 use ordered_float::OrderedFloat;
 
-/// Builds a connected undirected graph with 4 nodes.
-/// Graph structure (nodes 0,1,2,3):
-///   0 -- 1: 1.0
-///   0 -- 2: 2.0
-///   1 -- 2: 2.0
-///   1 -- 3: 3.0
-///   2 -- 3: 1.0
-/// The optimal MST should have 3 edges with total weight: 1.0 + 1.0 + 2.0 = 4.0.
 fn build_connected_graph() -> Graph<i32, OrderedFloat<f64>> {
     let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::default();
     let n0 = graph.add_node(0);
@@ -26,10 +18,6 @@ fn build_connected_graph() -> Graph<i32, OrderedFloat<f64>> {
     graph
 }
 
-/// Builds a disconnected undirected graph with 4 nodes divided into 2 components:
-/// Component 1: nodes 0 and 1 connected by an edge with weight 1.0.
-/// Component 2: nodes 2 and 3 connected by an edge with weight 2.0.
-/// The MST forest should have (n - k) = 4 - 2 = 2 edges with total weight: 1.0 + 2.0 = 3.0.
 fn build_disconnected_graph() -> Graph<i32, OrderedFloat<f64>> {
     let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::default();
     let n0 = graph.add_node(0);
@@ -46,10 +34,8 @@ fn build_disconnected_graph() -> Graph<i32, OrderedFloat<f64>> {
 #[test]
 fn test_boruvka_mst_connected() {
     let graph = build_connected_graph();
-    let (mst_edges, total_weight) = boruvka_mst(&graph);
-    // For 4 connected nodes, MST should have 3 edges.
+    let (mst_edges, total_weight) = boruvka_mst(&graph).unwrap();
     assert_eq!(mst_edges.len(), 3, "Boruvka MST should have 3 edges");
-    // Expected total weight: 1.0 + 1.0 + 2.0 = 4.0.
     assert!(
         (total_weight.0 - 4.0).abs() < 1e-6,
         "Boruvka MST total weight expected to be 4.0, got {}",
@@ -60,7 +46,7 @@ fn test_boruvka_mst_connected() {
 #[test]
 fn test_kruskal_mst_connected() {
     let graph = build_connected_graph();
-    let (mst_edges, total_weight) = kruskal_mst(&graph);
+    let (mst_edges, total_weight) = kruskal_mst(&graph).unwrap();
     assert_eq!(mst_edges.len(), 3, "Kruskal MST should have 3 edges");
     assert!(
         (total_weight.0 - 4.0).abs() < 1e-6,
@@ -72,7 +58,7 @@ fn test_kruskal_mst_connected() {
 #[test]
 fn test_prim_mst_connected() {
     let graph = build_connected_graph();
-    let (mst_edges, total_weight) = prim_mst(&graph);
+    let (mst_edges, total_weight) = prim_mst(&graph).unwrap();
     assert_eq!(mst_edges.len(), 3, "Prim MST should have 3 edges");
     assert!(
         (total_weight.0 - 4.0).abs() < 1e-6,
@@ -84,8 +70,7 @@ fn test_prim_mst_connected() {
 #[test]
 fn test_boruvka_mst_disconnected() {
     let graph = build_disconnected_graph();
-    let (mst_edges, total_weight) = boruvka_mst(&graph);
-    // For a disconnected graph with 4 nodes and 2 components, MST forest should have 2 edges.
+    let (mst_edges, total_weight) = boruvka_mst(&graph).unwrap();
     assert_eq!(
         mst_edges.len(),
         2,
@@ -101,7 +86,7 @@ fn test_boruvka_mst_disconnected() {
 #[test]
 fn test_kruskal_mst_disconnected() {
     let graph = build_disconnected_graph();
-    let (mst_edges, total_weight) = kruskal_mst(&graph);
+    let (mst_edges, total_weight) = kruskal_mst(&graph).unwrap();
     assert_eq!(
         mst_edges.len(),
         2,
@@ -117,7 +102,7 @@ fn test_kruskal_mst_disconnected() {
 #[test]
 fn test_prim_mst_disconnected() {
     let graph = build_disconnected_graph();
-    let (mst_edges, total_weight) = prim_mst(&graph);
+    let (mst_edges, total_weight) = prim_mst(&graph).unwrap();
     assert_eq!(
         mst_edges.len(),
         2,

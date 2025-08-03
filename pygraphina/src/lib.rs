@@ -161,9 +161,9 @@ impl PyGraph {
         let mut result = Vec::new();
         // Iterate over neighbors and reverse-search the mapping for their Python-level IDs.
         for neighbor in self.graph.neighbors(*node_id) {
-            // if let Some((&py_id, _)) = self.mapping.iter().find(|(_, &v)| v == neighbor) {
-            //     result.push(py_id);
-            // }
+            if let Some((&py_id, _)) = self.mapping.iter().find(|(_, &v)| v == neighbor) {
+                result.push(py_id);
+            }
         }
         Ok(result)
     }
