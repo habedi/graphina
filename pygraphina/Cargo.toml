@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 doc = false
 
 [dependencies]
-pyo3 = { version = "0.24.0", features = ["abi3-py310", "extension-module", "auto-initialize"] }
+pyo3 = { version = "0.25.1", features = ["abi3-py310", "extension-module", "auto-initialize"] }
 graphina = { path = ".." }
 

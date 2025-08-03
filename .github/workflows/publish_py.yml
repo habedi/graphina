@@ -1,20 +1,17 @@
 name: Publish to PyPI
 
 on:
-  workflow_dispatch: # Enable manual runs
+  workflow_dispatch:
   push:
     tags:
-      - 'v*' # Trigger on version tags
+      - 'v*'
+
+permissions:
+  contents: read
 
 jobs:
-
-  #  # Run tests before publishing
-  #  call_tests:
-  #    uses: ./.github/workflows/tests_py.yml
-
   publish_to_pypi:
     runs-on: ubuntu-latest
-    #    needs: call_tests
 
     steps:
       - name: Checkout Repository
