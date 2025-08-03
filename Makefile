@@ -169,3 +169,19 @@ publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PY
 generate-ci: ## Generate CI configuration files (GitHub Actions workflow)
 	@echo "Generating CI configuration files..."
 	@(cd $(PYGRAPHINA_DIR) && maturin generate-ci --zig --pytest --platform all -o ../.github/workflows/ci.yml github)
+
+########################################################################################
+## Additional targets
+########################################################################################
+
+.PHONY: setup-hooks
+setup-hooks: ## Install Git hooks (pre-commit and pre-push)
+	@echo "Installing Git hooks..."
+	@pre-commit install --hook-type pre-commit
+	@pre-commit install --hook-type pre-push
+	@pre-commit install-hooks
+
+.PHONY: test-hooks
+test-hooks: ## Test Git hooks on all files
+	@echo "Testing Git hooks..."
+	@pre-commit run --all-files
