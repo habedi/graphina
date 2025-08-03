@@ -64,6 +64,7 @@ where
 /// A `Result` containing a vector of length equal to the number of nodes, where each element is:
 /// - `Some(cost)` if the node is reachable from the source, or
 /// - `None` if it is unreachable.
+///
 /// Returns an `Err(GraphinaException)` if a negative edge weight is found.
 ///
 /// # Complexity

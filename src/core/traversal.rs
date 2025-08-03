@@ -279,10 +279,10 @@ where
 
     if depth > 0 {
         for neighbor in graph.neighbors(current) {
-            if !visited.contains(&neighbor) {
-                if dls(graph, neighbor, target, depth - 1, visited, path) {
-                    return true;
-                }
+            if !visited.contains(&neighbor)
+                && dls(graph, neighbor, target, depth - 1, visited, path)
+            {
+                return true;
             }
         }
     }

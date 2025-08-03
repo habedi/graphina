@@ -23,7 +23,7 @@ jobs:
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: stable
+          toolchain: '1.86.0' # Pinned to project's MSRV
 
       - name: Install Dependencies
         run: |

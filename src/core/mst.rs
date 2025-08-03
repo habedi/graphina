@@ -106,6 +106,7 @@ pub struct MstEdge<W> {
 /// A `Result` containing a tuple with:
 /// - A vector of MST edges (`MstEdge<W>`).
 /// - The total weight of the MST.
+///
 /// Returns an `Err(GraphinaException)` if the input graph is empty.
 ///
 /// # Example
@@ -205,6 +206,7 @@ where
 /// A `Result` containing a tuple with:
 /// - A vector of MST edges (`MstEdge<W>`).
 /// - The total weight of the MST.
+///
 /// Returns an `Err(GraphinaException)` if the input graph is empty.
 ///
 /// # Example
@@ -276,6 +278,7 @@ where
 /// A `Result` containing a tuple with:
 /// - A vector of MST edges (`MstEdge<W>`).
 /// - The total weight of the MST.
+///
 /// Returns an `Err(GraphinaException)` if the input graph is empty.
 ///
 /// # Example

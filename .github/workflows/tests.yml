@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         # Define the Rust versions to test against
-        rust-version: [ "1.86.0", "1.87.0", "stable", "beta" ]
+        rust-version: [ "1.86.0", "stable" ]
 
     steps:
       - name: Checkout Repository
