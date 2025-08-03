@@ -35,6 +35,6 @@ repos:
 
       - id: test
         name: Run Tests
-        entry: make test
+        entry: make nexttest
         language: system
         pass_filenames: false

@@ -204,11 +204,7 @@ where
         total += links as f64 / possible as f64;
         count += 1;
     }
-    if count > 0 {
-        total / count as f64
-    } else {
-        0.0
-    }
+    if count > 0 { total / count as f64 } else { 0.0 }
 }
 
 /// -------------------------------

@@ -1,6 +1,6 @@
 [package]
 name = "graphina"
-version = "0.2.3-alpha"
+version = "0.3.0-a1"
 description = "A graph data science library for Rust"
 repository = "https://github.com/habedi/graphina"
 license = "MIT OR Apache-2.0"
@@ -10,8 +10,8 @@ authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
 homepage = "https://github.com/habedi/graphina"
 documentation = "https://docs.rs/graphina"
 categories = ["data-structures", "algorithms"]
-edition = "2021"
-rust-version = "1.83"
+edition = "2024"
+rust-version = "1.86"
 
 resolver = "2"
 

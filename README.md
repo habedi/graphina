@@ -13,7 +13,7 @@
 [![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=f46623&logo=rust)](https://crates.io/crates/graphina)
 [![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
 [![Downloads](https://img.shields.io/crates/d/graphina?style=flat&labelColor=282c34&color=4caf50&logo=rust)](https://crates.io/crates/graphina)
-[![MSRV](https://img.shields.io/badge/MSRV-1.83.0-007ec6?label=msrv&style=flat&labelColor=282c34&logo=rust)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
+[![MSRV](https://img.shields.io/badge/MSRV-1.86.0-007ec6?label=msrv&style=flat&labelColor=282c34&logo=rust)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
 [![Docs](https://img.shields.io/badge/docs-latest-3776ab?style=flat&labelColor=282c34&logo=readthedocs)](docs)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
@@ -78,10 +78,10 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.2"
+graphina = "0.3"
 ```
 
-*Graphina requires Rust 1.83 or later.*
+*Graphina requires Rust 1.85 or later.*
 
 ### Documentation
 

@@ -8,9 +8,10 @@ RUST_LOG        := info
 RUST_BACKTRACE  := full
 WHEEL_DIR       := dist
 PYGRAPHINA_DIR  := pygraphina
+PY_DEP_MNGR := uv
 TEST_DATA_DIR  := tests/testdata
 SHELL           := /bin/bash
-MSRV			:= 1.83
+MSRV			:= 1.86
 
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
@@ -74,6 +75,8 @@ install-deps: install-snap ## Install development dependencies
 	@cargo install cargo-tarpaulin
 	@cargo install cargo-audit
 	@cargo install cargo-nextest
+	@sudo apt-get install python3-pip
+	@pip install $(PY_DEP_MNGR)
 
 .PHONY: lint
 lint: format ## Run linters on Rust files
@@ -153,7 +156,7 @@ wheel-manylinux: ## Build the manylinux wheel file for PyGraphina (using Zig)
 .PHONY: test-py
 test-py: develop-py ## Run Python tests
 	@echo "Running Python tests..."
-	@poetry run pytest $(PYGRAPHINA_DIR)/tests
+	@$(PY_DEP_MNGR) run pytest $(PYGRAPHINA_DIR)/tests
 
 .PHONY: publish-py
 publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PYPI_TOKEN to be set)
