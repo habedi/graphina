@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 // Private helper: convert a raw index (usize) to a NodeId.
 fn node_from_index(i: usize) -> NodeId {
-    NodeId::new(petgraph::graph::NodeIndex::new(i))
+    petgraph::graph::NodeIndex::new(i)
 }
 
 //

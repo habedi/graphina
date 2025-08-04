@@ -511,9 +511,9 @@ where
             .filter(|(i, _)| !voted[*i])
             .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
             .unwrap();
-        selected.push(NodeId::new(petgraph::graph::NodeIndex::new(max_idx)));
+        selected.push(petgraph::graph::NodeIndex::new(max_idx));
         voted[max_idx] = true;
-        for nb in graph.neighbors(NodeId::new(petgraph::graph::NodeIndex::new(max_idx))) {
+        for nb in graph.neighbors(petgraph::graph::NodeIndex::new(max_idx)) {
             scores[nb.index()] *= 0.8;
         }
     }

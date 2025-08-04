@@ -39,35 +39,11 @@ pub use petgraph::EdgeType;
 /// Marker type for directed graphs.
 pub use petgraph::{Directed, Undirected};
 
-/// Wrapper for `NodeIndex` that provides additional functionality.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct NodeId(pub(crate) NodeIndex);
+/// Alias for `NodeIndex` that provides additional functionality.
+pub type NodeId = NodeIndex;
 
-impl NodeId {
-    /// Returns the numeric part of the node's index.
-    pub fn index(&self) -> usize {
-        self.0.index()
-    }
-    /// Creates a new `NodeId` from a `NodeIndex`.
-    pub(crate) fn new(index: NodeIndex) -> Self {
-        Self(index)
-    }
-}
-
-/// Wrapper for `EdgeIndex` that provides additional functionality.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EdgeId(pub(crate) EdgeIndex);
-
-impl EdgeId {
-    /// Returns the numeric part of the edge's index.
-    pub fn index(&self) -> usize {
-        self.0.index()
-    }
-    /// Creates a new `EdgeId` from an `EdgeIndex`.
-    pub(crate) fn new(index: EdgeIndex) -> Self {
-        Self(index)
-    }
-}
+/// Alias for `EdgeIndex` that provides additional functionality.
+pub type EdgeId = EdgeIndex;
 
 /// Base graph structure that wraps around a petgraph instance.
 ///
@@ -104,14 +80,14 @@ impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
     /// let n = g.add_node(42);
     /// ```
     pub fn add_node(&mut self, attr: A) -> NodeId {
-        NodeId::new(self.inner.add_node(attr))
+        self.inner.add_node(attr)
     }
 
     /// Updates the attribute of an existing node.
     ///
     /// Returns `true` if the update was successful, or `false` if the node was not found.
     pub fn update_node(&mut self, node: NodeId, new_attr: A) -> bool {
-        match self.inner.node_weight_mut(node.0) {
+        match self.inner.node_weight_mut(node) {
             Some(attr) => {
                 *attr = new_attr;
                 true
@@ -128,7 +104,7 @@ impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
     ///
     /// Returns an error if the node does not exist (has been removed).
     pub fn try_update_node(&mut self, node: NodeId, new_attr: A) -> Result<(), NodeNotFound> {
-        if let Some(attr) = self.inner.node_weight_mut(node.0) {
+        if let Some(attr) = self.inner.node_weight_mut(node) {
             *attr = new_attr;
             Ok(())
         } else {
@@ -138,13 +114,13 @@ impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
 
     /// Adds an edge with the given weight between two nodes.
     pub fn add_edge(&mut self, source: NodeId, target: NodeId, weight: W) -> EdgeId {
-        EdgeId::new(self.inner.add_edge(source.0, target.0, weight))
+        self.inner.add_edge(source, target, weight)
     }
 
     /// Removes a node from the graph, returning its attribute if it existed.
     /// All incident edges will be removed.
     pub fn remove_node(&mut self, node: NodeId) -> Option<A> {
-        self.inner.remove_node(node.0)
+        self.inner.remove_node(node)
     }
 
     /// Attempts to remove a node from the graph.
@@ -152,13 +128,13 @@ impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
     /// Returns the node's attribute if successful, or a `NodeNotFound` error if the node did not exist.
     pub fn try_remove_node(&mut self, node: NodeId) -> Result<A, NodeNotFound> {
         self.inner
-            .remove_node(node.0)
+            .remove_node(node)
             .ok_or_else(|| NodeNotFound::new("Node not found during removal"))
     }
 
     /// Removes an edge from the graph, returning its weight if it existed.
     pub fn remove_edge(&mut self, edge: EdgeId) -> Option<W> {
-        self.inner.remove_edge(edge.0)
+        self.inner.remove_edge(edge)
     }
 
     /// Attempts to remove an edge from the graph.
@@ -166,7 +142,7 @@ impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
     /// Returns the edge's weight if successful, or a `GraphinaException` if the edge was not found.
     pub fn try_remove_edge(&mut self, edge: EdgeId) -> Result<W, GraphinaException> {
         self.inner
-            .remove_edge(edge.0)
+            .remove_edge(edge)
             .ok_or_else(|| GraphinaException::new("Edge not found during removal"))
     }
 
@@ -182,45 +158,39 @@ impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
 
     /// Returns an iterator over the neighbors of a node.
     pub fn neighbors(&self, node: NodeId) -> impl Iterator<Item = NodeId> + '_ {
-        self.inner.neighbors(node.0).map(NodeId::new)
+        self.inner.neighbors(node)
     }
 
     /// Returns a reference to the attribute of a node.
     pub fn node_attr(&self, node: NodeId) -> Option<&A> {
-        self.inner.node_weight(node.0)
+        self.inner.node_weight(node)
     }
 
     /// Returns a mutable reference to the attribute of a node.
     pub fn node_attr_mut(&mut self, node: NodeId) -> Option<&mut A> {
-        self.inner.node_weight_mut(node.0)
+        self.inner.node_weight_mut(node)
     }
 
     /// Returns a reference to the weight of an edge.
     pub fn edge_attr(&self, edge: EdgeId) -> Option<&W> {
-        self.inner.edge_weight(edge.0)
+        self.inner.edge_weight(edge)
     }
 
     /// Returns a mutable reference to the weight of an edge.
     pub fn edge_attr_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
-        self.inner.edge_weight_mut(edge.0)
+        self.inner.edge_weight_mut(edge)
     }
 
     /// Returns an iterator over all nodes and their attributes.
     pub fn nodes(&self) -> impl Iterator<Item = (NodeId, &A)> + '_ {
-        self.inner
-            .node_references()
-            .map(|(idx, attr)| (NodeId::new(idx), attr))
+        self.inner.node_references()
     }
 
     /// Returns an iterator over all edges and their weights.
     pub fn edges(&self) -> impl Iterator<Item = (NodeId, NodeId, &W)> + '_ {
-        self.inner.edge_references().map(|edge| {
-            (
-                NodeId::new(edge.source()),
-                NodeId::new(edge.target()),
-                edge.weight(),
-            )
-        })
+        self.inner
+            .edge_references()
+            .map(|edge| (edge.source(), edge.target(), edge.weight()))
     }
 
     /// Returns a reference to the inner petgraph instance.
@@ -247,8 +217,8 @@ impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
     pub fn find_edge(&self, source: NodeId, target: NodeId) -> Option<EdgeId> {
         self.inner
             .edge_references()
-            .find(|edge| edge.source() == source.0 && edge.target() == target.0)
-            .map(|edge| EdgeId::new(edge.id()))
+            .find(|edge| edge.source() == source && edge.target() == target)
+            .map(|edge| edge.id())
     }
 }
 
@@ -270,8 +240,8 @@ where
         }
         let mut matrix = vec![vec![None; n]; n];
         for edge in self.inner().edge_references() {
-            let source = NodeId::new(edge.source());
-            let target = NodeId::new(edge.target());
+            let source = edge.source();
+            let target = edge.target();
             if let (Some(&i), Some(&j)) = (mapping.get(&source), mapping.get(&target)) {
                 matrix[i][j] = Some(edge.weight().clone());
                 if !Ty::is_directed() {
@@ -322,8 +292,8 @@ where
         }
         let mut triplet = TriMat::new((n, n));
         for edge in self.inner().edge_references() {
-            let source = NodeId::new(edge.source());
-            let target = NodeId::new(edge.target());
+            let source = edge.source();
+            let target = edge.target();
             if let (Some(&i), Some(&j)) = (mapping.get(&source), mapping.get(&target)) {
                 triplet.add_triplet(i, j, edge.weight().clone());
                 if !Ty::is_directed() && i != j {
