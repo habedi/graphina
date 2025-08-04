@@ -25,7 +25,6 @@ assert!(success);
 g.try_update_node(n1, 30).expect("Node update should succeed");
 */
 
-use petgraph::EdgeType;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::prelude::EdgeRef;
 use petgraph::stable_graph::StableGraph as PetGraph;
@@ -40,10 +39,10 @@ pub use petgraph::EdgeType;
 /// Marker type for directed graphs.
 pub use petgraph::{Directed, Undirected};
 
-/// Alias for `NodeIndex` that provides additional functionality.
+/// Alias for `NodeIndex`
 pub type NodeId = NodeIndex;
 
-/// Alias for `EdgeIndex` that provides additional functionality.
+/// Alias for `EdgeIndex`
 pub type EdgeId = EdgeIndex;
 
 /// Base graph structure that wraps around a petgraph instance.
