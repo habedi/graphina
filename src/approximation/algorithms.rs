@@ -10,7 +10,7 @@
 //! ```
 
 use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use ordered_float::OrderedFloat;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
@@ -24,7 +24,7 @@ fn find_path<A, Ty>(
     blocked: &HashSet<NodeId>,
 ) -> Option<Vec<NodeId>>
 where
-    Ty: crate::core::types::GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut prev: Vec<Option<NodeId>> = vec![None; n];
@@ -63,7 +63,7 @@ pub fn local_node_connectivity<A, Ty>(
     target: NodeId,
 ) -> usize
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType,
 {
     let mut connectivity = 0;
     let mut blocked = HashSet::new();
@@ -81,7 +81,7 @@ where
 /// Approximate a maximum independent set using a greedy algorithm with neighbor caching.
 pub fn maximum_independent_set<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> HashSet<NodeId>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut mis = HashSet::new();
     let mut nodes: Vec<NodeId> = graph.nodes().map(|(u, _)| u).collect();
@@ -108,7 +108,7 @@ where
 /// Approximate a maximum clique using a greedy heuristic with neighbor caching.
 pub fn max_clique<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> HashSet<NodeId>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut best = HashSet::new();
     let neighbor_cache: HashMap<NodeId, HashSet<NodeId>> = graph
@@ -140,7 +140,7 @@ where
 /// Repeatedly remove a clique (found via max_clique) from the graph until no nodes remain.
 pub fn clique_removal<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> Vec<HashSet<NodeId>>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut cliques = Vec::new();
     let mut remaining: HashSet<NodeId> = graph.nodes().map(|(u, _)| u).collect();
@@ -164,7 +164,7 @@ where
 /// Return the size of a large clique approximated by the max_clique heuristic.
 pub fn large_clique_size<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> usize
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     max_clique(graph).len()
 }
@@ -173,7 +173,7 @@ where
 /// Estimate the average clustering coefficient using cached neighbor sets.
 pub fn average_clustering<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> f64
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut total = 0.0;
     let mut count = 0;
@@ -219,7 +219,7 @@ pub fn densest_subgraph<A, Ty>(
     _iterations: Option<usize>,
 ) -> HashSet<NodeId>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut best_density = 0.0;
     let mut best_set = HashSet::new();
@@ -276,7 +276,7 @@ where
 /// Compute a lower bound on the diameter using BFS from an arbitrary node.
 pub fn diameter<A, Ty>(graph: &BaseGraph<A, OrderedFloat<f64>, Ty>) -> f64
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType,
 {
     if let Some((start, _)) = graph.nodes().next() {
         let distances = dijkstra(graph, start);
@@ -307,7 +307,7 @@ pub fn min_weighted_vertex_cover<A, Ty>(
     _weight: Option<&dyn Fn(NodeId) -> f64>,
 ) -> std::collections::HashSet<NodeId>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: crate::core::types::EdgeType,
 {
     let mut cover = HashSet::new();
     // Start with all edges uncovered.
@@ -342,7 +342,7 @@ where
 /// Approximate the minimum maximal matching using a greedy algorithm.
 pub fn min_maximal_matching<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> HashSet<(NodeId, NodeId)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut matching = HashSet::new();
     let mut matched = HashSet::new();
@@ -360,7 +360,7 @@ where
 /// Approximate Ramsey R2 by computing a maximum clique and a maximum independent set.
 pub fn ramsey_r2<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> (HashSet<NodeId>, HashSet<NodeId>)
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let clique = max_clique(graph);
     let independent_set = maximum_independent_set(graph);
@@ -372,7 +372,7 @@ where
 pub fn christofides<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> (Vec<NodeId>, f64)
 where
     A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType + EdgeType,
 {
     // As a placeholder, we use greedy_tsp.
     greedy_tsp(
@@ -386,7 +386,7 @@ where
 pub fn traveling_salesman_problem<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> (Vec<NodeId>, f64)
 where
     A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType + EdgeType,
 {
     greedy_tsp(
         &graph.convert::<OrderedFloat<f64>>(),
@@ -402,7 +402,7 @@ pub fn greedy_tsp<A, Ty>(
     source: NodeId,
 ) -> (Vec<NodeId>, f64)
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType,
 {
     let mut unvisited: HashSet<NodeId> = graph.nodes().map(|(u, _)| u).collect();
     let mut tour = Vec::new();
@@ -438,7 +438,7 @@ pub fn simulated_annealing_tsp<A, Ty>(
 ) -> (Vec<NodeId>, f64)
 where
     A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType + EdgeType,
 {
     let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle);
     (init_cycle, cost)
@@ -452,7 +452,7 @@ pub fn threshold_accepting_tsp<A, Ty>(
 ) -> (Vec<NodeId>, f64)
 where
     A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType + EdgeType,
 {
     let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle);
     (init_cycle, cost)
@@ -462,7 +462,7 @@ where
 /// Asadpour ATSP (not implemented).
 pub fn asadpour_atsp<A, Ty>(_graph: &BaseGraph<A, f64, Ty>) -> (Vec<NodeId>, f64)
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     unimplemented!("Asadpour ATSP algorithm is not implemented yet")
 }
@@ -471,7 +471,7 @@ where
 /// Helper: Compute the total cost of a given tour.
 fn tour_cost<A, Ty>(graph: &BaseGraph<A, OrderedFloat<f64>, Ty>, tour: &[NodeId]) -> f64
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: EdgeType,
 {
     let mut cost = 0.0;
     for i in 0..tour.len() - 1 {
@@ -487,7 +487,7 @@ where
 /// Compute a treewidth decomposition using the Minimum Degree heuristic with a min-heap.
 pub fn treewidth_min_degree<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> (usize, Vec<NodeId>)
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut order = Vec::new();
     let mut remaining: HashSet<NodeId> = graph.nodes().map(|(u, _)| u).collect();
@@ -528,7 +528,7 @@ where
 /// Compute a treewidth decomposition using the Minimum Fill-in heuristic.
 pub fn treewidth_min_fill_in<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> (usize, Vec<NodeId>)
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let mut order = Vec::new();
     let mut remaining: HashSet<NodeId> = graph.nodes().map(|(u, _)| u).collect();

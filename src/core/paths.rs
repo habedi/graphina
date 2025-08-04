@@ -35,7 +35,7 @@ Users should make sure that inputs meet the preconditions as described in the do
 */
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashSet};
 use std::fmt::Debug;
@@ -48,7 +48,7 @@ fn outgoing_edges<A, W, Ty>(
 ) -> impl Iterator<Item = (NodeId, W)> + '_
 where
     W: Copy,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     graph
         .edges()
@@ -77,7 +77,7 @@ where
 pub fn dijkstra<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, source: NodeId) -> Vec<Option<W>>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord + Debug,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
     NodeId: Ord,
 {
     let n = graph.node_count();
@@ -127,7 +127,7 @@ where
 pub fn bellman_ford<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, source: NodeId) -> Option<Vec<Option<W>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + From<u8>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut dist = vec![None; n];
@@ -185,7 +185,7 @@ pub fn a_star<A, W, Ty, F>(
 ) -> Option<(W, Vec<NodeId>)>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord + Debug,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
     F: Fn(NodeId) -> W,
     NodeId: Ord,
 {
@@ -258,7 +258,7 @@ where
 pub fn floyd_warshall<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Option<Vec<Vec<Option<W>>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + From<u8>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut dist = vec![vec![None; n]; n];
@@ -314,7 +314,7 @@ where
 pub fn johnson<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Option<Vec<Vec<Option<W>>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut h = vec![W::from(0u8); n];
@@ -402,7 +402,7 @@ pub fn ida_star<A, Ty, F>(
     heuristic: F,
 ) -> Option<(f64, Vec<NodeId>)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
     F: Fn(NodeId) -> f64,
 {
     for (_u, _v, &w) in graph.edges() {
@@ -430,7 +430,7 @@ where
         visited: &mut HashSet<NodeId>,
     ) -> Result<f64, f64>
     where
-        Ty: GraphConstructor<A, f64>,
+        Ty: EdgeType,
         F: Fn(NodeId) -> f64,
     {
         let f = g + heuristic(current);

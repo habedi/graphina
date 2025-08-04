@@ -20,7 +20,7 @@ and allow for optional weight specifications. If a weight is missing, a default 
 */
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::types::{BaseGraph, GraphConstructor};
+use crate::core::types::{BaseGraph, EdgeType};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
@@ -59,7 +59,7 @@ use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
 /// ```
 pub fn read_edge_list<Ty>(path: &str, graph: &mut BaseGraph<i32, f32, Ty>, sep: char) -> Result<()>
 where
-    Ty: GraphConstructor<i32, f32>,
+    Ty: EdgeType,
 {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
@@ -151,7 +151,7 @@ where
 /// ```
 pub fn write_edge_list<Ty>(path: &str, graph: &BaseGraph<i32, f32, Ty>, sep: char) -> Result<()>
 where
-    Ty: GraphConstructor<i32, f32>,
+    Ty: EdgeType,
 {
     let file = File::create(path)?;
     let mut writer = BufWriter::new(file);
@@ -223,7 +223,7 @@ pub fn read_adjacency_list<Ty>(
     sep: char,
 ) -> Result<()>
 where
-    Ty: GraphConstructor<i32, f32>,
+    Ty: EdgeType,
 {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
@@ -331,7 +331,7 @@ pub fn write_adjacency_list<Ty>(
     sep: char,
 ) -> Result<()>
 where
-    Ty: GraphConstructor<i32, f32>,
+    Ty: EdgeType,
 {
     let file = File::create(path)?;
     let mut writer = BufWriter::new(file);

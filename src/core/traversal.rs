@@ -22,7 +22,7 @@ variants are provided that return a `Result` and use the custom exception
 */
 
 use crate::core::exceptions::GraphinaNoPath;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Performs a breadth-first search (BFS) starting from `start`.
@@ -56,7 +56,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// ```
 pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId>
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let mut visited = HashSet::new();
     let mut order = Vec::new();
@@ -107,7 +107,7 @@ where
 /// ```
 pub fn dfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId>
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let mut visited = HashSet::new();
     let mut order = Vec::new();
@@ -129,7 +129,7 @@ fn dfs_util<A, W, Ty>(
     visited: &mut HashSet<NodeId>,
     order: &mut Vec<NodeId>,
 ) where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     if !visited.insert(node) {
         return;
@@ -186,7 +186,7 @@ pub fn iddfs<A, W, Ty>(
     max_depth: usize,
 ) -> Option<Vec<NodeId>>
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     for depth in 0..=max_depth {
         let mut path = Vec::new();
@@ -238,7 +238,7 @@ pub fn try_iddfs<A, W, Ty>(
     max_depth: usize,
 ) -> Result<Vec<NodeId>, GraphinaNoPath>
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     match iddfs(graph, start, target, max_depth) {
         Some(path) => Ok(path),
@@ -271,7 +271,7 @@ fn dls<A, W, Ty>(
     path: &mut Vec<NodeId>,
 ) -> bool
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     visited.insert(current);
     path.push(current);
@@ -332,7 +332,7 @@ pub fn bidis<A, W, Ty>(
     target: NodeId,
 ) -> Option<Vec<NodeId>>
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     if start == target {
         return Some(vec![start]);
@@ -458,7 +458,7 @@ pub fn try_bidirectional_search<A, W, Ty>(
     target: NodeId,
 ) -> Result<Vec<NodeId>, GraphinaNoPath>
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     match bidis(graph, start, target) {
         Some(path) => Ok(path),
@@ -479,9 +479,9 @@ where
 /// * `node` - The node identifier for which to retrieve backward neighbors.
 fn get_backward_neighbors<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, node: NodeId) -> Vec<NodeId>
 where
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
-    if <Ty as GraphConstructor<A, W>>::is_directed() {
+    if <Ty as EdgeType>::is_directed() {
         // For directed graphs, iterate over all edges and select those incoming to `node`.
         graph
             .edges()

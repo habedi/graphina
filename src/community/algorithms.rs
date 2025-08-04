@@ -1,6 +1,6 @@
 // File: src/community/algorithms.rs
 
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use nalgebra::DMatrix;
 use rand::prelude::*;
 use rand::{rngs::StdRng, SeedableRng};
@@ -46,7 +46,7 @@ pub fn label_propagation<A, W, Ty>(
 ) -> Vec<usize>
 where
     W: Copy + PartialOrd + Into<f64>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut labels: Vec<usize> = (0..n).collect();
@@ -102,7 +102,7 @@ where
 /// A vector of communities, where each community is a vector of `NodeId`s.
 pub fn louvain<A, Ty>(graph: &BaseGraph<A, f64, Ty>, seed: Option<u64>) -> Vec<Vec<NodeId>>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let m: f64 = graph.edges().map(|(_u, _v, &w)| w).sum();
     let n = graph.node_count();
@@ -211,7 +211,7 @@ pub fn girvan_newman<A, W, Ty>(
 ) -> Vec<Vec<NodeId>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     // Store only the endpoints (usize pairs), so no weight is needed.
     let mut active_edges: HashSet<(usize, usize)> = graph
@@ -347,7 +347,7 @@ fn compute_edge_betweenness(
 pub fn spectral_embeddings<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, k: usize) -> Vec<Vec<f64>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut adj = DMatrix::<f64>::zeros(n, n);
@@ -395,7 +395,7 @@ pub fn spectral_clustering<A, W, Ty>(
 ) -> Vec<Vec<NodeId>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let embedding = spectral_embeddings(graph, k);
     k_means(&embedding, k, seed)
@@ -498,7 +498,7 @@ pub fn personalized_page_rank<A, W, Ty>(
 ) -> Vec<f64>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let p = if let Some(mut vec) = personalization {
@@ -580,7 +580,7 @@ pub fn infomap<A, W, Ty>(
 ) -> Vec<usize>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut modules: Vec<usize> = (0..n).collect();
@@ -642,7 +642,7 @@ where
 pub fn connected_components<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<Vec<NodeId>>
 where
     W: Copy,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut visited = vec![false; n];

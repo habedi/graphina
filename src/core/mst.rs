@@ -27,7 +27,7 @@ If a required condition is violated, the algorithm will signal the error via a p
 */
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::convert::From;
@@ -141,7 +141,7 @@ pub struct MstEdge<W> {
 pub fn boruvka_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<MstEdge<W>>, W)
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + Sub<Output = W> + From<u8> + Send + Sync,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     if graph.node_count() == 0 {
         panic!(
@@ -261,7 +261,7 @@ where
 pub fn kruskal_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<MstEdge<W>>, W)
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     if graph.node_count() == 0 {
         panic!(
@@ -347,7 +347,7 @@ where
 pub fn prim_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<MstEdge<W>>, W)
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
     NodeId: Ord,
 {
     if graph.node_count() == 0 {

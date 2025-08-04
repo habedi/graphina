@@ -37,7 +37,7 @@ let ws = watts_strogatz_graph::<GraphMarker>(100, 6, 0.3, 42)
 */
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::types::{BaseGraph, GraphConstructor};
+use crate::core::types::{BaseGraph, EdgeType};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -51,12 +51,12 @@ use rand::{Rng, SeedableRng};
 ///
 /// # Type Parameters
 ///
-/// * `Ty` - The graph type (directed or undirected) implementing `GraphConstructor<u32, f32>`.
+/// * `Ty` - The graph type (directed or undirected) implementing `EdgeType`.
 ///
 /// # Returns
 ///
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated graph, or an error if parameters are invalid.
-pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
+pub fn erdos_renyi_graph<Ty: EdgeType>(
     n: usize,
     p: f64,
     seed: u64,
@@ -78,7 +78,7 @@ pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
         nodes.push(graph.add_node(i as u32));
     }
     let mut rng = StdRng::seed_from_u64(seed);
-    if <Ty as GraphConstructor<u32, f32>>::is_directed() {
+    if <Ty as EdgeType>::is_directed() {
         for i in 0..n {
             for j in 0..n {
                 if i != j && rng.random_bool(p) {
@@ -106,12 +106,12 @@ pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Type Parameters
 ///
-/// * `Ty` - The graph type implementing `GraphConstructor<u32, f32>`.
+/// * `Ty` - The graph type implementing `EdgeType`.
 ///
 /// # Returns
 ///
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The complete graph.
-pub fn complete_graph<Ty: GraphConstructor<u32, f32>>(
+pub fn complete_graph<Ty: EdgeType>(
     n: usize,
 ) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
     if n == 0 {
@@ -124,7 +124,7 @@ pub fn complete_graph<Ty: GraphConstructor<u32, f32>>(
     for i in 0..n {
         nodes.push(graph.add_node(i as u32));
     }
-    if <Ty as GraphConstructor<u32, f32>>::is_directed() {
+    if <Ty as EdgeType>::is_directed() {
         for i in 0..n {
             for j in 0..n {
                 if i != j {
@@ -153,12 +153,12 @@ pub fn complete_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Type Parameters
 ///
-/// * `Ty` - The graph type implementing `GraphConstructor<u32, f32>`.
+/// * `Ty` - The graph type implementing `EdgeType`.
 ///
 /// # Returns
 ///
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated bipartite graph.
-pub fn bipartite_graph<Ty: GraphConstructor<u32, f32>>(
+pub fn bipartite_graph<Ty: EdgeType>(
     n1: usize,
     n2: usize,
     p: f64,
@@ -202,14 +202,12 @@ pub fn bipartite_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Type Parameters
 ///
-/// * `Ty` - The graph type implementing `GraphConstructor<u32, f32>`.
+/// * `Ty` - The graph type implementing `EdgeType`.
 ///
 /// # Returns
 ///
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated star graph.
-pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
-    n: usize,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+pub fn star_graph<Ty: EdgeType>(n: usize) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
     if n == 0 {
         return Err(GraphinaException::new(
@@ -232,14 +230,12 @@ pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Type Parameters
 ///
-/// * `Ty` - The graph type implementing `GraphConstructor<u32, f32>`.
+/// * `Ty` - The graph type implementing `EdgeType`.
 ///
 /// # Returns
 ///
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated cycle graph.
-pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
-    n: usize,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+pub fn cycle_graph<Ty: EdgeType>(n: usize) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
     if n == 0 {
         return Err(GraphinaException::new(
@@ -268,7 +264,7 @@ pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Type Parameters
 ///
-/// * `Ty` - The graph type implementing `GraphConstructor<u32, f32>`. This generator is typically used with undirected graphs.
+/// * `Ty` - The graph type implementing `EdgeType`. This generator is typically used with undirected graphs.
 ///
 /// # Returns
 ///
@@ -279,7 +275,7 @@ pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
 /// In the rewiring phase, each eligible edge is removed with probability `beta` and replaced by a new edge
 /// from the source node to a randomly chosen target (avoiding self-loops). This implementation uses the public
 /// API method `find_edge` to locate and remove an existing edge.
-pub fn watts_strogatz_graph<Ty: GraphConstructor<u32, f32>>(
+pub fn watts_strogatz_graph<Ty: EdgeType>(
     n: usize,
     k: usize,
     beta: f64,
@@ -347,7 +343,7 @@ pub fn watts_strogatz_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Type Parameters
 ///
-/// * `Ty` - The graph type implementing `GraphConstructor<u32, f32>`. Typically used with undirected graphs.
+/// * `Ty` - The graph type implementing `EdgeType`. Typically used with undirected graphs.
 ///
 /// # Returns
 ///
@@ -358,7 +354,7 @@ pub fn watts_strogatz_graph<Ty: GraphConstructor<u32, f32>>(
 /// The algorithm starts with a complete graph of m nodes, then each new node attaches to m existing nodes
 /// with probability proportional to their degree (preferential attachment). This implementation uses a simple
 /// linear scan for degree selection and may be less efficient for very large graphs.
-pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
+pub fn barabasi_albert_graph<Ty: EdgeType>(
     n: usize,
     m: usize,
     seed: u64,

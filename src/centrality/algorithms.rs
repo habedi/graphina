@@ -16,7 +16,7 @@
 //! - Laplacian centrality
 
 use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use std::collections::{HashMap, VecDeque};
 
 //
@@ -29,9 +29,9 @@ use std::collections::{HashMap, VecDeque};
 pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
+    if !Ty::is_directed() {
         return out_degree_centrality(graph);
     }
     let n = graph.node_count();
@@ -51,9 +51,9 @@ where
 pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
+    if !Ty::is_directed() {
         return out_degree_centrality(graph);
     }
     let n = graph.node_count();
@@ -68,7 +68,7 @@ where
 pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
-    Ty: GraphConstructor<A, W>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
@@ -91,7 +91,7 @@ pub fn eigenvector_centrality_impl<A, Ty>(
     tol: f64,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut centrality = vec![1.0; n];
@@ -124,7 +124,7 @@ where
 /// Wrapper for eigenvector centrality with default tolerance (1e-6).
 pub fn eigenvector_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>, max_iter: usize) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     eigenvector_centrality_impl(graph, max_iter, 1e-6_f64)
 }
@@ -136,7 +136,7 @@ pub fn eigenvector_centrality_numpy<A, Ty>(
     tol: f64,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     eigenvector_centrality_impl(graph, max_iter, tol)
 }
@@ -157,7 +157,7 @@ pub fn katz_centrality_impl<A, Ty>(
     tol: f64,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut centrality = vec![beta; n];
@@ -196,7 +196,7 @@ pub fn katz_centrality<A, Ty>(
     max_iter: usize,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: crate::core::types::EdgeType,
 {
     katz_centrality_impl(graph, alpha, beta, max_iter, 1e-6_f64)
 }
@@ -208,7 +208,7 @@ pub fn katz_centrality_numpy<A, Ty>(
     beta: f64,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: crate::core::types::EdgeType,
 {
     // Default parameters: 100 iterations, tol = 1e-6.
     katz_centrality_impl(graph, alpha, beta, 100, 1e-6_f64)
@@ -226,7 +226,7 @@ pub fn closeness_centrality<A, Ty>(
     graph: &BaseGraph<A, ordered_float::OrderedFloat<f64>, Ty>,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, ordered_float::OrderedFloat<f64>>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut closeness = vec![0.0; n];
@@ -254,7 +254,7 @@ pub fn pagerank_impl<A, Ty>(
     tol: f64,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut rank = vec![1.0 / n as f64; n];
@@ -299,7 +299,7 @@ where
 /// This wrapper takes 3 arguments: graph, damping, max_iter.
 pub fn pagerank<A, Ty>(graph: &BaseGraph<A, f64, Ty>, damping: f64, max_iter: usize) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     pagerank_impl(graph, damping, max_iter, 1e-6_f64)
 }
@@ -313,7 +313,7 @@ where
 /// Compute betweenness centrality (node version) using Brandes’ algorithm.
 pub fn betweenness_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut bc = vec![0.0; n];
@@ -362,7 +362,7 @@ pub fn edge_betweenness_centrality<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
 ) -> HashMap<(usize, usize), f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut eb: HashMap<(usize, usize), f64> = HashMap::new();
@@ -421,7 +421,7 @@ pub fn harmonic_centrality<A, Ty>(
     graph: &BaseGraph<A, ordered_float::OrderedFloat<f64>, Ty>,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, ordered_float::OrderedFloat<f64>>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut centrality = vec![0.0; n];
@@ -447,7 +447,7 @@ where
 /// Local reaching centrality: fraction of nodes reachable from a given node (via BFS).
 pub fn local_reaching_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>, v: NodeId) -> f64
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut visited = vec![false; n];
@@ -474,7 +474,7 @@ where
 /// Global reaching centrality: average difference between the maximum local reaching centrality and each node’s value.
 pub fn global_reaching_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> f64
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let lrc: Vec<f64> = graph
         .nodes()
@@ -495,7 +495,7 @@ where
 /// Initial scores are the nodes’ out–degrees; after selection, the scores of their neighbors are reduced.
 pub fn voterank<A, Ty>(graph: &BaseGraph<A, f64, Ty>, number_of_nodes: usize) -> Vec<NodeId>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut scores = vec![0.0; n];
@@ -530,7 +530,7 @@ where
 /// Here LC(v) = d(v)^2 + 2 * (sum of 1’s for each neighbor).
 pub fn laplacian_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>, _normalized: bool) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     graph
         .nodes()

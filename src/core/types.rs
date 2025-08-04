@@ -29,76 +29,15 @@ use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::prelude::EdgeRef;
 use petgraph::stable_graph::StableGraph as PetGraph;
 use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
-use petgraph::EdgeType;
 use sprs::{CsMat, TriMat};
 use std::collections::HashMap;
 
 // Import exceptions from the core exceptions module.
 use crate::core::exceptions::{GraphinaException, NodeNotFound};
 
+pub use petgraph::EdgeType;
 /// Marker type for directed graphs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Directed;
-
-/// Marker type for undirected graphs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Undirected;
-
-/// Implements `Default` for directed graphs.
-impl Default for Directed {
-    fn default() -> Self {
-        Directed
-    }
-}
-
-/// Implements `Default` for undirected graphs.
-impl Default for Undirected {
-    fn default() -> Self {
-        Undirected
-    }
-}
-
-/// Implements petgraph's `EdgeType` for directed graphs.
-impl EdgeType for Directed {
-    fn is_directed() -> bool {
-        true
-    }
-}
-
-/// Implements petgraph's `EdgeType` for undirected graphs.
-impl EdgeType for Undirected {
-    fn is_directed() -> bool {
-        false
-    }
-}
-
-/// Trait for constructing graphs with specific edge types.
-/// Types implementing `GraphConstructor` must also implement petgraph’s `EdgeType`.
-pub trait GraphConstructor<A, W>: EdgeType + Sized {
-    /// Creates a new graph.
-    fn new_graph() -> PetGraph<A, W, Self>;
-    /// Returns true if the graph is directed.
-    fn is_directed() -> bool;
-}
-
-impl<A, W> GraphConstructor<A, W> for Directed {
-    fn new_graph() -> PetGraph<A, W, Self> {
-        // Using StableGraph prevents node index recycling.
-        PetGraph::<A, W, Directed>::with_capacity(0, 0)
-    }
-    fn is_directed() -> bool {
-        true
-    }
-}
-
-impl<A, W> GraphConstructor<A, W> for Undirected {
-    fn new_graph() -> PetGraph<A, W, Self> {
-        PetGraph::<A, W, Undirected>::with_capacity(0, 0)
-    }
-    fn is_directed() -> bool {
-        false
-    }
-}
+pub use petgraph::{Directed, Undirected};
 
 /// Wrapper for `NodeIndex` that provides additional functionality.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -137,21 +76,21 @@ impl EdgeId {
 /// - `W`: Edge weight type.
 /// - `Ty`: Graph type (directed/undirected) implementing `GraphConstructor` and `EdgeType`.
 #[derive(Debug, Clone)]
-pub struct BaseGraph<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
+pub struct BaseGraph<A, W, Ty: EdgeType> {
     inner: PetGraph<A, W, Ty>,
 }
 
-impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> Default for BaseGraph<A, W, Ty> {
+impl<A, W, Ty: EdgeType> Default for BaseGraph<A, W, Ty> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
+impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty> {
     /// Creates a new `BaseGraph`.
     pub fn new() -> Self {
         Self {
-            inner: Ty::new_graph(),
+            inner: PetGraph::with_capacity(0, 0),
         }
     }
 
@@ -317,7 +256,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
 ///
 /// The adjacency matrix is built using a contiguous mapping of the current nodes.
 /// For undirected graphs, the matrix is symmetric.
-impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty>
+impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty>
 where
     W: Clone,
 {
@@ -335,7 +274,7 @@ where
             let target = NodeId::new(edge.target());
             if let (Some(&i), Some(&j)) = (mapping.get(&source), mapping.get(&target)) {
                 matrix[i][j] = Some(edge.weight().clone());
-                if !<Ty as GraphConstructor<A, W>>::is_directed() {
+                if !Ty::is_directed() {
                     matrix[j][i] = Some(edge.weight().clone());
                 }
             }
@@ -356,7 +295,7 @@ where
         for i in 0..n {
             for j in 0..matrix[i].len() {
                 if let Some(weight) = &matrix[i][j] {
-                    if <Ty as GraphConstructor<A, W>>::is_directed() || i <= j {
+                    if Ty::is_directed() || i <= j {
                         graph.add_edge(nodes[i], nodes[j], weight.clone());
                     }
                 }
@@ -369,7 +308,7 @@ where
 /// Sparse matrix API using sprs for efficient representation on large graphs.
 ///
 /// Duplicate entries are combined using the Add operation.
-impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty>
+impl<A, W, Ty: EdgeType> BaseGraph<A, W, Ty>
 where
     W: Clone + std::ops::Add<Output = W>,
 {
@@ -387,7 +326,7 @@ where
             let target = NodeId::new(edge.target());
             if let (Some(&i), Some(&j)) = (mapping.get(&source), mapping.get(&target)) {
                 triplet.add_triplet(i, j, edge.weight().clone());
-                if !<Ty as GraphConstructor<A, W>>::is_directed() && i != j {
+                if !Ty::is_directed() && i != j {
                     triplet.add_triplet(j, i, edge.weight().clone());
                 }
             }
@@ -407,7 +346,7 @@ where
         let nodes: Vec<NodeId> = (0..n).map(|_| graph.add_node(A::default())).collect();
         for (i, row) in sparse.outer_iterator().enumerate() {
             for (&j, weight) in row.indices().iter().zip(row.data().iter()) {
-                if <Ty as GraphConstructor<A, W>>::is_directed() || i <= j {
+                if Ty::is_directed() || i <= j {
                     graph.add_edge(nodes[i], nodes[j], weight.clone());
                 }
             }
@@ -421,18 +360,16 @@ where
 /// Each edge weight is converted via `U::from`, and node attributes are cloned.
 impl<A, Ty> BaseGraph<A, f64, Ty>
 where
-    Ty: GraphConstructor<A, f64> + EdgeType,
+    Ty: EdgeType,
 {
     /// Converts a graph with `f64` weights to one with weight type `U`.
     pub fn convert<U>(&self) -> BaseGraph<A, U, Ty>
     where
         U: From<f64> + Clone,
         A: Clone,
-        Ty: GraphConstructor<A, U>,
+        Ty: EdgeType,
     {
-        let mut new_graph = BaseGraph::<A, U, Ty> {
-            inner: <Ty as GraphConstructor<A, U>>::new_graph(),
-        };
+        let mut new_graph = BaseGraph::<A, U, Ty>::new();
 
         // Build a mapping from old NodeId to new NodeId.
         let mut mapping: HashMap<NodeId, NodeId> = HashMap::new();

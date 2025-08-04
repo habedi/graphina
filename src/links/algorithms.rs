@@ -7,13 +7,15 @@
 //! for which the scores should be computed. If `ebunch` is None, the functions default to using all
 //! unordered node pairs.
 
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use petgraph::EdgeType;
+
+use crate::core::types::{BaseGraph, NodeId};
 use std::collections::HashSet;
 
 /// Helper: If no ebunch is provided, generate all unordered pairs of nodes.
 fn default_ebunch<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<(NodeId, NodeId)>
 where
-    Ty: crate::core::types::GraphConstructor<A, W>,
+    Ty: crate::core::types::EdgeType,
 {
     let nodes: Vec<NodeId> = graph.nodes().map(|(u, _)| u).collect();
     let mut ebunch = Vec::new();
@@ -32,7 +34,7 @@ pub fn resource_allocation_index<A, Ty>(
     ebunch: Option<&[(NodeId, NodeId)]>,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let pairs = match ebunch {
         Some(p) => p.to_vec(),
@@ -66,7 +68,7 @@ pub fn jaccard_coefficient<A, Ty>(
     ebunch: Option<&[(NodeId, NodeId)]>,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let pairs = match ebunch {
         Some(p) => p.to_vec(),
@@ -95,7 +97,7 @@ pub fn adamic_adar_index<A, Ty>(
     ebunch: Option<&[(NodeId, NodeId)]>,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let pairs = match ebunch {
         Some(p) => p.to_vec(),
@@ -129,7 +131,7 @@ pub fn preferential_attachment<A, Ty>(
     ebunch: Option<&[(NodeId, NodeId)]>,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let pairs = match ebunch {
         Some(p) => p.to_vec(),
@@ -154,7 +156,7 @@ pub fn cn_soundarajan_hopcroft<A, Ty, F, C>(
     community: F,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
     F: Fn(NodeId) -> C,
     C: Eq,
 {
@@ -185,7 +187,7 @@ pub fn ra_index_soundarajan_hopcroft<A, Ty, F, C>(
     community: F,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
     F: Fn(NodeId) -> C,
     C: Eq,
 {
@@ -229,7 +231,7 @@ pub fn within_inter_cluster<A, Ty, F, C>(
     delta: f64,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
     F: Fn(NodeId) -> C,
     C: Eq,
 {
@@ -261,7 +263,7 @@ pub fn common_neighbor_centrality<A, Ty>(
     alpha: f64,
 ) -> Vec<((NodeId, NodeId), f64)>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: EdgeType,
 {
     let pairs = match ebunch {
         Some(p) => p.to_vec(),
