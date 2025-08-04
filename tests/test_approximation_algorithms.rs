@@ -156,7 +156,7 @@ fn test_densest_subgraph() {
 fn test_diameter() {
     let g_line = line_graph_ordered();
     // In a line graph of 4 nodes with unit weights, the diameter is 3.
-    let diam = diameter(&g_line);
+    let diam = diameter(&g_line).unwrap();
     assert!((diam - 3.0).abs() < 1e-6);
 }
 
@@ -210,7 +210,7 @@ fn test_greedy_tsp() {
     };
     let nodes: Vec<NodeId> = g.nodes().map(|(u, _)| u).collect();
     let start = nodes[0];
-    let (tour, cost) = greedy_tsp(&g, start);
+    let (tour, cost) = greedy_tsp(&g, start).unwrap();
     // The tour should start and end at the starting node.
     assert_eq!(tour.first(), Some(&start));
     assert_eq!(tour.last(), Some(&start));
@@ -233,7 +233,7 @@ fn test_simulated_annealing_tsp() {
     let nodes: Vec<NodeId> = g.nodes().map(|(u, _)| u).collect();
     // Define an initial cycle.
     let init_cycle = vec![nodes[0], nodes[1], nodes[2], nodes[0]];
-    let (cycle, cost) = simulated_annealing_tsp(&g, init_cycle.clone());
+    let (cycle, cost) = simulated_annealing_tsp(&g, init_cycle.clone()).unwrap();
     assert_eq!(cycle, init_cycle);
     assert!((cost - 3.0).abs() < 1e-6);
 }
@@ -250,7 +250,7 @@ fn test_threshold_accepting_tsp() {
     g.add_edge(c, a, 1.0);
     let nodes: Vec<NodeId> = g.nodes().map(|(u, _)| u).collect();
     let init_cycle = vec![nodes[0], nodes[1], nodes[2], nodes[0]];
-    let (cycle, cost) = threshold_accepting_tsp(&g, init_cycle.clone());
+    let (cycle, cost) = threshold_accepting_tsp(&g, init_cycle.clone()).unwrap();
     assert_eq!(cycle, init_cycle);
     assert!((cost - 3.0).abs() < 1e-6);
 }

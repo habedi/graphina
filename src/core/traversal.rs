@@ -240,12 +240,9 @@ pub fn try_iddfs<A, W, Ty>(
 where
     Ty: EdgeType,
 {
-    match iddfs(graph, start, target, max_depth) {
-        Some(path) => Ok(path),
-        None => Err(GraphinaNoPath::new(
-            "No path found using IDDFS within the given depth limit",
-        )),
-    }
+    iddfs(graph, start, target, max_depth).ok_or_else(|| {
+        GraphinaNoPath::new("No path found using IDDFS within the given depth limit")
+    })
 }
 
 /// Depth-limited search helper for IDDFS.
@@ -273,11 +270,13 @@ fn dls<A, W, Ty>(
 where
     Ty: EdgeType,
 {
-    visited.insert(current);
     path.push(current);
+    visited.insert(current);
+
     if current == target {
         return true;
     }
+
     if depth > 0 {
         for neighbor in graph.neighbors(current) {
             if !visited.contains(&neighbor)
@@ -287,7 +286,9 @@ where
             }
         }
     }
+
     path.pop();
+    visited.remove(&current);
     false
 }
 
@@ -460,12 +461,8 @@ pub fn try_bidirectional_search<A, W, Ty>(
 where
     Ty: EdgeType,
 {
-    match bidis(graph, start, target) {
-        Some(path) => Ok(path),
-        None => Err(GraphinaNoPath::new(
-            "No path exists between the specified nodes",
-        )),
-    }
+    bidis(graph, start, target)
+        .ok_or_else(|| GraphinaNoPath::new("No path exists between the specified nodes"))
 }
 
 /// Helper function to obtain backward neighbors for bidirectional search.

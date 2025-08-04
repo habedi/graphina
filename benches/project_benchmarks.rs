@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 
 fn benchmark_fun(_c: &mut Criterion) {
     // Your benchmarking code here

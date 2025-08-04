@@ -21,9 +21,8 @@ They use a union–find (disjoint-set) data structure with path compression and 
 
 ## Error Handling
 
-If the input graph is empty, algorithms will panic with a `GraphinaException` from `graphina::core::exceptions`.
-Also, additional invariants are not checked, and the algorithms assume that the input graph is valid.
-If a required condition is violated, the algorithm will signal the error via a panic using a custom exception.
+If the input graph is empty, algorithms will return a `Result` containing a `GraphinaException`.
+If other required conditions are violated, the algorithm may also signal an error via a `Result`.
 */
 
 use crate::core::exceptions::GraphinaException;
@@ -104,54 +103,40 @@ pub struct MstEdge<W> {
 ///
 /// # Returns
 ///
-/// A tuple containing:
+/// A `Result` containing a tuple with:
 /// - A vector of MST edges (`MstEdge<W>`).
 /// - The total weight of the MST.
 ///
-/// # Errors
-///
-/// Panics with a `GraphinaException` if the input graph is empty.
+/// Returns an `Err(GraphinaException)` if the input graph is empty.
 ///
 /// # Example
 ///
 /// ```rust
 /// use graphina::core::mst::boruvka_mst;
 /// use graphina::core::types::{Graph, NodeId};
+/// use ordered_float::OrderedFloat;
 ///
-/// // Create a simple undirected graph with 4 nodes and integer weights.
-/// let mut g = Graph::<i32, i32>::new();
+/// let mut g = Graph::<i32, OrderedFloat<f64>>::new();
 /// let n1 = g.add_node(1);
 /// let n2 = g.add_node(2);
-/// let n3 = g.add_node(3);
-/// let n4 = g.add_node(4);
+/// g.add_edge(n1, n2, OrderedFloat(1.0));
 ///
-/// // Add undirected edges (by adding both directions).
-/// g.add_edge(n1, n2, 1);
-/// g.add_edge(n2, n1, 1);
-/// g.add_edge(n2, n3, 2);
-/// g.add_edge(n3, n2, 2);
-/// g.add_edge(n3, n4, 1);
-/// g.add_edge(n4, n3, 1);
-/// g.add_edge(n4, n1, 3);
-/// g.add_edge(n1, n4, 3);
-///
-/// let (mst_edges, total_weight) = boruvka_mst(&g);
-/// println!("Boruvka MST Total Weight: {:?}", total_weight);
+/// let (mst_edges, total_weight) = boruvka_mst(&g).unwrap();
 /// ```
-pub fn boruvka_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<MstEdge<W>>, W)
+pub fn boruvka_mst<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<(Vec<MstEdge<W>>, W), GraphinaException>
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + Sub<Output = W> + From<u8> + Send + Sync,
     Ty: EdgeType,
 {
     if graph.node_count() == 0 {
-        panic!(
-            "{}",
-            GraphinaException::new("Graph is empty, cannot compute MST.")
-        );
+        return Err(GraphinaException::new(
+            "Graph is empty, cannot compute MST.",
+        ));
     }
 
     let n = graph.node_count();
-    // Collect all edges from the graph.
     let all_edges: Vec<(NodeId, NodeId, W)> = graph.edges().map(|(u, v, w)| (u, v, *w)).collect();
 
     let mut uf = UnionFind::new(n);
@@ -159,11 +144,8 @@ where
     let mut total_weight = W::from(0u8);
     let mut components = n;
 
-    // Continue until only one component remains.
     while components > 1 {
-        // Take a snapshot of the union–find parent vector to avoid concurrent modifications.
         let uf_snapshot = uf.parent.clone();
-        // In parallel, for each component index, find the cheapest edge that connects the component to a different one.
         let cheapest: Vec<Option<(NodeId, NodeId, W)>> = (0..n)
             .into_par_iter()
             .map(|comp| {
@@ -171,7 +153,6 @@ where
                 for &(u, v, w) in &all_edges {
                     let comp_u = uf_snapshot[u.index()];
                     let comp_v = uf_snapshot[v.index()];
-                    // Process only if one endpoint is in the component 'comp' and the other is not.
                     if (comp_u == comp && comp_v != comp) || (comp_v == comp && comp_u != comp) {
                         match min_edge {
                             Some((_, _, current)) if w < current => min_edge = Some((u, v, w)),
@@ -185,7 +166,6 @@ where
             .collect();
 
         let mut found = false;
-        // Process each found cheapest edge sequentially.
         for (u, v, w) in cheapest.into_iter().flatten() {
             let ru = uf.find(u.index());
             let rv = uf.find(v.index());
@@ -198,12 +178,11 @@ where
             }
         }
         if !found {
-            // No connecting edge found; the graph is disconnected.
             break;
         }
     }
 
-    (mst_edges, total_weight)
+    Ok((mst_edges, total_weight))
 }
 
 ///
@@ -224,55 +203,41 @@ where
 ///
 /// # Returns
 ///
-/// A tuple containing:
+/// A `Result` containing a tuple with:
 /// - A vector of MST edges (`MstEdge<W>`).
 /// - The total weight of the MST.
 ///
-/// # Errors
-///
-/// Panics with a `GraphinaException` if the input graph is empty.
+/// Returns an `Err(GraphinaException)` if the input graph is empty.
 ///
 /// # Example
 ///
 /// ```rust
 /// use graphina::core::mst::kruskal_mst;
 /// use graphina::core::types::{Graph, NodeId};
+/// use ordered_float::OrderedFloat;
 ///
-/// // Create a simple undirected graph with 4 nodes and integer weights.
-/// let mut g = Graph::<i32, i32>::new();
+/// let mut g = Graph::<i32, OrderedFloat<f64>>::new();
 /// let n1 = g.add_node(1);
 /// let n2 = g.add_node(2);
-/// let n3 = g.add_node(3);
-/// let n4 = g.add_node(4);
+/// g.add_edge(n1, n2, OrderedFloat(1.0));
 ///
-/// // Add undirected edges.
-/// g.add_edge(n1, n2, 1);
-/// g.add_edge(n2, n1, 1);
-/// g.add_edge(n2, n3, 2);
-/// g.add_edge(n3, n2, 2);
-/// g.add_edge(n3, n4, 1);
-/// g.add_edge(n4, n3, 1);
-/// g.add_edge(n4, n1, 3);
-/// g.add_edge(n1, n4, 3);
-///
-/// let (mst_edges, total_weight) = kruskal_mst(&g);
-/// println!("Kruskal MST Total Weight: {:?}", total_weight);
+/// let (mst_edges, total_weight) = kruskal_mst(&g).unwrap();
 /// ```
-pub fn kruskal_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<MstEdge<W>>, W)
+pub fn kruskal_mst<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<(Vec<MstEdge<W>>, W), GraphinaException>
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
     Ty: EdgeType,
 {
     if graph.node_count() == 0 {
-        panic!(
-            "{}",
-            GraphinaException::new("Graph is empty, cannot compute MST.")
-        );
+        return Err(GraphinaException::new(
+            "Graph is empty, cannot compute MST.",
+        ));
     }
 
     let n = graph.node_count();
     let mut edges: Vec<(NodeId, NodeId, W)> = graph.edges().map(|(u, v, w)| (u, v, *w)).collect();
-    // Sort edges by weight in non-decreasing order.
     edges.sort_by(|a, b| a.2.cmp(&b.2));
 
     let mut uf = UnionFind::new(n);
@@ -288,7 +253,7 @@ where
             total_weight += w;
         }
     }
-    (mst_edges, total_weight)
+    Ok((mst_edges, total_weight))
 }
 
 ///
@@ -310,51 +275,38 @@ where
 ///
 /// # Returns
 ///
-/// A tuple containing:
+/// A `Result` containing a tuple with:
 /// - A vector of MST edges (`MstEdge<W>`).
 /// - The total weight of the MST.
 ///
-/// # Errors
-///
-/// Panics with a `GraphinaException` if the input graph is empty.
+/// Returns an `Err(GraphinaException)` if the input graph is empty.
 ///
 /// # Example
 ///
 /// ```rust
 /// use graphina::core::mst::prim_mst;
 /// use graphina::core::types::{Graph, NodeId};
+/// use ordered_float::OrderedFloat;
 ///
-/// // Create a simple undirected graph with 4 nodes and integer weights.
-/// let mut g = Graph::<i32, i32>::new();
+/// let mut g = Graph::<i32, OrderedFloat<f64>>::new();
 /// let n1 = g.add_node(1);
 /// let n2 = g.add_node(2);
-/// let n3 = g.add_node(3);
-/// let n4 = g.add_node(4);
+/// g.add_edge(n1, n2, OrderedFloat(1.0));
 ///
-/// // Add undirected edges.
-/// g.add_edge(n1, n2, 1);
-/// g.add_edge(n2, n1, 1);
-/// g.add_edge(n2, n3, 2);
-/// g.add_edge(n3, n2, 2);
-/// g.add_edge(n3, n4, 1);
-/// g.add_edge(n4, n3, 1);
-/// g.add_edge(n4, n1, 3);
-/// g.add_edge(n1, n4, 3);
-///
-/// let (mst_edges, total_weight) = prim_mst(&g);
-/// println!("Prim MST Total Weight: {:?}", total_weight);
+/// let (mst_edges, total_weight) = prim_mst(&g).unwrap();
 /// ```
-pub fn prim_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<MstEdge<W>>, W)
+pub fn prim_mst<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<(Vec<MstEdge<W>>, W), GraphinaException>
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
     Ty: EdgeType,
     NodeId: Ord,
 {
     if graph.node_count() == 0 {
-        panic!(
-            "{}",
-            GraphinaException::new("Graph is empty, cannot compute MST.")
-        );
+        return Err(GraphinaException::new(
+            "Graph is empty, cannot compute MST.",
+        ));
     }
 
     let n = graph.node_count();
@@ -417,5 +369,5 @@ where
         }
     }
 
-    (mst_edges, total_weight)
+    Ok((mst_edges, total_weight))
 }

@@ -1,14 +1,15 @@
 name: Publish to Crates.io
 
 on:
-  workflow_dispatch: { } # Allow manual execution
+  workflow_dispatch:
   push:
     tags:
-      - 'v*' # Trigger on version tags
+      - 'v*'
+
+permissions:
+  contents: read
 
 jobs:
-
-  # Run tests before publishing and only publish if tests pass
   call_tests:
     uses: ./.github/workflows/tests.yml
 

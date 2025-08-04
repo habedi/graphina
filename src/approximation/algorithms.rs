@@ -1,5 +1,3 @@
-// File: src/approximation/algorithms.rs
-
 //! This module provides fast approximations and heuristic methods for NP‑hard graph problems,
 //! optimized for large, sparse graphs. Functions that rely on shortest–path computations require
 //! that the graph’s weight type is `ordered_float::OrderedFloat<f64>`.
@@ -9,6 +7,7 @@
 //! use graphina::approximation::algorithms::*;
 //! ```
 
+use crate::core::exceptions::GraphinaException;
 use crate::core::paths::dijkstra;
 use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use ordered_float::OrderedFloat;
@@ -204,11 +203,7 @@ where
         total += links as f64 / possible as f64;
         count += 1;
     }
-    if count > 0 {
-        total / count as f64
-    } else {
-        0.0
-    }
+    if count > 0 { total / count as f64 } else { 0.0 }
 }
 
 /// -------------------------------
@@ -274,18 +269,21 @@ where
 
 /// -------------------------------
 /// Compute a lower bound on the diameter using BFS from an arbitrary node.
-pub fn diameter<A, Ty>(graph: &BaseGraph<A, OrderedFloat<f64>, Ty>) -> f64
+pub fn diameter<A, Ty>(
+    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
+) -> Result<f64, GraphinaException>
 where
     Ty: EdgeType,
 {
     if let Some((start, _)) = graph.nodes().next() {
-        let distances = dijkstra(graph, start);
-        distances
+        let distances = dijkstra(graph, start)?;
+        let max_dist = distances
             .into_iter()
             .filter_map(|d| d.map(|od| od.0))
-            .fold(0.0, f64::max)
+            .fold(0.0, f64::max);
+        Ok(max_dist)
     } else {
-        0.0
+        Ok(0.0)
     }
 }
 
@@ -310,11 +308,9 @@ where
     Ty: crate::core::types::EdgeType,
 {
     let mut cover = HashSet::new();
-    // Start with all edges uncovered.
     let mut uncovered: HashSet<(NodeId, NodeId)> = graph.edges().map(|(u, v, _)| (u, v)).collect();
 
     while !uncovered.is_empty() {
-        // Recompute the incident uncovered edge count for each node not in cover.
         let best = graph
             .nodes()
             .map(|(u, _)| u)
@@ -324,12 +320,10 @@ where
                     .neighbors(u)
                     .filter(|w| uncovered.contains(&(u, *w)) || uncovered.contains(&(*w, u)))
                     .count();
-                // Use count as key (if desired, you can combine with weight_func(u) for a normalized score)
                 count
             });
         if let Some(best) = best {
             cover.insert(best);
-            // Remove all edges incident to the chosen node.
             uncovered.retain(|&(u, v)| u != best && v != best);
         } else {
             break;
@@ -369,29 +363,36 @@ where
 
 /// -------------------------------
 /// Approximate a solution to the TSP using Christofides' algorithm (placeholder).
-pub fn christofides<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> (Vec<NodeId>, f64)
+pub fn christofides<A, Ty>(
+    graph: &BaseGraph<A, f64, Ty>,
+) -> Result<(Vec<NodeId>, f64), GraphinaException>
 where
     A: Clone,
     Ty: EdgeType + EdgeType,
 {
-    // As a placeholder, we use greedy_tsp.
-    greedy_tsp(
-        &graph.convert::<OrderedFloat<f64>>(),
-        graph.nodes().next().unwrap().0,
-    )
+    let start_node = graph
+        .nodes()
+        .next()
+        .map(|(u, _)| u)
+        .ok_or_else(|| GraphinaException::new("Cannot run TSP on an empty graph."))?;
+    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start_node)
 }
 
 /// -------------------------------
 /// Approximate the TSP solution using a greedy algorithm.
-pub fn traveling_salesman_problem<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> (Vec<NodeId>, f64)
+pub fn traveling_salesman_problem<A, Ty>(
+    graph: &BaseGraph<A, f64, Ty>,
+) -> Result<(Vec<NodeId>, f64), GraphinaException>
 where
     A: Clone,
     Ty: EdgeType + EdgeType,
 {
-    greedy_tsp(
-        &graph.convert::<OrderedFloat<f64>>(),
-        graph.nodes().next().unwrap().0,
-    )
+    let start_node = graph
+        .nodes()
+        .next()
+        .map(|(u, _)| u)
+        .ok_or_else(|| GraphinaException::new("Cannot run TSP on an empty graph."))?;
+    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start_node)
 }
 
 /// -------------------------------
@@ -400,7 +401,7 @@ where
 pub fn greedy_tsp<A, Ty>(
     graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
     source: NodeId,
-) -> (Vec<NodeId>, f64)
+) -> Result<(Vec<NodeId>, f64), GraphinaException>
 where
     Ty: EdgeType,
 {
@@ -411,23 +412,25 @@ where
     tour.push(current);
     unvisited.remove(&current);
     while !unvisited.is_empty() {
-        let distances = dijkstra(graph, current);
+        let distances = dijkstra(graph, current)?;
         let (next_node, next_cost) = unvisited
             .iter()
             .filter_map(|v| distances[v.index()].map(|d| (*v, d.0)))
-            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-            .unwrap_or((current, 0.0));
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .ok_or_else(|| {
+                GraphinaException::new("Could not find a path to any unvisited node.")
+            })?;
         tour.push(next_node);
         cost += next_cost;
         current = next_node;
         unvisited.remove(&current);
     }
-    let distances = dijkstra(graph, current);
+    let distances = dijkstra(graph, current)?;
     if let Some(d) = distances[source.index()] {
         cost += d.0;
         tour.push(source);
     }
-    (tour, cost)
+    Ok((tour, cost))
 }
 
 /// -------------------------------
@@ -435,13 +438,13 @@ where
 pub fn simulated_annealing_tsp<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     init_cycle: Vec<NodeId>,
-) -> (Vec<NodeId>, f64)
+) -> Result<(Vec<NodeId>, f64), GraphinaException>
 where
     A: Clone,
     Ty: EdgeType + EdgeType,
 {
-    let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle);
-    (init_cycle, cost)
+    let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle)?;
+    Ok((init_cycle, cost))
 }
 
 /// -------------------------------
@@ -449,13 +452,13 @@ where
 pub fn threshold_accepting_tsp<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     init_cycle: Vec<NodeId>,
-) -> (Vec<NodeId>, f64)
+) -> Result<(Vec<NodeId>, f64), GraphinaException>
 where
     A: Clone,
     Ty: EdgeType + EdgeType,
 {
-    let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle);
-    (init_cycle, cost)
+    let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle)?;
+    Ok((init_cycle, cost))
 }
 
 /// -------------------------------
@@ -469,18 +472,21 @@ where
 
 /// -------------------------------
 /// Helper: Compute the total cost of a given tour.
-fn tour_cost<A, Ty>(graph: &BaseGraph<A, OrderedFloat<f64>, Ty>, tour: &[NodeId]) -> f64
+fn tour_cost<A, Ty>(
+    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
+    tour: &[NodeId],
+) -> Result<f64, GraphinaException>
 where
     Ty: EdgeType,
 {
     let mut cost = 0.0;
     for i in 0..tour.len() - 1 {
-        let distances = dijkstra(graph, tour[i]);
+        let distances = dijkstra(graph, tour[i])?;
         if let Some(d) = distances[tour[i + 1].index()] {
             cost += d.0;
         }
     }
-    cost
+    Ok(cost)
 }
 
 /// -------------------------------
@@ -510,7 +516,6 @@ where
         }
         order.push(u);
         remaining.remove(&u);
-        // Clone neighbor set to avoid borrow conflicts.
         let neighbors = neighbor_cache.get(&u).unwrap().clone();
         for &v in &neighbors {
             if remaining.contains(&v) {

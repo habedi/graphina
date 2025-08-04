@@ -7,14 +7,13 @@
 
 ## Graphina
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&color=4caf50&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
-[![Lints](https://img.shields.io/github/actions/workflow/status/habedi/graphina/lint.yml?label=lints&style=flat&labelColor=282c34&color=4caf50&logo=github)](https://github.com/habedi/graphina/actions/workflows/lint.yml)
-[![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&labelColor=282c34&color=ffca28&logo=codecov)](https://codecov.io/gh/habedi/graphina)
-[![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=flat&labelColor=282c34&color=4caf50&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
+[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
+[![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&labelColor=282c34&logo=codecov)](https://codecov.io/gh/habedi/graphina)
+[![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=flat&labelColor=282c34&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
 [![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=f46623&logo=rust)](https://crates.io/crates/graphina)
 [![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
 [![Downloads](https://img.shields.io/crates/d/graphina?style=flat&labelColor=282c34&color=4caf50&logo=rust)](https://crates.io/crates/graphina)
-[![MSRV](https://img.shields.io/badge/MSRV-1.83.0-007ec6?label=msrv&style=flat&labelColor=282c34&logo=rust)](https://github.com/rust-lang/rust/releases/tag/1.83.0)
+[![MSRV](https://img.shields.io/badge/MSRV-1.86.0-007ec6?label=msrv&style=flat&labelColor=282c34&logo=rust)](https://github.com/rust-lang/rust/releases/tag/1.86.0)
 [![Docs](https://img.shields.io/badge/docs-latest-3776ab?style=flat&labelColor=282c34&logo=readthedocs)](docs)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
@@ -29,7 +28,7 @@ The main goal is to make Graphina as feature-rich as [NetworkX](https://networkx
 but with the performance of Rust.
 
 Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
-Check out [pygraphina](pygraphina/) directory for more details.
+Check out [pygraphina](pygraphina/README.md) directory for more details.
 
 > [!IMPORTANT]
 > Graphina is in the early stages of development, so breaking changes may occur.
@@ -48,7 +47,7 @@ The extensions are independent of each other. However, they depend on the core l
 
 | Module                                   | Feature or Algorithm                                                                                                                                                                          | Status | Notes                                             |
 |------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|---------------------------------------------------|
-| [**Types**](src/core/types.rs)           | <ul><li>Directed and undirected graphs</li><li>Weighted and unweighted graphs</li></ul>                                                                                                       | Tested | Graph types that Graphina supports                |                                 
+| [**Types**](src/core/types.rs)           | <ul><li>Directed and undirected graphs</li><li>Weighted and unweighted graphs</li></ul>                                                                                                       | Tested | Graph types that Graphina supports                |  
 | [**Exceptions**](src/core/exceptions.rs) | <ul><li>List of exceptions</li></ul>                                                                                                                                                          | Tested | Custom error types for Graphina                   |
 | [**IO**](src/core/io.rs)                 | <ul><li>Edge list</li><li>Adjacency list</li></ul>                                                                                                                                            | Tested | I/O routines for reading and writing graph data   |
 | [**Generators**](src/core/generators.rs) | <ul><li>Erdős–Rényi graph</li><li>Watts–Strogatz graph</li><li>Barabási–Albert graph</li><li>Complete graph</li><li>Bipartite graph</li><li>Star graph</li><li>Cycle graph</li></ul>          | Tested | Graph generators for random and structured graphs |
@@ -60,10 +59,10 @@ The extensions are independent of each other. However, they depend on the core l
 
 | Module                                               | Feature/Algorithm                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status | Notes                                                     |
 |------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|-----------------------------------------------------------|
-| [**Centrality**](src/centrality/algorithms.rs)       | <ul><li>Degree centrality</li><li>Closeness centrality</li><li>Betweenness centrality</li><li>Eigenvector centrality</li><li>PageRank centrality</li><li>Katz centrality</li><li>Harmonic centrality</li><li>Local/global reaching centrality</li><li>Voterank centrality</li><li>Laplacian centrality</li></ul>                                                                                                                                                                                                                                                                                                                     |        | Centrality measures                                       |
-| [**Links**](src/links/algorithms.rs)                 | <ul><li>Resource allocation index</li><li>Jaccard coefficient</li><li>Adamic–Adar index</li><li>Preferential attachment</li><li>CN Soundarajan–Hopcroft</li><li>RA index Soundarajan–Hopcroft</li><li>Within–inter-cluster ratio</li><li>Common neighbor centrality</li></ul>                                                                                                                                                                                                                                                                                                                                                        |        | Link prediction algorithms                                |
-| [**Community**](src/community/algorithms.rs)         | <ul><li>Label propagation</li><li>Louvain method</li><li>Girvan–Newman algorithm</li><li>Spectral clustering</li><li>Personalized PageRank</li><li>Infomap</li><li>Connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                    |        | Community detection and clustering algorithms             |
-| [**Approximation**](src/approximation/algorithms.rs) | <ul><li>Local node connectivity (BFS-based)</li><li>Maximum independent set (greedy with neighbor caching)</li><li>Maximum clique (greedy heuristic)</li><li>Clique removal</li><li>Large clique size</li><li>Average clustering coefficient</li><li>Densest subgraph (greedy peeling)</li><li>Diameter lower bound</li><li>Minimum weighted vertex cover (greedy re‑evaluated)</li><li>Minimum maximal matching (greedy)</li><li>Approximate Ramsey R2</li><li>TSP approximations (greedy, simulated annealing, threshold accepting, Christofides placeholder)</li><li>Treewidth decompositions (min degree, min fill-in)</li></ul> |        | Approximations and heuristic methods for NP‑hard problems |
+| [**Centrality**](src/centrality/algorithms.rs)       | <ul><li>Degree centrality</li><li>Closeness centrality</li><li>Betweenness centrality</li><li>Eigenvector centrality</li><li>PageRank centrality</li><li>Katz centrality</li><li>Harmonic centrality</li><li>Local/global reaching centrality</li><li>Voterank centrality</li><li>Laplacian centrality</li></ul>                                                                                                                                                                                                                                                                                                                     | Tested | Centrality measures                                       |
+| [**Links**](src/links/algorithms.rs)                 | <ul><li>Resource allocation index</li><li>Jaccard coefficient</li><li>Adamic–Adar index</li><li>Preferential attachment</li><li>CN Soundarajan–Hopcroft</li><li>RA index Soundarajan–Hopcroft</li><li>Within–inter-cluster ratio</li><li>Common neighbor centrality</li></ul>                                                                                                                                                                                                                                                                                                                                                        | Tested | Link prediction algorithms                                |
+| [**Community**](src/community/algorithms.rs)         | <ul><li>Label propagation</li><li>Louvain method</li><li>Girvan–Newman algorithm</li><li>Spectral clustering</li><li>Personalized PageRank</li><li>Infomap</li><li>Connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                    | Tested | Community detection and clustering algorithms             |
+| [**Approximation**](src/approximation/algorithms.rs) | <ul><li>Local node connectivity (BFS-based)</li><li>Maximum independent set (greedy with neighbor caching)</li><li>Maximum clique (greedy heuristic)</li><li>Clique removal</li><li>Large clique size</li><li>Average clustering coefficient</li><li>Densest subgraph (greedy peeling)</li><li>Diameter lower bound</li><li>Minimum weighted vertex cover (greedy re‑evaluated)</li><li>Minimum maximal matching (greedy)</li><li>Approximate Ramsey R2</li><li>TSP approximations (greedy, simulated annealing, threshold accepting, Christofides placeholder)</li><li>Treewidth decompositions (min degree, min fill-in)</li></ul> | Tested | Approximations and heuristic methods for NP‑hard problems |
 
 > [!NOTE]
 > Status shows whether the module is `Tested` and `Benchmarked`.
@@ -79,10 +78,10 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.2"
+graphina = "0.3.0-a1"
 ```
 
-*Graphina requires Rust 1.83 or later.*
+*Graphina requires Rust 1.86 or later.*
 
 ### Documentation
 
@@ -126,7 +125,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to make a contribution
 The mascot is named "Graphina the Dinosaur".
 As the name implies, she's a dinosaur, however, she herself thinks she's a dragon.
 
-The logo was created using Gimp, ComfyUI, and a Flux Schnell v2 model.
+The logo was created using GIMP, ComfyUI, and a Flux Schnell v2 model.
 
 ### Licensing
 

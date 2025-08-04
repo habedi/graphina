@@ -1,5 +1,3 @@
-// File: src/centrality/algorithms.rs
-
 //! Centrality algorithms module.
 //!
 //! This module provides implementations for a selection of centrality measures.
@@ -15,6 +13,7 @@
 //! - VoteRank
 //! - Laplacian centrality
 
+use crate::core::exceptions::GraphinaException;
 use crate::core::paths::dijkstra;
 use crate::core::types::{BaseGraph, EdgeType, NodeId};
 use std::collections::{HashMap, VecDeque};
@@ -36,11 +35,9 @@ where
     }
     let n = graph.node_count();
     let mut degree = vec![0; n];
-    // Out–degree.
     for (node, _) in graph.nodes() {
         degree[node.index()] += graph.neighbors(node).count();
     }
-    // In–degree.
     for (_u, v, _w) in graph.edges() {
         degree[v.index()] += 1;
     }
@@ -210,7 +207,6 @@ pub fn katz_centrality_numpy<A, Ty>(
 where
     Ty: crate::core::types::EdgeType,
 {
-    // Default parameters: 100 iterations, tol = 1e-6.
     katz_centrality_impl(graph, alpha, beta, 100, 1e-6_f64)
 }
 
@@ -224,20 +220,20 @@ where
 /// Closeness = (n - 1) / (sum of shortest-path distances).
 pub fn closeness_centrality<A, Ty>(
     graph: &BaseGraph<A, ordered_float::OrderedFloat<f64>, Ty>,
-) -> Vec<f64>
+) -> Result<Vec<f64>, GraphinaException>
 where
     Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut closeness = vec![0.0; n];
     for (node, _) in graph.nodes() {
-        let distances = dijkstra(graph, node);
-        let sum: f64 = distances.iter().filter_map(|&d| d.map(|od| od.0)).sum();
+        let distances = dijkstra(graph, node)?;
+        let sum: f64 = distances.iter().filter_map(|d| d.map(|od| od.0)).sum();
         if sum > 0.0 {
             closeness[node.index()] = (n as f64 - 1.0) / sum;
         }
     }
-    closeness
+    Ok(closeness)
 }
 
 //
@@ -260,7 +256,6 @@ where
     let mut rank = vec![1.0 / n as f64; n];
     let teleport = (1.0 - damping) / n as f64;
 
-    // Precompute out–degree.
     let mut out_deg = vec![0usize; n];
     for (node, _) in graph.nodes() {
         out_deg[node.index()] = graph.neighbors(node).count();
@@ -276,7 +271,6 @@ where
                     new_rank[v.index()] += share;
                 }
             } else {
-                // Dangling node: distribute uniformly.
                 for x in new_rank.iter_mut() {
                     *x += damping * r / n as f64;
                 }
@@ -367,7 +361,6 @@ where
     let n = graph.node_count();
     let mut eb: HashMap<(usize, usize), f64> = HashMap::new();
 
-    // Initialize each edge's betweenness to 0.
     for (u, v, _) in graph.edges() {
         eb.insert((u.index(), v.index()), 0.0);
     }
@@ -419,23 +412,23 @@ where
 /// Harmonic centrality: sum of reciprocals of shortest-path distances (ignoring unreachable nodes).
 pub fn harmonic_centrality<A, Ty>(
     graph: &BaseGraph<A, ordered_float::OrderedFloat<f64>, Ty>,
-) -> Vec<f64>
+) -> Result<Vec<f64>, GraphinaException>
 where
     Ty: EdgeType,
 {
     let n = graph.node_count();
     let mut centrality = vec![0.0; n];
     for (node, _) in graph.nodes() {
-        let distances = dijkstra(graph, node);
+        let distances = dijkstra(graph, node)?;
         let sum: f64 = distances
             .iter()
-            .filter_map(|&d| d.map(|od| od.0))
+            .filter_map(|d| d.map(|od| od.0))
             .filter(|&d| d > 0.0)
             .map(|d| 1.0 / d)
             .sum();
         centrality[node.index()] = sum;
     }
-    centrality
+    Ok(centrality)
 }
 
 //
@@ -509,7 +502,7 @@ where
             .iter()
             .enumerate()
             .filter(|(i, _)| !voted[*i])
-            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap();
         selected.push(petgraph::graph::NodeIndex::new(max_idx));
         voted[max_idx] = true;

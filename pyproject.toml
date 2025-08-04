@@ -1,55 +1,71 @@
-[tool.poetry]
+[project]
 name = "graphina"
 version = "0.1.0"
 description = "Python environment for the Graphina library"
-authors = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
-maintainers = ["Hassan Abedi <hassan.abedi.t@gmail.com>"]
+readme = "README.md"
+authors = [
+  { name = "Hassan Abedi", email = "hassan.abedi.t@gmail.com" }
+]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+  "maturin[zig]>=1.8.3,<2.0.0",
+  "huggingface-hub>=0.29.3,<0.30.0",
+  "networkx>=3.4.2,<4.0.0",
+  "pygraphina>=0.1.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-maturin = { extras = ["zig"], version = "^1.8.3" }
-poetry-dynamic-versioning = "^1.4.0"
-pytest = "^8.3.5"
-pytest-cov = "^6.0.0"
-pytest-mock = "^3.14.0"
-pytest-benchmark = "^5.1.0"
-mypy = "^1.11.1"
-ruff = "^0.11.0"
-twine = "^6.1.0"
-huggingface-hub = "^0.29.3"
-networkx = "^3.4.2"
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.5",
+  "pytest-cov>=6.0.0",
+  "pytest-mock>=3.14.0",
+  "pytest-benchmark>=5.1.0",
+  "mypy>=1.11.1",
+  "ruff>=0.11.0",
+  "twine>=6.1.0"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["pygraphina/tests"]
+addopts = [
+  "--tb=short",
+  "--cov=pygraphina",
+  "--cov-branch",
+  "--cov-report=term",
+  "--cov-report=xml",
+  "-rs"
+]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source = ["."]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = false
+skip_empty = true
+precision = 2
 
 [tool.mypy]
 python_version = "3.10"
 ignore_missing_imports = true
+disallow_untyped_defs = true
 disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
 strict_optional = true
 warn_redundant_casts = true
+exclude = "^(tests/)"
 
-# Ruff configuration
 [tool.ruff]
 exclude = [
-  ".bzr",
-  ".direnv",
-  ".eggs",
-  ".git",
-  ".git-rewrite",
-  ".hg",
-  ".mypy_cache",
-  ".nox",
-  ".pants.d",
-  ".pytype",
-  ".ruff_cache",
-  ".svn",
-  ".tox",
-  ".venv",
-  "__pypackages__",
-  "_build",
-  "buck-out",
-  "build",
-  "dist",
-  "node_modules",
-  "venv"
+  ".bzr", ".direnv", ".eggs", ".git", ".git-rewrite", ".hg", ".mypy_cache",
+  ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv",
+  "__pypackages__", "_build", "buck-out", "build", "dist", "node_modules",
+  "venv",
+  "tests"
 ]
 line-length = 100
 indent-width = 4
@@ -57,10 +73,8 @@ src = ["pygraphina"]
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["ANN", "D", "E", "F", "I"]
-ignore = [
-  "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"
-]
+select = ["ANN", "E", "F", "I", "W", "B", "RUF", "SIM", "C90", "D"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
 fixable = ["ALL"]
 unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
