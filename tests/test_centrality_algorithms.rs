@@ -104,7 +104,7 @@ fn test_pagerank() {
 #[test]
 fn test_katz_centrality() {
     let graph = build_test_graph_f64();
-    let kc = katz_centrality(&graph, 0.1, 1.0, 50);
+    let kc = katz_centrality(&graph, 0.1, 1.0, 50,false,true);
     assert_eq!(kc.len(), 4);
     for score in kc {
         assert!(score > 0.0);
