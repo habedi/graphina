@@ -82,7 +82,7 @@ fn test_betweenness_centrality() {
 #[test]
 fn test_eigenvector_centrality() {
     let graph = build_test_graph_f64();
-    let ev = eigenvector_centrality(&graph, 20);
+    let ev = eigenvector_centrality(&graph, 20, false);
     // Check that we have 4 scores and all are positive.
     assert_eq!(ev.len(), 4);
     for &score in &ev {
