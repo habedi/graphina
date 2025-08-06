@@ -82,21 +82,24 @@ where
 //
 
 /// Full implementation of eigenvector centrality with convergence tolerance.
-pub fn eigenvector_centrality_impl<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
+pub fn eigenvector_centrality_impl<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
     max_iter: usize,
     tol: f64,
+    eval_weigth: impl Fn(&W) -> f64,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
     let mut centrality = vec![1.0; n];
+    let mut next = centrality.clone();
     for _ in 0..max_iter {
-        let mut next = vec![0.0; n];
-        for (node, _) in graph.nodes() {
-            for neighbor in graph.neighbors(node) {
-                next[neighbor.index()] += centrality[node.index()];
+        for (src, dst, w) in graph.edges() {
+            let w = eval_weigth(w);
+            next[dst.index()] += w * centrality[src.index()];
+            if !<Ty as GraphConstructor<A, W>>::is_directed() {
+                next[src.index()] += w * centrality[dst.index()];
             }
         }
         let norm = next.iter().map(|x| x * x).sum::<f64>().sqrt();
@@ -106,11 +109,14 @@ where
             }
         }
         let diff: f64 = centrality
-            .iter()
+            .iter_mut()
             .zip(next.iter())
-            .map(|(a, b)| (a - b).abs())
+            .map(|(a, b)| {
+                let d = (*a - b).abs();
+                *a = *b;
+                d
+            })
             .sum();
-        centrality = next;
         if diff < tol * n as f64 {
             break;
         }
@@ -119,11 +125,20 @@ where
 }
 
 /// Wrapper for eigenvector centrality with default tolerance (1e-6).
-pub fn eigenvector_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>, max_iter: usize) -> Vec<f64>
+pub fn eigenvector_centrality<A, Ty>(
+    graph: &BaseGraph<A, f64, Ty>,
+    max_iter: usize,
+    weighted: bool,
+) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
 {
-    eigenvector_centrality_impl(graph, max_iter, 1e-6_f64)
+    let eval_weight = if weighted {
+        |f: &f64| *f
+    } else {
+        |_f: &f64| 1.0
+    };
+    eigenvector_centrality_impl(graph, max_iter, 1e-6_f64, eval_weight)
 }
 
 /// NumPy–style eigenvector centrality (alias to the above).
@@ -131,11 +146,17 @@ pub fn eigenvector_centrality_numpy<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     max_iter: usize,
     tol: f64,
+    weighted: bool,
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
 {
-    eigenvector_centrality_impl(graph, max_iter, tol)
+    let eval_weight = if weighted {
+        |f: &f64| *f
+    } else {
+        |_f: &f64| 1.0
+    };
+    eigenvector_centrality_impl(graph, max_iter, tol, eval_weight)
 }
 
 //
