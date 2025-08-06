@@ -81,12 +81,41 @@ where
 // -----------------------------
 //
 
-/// Full implementation of eigenvector centrality with convergence tolerance.
+/// Full implementation of eigenvector centrality with convergence tolerance,
+/// calculates eigenvector centrality for nodes in a graph iteratively.
+///
+/// this function designed for generic edge type,
+/// see [`eigenvector_centrality`] and [`eigenvector_centrality_numpy`]
+/// for cleaner interaction with `f64` edge graph.
+///
+/// # Arguments:
+///
+/// * `graph`: the targeted graph.
+/// * `max_iter`: The maximum number of iterations that the algorithm will run for.
+/// * `tol`: the average tolerance for convergence.
+/// * `eval_weight`: callback to evaluate the weight of edges in the graph.
+///
+/// # Returns :
+///
+/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+/// use graphina::centrality::algorithms::eigenvector_centrality_impl;
+///
+/// let mut g: Graph<i32, (f64, f64)> = Graph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], (0.0, 1.0));
+/// g.add_edge(nodes[0], nodes[2], (1.0, 0.0));
+/// let centrality = eigenvector_centrality_impl(&g, 1000, 1e-6_f64, |w| w.0 * 10.0 + w.1);
+/// println!("{:.5?}", centrality); // [0.70711, 0.07036, 0.70360]
+/// ```
 pub fn eigenvector_centrality_impl<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     max_iter: usize,
     tol: f64,
-    eval_weigth: impl Fn(&W) -> f64,
+    eval_weight: impl Fn(&W) -> f64,
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, W>,
@@ -96,7 +125,7 @@ where
     let mut next = centrality.clone();
     for _ in 0..max_iter {
         for (src, dst, w) in graph.edges() {
-            let w = eval_weigth(w);
+            let w = eval_weight(w);
             next[dst.index()] += w * centrality[src.index()];
             if !<Ty as GraphConstructor<A, W>>::is_directed() {
                 next[src.index()] += w * centrality[dst.index()];
@@ -125,6 +154,32 @@ where
 }
 
 /// Wrapper for eigenvector centrality with default tolerance (1e-6).
+/// calculates eigenvector centrality for nodes in a graph iteratively.
+/// 
+/// # Arguments:
+///
+/// * `graph`: the targeted graph.
+/// * `max_iter`: The maximum number of iterations that the algorithm will run for.
+/// * `weighted`: whether or not the calculated centrality will be weighed.
+///
+/// # Returns :
+///
+/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+///
+/// # Examples :
+/// ```rust
+/// use graphina::centrality::algorithms::eigenvector_centrality;
+/// use graphina::core::types::Graph;
+/// let mut g = Graph::new();
+///
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], 1.0);
+/// g.add_edge(nodes[0], nodes[2], 2.0);
+/// let centrality = eigenvector_centrality(&g, 1000, false);
+/// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
+/// let centrality = eigenvector_centrality(&g, 1000, true);
+/// println!("{:.5?}", centrality); // [0.70711, 0.31623, 0.63246]
+/// ```
 pub fn eigenvector_centrality<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     max_iter: usize,
@@ -141,7 +196,33 @@ where
     eigenvector_centrality_impl(graph, max_iter, 1e-6_f64, eval_weight)
 }
 
-/// NumPy–style eigenvector centrality (alias to the above).
+/// NumPy–style eigenvector centrality (alias to [`eigenvector_centrality`]).
+/// calculates eigenvector centrality for nodes in a graph iteratively.
+/// 
+/// # Arguments:
+///
+/// * `graph`: the targeted graph.
+/// * `max_iter`: The maximum number of iterations that the algorithm will run for.
+/// * `weighted`: whether or not the calculated centrality will be weighed.
+///
+/// # Returns :
+///
+/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+///
+/// # Examples :
+/// ```rust
+/// use graphina::centrality::algorithms::eigenvector_centrality_numpy;
+/// use graphina::core::types::Graph;
+/// let mut g = Graph::new();
+///
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], 1.0);
+/// g.add_edge(nodes[0], nodes[2], 2.0);
+/// let centrality = eigenvector_centrality_numpy(&g, 1000, false);
+/// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
+/// let centrality = eigenvector_centrality_numpy(&g, 1000, true);
+/// println!("{:.5?}", centrality); // [0.70711, 0.31623, 0.63246]
+/// ```
 pub fn eigenvector_centrality_numpy<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     max_iter: usize,
