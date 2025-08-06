@@ -105,10 +105,17 @@ where
 /// use graphina::centrality::algorithms::eigenvector_centrality_impl;
 ///
 /// let mut g: Graph<i32, (f64, f64)> = Graph::new();
+/// //                    ^^^^^^^^^^
+/// //                             L arbitrary type as edge
 /// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
 /// g.add_edge(nodes[0], nodes[1], (0.0, 1.0));
 /// g.add_edge(nodes[0], nodes[2], (1.0, 0.0));
-/// let centrality = eigenvector_centrality_impl(&g, 1000, 1e-6_f64, |w| w.0 * 10.0 + w.1);
+/// let centrality = eigenvector_centrality_impl(
+///     &g, 
+///     1000, 
+///     1e-6_f64, 
+///     |w| w.0 * 10.0 + w.1 // <-- custom evaluation for edge weight
+/// );
 /// println!("{:.5?}", centrality); // [0.70711, 0.07036, 0.70360]
 /// ```
 pub fn eigenvector_centrality_impl<A, W, Ty>(
