@@ -155,7 +155,7 @@ where
 
 /// Wrapper for eigenvector centrality with default tolerance (1e-6).
 /// calculates eigenvector centrality for nodes in a graph iteratively.
-/// 
+///
 /// # Arguments:
 ///
 /// * `graph`: the targeted graph.
@@ -198,7 +198,7 @@ where
 
 /// NumPy–style eigenvector centrality (alias to [`eigenvector_centrality`]).
 /// calculates eigenvector centrality for nodes in a graph iteratively.
-/// 
+///
 /// # Arguments:
 ///
 /// * `graph`: the targeted graph.
