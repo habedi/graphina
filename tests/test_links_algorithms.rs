@@ -33,11 +33,7 @@ fn build_test_graph() -> Graph<i32, f64> {
 
 // A simple community function: nodes 0,1,2 in community 0, node 3 in community 1.
 fn community(n: NodeId) -> u8 {
-    if n.index() == 3 {
-        1
-    } else {
-        0
-    }
+    if n.index() == 3 { 1 } else { 0 }
 }
 
 // Helper for approximate equality of f64 values.

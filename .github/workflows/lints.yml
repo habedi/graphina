@@ -1,10 +1,16 @@
 name: Run Linters
 
 on:
-  workflow_dispatch: { } # Allow manual execution
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
   push:
     tags:
-      - 'v*' # Trigger on version tags
+      - 'v*'
+
+permissions:
+  contents: read
 
 jobs:
   lint:
@@ -17,7 +23,7 @@ jobs:
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: stable
+          toolchain: '1.86.0' # Pinned to project's MSRV
 
       - name: Install Dependencies
         run: |

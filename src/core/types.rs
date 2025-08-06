@@ -25,11 +25,11 @@ assert!(success);
 g.try_update_node(n1, 30).expect("Node update should succeed");
 */
 
+use petgraph::EdgeType;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::prelude::EdgeRef;
 use petgraph::stable_graph::StableGraph as PetGraph;
 use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
-use petgraph::EdgeType;
 use sprs::{CsMat, TriMat};
 use std::collections::HashMap;
 

@@ -8,9 +8,10 @@ RUST_LOG        := info
 RUST_BACKTRACE  := full
 WHEEL_DIR       := dist
 PYGRAPHINA_DIR  := pygraphina
+PY_DEP_MNGR := uv # Use `uv sync --all-extras` to make the environment
 TEST_DATA_DIR  := tests/testdata
 SHELL           := /bin/bash
-MSRV			:= 1.83
+MSRV          := 1.86
 
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
@@ -20,8 +21,8 @@ WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/
 
 .PHONY: help
 help: ## Show the help message for each target
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | \
+	   awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 ########################################################################################
 ## Rust targets
@@ -74,6 +75,8 @@ install-deps: install-snap ## Install development dependencies
 	@cargo install cargo-tarpaulin
 	@cargo install cargo-audit
 	@cargo install cargo-nextest
+	@sudo apt-get install python3-pip
+	@pip install $(PY_DEP_MNGR)
 
 .PHONY: lint
 lint: format ## Run linters on Rust files
@@ -125,9 +128,9 @@ install-msrv: ## Install the minimum supported Rust version (MSRV) for developme
 run-examples: ## Run all the scripts in the examples directory one by one
 	@echo "Running all example scripts..."
 	@for example in examples/*.rs; do \
-		example_name=$$(basename $$example .rs); \
-		echo "Running example: $$example_name"; \
-		cargo run --example $$example_name; \
+	   example_name=$$(basename $$example .rs); \
+	   echo "Running example: $$example_name"; \
+	   cargo run --example $$example_name; \
 	done
 
 ########################################################################################
@@ -153,14 +156,14 @@ wheel-manylinux: ## Build the manylinux wheel file for PyGraphina (using Zig)
 .PHONY: test-py
 test-py: develop-py ## Run Python tests
 	@echo "Running Python tests..."
-	@poetry run pytest $(PYGRAPHINA_DIR)/tests
+	@$(PY_DEP_MNGR) run pytest
 
 .PHONY: publish-py
 publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PYPI_TOKEN to be set)
 	@echo "Publishing PyGraphina to PyPI..."
 	@if [ -z "$(WHEEL_FILE)" ]; then \
-		echo "Error: No wheel file found. Please run 'make wheel' first."; \
-		exit 1; \
+	   echo "Error: No wheel file found. Please run 'make wheel' first."; \
+	   exit 1; \
 	fi
 	@echo "Found wheel file: $(WHEEL_FILE)"
 	@twine upload -u __token__ -p $(PYPI_TOKEN) $(WHEEL_FILE)
@@ -169,3 +172,19 @@ publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PY
 generate-ci: ## Generate CI configuration files (GitHub Actions workflow)
 	@echo "Generating CI configuration files..."
 	@(cd $(PYGRAPHINA_DIR) && maturin generate-ci --zig --pytest --platform all -o ../.github/workflows/ci.yml github)
+
+########################################################################################
+## Additional targets
+########################################################################################
+
+.PHONY: setup-hooks
+setup-hooks: ## Install Git hooks (pre-commit and pre-push)
+	@echo "Installing Git hooks..."
+	@pre-commit install --hook-type pre-commit
+	@pre-commit install --hook-type pre-push
+	@pre-commit install-hooks
+
+.PHONY: test-hooks
+test-hooks: ## Test Git hooks on all files
+	@echo "Testing Git hooks..."
+	@pre-commit run --all-files

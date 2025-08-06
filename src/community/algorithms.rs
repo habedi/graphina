@@ -3,7 +3,7 @@
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use nalgebra::DMatrix;
 use rand::prelude::*;
-use rand::{rngs::StdRng, SeedableRng};
+use rand::{SeedableRng, rngs::StdRng};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 // Private helper: convert a raw index (usize) to a NodeId.
@@ -218,11 +218,7 @@ where
         .edges()
         .map(|(u, v, _w)| {
             let (a, b) = (u.index(), v.index());
-            if a < b {
-                (a, b)
-            } else {
-                (b, a)
-            }
+            if a < b { (a, b) } else { (b, a) }
         })
         .collect();
 

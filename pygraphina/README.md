@@ -8,10 +8,14 @@
 
 PyGraphina Python library allows users to use [Graphina](https://github.com/habedi/graphina) in Python.
 
+> [!NOTE]
+> PyGraphina is far from finished.
+> It currently exposes only the core graph data structure from Rust.
+
 ### Installation
 
 ```bash
-pip install pygraphina
+pip install --pre pygraphina
 ```
 
 ### License
