@@ -351,6 +351,11 @@ where
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
+/// # Note
+///
+/// the katz centrality migh not converge if
+/// alpha is larger than the recipocal of the larger eigen value of the network.
+///
 /// # Example
 /// ```rust
 /// use graphina::centrality::algorithms::katz_centrality_impl;
@@ -460,6 +465,11 @@ where
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
+/// # Note
+///
+/// the katz centrality migh not converge if
+/// alpha is larger than the recipocal of the larger eigen value of the network.
+///
 /// # Example
 /// ```rust
 /// use graphina::centrality::algorithms::katz_centrality;
@@ -521,6 +531,11 @@ where
 /// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
+///
+/// # Note
+///
+/// the katz centrality migh not converge if
+/// alpha is larger than the recipocal of the larger eigen value of the network.
 ///
 /// # Example
 /// ```rust
