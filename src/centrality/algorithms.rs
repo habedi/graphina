@@ -27,6 +27,29 @@ use std::collections::{HashMap, VecDeque};
 //
 
 /// Degree centrality: sum of a node’s in–degree and out–degree.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+///
+/// # Returns
+///
+/// a vector of `f64` representing out degree centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+///
+/// use graphina::centrality::algorithms::degree_centrality;
+///
+/// let mut g: Graph<i32, ()> = Graph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], ());
+/// g.add_edge(nodes[0], nodes[2], ());
+///
+/// let centrality = degree_centrality(&g);
+/// println!("{:?}", centrality); // [2.0, 1.0, 1.0]
+/// ```
 pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
@@ -47,6 +70,29 @@ where
 }
 
 /// In–degree centrality.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+///
+/// # Returns
+///
+/// a vector of `f64` representing out degree centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Digraph;
+///
+/// use graphina::centrality::algorithms::in_degree_centrality;
+///
+/// let mut g: Digraph<i32, ()> = Digraph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], ());
+/// g.add_edge(nodes[0], nodes[2], ());
+///
+/// let centrality = in_degree_centrality(&g);
+/// println!("{:?}", centrality); // [0.0, 1.0, 1.0]
+/// ```
 pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
@@ -64,6 +110,29 @@ where
 }
 
 /// Out–degree centrality.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+///
+/// # Returns
+///
+/// a vector of `f64` representing out degree centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Digraph;
+///
+/// use graphina::centrality::algorithms::out_degree_centrality;
+///
+/// let mut g: Digraph<i32, ()> = Digraph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], ());
+/// g.add_edge(nodes[0], nodes[2], ());
+///
+/// let centrality = out_degree_centrality(&g);
+/// println!("{:?}", centrality); // [2.0, 0.0, 0.0]
+/// ```
 pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
@@ -90,14 +159,14 @@ where
 /// see [`eigenvector_centrality`] and [`eigenvector_centrality_numpy`]
 /// for cleaner interaction with `f64` edge graph.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `max_iter`: The maximum number of iterations that the algorithm will run for.
 /// * `tol`: the average tolerance for convergence.
 /// * `eval_weight`: callback to evaluate the weight of edges in the graph.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
@@ -165,25 +234,27 @@ where
 /// Wrapper for eigenvector centrality with default tolerance (1e-6).
 /// calculates eigenvector centrality for nodes in a graph iteratively.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `max_iter`: The maximum number of iterations that the algorithm will run for.
 /// * `weighted`: whether or not the calculated centrality will be weighed.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
-/// # Examples :
+/// # Examples
 /// ```rust
-/// use graphina::centrality::algorithms::eigenvector_centrality;
 /// use graphina::core::types::Graph;
-/// let mut g = Graph::new();
 ///
+/// use graphina::centrality::algorithms::eigenvector_centrality;
+///
+/// let mut g = Graph::new();
 /// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
 /// g.add_edge(nodes[0], nodes[1], 1.0);
 /// g.add_edge(nodes[0], nodes[2], 2.0);
+///
 /// let centrality = eigenvector_centrality(&g, 1000, false);
 /// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
 /// let centrality = eigenvector_centrality(&g, 1000, true);
@@ -208,25 +279,26 @@ where
 /// NumPy–style eigenvector centrality (alias to [`eigenvector_centrality`]).
 /// calculates eigenvector centrality for nodes in a graph iteratively.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `max_iter`: The maximum number of iterations that the algorithm will run for.
 /// * `weighted`: whether or not the calculated centrality will be weighed.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
-/// # Examples :
+/// # Examples
 /// ```rust
-/// use graphina::centrality::algorithms::eigenvector_centrality_numpy;
 /// use graphina::core::types::Graph;
-/// let mut g = Graph::new();
 ///
+/// use graphina::centrality::algorithms::eigenvector_centrality_numpy;
+/// let mut g = Graph::new();
 /// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
 /// g.add_edge(nodes[0], nodes[1], 1.0);
 /// g.add_edge(nodes[0], nodes[2], 2.0);
+///
 /// let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, false);
 /// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
 /// let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, true);
@@ -265,7 +337,7 @@ where
 /// see [`katz_centrality`] and [`katz_centrality_numpy`]
 /// for cleaner interaction with `f64` edge graph.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `alpha`: callback to evaluate the alphas of nodes in the graph.
@@ -275,7 +347,7 @@ where
 /// * `normalized`: whether the returned result will be normalized.
 /// * `eval_weight`: callback to evaluate the weight of edges in the graph.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
@@ -286,7 +358,7 @@ where
 ///
 /// let mut g: Graph<(i32, f64), (f64, f64)> = Graph::new();
 /// //               ^^^^^^^^^^  ^^^^^^^^^^
-/// //                        |            L arbitrary type as edge
+/// //                        |           L arbitrary type as edge
 /// //                        L arbitrary type as node
 /// let nodes = [
 ///     g.add_node((1, 2.0)),
@@ -375,7 +447,7 @@ where
 ///
 /// calculates katz centrality for nodes in a graph iteratively.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `alpha`: value of alpha
@@ -384,7 +456,7 @@ where
 /// * `normalized`: whether the returned result will be normalized.
 /// * `weighted`: whether or not the calculated centrality will be weighed.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
@@ -433,11 +505,12 @@ where
 }
 
 /// NumPy–style Katz centrality, with default tolerance (1e-6) and max iteration of 100.
+///
 /// Formula: x = alpha * A * x + beta.
 ///
 /// calculates katz centrality for nodes in a graph iteratively.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `alpha`: value of alpha
@@ -445,7 +518,7 @@ where
 /// * `normalized`: whether the returned result will be normalized.
 /// * `weighted`: whether or not the calculated centrality will be weighed.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
