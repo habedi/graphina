@@ -155,6 +155,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
     }
 
+    pub fn is_directed(&self) -> bool {
+        self.inner.is_directed()
+    }
+
     /// Adds a node with the specified attribute to the graph.
     ///
     /// # Example
@@ -284,6 +288,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         })
     }
 
+    pub fn outgoing_edges(&self, source: NodeId) -> impl Iterator<Item = (NodeId, &W)> + '_ {
+        self.inner
+            .edges(source.0)
+            .map(|edge| (NodeId(edge.target()), edge.weight()))
+    }
+
     /// Returns a reference to the inner petgraph instance.
     fn inner(&self) -> &PetGraph<A, W, Ty> {
         &self.inner
@@ -313,27 +323,16 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     }
 }
 
+/// Extra util
 pub trait GraphinaGraph<A, W> {
-    /// whether or not the graph is directed
-    fn is_directed(&self) -> bool;
     /// return edges in form or `(src: NodeId, dst: NodeId, attr: &W)`,
     /// where the backward edge is included for undirected graph.
     fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
     where
         W: 'a;
-    fn outgoing_edges<'a>(&'a self, u: NodeId) -> impl Iterator<Item = (NodeId, &'a W)> + 'a
-    where
-        W: 'a,
-    {
-        self.flow_edges()
-            .filter_map(move |(src, dst, w)| if src == u { Some((dst, w)) } else { None })
-    }
 }
 
 impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Undirected> {
-    fn is_directed(&self) -> bool {
-        false
-    }
     fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
     where
         W: 'a,
@@ -343,9 +342,6 @@ impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Undirected> {
     }
 }
 impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Directed> {
-    fn is_directed(&self) -> bool {
-        true
-    }
     fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
     where
         W: 'a,

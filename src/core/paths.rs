@@ -32,11 +32,13 @@ if a negative weight is encountered. Users should handle these `Result` types ac
 */
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashSet};
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
+
+use ordered_float::NotNan;
 
 /// Returns an iterator over outgoing edges from a given node as `(target, weight)`.
 fn outgoing_edges<A, W, Ty>(
@@ -53,10 +55,202 @@ where
         .map(|(_src, tgt, w)| (tgt, *w))
 }
 
-/// ============================
-/// Dijkstra’s Algorithm
-/// ============================
+// ============================
+// Dijkstra’s Algorithm
+// ============================
+//
+
+/// Generic, Full implementationof Dijkstra's algorithm for finding shortest paths in a graph
+/// with non-negative weights.
 ///
+/// # Arguments
+///
+/// * `graph`: the target graph.
+/// * `source`: the source of path finding.
+/// * `cutoff`: the maximum total cost before stopping search.
+/// * `eval_cost`: callback to evaluate the cost `Some(f64)` of possible edges in the graph,
+///   return `None` for not passable edge.
+///
+/// # Returns
+///
+/// - `Vec<Option<f64>>` in which `None` for unreachable, and `Some(cost)` for the total path cost.
+/// - `Vec<Option<NodeID>>` in which `None` for no traceback (i.e. is source or unreachable),
+///   and `Some(NodeId)` for the previous node visited in the path.
+///
+/// # Error
+///
+/// return error, if encounter negative cost, or encounter `NaN` weight.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Digraph;
+///
+/// use graphina::core::paths::dijkstra_path_impl;
+///
+/// let mut graph: Digraph<String, (f64, String)> = Digraph::new();
+/// //                             ^^^^^^^^^^^^^
+/// //                                         L arbitrary type as edge
+///
+/// let cities = ["ATL", "PEK", "LHR", "HND", "CDG", "FRA", "HKG"];
+///
+/// let ids = cities
+///     .iter()
+///     .map(|s| graph.add_node(s.to_string()))
+///     .collect::<Vec<_>>();
+///
+/// let edges = [
+///     //
+///     ("ATL", "PEK", (900.0, "boeing")),
+///     ("ATL", "LHR", (500.0, "airbus")),
+///     ("ATL", "HND", (700.0, "airbus")),
+///     //
+///     ("PEK", "LHR", (800.0, "boeing")),
+///     ("PEK", "HND", (100.0, "airbus")),
+///     ("PEK", "HKG", (100.0, "airbus")),
+///     //
+///     ("LHR", "CDG", (100.0, "airbus")),
+///     ("LHR", "FRA", (200.0, "boeing")),
+///     ("LHR", "HND", (600.0, "airbus")),
+///     //
+///     ("HND", "ATL", (700.0, "airbus")),
+///     ("HND", "FRA", (600.0, "airbus")),
+///     ("HND", "HKG", (100.0, "airbus")),
+///     //
+/// ];
+///
+/// for (s, d, w) in edges {
+///     let depart = cities.iter().position(|city| s == *city).unwrap();
+///     let destin = cities.iter().position(|city| d == *city).unwrap();
+///     graph.add_edge(ids[depart], ids[destin], (w.0, w.1.to_string()));
+/// }
+///
+/// // function for evaluating possible cost for the edge
+/// // Some(f64) for cost
+/// // None for impassable
+/// let eval_cost = |(price, manufactuer): &(f64, String)| match manufactuer.as_str() {
+///     "boeing" => None,  // avoid boeing plane
+///     _ => Some(*price), // retunr price as the cost
+/// };
+///
+/// let (cost, trace) = dijkstra_path_impl(&graph, ids[0], Some(1000.0), eval_cost).unwrap();
+///
+/// println!("cost : {:?}", cost);
+/// println!("trace: {:?}", trace);
+/// // cost : [Some(0.0), None, Some(500.0), Some(700.0), Some(600.0), None, Some(800.0)]
+/// // trace: [None, None, Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(2))), None, Some(NodeId(NodeIndex(3)))]
+/// ```
+pub fn dijkstra_path_impl<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    source: NodeId,
+    cutoff: Option<f64>,
+    eval_cost: impl Fn(&W) -> Option<f64>,
+) -> Result<(Vec<Option<f64>>, Vec<Option<NodeId>>), GraphinaException>
+where
+    W: Debug,
+    A: Debug,
+    Ty: GraphConstructor<A, W>,
+    NodeId: Ord,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
+{
+    let n = graph.node_count();
+    let mut dist = vec![None; n];
+    let mut trace = vec![None; n];
+    let mut heap = BinaryHeap::new();
+
+    dist[source.index()] = Some(0.0);
+    heap.push(Reverse((NotNan::new(0.0).unwrap(), source)));
+
+    while let Some(Reverse((d, u))) = heap.pop() {
+        if let Some(current) = dist[u.index()] {
+            if *d > current {
+                continue;
+            }
+        }
+        for (v, edge) in graph.outgoing_edges(u) {
+            let Some(w) = eval_cost(edge) else {
+                continue;
+            };
+            if w.is_sign_negative() {
+                return Err(GraphinaException::new(&format!(
+                    "Dijkstra requires nonnegative costs, but found cost: {:?}, src: {:?}, dst: {:?}, edge: {:?}",
+                    w, u, v, edge
+                )));
+            }
+            let Ok(w) = NotNan::new(w) else {
+                return Err(GraphinaException::new(&format!(
+                    "Dijkstra requires not NaN costs, but found cost: {:?}, src: {:?}, dst: {:?}, edge: {:?}",
+                    w, u, v, edge
+                )));
+            };
+            let next = d + w;
+            if let Some(cutoff) = cutoff {
+                if *next > cutoff {
+                    continue;
+                }
+            }
+            if dist[v.index()].is_none() || Some(*next) < dist[v.index()] {
+                dist[v.index()] = Some(*next);
+                trace[v.index()] = Some(u);
+                heap.push(Reverse((next, v)));
+            }
+        }
+    }
+    Ok((dist, trace))
+}
+
+/// Full implementationof  Dijkstra's algorithm for finding shortest paths in a graph
+/// for graph with edge type `f64`
+/// with non-negative weights.
+///
+/// # Arguments
+///
+/// * `graph`: the target graph.
+/// * `source`: the source of path finding.
+/// * `cutoff`: the maximum total cost before stopping search.
+///
+/// # Returns
+///
+/// - `Vec<Option<f64>>` in which `None` for unreachable, and `Some(cost)` for the total path cost.
+/// - `Vec<Option<NodeID>>` in which `None` for no traceback (i.e. is source or unreachable),
+///   and `Some(NodeId)` for the previous node visited in the path.
+///
+/// # Error
+///
+/// return error, if encounter negative cost, or encounter `NaN` weight.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+///
+/// use graphina::core::paths::dijkstra_path_f64;
+///
+/// let mut graph = Graph::new();
+/// let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+/// let edges = [(0, 1, 1.0), (1, 2, 1.0), (2, 3, 2.0), (3, 4, 1.0)];
+/// for (s, d, w) in edges {
+///     graph.add_edge(ids[s], ids[d], w);
+/// }
+///
+/// let (cost, trace) = dijkstra_path_f64(&graph, ids[0], None).unwrap();
+///
+/// println!("cost : {:?}", cost);
+/// println!("trace: {:?}", trace);
+/// // cost : [Some(0.0), Some(1.0), Some(2.0), Some(4.0), Some(5.0)]
+/// // trace: [None, Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(1))), Some(NodeId(NodeIndex(2))), Some(NodeId(NodeIndex(3)))]
+/// ```
+pub fn dijkstra_path_f64<A, Ty>(
+    graph: &BaseGraph<A, f64, Ty>,
+    source: NodeId,
+    cutoff: Option<f64>,
+) -> Result<(Vec<Option<f64>>, Vec<Option<NodeId>>), GraphinaException>
+where
+    A: Debug,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
+{
+    dijkstra_path_impl(graph, source, cutoff, |f| Some(*f))
+}
+
 /// Computes single‑source shortest paths for graphs with nonnegative weights.
 ///
 /// # Returns

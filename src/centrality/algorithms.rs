@@ -56,7 +56,7 @@ where
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    if graph.is_directed() {
+    if !graph.is_directed() {
         return out_degree_centrality(graph);
     }
     let n = graph.node_count();
