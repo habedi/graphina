@@ -16,9 +16,10 @@
 use petgraph::graph::NodeIndex;
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::paths::dijkstra;
+use crate::core::paths::{dijkstra, dijkstra_path_impl};
 use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
 use std::collections::{HashMap, VecDeque};
+use std::fmt::Debug;
 
 //
 // -----------------------------
@@ -575,6 +576,42 @@ where
 // Closeness Centrality
 // -----------------------------
 //
+
+/// Compute closeness centrality using Dijkstra’s algorithm.
+///
+/// Closeness = (n - 1) / (sum of shortest-path distances).
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `eval_cost`: callback to evaluate the cost of edges in the graph, returning
+///   - `Some(f64)` for cost
+///   - `None` for impassable
+///
+/// # Returns
+///
+/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+pub fn closeness_centrality_impl<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    eval_cost: impl Fn(&W) -> Option<f64>,
+) -> Result<Vec<f64>, GraphinaException>
+where
+    A: Debug,
+    W: Debug,
+    Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
+{
+    let n = graph.node_count();
+    let mut closeness = vec![0.0; n];
+    for (node, _) in graph.nodes() {
+        let (distances, _) = dijkstra_path_impl(graph, node, None, &eval_cost)?;
+        let sum: f64 = distances.iter().filter_map(|d| d.to_owned()).sum();
+        if sum > 0.0 {
+            closeness[node.index()] = (n as f64 - 1.0) / sum;
+        }
+    }
+    Ok(closeness)
+}
 
 /// Compute closeness centrality using Dijkstra’s algorithm.
 /// Closeness = (n - 1) / (sum of shortest-path distances).
