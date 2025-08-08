@@ -65,7 +65,7 @@ fn flight() {
     // None for impassable
     let eval_cost = |(price, manufactuer): &(f64, String)| match manufactuer.as_str() {
         "boeing" => None,  // avoid boeing plane
-        _ => Some(*price), // retunr price as the cost
+        _ => Some(*price), // return price as the cost
     };
 
     let (cost, trace) = dijkstra_path_impl(&graph, ids[0], Some(1000.0), eval_cost).unwrap();

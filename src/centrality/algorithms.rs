@@ -590,7 +590,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+/// a vector of `f64` representing closeness centralities of each node in the graph.
 pub fn closeness_centrality_impl<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     eval_cost: impl Fn(&W) -> Option<f64>,

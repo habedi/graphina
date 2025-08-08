@@ -68,8 +68,9 @@ where
 /// * `graph`: the target graph.
 /// * `source`: the source of path finding.
 /// * `cutoff`: the maximum total cost before stopping search.
-/// * `eval_cost`: callback to evaluate the cost `Some(f64)` of possible edges in the graph,
-///   return `None` for not passable edge.
+/// * `eval_cost`: callback to evaluate the cost of possible edges in the graph, returning
+///     - `Some(f64)` for cost,
+///     - `None` for not passable edge.
 ///
 /// # Returns
 ///
@@ -129,7 +130,7 @@ where
 /// // None for impassable
 /// let eval_cost = |(price, manufactuer): &(f64, String)| match manufactuer.as_str() {
 ///     "boeing" => None,  // avoid boeing plane
-///     _ => Some(*price), // retunr price as the cost
+///     _ => Some(*price), // return price as the cost
 /// };
 ///
 /// let (cost, trace) = dijkstra_path_impl(&graph, ids[0], Some(1000.0), eval_cost).unwrap();
