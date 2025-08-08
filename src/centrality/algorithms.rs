@@ -17,7 +17,7 @@ use petgraph::graph::NodeIndex;
 
 use crate::core::exceptions::GraphinaException;
 use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
 use std::collections::{HashMap, VecDeque};
 
 //
@@ -54,19 +54,18 @@ pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
+    if graph.is_directed() {
         return out_degree_centrality(graph);
     }
     let n = graph.node_count();
-    let mut degree = vec![0; n];
-    for (node, _) in graph.nodes() {
-        degree[node.index()] += graph.neighbors(node).count();
+    let mut cent = vec![0.0; n];
+    for (src, dst, _) in graph.edges() {
+        cent[src.index()] += 1.0;
+        cent[dst.index()] += 1.0;
     }
-    for (_u, v, _w) in graph.edges() {
-        degree[v.index()] += 1;
-    }
-    degree.into_iter().map(|d| d as f64).collect()
+    cent
 }
 
 /// In–degree centrality.
@@ -97,14 +96,12 @@ pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
-        return out_degree_centrality(graph);
-    }
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
-    for (_u, v, _w) in graph.edges() {
-        cent[v.index()] += 1.0;
+    for (_, dst, _) in graph.edges() {
+        cent[dst.index()] += 1.0;
     }
     cent
 }
@@ -137,11 +134,12 @@ pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
-    for (u, _) in graph.nodes() {
-        cent[u.index()] = graph.neighbors(u).count() as f64;
+    for (src, _, _) in graph.edges() {
+        cent[src.index()] += 1.0;
     }
     cent
 }
@@ -197,17 +195,15 @@ pub fn eigenvector_centrality_impl<A, W, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut centrality = vec![1.0; n];
     let mut next = centrality.clone();
     for _ in 0..max_iter {
-        for (src, dst, w) in graph.edges() {
+        for (src, dst, w) in graph.flow_edges() {
             let w = eval_weight(w);
             next[dst.index()] += w * centrality[src.index()];
-            if !<Ty as GraphConstructor<A, W>>::is_directed() {
-                next[src.index()] += w * centrality[dst.index()];
-            }
         }
         let norm = next.iter().map(|x| x * x).sum::<f64>().sqrt();
         if norm > 0.0 {
@@ -267,6 +263,7 @@ pub fn eigenvector_centrality<A, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let eval_weight = if weighted {
         |f: &f64| *f
@@ -312,6 +309,7 @@ pub fn eigenvector_centrality_numpy<A, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let eval_weight = if weighted {
         |f: &f64| *f
@@ -395,6 +393,7 @@ pub fn katz_centrality_impl<A, W, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let betas = (0..n)
@@ -408,12 +407,9 @@ where
     let mut next = vec![0.0; n];
 
     for _ in 0..max_iter {
-        for (src, dst, w) in graph.edges() {
+        for (src, dst, w) in graph.flow_edges() {
             let w = eval_weight(w);
             next[dst.index()] += w * centrality[src.index()];
-            if !<Ty as GraphConstructor<A, W>>::is_directed() {
-                next[src.index()] += w * centrality[dst.index()];
-            }
         }
 
         for (i, n) in next.iter_mut().enumerate() {
@@ -494,7 +490,8 @@ pub fn katz_centrality<A, Ty>(
     normalized: bool,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let alpha = |_a: &A| alpha;
     let beta = |_a: &A| beta;
@@ -560,7 +557,8 @@ pub fn katz_centrality_numpy<A, Ty>(
     normalized: bool,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let alpha = |_a: &A| alpha;
     let beta = |_a: &A| beta;

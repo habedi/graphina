@@ -313,6 +313,47 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     }
 }
 
+pub trait GraphinaGraph<A, W> {
+    /// whether or not the graph is directed
+    fn is_directed(&self) -> bool;
+    /// return edges in form or `(src: NodeId, dst: NodeId, attr: &W)`,
+    /// where the backward edge is included for undirected graph.
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a;
+    fn outgoing_edges<'a>(&'a self, u: NodeId) -> impl Iterator<Item = (NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.flow_edges()
+            .filter_map(move |(src, dst, w)| if src == u { Some((dst, w)) } else { None })
+    }
+}
+
+impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Undirected> {
+    fn is_directed(&self) -> bool {
+        false
+    }
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.edges()
+            .flat_map(|(src, dst, w)| [(src, dst, w), (dst, src, w)].into_iter())
+    }
+}
+impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Directed> {
+    fn is_directed(&self) -> bool {
+        true
+    }
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.edges()
+    }
+}
+
 /// Dense matrix API using owned values.
 ///
 /// The adjacency matrix is built using a contiguous mapping of the current nodes.
