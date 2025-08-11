@@ -20,7 +20,7 @@ use std::collections::{HashMap, VecDeque};
 
 //
 // -----------------------------
-// Degree Centralities
+// Degree Centralises
 // -----------------------------
 //
 
@@ -111,9 +111,9 @@ where
 /// g.add_edge(nodes[0], nodes[1], (0.0, 1.0));
 /// g.add_edge(nodes[0], nodes[2], (1.0, 0.0));
 /// let centrality = eigenvector_centrality_impl(
-///     &g, 
-///     1000, 
-///     1e-6_f64, 
+///     &g,
+///     1000,
+///     1e-6_f64,
 ///     |w| w.0 * 10.0 + w.1 // <-- custom evaluation for edge weight
 /// );
 /// println!("{:.5?}", centrality); // [0.70711, 0.07036, 0.70360]
