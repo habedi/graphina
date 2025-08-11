@@ -40,6 +40,8 @@ use std::ops::{Add, Sub};
 
 use ordered_float::NotNan;
 
+pub type PathFindResult = (Vec<Option<f64>>, Vec<Option<NodeId>>);
+
 /// Returns an iterator over outgoing edges from a given node as `(target, weight)`.
 fn outgoing_edges<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
@@ -145,7 +147,7 @@ pub fn dijkstra_path_impl<A, W, Ty>(
     source: NodeId,
     cutoff: Option<f64>,
     eval_cost: impl Fn(&W) -> Option<f64>,
-) -> Result<(Vec<Option<f64>>, Vec<Option<NodeId>>), GraphinaException>
+) -> Result<PathFindResult, GraphinaException>
 where
     W: Debug,
     A: Debug,
@@ -243,7 +245,7 @@ pub fn dijkstra_path_f64<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     source: NodeId,
     cutoff: Option<f64>,
-) -> Result<(Vec<Option<f64>>, Vec<Option<NodeId>>), GraphinaException>
+) -> Result<PathFindResult, GraphinaException>
 where
     A: Debug,
     Ty: GraphConstructor<A, f64>,
