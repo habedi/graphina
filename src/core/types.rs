@@ -155,6 +155,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
     }
 
+    pub fn is_directed(&self) -> bool {
+        self.inner.is_directed()
+    }
+
     /// Adds a node with the specified attribute to the graph.
     ///
     /// # Example
@@ -284,6 +288,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         })
     }
 
+    pub fn outgoing_edges(&self, source: NodeId) -> impl Iterator<Item = (NodeId, &W)> + '_ {
+        self.inner
+            .edges(source.0)
+            .map(|edge| (NodeId(edge.target()), edge.weight()))
+    }
+
     /// Returns a reference to the inner petgraph instance.
     fn inner(&self) -> &PetGraph<A, W, Ty> {
         &self.inner
@@ -310,6 +320,33 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             .edge_references()
             .find(|edge| edge.source() == source.0 && edge.target() == target.0)
             .map(|edge| EdgeId::new(edge.id()))
+    }
+}
+
+/// Extra util
+pub trait GraphinaGraph<A, W> {
+    /// return edges in form or `(src: NodeId, dst: NodeId, attr: &W)`,
+    /// where the backward edge is included for undirected graph.
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a;
+}
+
+impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Undirected> {
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.edges()
+            .flat_map(|(src, dst, w)| [(src, dst, w), (dst, src, w)].into_iter())
+    }
+}
+impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Directed> {
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.edges()
     }
 }
 

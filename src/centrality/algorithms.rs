@@ -13,10 +13,13 @@
 //! - VoteRank
 //! - Laplacian centrality
 
+use petgraph::graph::NodeIndex;
+
 use crate::core::exceptions::GraphinaException;
-use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::paths::{dijkstra, dijkstra_path_impl};
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
 use std::collections::{HashMap, VecDeque};
+use std::fmt::Debug;
 
 //
 // -----------------------------
@@ -25,52 +28,119 @@ use std::collections::{HashMap, VecDeque};
 //
 
 /// Degree centrality: sum of a node’s in–degree and out–degree.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+///
+/// # Returns
+///
+/// a vector of `f64` representing out degree centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+///
+/// use graphina::centrality::algorithms::degree_centrality;
+///
+/// let mut g: Graph<i32, ()> = Graph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], ());
+/// g.add_edge(nodes[0], nodes[2], ());
+///
+/// let centrality = degree_centrality(&g);
+/// println!("{:?}", centrality); // [2.0, 1.0, 1.0]
+/// ```
 pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
-        return out_degree_centrality(graph);
-    }
-    let n = graph.node_count();
-    let mut degree = vec![0; n];
-    for (node, _) in graph.nodes() {
-        degree[node.index()] += graph.neighbors(node).count();
-    }
-    for (_u, v, _w) in graph.edges() {
-        degree[v.index()] += 1;
-    }
-    degree.into_iter().map(|d| d as f64).collect()
-}
-
-/// In–degree centrality.
-pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
-where
-    W: Copy,
-    Ty: GraphConstructor<A, W>,
-{
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
+    if !graph.is_directed() {
         return out_degree_centrality(graph);
     }
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
-    for (_u, v, _w) in graph.edges() {
-        cent[v.index()] += 1.0;
+    for (src, dst, _) in graph.edges() {
+        cent[src.index()] += 1.0;
+        cent[dst.index()] += 1.0;
+    }
+    cent
+}
+
+/// In–degree centrality.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+///
+/// # Returns
+///
+/// a vector of `f64` representing out degree centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Digraph;
+///
+/// use graphina::centrality::algorithms::in_degree_centrality;
+///
+/// let mut g: Digraph<i32, ()> = Digraph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], ());
+/// g.add_edge(nodes[0], nodes[2], ());
+///
+/// let centrality = in_degree_centrality(&g);
+/// println!("{:?}", centrality); // [0.0, 1.0, 1.0]
+/// ```
+pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
+where
+    W: Copy,
+    Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
+{
+    let n = graph.node_count();
+    let mut cent = vec![0.0; n];
+    for (_, dst, _) in graph.edges() {
+        cent[dst.index()] += 1.0;
     }
     cent
 }
 
 /// Out–degree centrality.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+///
+/// # Returns
+///
+/// a vector of `f64` representing out degree centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Digraph;
+///
+/// use graphina::centrality::algorithms::out_degree_centrality;
+///
+/// let mut g: Digraph<i32, ()> = Digraph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], ());
+/// g.add_edge(nodes[0], nodes[2], ());
+///
+/// let centrality = out_degree_centrality(&g);
+/// println!("{:?}", centrality); // [2.0, 0.0, 0.0]
+/// ```
 pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
-    for (u, _) in graph.nodes() {
-        cent[u.index()] = graph.neighbors(u).count() as f64;
+    for (src, _, _) in graph.edges() {
+        cent[src.index()] += 1.0;
     }
     cent
 }
@@ -88,14 +158,14 @@ where
 /// see [`eigenvector_centrality`] and [`eigenvector_centrality_numpy`]
 /// for cleaner interaction with `f64` edge graph.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `max_iter`: The maximum number of iterations that the algorithm will run for.
 /// * `tol`: the average tolerance for convergence.
 /// * `eval_weight`: callback to evaluate the weight of edges in the graph.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
@@ -126,17 +196,15 @@ pub fn eigenvector_centrality_impl<A, W, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut centrality = vec![1.0; n];
     let mut next = centrality.clone();
     for _ in 0..max_iter {
-        for (src, dst, w) in graph.edges() {
+        for (src, dst, w) in graph.flow_edges() {
             let w = eval_weight(w);
             next[dst.index()] += w * centrality[src.index()];
-            if !<Ty as GraphConstructor<A, W>>::is_directed() {
-                next[src.index()] += w * centrality[dst.index()];
-            }
         }
         let norm = next.iter().map(|x| x * x).sum::<f64>().sqrt();
         if norm > 0.0 {
@@ -163,25 +231,27 @@ where
 /// Wrapper for eigenvector centrality with default tolerance (1e-6).
 /// calculates eigenvector centrality for nodes in a graph iteratively.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `max_iter`: The maximum number of iterations that the algorithm will run for.
 /// * `weighted`: whether or not the calculated centrality will be weighed.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
-/// # Examples :
+/// # Examples
 /// ```rust
-/// use graphina::centrality::algorithms::eigenvector_centrality;
 /// use graphina::core::types::Graph;
-/// let mut g = Graph::new();
 ///
+/// use graphina::centrality::algorithms::eigenvector_centrality;
+///
+/// let mut g = Graph::new();
 /// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
 /// g.add_edge(nodes[0], nodes[1], 1.0);
 /// g.add_edge(nodes[0], nodes[2], 2.0);
+///
 /// let centrality = eigenvector_centrality(&g, 1000, false);
 /// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
 /// let centrality = eigenvector_centrality(&g, 1000, true);
@@ -194,6 +264,7 @@ pub fn eigenvector_centrality<A, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let eval_weight = if weighted {
         |f: &f64| *f
@@ -206,28 +277,29 @@ where
 /// NumPy–style eigenvector centrality (alias to [`eigenvector_centrality`]).
 /// calculates eigenvector centrality for nodes in a graph iteratively.
 ///
-/// # Arguments:
+/// # Arguments
 ///
 /// * `graph`: the targeted graph.
 /// * `max_iter`: The maximum number of iterations that the algorithm will run for.
 /// * `weighted`: whether or not the calculated centrality will be weighed.
 ///
-/// # Returns :
+/// # Returns
 ///
 /// a vector of `f64` representing eigenvector centralities of each node in the graph.
 ///
-/// # Examples :
+/// # Examples
 /// ```rust
-/// use graphina::centrality::algorithms::eigenvector_centrality_numpy;
 /// use graphina::core::types::Graph;
-/// let mut g = Graph::new();
 ///
+/// use graphina::centrality::algorithms::eigenvector_centrality_numpy;
+/// let mut g = Graph::new();
 /// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
 /// g.add_edge(nodes[0], nodes[1], 1.0);
 /// g.add_edge(nodes[0], nodes[2], 2.0);
-/// let centrality = eigenvector_centrality_numpy(&g, 1000, false);
+///
+/// let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, false);
 /// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
-/// let centrality = eigenvector_centrality_numpy(&g, 1000, true);
+/// let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, true);
 /// println!("{:.5?}", centrality); // [0.70711, 0.31623, 0.63246]
 /// ```
 pub fn eigenvector_centrality_numpy<A, Ty>(
@@ -238,6 +310,7 @@ pub fn eigenvector_centrality_numpy<A, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let eval_weight = if weighted {
         |f: &f64| *f
@@ -254,39 +327,116 @@ where
 //
 
 /// Full implementation of Katz centrality with convergence tolerance.
+///
 /// Formula: x = alpha * A * x + beta.
-pub fn katz_centrality_impl<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
-    alpha: f64,
-    beta: f64,
+///
+/// calculates katz centrality for nodes in a graph iteratively.
+///
+/// this function designed for generic node and edge type,
+/// see [`katz_centrality`] and [`katz_centrality_numpy`]
+/// for cleaner interaction with `f64` edge graph.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `alpha`: callback to evaluate the alphas of nodes in the graph.
+/// * `beta`: callback to evaluate the betas of nodes in the graph.
+/// * `max_iter`: The maximum number of iterations that the algorithm will run for.
+/// * `tol`: the average tolerance for convergence.
+/// * `normalized`: whether the returned result will be normalized.
+/// * `eval_weight`: callback to evaluate the weight of edges in the graph.
+///
+/// # Returns
+///
+/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+///
+/// # Note
+///
+/// the katz centrality migh not converge if
+/// alpha is larger than the recipocal of the larger eigen value of the network.
+///
+/// # Example
+/// ```rust
+/// use graphina::centrality::algorithms::katz_centrality_impl;
+/// use graphina::core::types::Graph;
+///
+/// let mut g: Graph<(i32, f64), (f64, f64)> = Graph::new();
+/// //               ^^^^^^^^^^  ^^^^^^^^^^
+/// //                        |           L arbitrary type as edge
+/// //                        L arbitrary type as node
+/// let nodes = [
+///     g.add_node((1, 2.0)),
+///     g.add_node((2, 3.0)),
+///     g.add_node((3, 2.0)),
+/// ];
+/// g.add_edge(nodes[0], nodes[1], (0.0, 1.0));
+/// g.add_edge(nodes[0], nodes[2], (1.0, 0.0));
+///
+/// let centrality = katz_centrality_impl(
+///     &g,
+///     |_n| 0.01,                           // <-- custom alpha depend on node attribute
+///     |(i, f): &(i32, f64)| f.powi(*i),    // <-- custom beta depend on node attribute
+///     1_000,
+///     1e-6_f64,
+///     true,
+///     |w| w.0 * 10.0 + w.1,                // <-- custom evaluation for edge weight
+/// );
+/// println!("{:.5?}", centrality); // [0.23167, 0.71650, 0.65800]
+/// ```
+pub fn katz_centrality_impl<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    alpha: impl Fn(&A) -> f64,
+    beta: impl Fn(&A) -> f64,
     max_iter: usize,
     tol: f64,
+    normalized: bool,
+    eval_weight: impl Fn(&W) -> f64,
 ) -> Vec<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
-    let mut centrality = vec![beta; n];
+    let betas = (0..n)
+        .map(|i| beta(graph.node_attr(NodeId(NodeIndex::new(i))).unwrap()))
+        .collect::<Vec<_>>();
+    let alphas = (0..n)
+        .map(|i| alpha(graph.node_attr(NodeId(NodeIndex::new(i))).unwrap()))
+        .collect::<Vec<_>>();
+
+    let mut centrality = vec![0.0; n];
+    let mut next = vec![0.0; n];
+
     for _ in 0..max_iter {
-        let mut next = vec![beta; n];
-        for (node, _) in graph.nodes() {
-            for neighbor in graph.neighbors(node) {
-                next[neighbor.index()] += alpha * centrality[node.index()];
-            }
+        for (src, dst, w) in graph.flow_edges() {
+            let w = eval_weight(w);
+            next[dst.index()] += w * centrality[src.index()];
         }
-        let norm = next.iter().map(|x| x * x).sum::<f64>().sqrt();
-        if norm > 0.0 {
-            for x in &mut next {
-                *x /= norm;
-            }
+
+        for (i, n) in next.iter_mut().enumerate() {
+            *n = alphas[i] * *n + betas[i];
         }
+
         let diff: f64 = centrality
-            .iter()
-            .zip(next.iter())
-            .map(|(a, b)| (a - b).abs())
+            .iter_mut()
+            .zip(next.iter_mut())
+            .map(|(a, b)| {
+                let d = (*a - *b).abs();
+                *a = *b;
+                *b = 0.0;
+                d
+            })
             .sum();
-        centrality = next;
+
         if diff < tol * n as f64 {
+            if normalized {
+                let norm = centrality.iter().map(|x| x * x).sum::<f64>().sqrt();
+                if norm > 0.0 {
+                    for x in &mut centrality {
+                        *x /= norm;
+                    }
+                }
+            }
             break;
         }
     }
@@ -294,29 +444,131 @@ where
 }
 
 /// Wrapper for Katz centrality with default tolerance (1e-6).
-/// This wrapper takes 4 arguments: graph, alpha, beta, max_iter.
+///
+/// Formula: x = alpha * A * x + beta.
+///
+/// calculates katz centrality for nodes in a graph iteratively.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `alpha`: value of alpha
+/// * `beta`: value of alpha
+/// * `max_iter`: The maximum number of iterations that the algorithm will run for.
+/// * `normalized`: whether the returned result will be normalized.
+/// * `weighted`: whether or not the calculated centrality will be weighed.
+///
+/// # Returns
+///
+/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+///
+/// # Note
+///
+/// the katz centrality migh not converge if
+/// alpha is larger than the recipocal of the larger eigen value of the network.
+///
+/// # Example
+/// ```rust
+/// use graphina::centrality::algorithms::katz_centrality;
+/// use graphina::core::types::Graph;
+///
+/// let mut g = Graph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], 1.0);
+/// g.add_edge(nodes[0], nodes[2], 2.0);
+///
+/// let centrality = katz_centrality(&g, 0.1, 1.0, 1000, false, true);
+/// println!("{:.5?}", centrality); // [0.61078, 0.55989, 0.55989]
+/// let centrality = katz_centrality(&g, 0.01, 0.5, 1000, true, true);
+/// println!("{:.5?}", centrality); // [0.58301, 0.57158, 0.57741]
+/// ```
 pub fn katz_centrality<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     alpha: f64,
     beta: f64,
     max_iter: usize,
+    weighted: bool,
+    normalized: bool,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
-    katz_centrality_impl(graph, alpha, beta, max_iter, 1e-6_f64)
+    let alpha = |_a: &A| alpha;
+    let beta = |_a: &A| beta;
+    let eval_weight = if weighted {
+        |f: &f64| *f
+    } else {
+        |_f: &f64| 1.0
+    };
+    katz_centrality_impl(
+        graph,
+        alpha,
+        beta,
+        max_iter,
+        1e-6_f64,
+        normalized,
+        eval_weight,
+    )
 }
 
-/// NumPy–style Katz centrality.
+/// NumPy–style Katz centrality, with default tolerance (1e-6) and max iteration of 100.
+///
+/// Formula: x = alpha * A * x + beta.
+///
+/// calculates katz centrality for nodes in a graph iteratively.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `alpha`: value of alpha
+/// * `beta`: value of alpha
+/// * `normalized`: whether the returned result will be normalized.
+/// * `weighted`: whether or not the calculated centrality will be weighed.
+///
+/// # Returns
+///
+/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+///
+/// # Note
+///
+/// the katz centrality migh not converge if
+/// alpha is larger than the recipocal of the larger eigen value of the network.
+///
+/// # Example
+/// ```rust
+/// use graphina::centrality::algorithms::katz_centrality_numpy;
+/// use graphina::core::types::Graph;
+///
+/// let mut g = Graph::new();
+/// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
+/// g.add_edge(nodes[0], nodes[1], 1.0);
+/// g.add_edge(nodes[0], nodes[2], 2.0);
+///
+/// let centrality = katz_centrality_numpy(&g, 0.1, 1.0, false, true);
+/// println!("{:.5?}", centrality); // [0.61078, 0.55989, 0.55989]
+/// let centrality = katz_centrality_numpy(&g, 0.01, 0.5, true, true);
+/// println!("{:.5?}", centrality); // [0.58301, 0.57158, 0.57741]
+/// ```
 pub fn katz_centrality_numpy<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     alpha: f64,
     beta: f64,
+    weighted: bool,
+    normalized: bool,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
-    katz_centrality_impl(graph, alpha, beta, 100, 1e-6_f64)
+    let alpha = |_a: &A| alpha;
+    let beta = |_a: &A| beta;
+    let eval_weight = if weighted {
+        |f: &f64| *f
+    } else {
+        |_f: &f64| 1.0
+    };
+    katz_centrality_impl(graph, alpha, beta, 100, 1e-6_f64, normalized, eval_weight)
 }
 
 //
@@ -326,23 +578,122 @@ where
 //
 
 /// Compute closeness centrality using Dijkstra’s algorithm.
+///
 /// Closeness = (n - 1) / (sum of shortest-path distances).
-pub fn closeness_centrality<A, Ty>(
-    graph: &BaseGraph<A, ordered_float::OrderedFloat<f64>, Ty>,
+///
+/// where n is number of reachable nodes.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `eval_cost`: callback to evaluate the cost of edges in the graph, returning
+///   - `Some(f64)` for cost
+///   - `None` for impassable
+/// * `wf_improved`: whether or not to scale the result by reachability ratio.
+///
+/// # Returns
+///
+/// a vector of `f64` representing closeness centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+///
+/// use graphina::centrality::algorithms::closeness_centrality_impl;
+///
+/// let mut graph: Graph<i32, (String, f64)> = Graph::new();
+///
+/// let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+///
+/// let edges = [
+///     (0, 1, ("friend".to_string(), 0.9)),
+///     (0, 2, ("family".to_string(), 0.8)),
+///     (1, 3, ("friend".to_string(), 0.7)),
+///     (2, 4, ("enemy".to_string(), 0.1)),
+/// ];
+/// for (s, d, w) in edges {
+///     graph.add_edge(ids[s], ids[d], w);
+/// }
+///
+/// let eval_cost = |(s, f): &(String, f64)| match s.as_str() {
+///     "friend" => Some(1.0 / *f / 2.0),
+///     "family" => Some(1.0 / *f / 4.0),
+///     "enemy" => None,
+///     _ => Some(1.0 / *f),
+/// };
+///
+/// let centrality = closeness_centrality_impl(&graph, eval_cost, true).unwrap();
+/// println!("{:.5?}", centrality); // [1.05244, 1.05244, 0.81436, 0.63088, 0.00000]
+/// ```
+pub fn closeness_centrality_impl<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    eval_cost: impl Fn(&W) -> Option<f64>,
+    wf_improved: bool,
 ) -> Result<Vec<f64>, GraphinaException>
 where
-    Ty: GraphConstructor<A, ordered_float::OrderedFloat<f64>>,
+    A: Debug,
+    W: Debug,
+    Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut closeness = vec![0.0; n];
     for (node, _) in graph.nodes() {
-        let distances = dijkstra(graph, node)?;
-        let sum: f64 = distances.iter().filter_map(|d| d.map(|od| od.0)).sum();
+        let (distances, _) = dijkstra_path_impl(graph, node, None, &eval_cost)?;
+        let reachable = distances.iter().filter(|d| d.is_some()).count() as f64;
+        let sum: f64 = distances.iter().filter_map(|d| d.to_owned()).sum();
         if sum > 0.0 {
-            closeness[node.index()] = (n as f64 - 1.0) / sum;
+            closeness[node.index()] = (reachable - 1.0) / sum;
+        }
+        if wf_improved {
+            closeness[node.index()] *= (reachable - 1.0) / (n as f64 - 1.0);
         }
     }
     Ok(closeness)
+}
+
+/// Compute closeness centrality using Dijkstra’s algorithm.
+///
+/// Closeness = (n - 1) / (sum of shortest-path distances).
+///
+/// where n is number of reachable nodes.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `wf_improved`: whether or not to scale the result by reachability ratio.
+///
+/// # Returns
+///
+/// a vector of `f64` representing closeness centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+///
+/// use graphina::centrality::algorithms::closeness_centrality;
+///
+/// let mut graph = Graph::new();
+/// let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+/// let edges = [(0, 1, 1.0), (0, 2, 1.0), (1, 3, 1.0)];
+/// for (s, d, w) in edges {
+///     graph.add_edge(ids[s], ids[d], w);
+/// }
+///
+/// let centrality = closeness_centrality(&graph, false).unwrap();
+/// println!("{:.5?}", centrality); // [0.75000, 0.75000, 0.50000, 0.50000, 0.00000]    
+/// ```
+pub fn closeness_centrality<A, Ty>(
+    graph: &BaseGraph<A, f64, Ty>,
+    wf_improved: bool,
+) -> Result<Vec<f64>, GraphinaException>
+where
+    A: Debug,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
+{
+    let eval_cost = |f: &f64| Some(*f);
+    closeness_centrality_impl(graph, eval_cost, wf_improved)
 }
 
 //
