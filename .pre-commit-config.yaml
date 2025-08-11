@@ -40,4 +40,3 @@ repos:
         entry: make nexttest
         language: system
         pass_filenames: false
-        stages: [ pre-push ]
