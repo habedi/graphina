@@ -59,8 +59,8 @@ fn test_degree_centrality() {
 
 #[test]
 fn test_closeness_centrality() {
-    let graph = build_test_graph_ordered();
-    let closeness = closeness_centrality(&graph).unwrap();
+    let graph = build_test_graph_f64();
+    let closeness = closeness_centrality(&graph, false).unwrap();
     // In our strongly connected graph with all edges = 1.0,
     // each node's distances: two neighbors at 1 and one at 2 -> sum = 4.
     // Closeness = (n-1)/sum = 3/4 = 0.75.

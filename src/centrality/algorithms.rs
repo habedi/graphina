@@ -16,9 +16,10 @@
 use petgraph::graph::NodeIndex;
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::paths::{dijkstra, dijkstra_path_impl};
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
 use std::collections::{HashMap, VecDeque};
+use std::fmt::Debug;
 
 //
 // -----------------------------
@@ -54,19 +55,18 @@ pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
+    if !graph.is_directed() {
         return out_degree_centrality(graph);
     }
     let n = graph.node_count();
-    let mut degree = vec![0; n];
-    for (node, _) in graph.nodes() {
-        degree[node.index()] += graph.neighbors(node).count();
+    let mut cent = vec![0.0; n];
+    for (src, dst, _) in graph.edges() {
+        cent[src.index()] += 1.0;
+        cent[dst.index()] += 1.0;
     }
-    for (_u, v, _w) in graph.edges() {
-        degree[v.index()] += 1;
-    }
-    degree.into_iter().map(|d| d as f64).collect()
+    cent
 }
 
 /// In–degree centrality.
@@ -97,14 +97,12 @@ pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    if !<Ty as GraphConstructor<A, W>>::is_directed() {
-        return out_degree_centrality(graph);
-    }
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
-    for (_u, v, _w) in graph.edges() {
-        cent[v.index()] += 1.0;
+    for (_, dst, _) in graph.edges() {
+        cent[dst.index()] += 1.0;
     }
     cent
 }
@@ -137,11 +135,12 @@ pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut cent = vec![0.0; n];
-    for (u, _) in graph.nodes() {
-        cent[u.index()] = graph.neighbors(u).count() as f64;
+    for (src, _, _) in graph.edges() {
+        cent[src.index()] += 1.0;
     }
     cent
 }
@@ -197,17 +196,15 @@ pub fn eigenvector_centrality_impl<A, W, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut centrality = vec![1.0; n];
     let mut next = centrality.clone();
     for _ in 0..max_iter {
-        for (src, dst, w) in graph.edges() {
+        for (src, dst, w) in graph.flow_edges() {
             let w = eval_weight(w);
             next[dst.index()] += w * centrality[src.index()];
-            if !<Ty as GraphConstructor<A, W>>::is_directed() {
-                next[src.index()] += w * centrality[dst.index()];
-            }
         }
         let norm = next.iter().map(|x| x * x).sum::<f64>().sqrt();
         if norm > 0.0 {
@@ -267,6 +264,7 @@ pub fn eigenvector_centrality<A, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let eval_weight = if weighted {
         |f: &f64| *f
@@ -312,6 +310,7 @@ pub fn eigenvector_centrality_numpy<A, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let eval_weight = if weighted {
         |f: &f64| *f
@@ -395,6 +394,7 @@ pub fn katz_centrality_impl<A, W, Ty>(
 ) -> Vec<f64>
 where
     Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let betas = (0..n)
@@ -408,12 +408,9 @@ where
     let mut next = vec![0.0; n];
 
     for _ in 0..max_iter {
-        for (src, dst, w) in graph.edges() {
+        for (src, dst, w) in graph.flow_edges() {
             let w = eval_weight(w);
             next[dst.index()] += w * centrality[src.index()];
-            if !<Ty as GraphConstructor<A, W>>::is_directed() {
-                next[src.index()] += w * centrality[dst.index()];
-            }
         }
 
         for (i, n) in next.iter_mut().enumerate() {
@@ -494,7 +491,8 @@ pub fn katz_centrality<A, Ty>(
     normalized: bool,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let alpha = |_a: &A| alpha;
     let beta = |_a: &A| beta;
@@ -560,7 +558,8 @@ pub fn katz_centrality_numpy<A, Ty>(
     normalized: bool,
 ) -> Vec<f64>
 where
-    Ty: crate::core::types::GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let alpha = |_a: &A| alpha;
     let beta = |_a: &A| beta;
@@ -579,23 +578,122 @@ where
 //
 
 /// Compute closeness centrality using Dijkstra’s algorithm.
+///
 /// Closeness = (n - 1) / (sum of shortest-path distances).
-pub fn closeness_centrality<A, Ty>(
-    graph: &BaseGraph<A, ordered_float::OrderedFloat<f64>, Ty>,
+///
+/// where n is number of reachable nodes.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `eval_cost`: callback to evaluate the cost of edges in the graph, returning
+///   - `Some(f64)` for cost
+///   - `None` for impassable
+/// * `wf_improved`: whether or not to scale the result by reachability ratio.
+///
+/// # Returns
+///
+/// a vector of `f64` representing closeness centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+///
+/// use graphina::centrality::algorithms::closeness_centrality_impl;
+///
+/// let mut graph: Graph<i32, (String, f64)> = Graph::new();
+///
+/// let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+///
+/// let edges = [
+///     (0, 1, ("friend".to_string(), 0.9)),
+///     (0, 2, ("family".to_string(), 0.8)),
+///     (1, 3, ("friend".to_string(), 0.7)),
+///     (2, 4, ("enemy".to_string(), 0.1)),
+/// ];
+/// for (s, d, w) in edges {
+///     graph.add_edge(ids[s], ids[d], w);
+/// }
+///
+/// let eval_cost = |(s, f): &(String, f64)| match s.as_str() {
+///     "friend" => Some(1.0 / *f / 2.0),
+///     "family" => Some(1.0 / *f / 4.0),
+///     "enemy" => None,
+///     _ => Some(1.0 / *f),
+/// };
+///
+/// let centrality = closeness_centrality_impl(&graph, eval_cost, true).unwrap();
+/// println!("{:.5?}", centrality); // [1.05244, 1.05244, 0.81436, 0.63088, 0.00000]
+/// ```
+pub fn closeness_centrality_impl<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    eval_cost: impl Fn(&W) -> Option<f64>,
+    wf_improved: bool,
 ) -> Result<Vec<f64>, GraphinaException>
 where
-    Ty: GraphConstructor<A, ordered_float::OrderedFloat<f64>>,
+    A: Debug,
+    W: Debug,
+    Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
     let mut closeness = vec![0.0; n];
     for (node, _) in graph.nodes() {
-        let distances = dijkstra(graph, node)?;
-        let sum: f64 = distances.iter().filter_map(|d| d.map(|od| od.0)).sum();
+        let (distances, _) = dijkstra_path_impl(graph, node, None, &eval_cost)?;
+        let reachable = distances.iter().filter(|d| d.is_some()).count() as f64;
+        let sum: f64 = distances.iter().filter_map(|d| d.to_owned()).sum();
         if sum > 0.0 {
-            closeness[node.index()] = (n as f64 - 1.0) / sum;
+            closeness[node.index()] = (reachable - 1.0) / sum;
+        }
+        if wf_improved {
+            closeness[node.index()] *= (reachable - 1.0) / (n as f64 - 1.0);
         }
     }
     Ok(closeness)
+}
+
+/// Compute closeness centrality using Dijkstra’s algorithm.
+///
+/// Closeness = (n - 1) / (sum of shortest-path distances).
+///
+/// where n is number of reachable nodes.
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `wf_improved`: whether or not to scale the result by reachability ratio.
+///
+/// # Returns
+///
+/// a vector of `f64` representing closeness centralities of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Graph;
+///
+/// use graphina::centrality::algorithms::closeness_centrality;
+///
+/// let mut graph = Graph::new();
+/// let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+/// let edges = [(0, 1, 1.0), (0, 2, 1.0), (1, 3, 1.0)];
+/// for (s, d, w) in edges {
+///     graph.add_edge(ids[s], ids[d], w);
+/// }
+///
+/// let centrality = closeness_centrality(&graph, false).unwrap();
+/// println!("{:.5?}", centrality); // [0.75000, 0.75000, 0.50000, 0.50000, 0.00000]    
+/// ```
+pub fn closeness_centrality<A, Ty>(
+    graph: &BaseGraph<A, f64, Ty>,
+    wf_improved: bool,
+) -> Result<Vec<f64>, GraphinaException>
+where
+    A: Debug,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
+{
+    let eval_cost = |f: &f64| Some(*f);
+    closeness_centrality_impl(graph, eval_cost, wf_improved)
 }
 
 //
