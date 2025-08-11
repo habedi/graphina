@@ -166,6 +166,52 @@ fn katz_centrality_impl_example() {
     println!("{:.5?}", centrality); // [0.23167, 0.71650, 0.65800]
 }
 
+fn closeness_centrality_example() {
+    use graphina::core::types::Graph;
+
+    use graphina::centrality::algorithms::closeness_centrality;
+
+    let mut graph = Graph::new();
+    let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+    let edges = [(0, 1, 1.0), (0, 2, 1.0), (1, 3, 1.0)];
+    for (s, d, w) in edges {
+        graph.add_edge(ids[s], ids[d], w);
+    }
+
+    let centrality = closeness_centrality(&graph, false).unwrap();
+    println!("{:.5?}", centrality); // [0.75000, 0.75000, 0.50000, 0.50000, 0.00000]
+}
+
+fn closeness_centrality_impl_example() {
+    use graphina::core::types::Graph;
+
+    use graphina::centrality::algorithms::closeness_centrality_impl;
+
+    let mut graph: Graph<i32, (String, f64)> = Graph::new();
+
+    let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+
+    let edges = [
+        (0, 1, ("friend".to_string(), 0.9)),
+        (0, 2, ("family".to_string(), 0.8)),
+        (1, 3, ("friend".to_string(), 0.7)),
+        (2, 4, ("enemy".to_string(), 0.1)),
+    ];
+    for (s, d, w) in edges {
+        graph.add_edge(ids[s], ids[d], w);
+    }
+
+    let eval_cost = |(s, f): &(String, f64)| match s.as_str() {
+        "friend" => Some(1.0 / *f / 2.0),
+        "family" => Some(1.0 / *f / 4.0),
+        "enemy" => None,
+        _ => Some(1.0 / *f),
+    };
+
+    let centrality = closeness_centrality_impl(&graph, eval_cost, true).unwrap();
+    println!("{:.5?}", centrality); // [1.05244, 1.05244, 0.81436, 0.63088, 0.00000]
+}
+
 macro_rules! run_examples {
     ($($func:ident),* $(,)?) => {
         $(
@@ -189,6 +235,9 @@ fn main() {
         // katz centrality
         katz_centrality_example,
         katz_centrality_numpy_example,
-        katz_centrality_impl_example
+        katz_centrality_impl_example,
+        // closeness centrality
+        closeness_centrality_example,
+        closeness_centrality_impl_example,
     );
 }
