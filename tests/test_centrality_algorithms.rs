@@ -85,7 +85,7 @@ fn test_eigenvector_centrality() {
     let ev = eigenvector_centrality(&graph, 20, false);
     // Check that we have 4 scores and all are positive.
     assert_eq!(ev.len(), 4);
-    for (n, score) in ev.iter() {
+    for (_, score) in ev.iter() {
         assert!(*score > 0.0);
     }
 }
