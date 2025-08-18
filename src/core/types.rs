@@ -299,6 +299,15 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         &self.inner
     }
 
+    pub fn to_nodemap<T>(&self, mut eval: impl FnMut(NodeId, &A) -> T) -> NodeMap<T> {
+        self.nodes()
+            .map(|(nodeid, a)| (nodeid, eval(nodeid, a)))
+            .collect()
+    }
+    pub fn to_nodemap_default<T: Default>(&self) -> NodeMap<T> {
+        self.to_nodemap(|_, _| Default::default())
+    }
+
     /// Finds and returns the first edge from `source` to `target`.
     ///
     /// # Returns
@@ -324,6 +333,8 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
 }
 
 /// Extra util
+///
+/// this trait contain custom implementation of function that behave different for Directed and Undirected Graph.
 pub trait GraphinaGraph<A, W> {
     /// return edges in form or `(src: NodeId, dst: NodeId, attr: &W)`,
     /// where the backward edge is included for undirected graph.
@@ -504,3 +515,6 @@ pub type Graph<A, W> = BaseGraph<A, W, Undirected>;
 /// Marker type alias for undirected graphs.
 /// This refers to the `Undirected` marker type.
 pub type GraphMarker = Undirected;
+
+pub type NodeMap<T> = HashMap<NodeId, T>;
+pub type EdgeMap<T> = HashMap<EdgeId, T>;

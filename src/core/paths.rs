@@ -32,7 +32,7 @@ if a negative weight is encountered. Users should handle these `Result` types ac
 */
 
 use crate::core::exceptions::GraphinaException;
-use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId, NodeMap};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashSet};
 use std::fmt::Debug;
@@ -40,7 +40,7 @@ use std::ops::{Add, Sub};
 
 use ordered_float::NotNan;
 
-pub type PathFindResult = (Vec<Option<f64>>, Vec<Option<NodeId>>);
+pub type PathFindResult = (NodeMap<Option<f64>>, NodeMap<Option<NodeId>>);
 
 /// Returns an iterator over outgoing edges from a given node as `(target, weight)`.
 fn outgoing_edges<A, W, Ty>(
@@ -136,11 +136,32 @@ where
 /// };
 ///
 /// let (cost, trace) = dijkstra_path_impl(&graph, ids[0], Some(1000.0), eval_cost).unwrap();
-///
 /// println!("cost : {:?}", cost);
 /// println!("trace: {:?}", trace);
-/// // cost : [Some(0.0), None, Some(500.0), Some(700.0), Some(600.0), None, Some(800.0)]
-/// // trace: [None, None, Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(2))), None, Some(NodeId(NodeIndex(3)))]
+///
+/// let expected_cost = [
+///     Some(0.0),
+///     None,
+///     Some(500.0),
+///     Some(700.0),
+///     Some(600.0),
+///     None,
+///     Some(800.0),
+/// ];
+/// let expected_trace = [
+///     None,
+///     None,
+///     Some(ids[0]),
+///     Some(ids[0]),
+///     Some(ids[2]),
+///     None,
+///     Some(ids[3]),
+/// ];
+///
+/// for id in ids {
+///     assert_eq!(cost[&id], expected_cost[id.index()]);
+///     assert_eq!(trace[&id], expected_trace[id.index()]);
+/// }
 /// ```
 pub fn dijkstra_path_impl<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
@@ -155,16 +176,15 @@ where
     NodeId: Ord,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    let n = graph.node_count();
-    let mut dist = vec![None; n];
-    let mut trace = vec![None; n];
+    let mut dist = graph.to_nodemap_default();
+    let mut trace = graph.to_nodemap_default();
     let mut heap = BinaryHeap::new();
 
-    dist[source.index()] = Some(0.0);
+    dist.insert(source, Some(0.0));
     heap.push(Reverse((NotNan::new(0.0).unwrap(), source)));
 
     while let Some(Reverse((d, u))) = heap.pop() {
-        if let Some(current) = dist[u.index()] {
+        if let Some(current) = dist[&u] {
             if *d > current {
                 continue;
             }
@@ -191,9 +211,9 @@ where
                     continue;
                 }
             }
-            if dist[v.index()].is_none() || Some(*next) < dist[v.index()] {
-                dist[v.index()] = Some(*next);
-                trace[v.index()] = Some(u);
+            if dist[&v].is_none() || Some(*next) < dist[&v] {
+                dist.insert(v, Some(*next));
+                trace.insert(v, Some(u));
                 heap.push(Reverse((next, v)));
             }
         }
@@ -201,7 +221,7 @@ where
     Ok((dist, trace))
 }
 
-/// Full implementationof  Dijkstra's algorithm for finding shortest paths in a graph
+/// Full implementationof Dijkstra's algorithm for finding shortest paths in a graph
 /// for graph with edge type `f64`
 /// with non-negative weights.
 ///
@@ -238,8 +258,13 @@ where
 ///
 /// println!("cost : {:?}", cost);
 /// println!("trace: {:?}", trace);
-/// // cost : [Some(0.0), Some(1.0), Some(2.0), Some(4.0), Some(5.0)]
-/// // trace: [None, Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(1))), Some(NodeId(NodeIndex(2))), Some(NodeId(NodeIndex(3)))]
+/// let expected_cost = [Some(0.0), Some(1.0), Some(2.0), Some(4.0), Some(5.0)];
+/// let expected_trace = [None, Some(ids[0]), Some(ids[1]), Some(ids[2]), Some(ids[3])];
+///
+/// for id in ids {
+///     assert_eq!(cost[&id], expected_cost[id.index()]);
+///     assert_eq!(trace[&id], expected_trace[id.index()]);
+/// }
 /// ```
 pub fn dijkstra_path_f64<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,

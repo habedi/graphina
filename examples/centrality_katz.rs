@@ -24,7 +24,7 @@ fn main() {
             alpha, beta, max_iter, weighted, normalized
         );
         for (n, attr) in graph.nodes() {
-            println!(">> {} : {:.5}", attr, centrality[n.index()])
+            println!(">> {} : {:.5}", attr, centrality[&n])
         }
         println!();
     }

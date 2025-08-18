@@ -13,11 +13,9 @@
 //! - VoteRank
 //! - Laplacian centrality
 
-use petgraph::graph::NodeIndex;
-
 use crate::core::exceptions::GraphinaException;
 use crate::core::paths::{dijkstra, dijkstra_path_impl};
-use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId, NodeMap};
 use std::collections::{HashMap, VecDeque};
 use std::fmt::Debug;
 
@@ -49,9 +47,12 @@ use std::fmt::Debug;
 /// g.add_edge(nodes[0], nodes[2], ());
 ///
 /// let centrality = degree_centrality(&g);
-/// println!("{:?}", centrality); // [2.0, 1.0, 1.0]
+/// let expected = [2.0, 1.0, 1.0];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
-pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
+pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
@@ -60,11 +61,10 @@ where
     if !graph.is_directed() {
         return out_degree_centrality(graph);
     }
-    let n = graph.node_count();
-    let mut cent = vec![0.0; n];
-    for (src, dst, _) in graph.edges() {
-        cent[src.index()] += 1.0;
-        cent[dst.index()] += 1.0;
+    let mut cent = graph.to_nodemap_default();
+    for (src, dst, _) in graph.flow_edges() {
+        *cent.get_mut(&src).unwrap() += 1.0;
+        *cent.get_mut(&dst).unwrap() += 1.0;
     }
     cent
 }
@@ -91,18 +91,20 @@ where
 /// g.add_edge(nodes[0], nodes[2], ());
 ///
 /// let centrality = in_degree_centrality(&g);
-/// println!("{:?}", centrality); // [0.0, 1.0, 1.0]
+/// let expected = [0.0, 1.0, 1.0];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
-pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
+pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    let n = graph.node_count();
-    let mut cent = vec![0.0; n];
-    for (_, dst, _) in graph.edges() {
-        cent[dst.index()] += 1.0;
+    let mut cent = graph.to_nodemap_default();
+    for (_, dst, _) in graph.flow_edges() {
+        *cent.get_mut(&dst).unwrap() += 1.0;
     }
     cent
 }
@@ -129,18 +131,21 @@ where
 /// g.add_edge(nodes[0], nodes[2], ());
 ///
 /// let centrality = out_degree_centrality(&g);
-/// println!("{:?}", centrality); // [2.0, 0.0, 0.0]
+///
+/// let expected = [2.0, 0.0, 0.0];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
-pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<f64>
+pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    let n = graph.node_count();
-    let mut cent = vec![0.0; n];
-    for (src, _, _) in graph.edges() {
-        cent[src.index()] += 1.0;
+    let mut cent = graph.to_nodemap_default();
+    for (src, _, _) in graph.flow_edges() {
+        *cent.get_mut(&src).unwrap() += 1.0;
     }
     cent
 }
@@ -171,8 +176,8 @@ where
 ///
 /// # Example
 /// ```rust
-/// use graphina::core::types::Graph;
 /// use graphina::centrality::algorithms::eigenvector_centrality_impl;
+/// use graphina::core::types::Graph;
 ///
 /// let mut g: Graph<i32, (f64, f64)> = Graph::new();
 /// //                    ^^^^^^^^^^
@@ -184,40 +189,43 @@ where
 ///     &g,
 ///     1000,
 ///     1e-6_f64,
-///     |w| w.0 * 10.0 + w.1 // <-- custom evaluation for edge weight
+///     |w| w.0 * 10.0 + w.1, // <-- custom evaluation for edge weight
 /// );
-/// println!("{:.5?}", centrality); // [0.70711, 0.07036, 0.70360]
+/// let expected = [0.70711, 0.07036, 0.70360];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
 pub fn eigenvector_centrality_impl<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     max_iter: usize,
     tol: f64,
     eval_weight: impl Fn(&W) -> f64,
-) -> Vec<f64>
+) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
-    let mut centrality = vec![1.0; n];
+    let mut centrality = graph.to_nodemap(|_, _| 1.0);
     let mut next = centrality.clone();
     for _ in 0..max_iter {
         for (src, dst, w) in graph.flow_edges() {
             let w = eval_weight(w);
-            next[dst.index()] += w * centrality[src.index()];
+            *next.get_mut(&dst).unwrap() += w * centrality[&src];
         }
-        let norm = next.iter().map(|x| x * x).sum::<f64>().sqrt();
+        let norm = next.values().map(|x| x * x).sum::<f64>().sqrt();
         if norm > 0.0 {
-            for x in &mut next {
+            for x in next.values_mut() {
                 *x /= norm;
             }
         }
         let diff: f64 = centrality
             .iter_mut()
-            .zip(next.iter())
-            .map(|(a, b)| {
-                let d = (*a - b).abs();
-                *a = *b;
+            .map(|(nodeid, a)| {
+                let next = next.get(nodeid).unwrap();
+                let d = (*a - *next).abs();
+                *a = *next;
                 d
             })
             .sum();
@@ -253,15 +261,22 @@ where
 /// g.add_edge(nodes[0], nodes[2], 2.0);
 ///
 /// let centrality = eigenvector_centrality(&g, 1000, false);
-/// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
+/// let expected = [0.70711, 0.50000, 0.50000];
+/// for (i, f) in expected.into_iter().enumerate() {
+/// assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
+///
 /// let centrality = eigenvector_centrality(&g, 1000, true);
-/// println!("{:.5?}", centrality); // [0.70711, 0.31623, 0.63246]
+/// let expected = [0.70711, 0.31623, 0.63246];
+/// for (i, f) in expected.into_iter().enumerate() {
+/// assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
 pub fn eigenvector_centrality<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     max_iter: usize,
     weighted: bool,
-) -> Vec<f64>
+) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, f64>,
     BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
@@ -289,25 +304,32 @@ where
 ///
 /// # Examples
 /// ```rust
-/// use graphina::core::types::Graph;
-///
 /// use graphina::centrality::algorithms::eigenvector_centrality_numpy;
+/// use graphina::core::types::Graph;
 /// let mut g = Graph::new();
+///
 /// let nodes = [g.add_node(1), g.add_node(2), g.add_node(3)];
 /// g.add_edge(nodes[0], nodes[1], 1.0);
 /// g.add_edge(nodes[0], nodes[2], 2.0);
 ///
 /// let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, false);
-/// println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
+/// let expected = [0.70711, 0.50000, 0.50000];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
+///
 /// let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, true);
-/// println!("{:.5?}", centrality); // [0.70711, 0.31623, 0.63246]
+/// let expected = [0.70711, 0.31623, 0.63246];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
 pub fn eigenvector_centrality_numpy<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     max_iter: usize,
     tol: f64,
     weighted: bool,
-) -> Vec<f64>
+) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, f64>,
     BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
@@ -374,14 +396,17 @@ where
 ///
 /// let centrality = katz_centrality_impl(
 ///     &g,
-///     |_n| 0.01,                           // <-- custom alpha depend on node attribute
-///     |(i, f): &(i32, f64)| f.powi(*i),    // <-- custom beta depend on node attribute
+///     |_n| 0.01,                        // <-- custom alpha depend on node attribute
+///     |(i, f): &(i32, f64)| f.powi(*i), // <-- custom beta depend on node attribute
 ///     1_000,
 ///     1e-6_f64,
 ///     true,
-///     |w| w.0 * 10.0 + w.1,                // <-- custom evaluation for edge weight
+///     |w| w.0 * 10.0 + w.1, // <-- custom evaluation for edge weight
 /// );
-/// println!("{:.5?}", centrality); // [0.23167, 0.71650, 0.65800]
+/// let expected = [0.23167, 0.71650, 0.65800];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
 pub fn katz_centrality_impl<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
@@ -391,48 +416,44 @@ pub fn katz_centrality_impl<A, W, Ty>(
     tol: f64,
     normalized: bool,
     eval_weight: impl Fn(&W) -> f64,
-) -> Vec<f64>
+) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
-    let betas = (0..n)
-        .map(|i| beta(graph.node_attr(NodeId(NodeIndex::new(i))).unwrap()))
-        .collect::<Vec<_>>();
-    let alphas = (0..n)
-        .map(|i| alpha(graph.node_attr(NodeId(NodeIndex::new(i))).unwrap()))
-        .collect::<Vec<_>>();
+    let betas = graph.to_nodemap(|_, attr| beta(attr));
+    let alphas = graph.to_nodemap(|_, attr| alpha(attr));
 
-    let mut centrality = vec![0.0; n];
-    let mut next = vec![0.0; n];
+    let mut centrality = graph.to_nodemap_default();
+    let mut next = graph.to_nodemap_default();
 
     for _ in 0..max_iter {
         for (src, dst, w) in graph.flow_edges() {
             let w = eval_weight(w);
-            next[dst.index()] += w * centrality[src.index()];
+            *next.get_mut(&dst).unwrap() += w * centrality[&src];
         }
 
-        for (i, n) in next.iter_mut().enumerate() {
-            *n = alphas[i] * *n + betas[i];
+        for (n, next) in next.iter_mut() {
+            *next = alphas[n] * *next + betas[n];
         }
 
         let diff: f64 = centrality
             .iter_mut()
-            .zip(next.iter_mut())
-            .map(|(a, b)| {
-                let d = (*a - *b).abs();
-                *a = *b;
-                *b = 0.0;
+            .map(|(nodeid, a): (&NodeId, &mut f64)| {
+                let next: &mut f64 = next.get_mut(nodeid).unwrap();
+                let d = (*a - *next).abs();
+                *a = *next;
+                *next = 0.0;
                 d
             })
             .sum();
 
         if diff < tol * n as f64 {
             if normalized {
-                let norm = centrality.iter().map(|x| x * x).sum::<f64>().sqrt();
+                let norm = centrality.values().map(|x| x * x).sum::<f64>().sqrt();
                 if norm > 0.0 {
-                    for x in &mut centrality {
+                    for x in centrality.values_mut() {
                         *x /= norm;
                     }
                 }
@@ -478,9 +499,16 @@ where
 /// g.add_edge(nodes[0], nodes[2], 2.0);
 ///
 /// let centrality = katz_centrality(&g, 0.1, 1.0, 1000, false, true);
-/// println!("{:.5?}", centrality); // [0.61078, 0.55989, 0.55989]
+/// let expected = [0.61078, 0.55989, 0.55989];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
+///
 /// let centrality = katz_centrality(&g, 0.01, 0.5, 1000, true, true);
-/// println!("{:.5?}", centrality); // [0.58301, 0.57158, 0.57741]
+/// let expected = [0.58301, 0.57158, 0.57741];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
 pub fn katz_centrality<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
@@ -489,7 +517,7 @@ pub fn katz_centrality<A, Ty>(
     max_iter: usize,
     weighted: bool,
     normalized: bool,
-) -> Vec<f64>
+) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, f64>,
     BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
@@ -546,9 +574,16 @@ where
 /// g.add_edge(nodes[0], nodes[2], 2.0);
 ///
 /// let centrality = katz_centrality_numpy(&g, 0.1, 1.0, false, true);
-/// println!("{:.5?}", centrality); // [0.61078, 0.55989, 0.55989]
+/// let expected = [0.61078, 0.55989, 0.55989];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
+///
 /// let centrality = katz_centrality_numpy(&g, 0.01, 0.5, true, true);
-/// println!("{:.5?}", centrality); // [0.58301, 0.57158, 0.57741]
+/// let expected = [0.58301, 0.57158, 0.57741];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
 pub fn katz_centrality_numpy<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
@@ -556,7 +591,7 @@ pub fn katz_centrality_numpy<A, Ty>(
     beta: f64,
     weighted: bool,
     normalized: bool,
-) -> Vec<f64>
+) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, f64>,
     BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
@@ -603,7 +638,7 @@ where
 ///
 /// let mut graph: Graph<i32, (String, f64)> = Graph::new();
 ///
-/// let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+/// let nodes = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
 ///
 /// let edges = [
 ///     (0, 1, ("friend".to_string(), 0.9)),
@@ -612,7 +647,7 @@ where
 ///     (2, 4, ("enemy".to_string(), 0.1)),
 /// ];
 /// for (s, d, w) in edges {
-///     graph.add_edge(ids[s], ids[d], w);
+///     graph.add_edge(nodes[s], nodes[d], w);
 /// }
 ///
 /// let eval_cost = |(s, f): &(String, f64)| match s.as_str() {
@@ -623,13 +658,16 @@ where
 /// };
 ///
 /// let centrality = closeness_centrality_impl(&graph, eval_cost, true).unwrap();
-/// println!("{:.5?}", centrality); // [1.05244, 1.05244, 0.81436, 0.63088, 0.00000]
+/// let expected = [1.05244, 1.05244, 0.81436, 0.63088, 0.00000];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
 /// ```
 pub fn closeness_centrality_impl<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     eval_cost: impl Fn(&W) -> Option<f64>,
     wf_improved: bool,
-) -> Result<Vec<f64>, GraphinaException>
+) -> Result<NodeMap<f64>, GraphinaException>
 where
     A: Debug,
     W: Debug,
@@ -637,16 +675,16 @@ where
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
     let n = graph.node_count();
-    let mut closeness = vec![0.0; n];
+    let mut closeness = graph.to_nodemap_default();
     for (node, _) in graph.nodes() {
         let (distances, _) = dijkstra_path_impl(graph, node, None, &eval_cost)?;
-        let reachable = distances.iter().filter(|d| d.is_some()).count() as f64;
-        let sum: f64 = distances.iter().filter_map(|d| d.to_owned()).sum();
+        let reachable = distances.values().filter(|d| d.is_some()).count() as f64;
+        let sum: f64 = distances.values().filter_map(|d| d.to_owned()).sum();
         if sum > 0.0 {
-            closeness[node.index()] = (reachable - 1.0) / sum;
+            let _ = closeness.insert(node, (reachable - 1.0) / sum);
         }
         if wf_improved {
-            closeness[node.index()] *= (reachable - 1.0) / (n as f64 - 1.0);
+            *closeness.get_mut(&node).unwrap() *= (reachable - 1.0) / (n as f64 - 1.0);
         }
     }
     Ok(closeness)
@@ -674,19 +712,22 @@ where
 /// use graphina::centrality::algorithms::closeness_centrality;
 ///
 /// let mut graph = Graph::new();
-/// let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+/// let nodes = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
 /// let edges = [(0, 1, 1.0), (0, 2, 1.0), (1, 3, 1.0)];
 /// for (s, d, w) in edges {
-///     graph.add_edge(ids[s], ids[d], w);
+///     graph.add_edge(nodes[s], nodes[d], w);
 /// }
 ///
 /// let centrality = closeness_centrality(&graph, false).unwrap();
-/// println!("{:.5?}", centrality); // [0.75000, 0.75000, 0.50000, 0.50000, 0.00000]    
+/// let expected = [0.75000, 0.75000, 0.50000, 0.50000, 0.00000];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }  
 /// ```
 pub fn closeness_centrality<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     wf_improved: bool,
-) -> Result<Vec<f64>, GraphinaException>
+) -> Result<NodeMap<f64>, GraphinaException>
 where
     A: Debug,
     Ty: GraphConstructor<A, f64>,
