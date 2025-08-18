@@ -14,8 +14,13 @@ fn line() {
 
     println!("cost : {:?}", cost);
     println!("trace: {:?}", trace);
-    // cost : [Some(0.0), Some(1.0), Some(2.0), Some(4.0), Some(5.0)]
-    // trace: [None, Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(1))), Some(NodeId(NodeIndex(2))), Some(NodeId(NodeIndex(3)))]
+    let expected_cost = [Some(0.0), Some(1.0), Some(2.0), Some(4.0), Some(5.0)];
+    let expected_trace = [None, Some(ids[0]), Some(ids[1]), Some(ids[2]), Some(ids[3])];
+
+    for id in ids {
+        assert_eq!(cost[&id], expected_cost[id.index()]);
+        assert_eq!(trace[&id], expected_trace[id.index()]);
+    }
 }
 
 fn flight() {
@@ -69,11 +74,32 @@ fn flight() {
     };
 
     let (cost, trace) = dijkstra_path_impl(&graph, ids[0], Some(1000.0), eval_cost).unwrap();
-
     println!("cost : {:?}", cost);
     println!("trace: {:?}", trace);
-    // cost : [Some(0.0), None, Some(500.0), Some(700.0), Some(600.0), None, Some(800.0)]
-    // trace: [None, None, Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(0))), Some(NodeId(NodeIndex(2))), None, Some(NodeId(NodeIndex(3)))]
+
+    let expected_cost = [
+        Some(0.0),
+        None,
+        Some(500.0),
+        Some(700.0),
+        Some(600.0),
+        None,
+        Some(800.0),
+    ];
+    let expected_trace = [
+        None,
+        None,
+        Some(ids[0]),
+        Some(ids[0]),
+        Some(ids[2]),
+        None,
+        Some(ids[3]),
+    ];
+
+    for id in ids {
+        assert_eq!(cost[&id], expected_cost[id.index()]);
+        assert_eq!(trace[&id], expected_trace[id.index()]);
+    }
 }
 
 macro_rules! run_examples {

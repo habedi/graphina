@@ -15,7 +15,10 @@ fn degree_centrality_example() {
     g.add_edge(nodes[0], nodes[2], ());
 
     let centrality = degree_centrality(&g);
-    println!("{:?}", centrality); // [2.0, 1.0, 1.0]
+    let expected = [2.0, 1.0, 1.0];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn in_degree_centrality_example() {
@@ -29,7 +32,10 @@ fn in_degree_centrality_example() {
     g.add_edge(nodes[0], nodes[2], ());
 
     let centrality = in_degree_centrality(&g);
-    println!("{:?}", centrality); // [0.0, 1.0, 1.0]
+    let expected = [0.0, 1.0, 1.0];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn out_degree_centrality_example() {
@@ -43,7 +49,11 @@ fn out_degree_centrality_example() {
     g.add_edge(nodes[0], nodes[2], ());
 
     let centrality = out_degree_centrality(&g);
-    println!("{:?}", centrality); // [2.0, 0.0, 0.0]
+
+    let expected = [2.0, 0.0, 0.0];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 //
@@ -63,9 +73,16 @@ fn eigenvector_centrality_example() {
     g.add_edge(nodes[0], nodes[2], 2.0);
 
     let centrality = eigenvector_centrality(&g, 1000, false);
-    println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
+    let expected = [0.70711, 0.50000, 0.50000];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
+
     let centrality = eigenvector_centrality(&g, 1000, true);
-    println!("{:.5?}", centrality); // [0.70711, 0.31623, 0.63246]
+    let expected = [0.70711, 0.31623, 0.63246];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn eigenvector_centrality_numpy_example() {
@@ -78,9 +95,16 @@ fn eigenvector_centrality_numpy_example() {
     g.add_edge(nodes[0], nodes[2], 2.0);
 
     let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, false);
-    println!("{:.5?}", centrality); // [0.70711, 0.50000, 0.50000]
+    let expected = [0.70711, 0.50000, 0.50000];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
+
     let centrality = eigenvector_centrality_numpy(&g, 1000, 1e-6_f64, true);
-    println!("{:.5?}", centrality); // [0.70711, 0.31623, 0.63246]
+    let expected = [0.70711, 0.31623, 0.63246];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn eigenvector_centrality_impl_example() {
@@ -99,7 +123,10 @@ fn eigenvector_centrality_impl_example() {
         1e-6_f64,
         |w| w.0 * 10.0 + w.1, // <-- custom evaluation for edge weight
     );
-    println!("{:.5?}", centrality); // [0.70711, 0.07036, 0.70360]
+    let expected = [0.70711, 0.07036, 0.70360];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 //
@@ -118,9 +145,16 @@ fn katz_centrality_example() {
     g.add_edge(nodes[0], nodes[2], 2.0);
 
     let centrality = katz_centrality(&g, 0.1, 1.0, 1000, false, true);
-    println!("{:.5?}", centrality); // [0.61078, 0.55989, 0.55989]
+    let expected = [0.61078, 0.55989, 0.55989];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
+
     let centrality = katz_centrality(&g, 0.01, 0.5, 1000, true, true);
-    println!("{:.5?}", centrality); // [0.58301, 0.57158, 0.57741]
+    let expected = [0.58301, 0.57158, 0.57741];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn katz_centrality_numpy_example() {
@@ -133,9 +167,16 @@ fn katz_centrality_numpy_example() {
     g.add_edge(nodes[0], nodes[2], 2.0);
 
     let centrality = katz_centrality_numpy(&g, 0.1, 1.0, false, true);
-    println!("{:.5?}", centrality); // [0.61078, 0.55989, 0.55989]
+    let expected = [0.61078, 0.55989, 0.55989];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
+
     let centrality = katz_centrality_numpy(&g, 0.01, 0.5, true, true);
-    println!("{:.5?}", centrality); // [0.58301, 0.57158, 0.57741]
+    let expected = [0.58301, 0.57158, 0.57741];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn katz_centrality_impl_example() {
@@ -163,7 +204,10 @@ fn katz_centrality_impl_example() {
         true,
         |w| w.0 * 10.0 + w.1, // <-- custom evaluation for edge weight
     );
-    println!("{:.5?}", centrality); // [0.23167, 0.71650, 0.65800]
+    let expected = [0.23167, 0.71650, 0.65800];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn closeness_centrality_example() {
@@ -172,14 +216,17 @@ fn closeness_centrality_example() {
     use graphina::centrality::algorithms::closeness_centrality;
 
     let mut graph = Graph::new();
-    let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+    let nodes = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
     let edges = [(0, 1, 1.0), (0, 2, 1.0), (1, 3, 1.0)];
     for (s, d, w) in edges {
-        graph.add_edge(ids[s], ids[d], w);
+        graph.add_edge(nodes[s], nodes[d], w);
     }
 
     let centrality = closeness_centrality(&graph, false).unwrap();
-    println!("{:.5?}", centrality); // [0.75000, 0.75000, 0.50000, 0.50000, 0.00000]
+    let expected = [0.75000, 0.75000, 0.50000, 0.50000, 0.00000];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 fn closeness_centrality_impl_example() {
@@ -189,7 +236,7 @@ fn closeness_centrality_impl_example() {
 
     let mut graph: Graph<i32, (String, f64)> = Graph::new();
 
-    let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+    let nodes = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
 
     let edges = [
         (0, 1, ("friend".to_string(), 0.9)),
@@ -198,7 +245,7 @@ fn closeness_centrality_impl_example() {
         (2, 4, ("enemy".to_string(), 0.1)),
     ];
     for (s, d, w) in edges {
-        graph.add_edge(ids[s], ids[d], w);
+        graph.add_edge(nodes[s], nodes[d], w);
     }
 
     let eval_cost = |(s, f): &(String, f64)| match s.as_str() {
@@ -209,7 +256,10 @@ fn closeness_centrality_impl_example() {
     };
 
     let centrality = closeness_centrality_impl(&graph, eval_cost, true).unwrap();
-    println!("{:.5?}", centrality); // [1.05244, 1.05244, 0.81436, 0.63088, 0.00000]
+    let expected = [1.05244, 1.05244, 0.81436, 0.63088, 0.00000];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
 }
 
 macro_rules! run_examples {

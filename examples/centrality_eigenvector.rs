@@ -13,13 +13,13 @@ fn main() {
     let centrality = eigenvector_centrality(&graph, 1000, false);
     println!("Unweighted",);
     for (n, attr) in graph.nodes() {
-        println!(">> {} : {:.5}", attr, centrality[n.index()])
+        println!(">> {} : {:.5}", attr, centrality[&n])
     }
     println!();
     let centrality = eigenvector_centrality(&graph, 1000, true);
     println!("Weighted",);
     for (n, attr) in graph.nodes() {
-        println!(">> {} : {:.5}", attr, centrality[n.index()])
+        println!(">> {} : {:.5}", attr, centrality[&n])
     }
     println!();
 }

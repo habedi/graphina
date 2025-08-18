@@ -53,7 +53,7 @@ fn test_degree_centrality() {
     let deg = degree_centrality(&graph);
     // In our graph, each node has 2 out-edges and 2 in-edges, so degree should be 4.
     for d in deg {
-        assert_eq!(d, 4.0);
+        assert_eq!(d.1, 4.0);
     }
 }
 
@@ -64,7 +64,7 @@ fn test_closeness_centrality() {
     // In our strongly connected graph with all edges = 1.0,
     // each node's distances: two neighbors at 1 and one at 2 -> sum = 4.
     // Closeness = (n-1)/sum = 3/4 = 0.75.
-    for c in closeness {
+    for (_, c) in closeness {
         assert!(approx_eq(c, 0.75, 1e-6));
     }
 }
@@ -85,8 +85,8 @@ fn test_eigenvector_centrality() {
     let ev = eigenvector_centrality(&graph, 20, false);
     // Check that we have 4 scores and all are positive.
     assert_eq!(ev.len(), 4);
-    for &score in &ev {
-        assert!(score > 0.0);
+    for (n, score) in ev.iter() {
+        assert!(*score > 0.0);
     }
 }
 
@@ -106,7 +106,7 @@ fn test_katz_centrality() {
     let graph = build_test_graph_f64();
     let kc = katz_centrality(&graph, 0.1, 1.0, 50, false, true);
     assert_eq!(kc.len(), 4);
-    for score in kc {
+    for (_, score) in kc {
         assert!(score > 0.0);
     }
 }
