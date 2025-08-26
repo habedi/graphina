@@ -94,9 +94,9 @@ fn test_eigenvector_centrality() {
 fn test_pagerank() {
     let graph = build_test_graph_f64();
     let pr = pagerank(&graph, 0.85, 50);
-    let total: f64 = pr.iter().sum();
+    let total: f64 = pr.values().sum();
     assert!(approx_eq(total, 1.0, 1e-6));
-    for score in pr {
+    for score in pr.into_values() {
         assert!(score > 0.0);
     }
 }

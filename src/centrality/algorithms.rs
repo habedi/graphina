@@ -33,7 +33,7 @@ use std::fmt::Debug;
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing out degree centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing out degree centralities of each node in the graph.
 ///
 /// # Example
 /// ```rust
@@ -54,7 +54,6 @@ use std::fmt::Debug;
 /// ```
 pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
 where
-    W: Copy,
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
@@ -77,7 +76,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing out degree centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing out degree centralities of each node in the graph.
 ///
 /// # Example
 /// ```rust
@@ -98,7 +97,6 @@ where
 /// ```
 pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
 where
-    W: Copy,
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
@@ -117,7 +115,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing out degree centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing out degree centralities of each node in the graph.
 ///
 /// # Example
 /// ```rust
@@ -139,7 +137,6 @@ where
 /// ```
 pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
 where
-    W: Copy,
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
@@ -172,7 +169,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing eigenvector centralities of each node in the graph.
 ///
 /// # Example
 /// ```rust
@@ -247,7 +244,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing eigenvector centralities of each node in the graph.
 ///
 /// # Examples
 /// ```rust
@@ -300,7 +297,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing eigenvector centralities of each node in the graph.
 ///
 /// # Examples
 /// ```rust
@@ -370,7 +367,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing eigenvector centralities of each node in the graph.
 ///
 /// # Note
 ///
@@ -481,7 +478,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing eigenvector centralities of each node in the graph.
 ///
 /// # Note
 ///
@@ -556,7 +553,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing eigenvector centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing eigenvector centralities of each node in the graph.
 ///
 /// # Note
 ///
@@ -628,7 +625,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing closeness centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing closeness centralities of each node in the graph.
 ///
 /// # Example
 /// ```rust
@@ -703,7 +700,7 @@ where
 ///
 /// # Returns
 ///
-/// a vector of `f64` representing closeness centralities of each node in the graph.
+/// [`NodeMap`] of `f64` representing closeness centralities of each node in the graph.
 ///
 /// # Example
 /// ```rust
@@ -744,46 +741,57 @@ where
 //
 
 /// Full implementation of PageRank with convergence tolerance.
-pub fn pagerank_impl<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `damping`: the damping alpha parameter typically `0.85`.
+/// * `max_iter`: The maximum number of iterations that the algorithm will run for.
+/// * `tol`: the average tolerance for convergence.
+///
+/// # Returns
+///
+/// [`NodeMap`] of `f64` representing pagerank of each node in the graph.
+///
+/// see [`pagerank`] for example.
+pub fn pagerank_impl<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
     damping: f64,
     max_iter: usize,
     tol: f64,
-) -> Vec<f64>
+) -> NodeMap<f64>
 where
-    Ty: GraphConstructor<A, f64>,
+    Ty: GraphConstructor<A, W>,
+    BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    let n = graph.node_count();
-    let mut rank = vec![1.0 / n as f64; n];
-    let teleport = (1.0 - damping) / n as f64;
+    let n = graph.node_count() as f64;
+    let mut rank = graph.to_nodemap(|_, _| 1.0 / n);
+    let teleport = (1.0 - damping) / n;
 
-    let mut out_deg = vec![0usize; n];
-    for (node, _) in graph.nodes() {
-        out_deg[node.index()] = graph.neighbors(node).count();
-    }
+    let out_deg = out_degree_centrality(graph);
 
     for _ in 0..max_iter {
-        let mut new_rank = vec![teleport; n];
+        let mut new_rank = graph.to_nodemap(|_, _| teleport);
         for (u, _) in graph.nodes() {
-            let r = rank[u.index()];
-            if out_deg[u.index()] > 0 {
-                let share = damping * r / out_deg[u.index()] as f64;
+            let r = rank[&u];
+            if out_deg[&u] > 0.0 {
+                let share = damping * r / out_deg[&u];
                 for v in graph.neighbors(u) {
-                    new_rank[v.index()] += share;
+                    *new_rank.get_mut(&v).unwrap() += share;
                 }
             } else {
-                for x in new_rank.iter_mut() {
-                    *x += damping * r / n as f64;
+                for x in new_rank.values_mut() {
+                    *x += damping * r / n;
                 }
             }
         }
         let diff: f64 = rank
             .iter()
             .zip(new_rank.iter())
-            .map(|(a, b)| (a - b).abs())
+            .map(|((_, a), (_, b))| (a - b).abs())
             .sum();
         rank = new_rank;
-        if diff < tol * n as f64 {
+        if diff < tol * n {
             break;
         }
     }
@@ -792,9 +800,41 @@ where
 
 /// Wrapper for PageRank with default tolerance (1e-6).
 /// This wrapper takes 3 arguments: graph, damping, max_iter.
-pub fn pagerank<A, Ty>(graph: &BaseGraph<A, f64, Ty>, damping: f64, max_iter: usize) -> Vec<f64>
+///
+/// # Arguments
+///
+/// * `graph`: the targeted graph.
+/// * `damping`: the damping alpha parameter typically `0.85`.
+/// * `max_iter`: The maximum number of iterations that the algorithm will run for.
+/// * `tol`: the average tolerance for convergence.
+///
+/// # Returns
+///
+/// [`NodeMap`] of `f64` representing pagerank of each node in the graph.
+///
+/// # Example
+/// ```rust
+/// use graphina::core::types::Digraph;
+///
+/// use graphina::centrality::algorithms::pagerank;
+///
+/// let mut graph = Digraph::new();
+/// let nodes = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+/// let edges = [(0, 1, 1.0), (0, 2, 1.0), (1, 3, 1.0)];
+/// for (s, d, w) in edges {
+///     graph.add_edge(nodes[s], nodes[d], w);
+/// }
+///
+/// let centrality = pagerank(&graph, 0.85, 1000);
+/// let expected = [0.14161, 0.20180, 0.20180, 0.31315, 0.14161];
+/// for (i, f) in expected.into_iter().enumerate() {
+///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+/// }
+/// ```
+pub fn pagerank<A, Ty>(graph: &BaseGraph<A, f64, Ty>, damping: f64, max_iter: usize) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     pagerank_impl(graph, damping, max_iter, 1e-6_f64)
 }
