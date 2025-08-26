@@ -516,5 +516,8 @@ pub type Graph<A, W> = BaseGraph<A, W, Undirected>;
 /// This refers to the `Undirected` marker type.
 pub type GraphMarker = Undirected;
 
+/// type alias for [`HashMap`] that map [`NodeId`] to `T`
 pub type NodeMap<T> = HashMap<NodeId, T>;
+
+/// type alias for [`HashMap`] that map [`EdgeId`] to `T`
 pub type EdgeMap<T> = HashMap<EdgeId, T>;

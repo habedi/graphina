@@ -262,6 +262,25 @@ fn closeness_centrality_impl_example() {
     }
 }
 
+fn pagerank_example() {
+    use graphina::core::types::Digraph;
+
+    use graphina::centrality::algorithms::pagerank;
+
+    let mut graph = Digraph::new();
+    let nodes = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
+    let edges = [(0, 1, 1.0), (0, 2, 1.0), (1, 3, 1.0)];
+    for (s, d, w) in edges {
+        graph.add_edge(nodes[s], nodes[d], w);
+    }
+
+    let centrality = pagerank(&graph, 0.85, 1000);
+    let expected = [0.14161, 0.20180, 0.20180, 0.31315, 0.14161];
+    for (i, f) in expected.into_iter().enumerate() {
+        assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
+    }
+}
+
 macro_rules! run_examples {
     ($($func:ident),* $(,)?) => {
         $(
@@ -289,5 +308,7 @@ fn main() {
         // closeness centrality
         closeness_centrality_example,
         closeness_centrality_impl_example,
+        // pagerank
+        pagerank_example,
     );
 }
