@@ -34,6 +34,8 @@ Check out [pygraphina](pygraphina/README.md) directory for more details.
 > Graphina is in the early stages of development, so breaking changes may occur.
 > Bugs and API inconsistencies are also expected, and the algorithms may not yet be optimized for performance.
 
+---
+
 ### Structure
 
 Graphina consists of two main parts: a *core library* and *extensions*.
@@ -115,6 +117,8 @@ fn main() {
 ```
 
 See the [examples](examples) and [tests](tests) directories for more usage examples.
+
+---
 
 ### Contributing
 

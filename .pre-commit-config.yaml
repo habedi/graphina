@@ -26,12 +26,14 @@ repos:
         entry: make format
         language: system
         pass_filenames: false
+        stages: [ pre-commit ]
 
       - id: lint
         name: Check Code Style
         entry: make lint
         language: system
         pass_filenames: false
+        stages: [ pre-commit ]
 
       - id: test
         name: Run Tests
