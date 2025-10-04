@@ -240,12 +240,12 @@ pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
 pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
 ) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
-    let mut graph = BaseGraph::<u32, f32, Ty>::new();
-    if n == 0 {
+    if n < 3 {
         return Err(GraphinaException::new(
-            "Cycle graph must have at least one node.",
+            "Cycle graph must have at least three nodes.",
         ));
     }
+    let mut graph = BaseGraph::<u32, f32, Ty>::new();
     let mut nodes = Vec::with_capacity(n);
     for i in 0..n {
         nodes.push(graph.add_node(i as u32));

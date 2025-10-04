@@ -60,6 +60,13 @@ fn test_cycle_graph() {
 }
 
 #[test]
+fn test_cycle_graph_invalid_n() {
+    assert!(cycle_graph::<Undirected>(0).is_err());
+    assert!(cycle_graph::<Undirected>(1).is_err());
+    assert!(cycle_graph::<Undirected>(2).is_err());
+}
+
+#[test]
 fn test_watts_strogatz_graph() {
     let n = 10;
     let k = 4; // must be even and less than n

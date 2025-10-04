@@ -719,7 +719,7 @@ where
 /// let expected = [0.75000, 0.75000, 0.50000, 0.50000, 0.00000];
 /// for (i, f) in expected.into_iter().enumerate() {
 ///     assert!((centrality[&nodes[i]] - f).abs() < 1e-5)
-/// }  
+/// }
 /// ```
 pub fn closeness_centrality<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
