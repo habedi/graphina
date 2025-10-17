@@ -58,6 +58,11 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId>
 where
     Ty: GraphConstructor<A, W>,
 {
+    // Check if start node exists in the graph
+    if graph.node_attr(start).is_none() {
+        return Vec::new();
+    }
+
     let mut visited = HashSet::new();
     let mut order = Vec::new();
     let mut queue = VecDeque::new();
@@ -109,6 +114,11 @@ pub fn dfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId>
 where
     Ty: GraphConstructor<A, W>,
 {
+    // Check if start node exists in the graph
+    if graph.node_attr(start).is_none() {
+        return Vec::new();
+    }
+
     let mut visited = HashSet::new();
     let mut order = Vec::new();
     dfs_util(graph, start, &mut visited, &mut order);

@@ -221,7 +221,7 @@ where
     Ok((dist, trace))
 }
 
-/// Full implementationof Dijkstra's algorithm for finding shortest paths in a graph
+/// Full implementation of Dijkstra's algorithm for finding shortest paths in a graph
 /// for graph with edge type `f64`
 /// with non-negative weights.
 ///

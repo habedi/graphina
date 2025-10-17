@@ -321,15 +321,29 @@ pub fn watts_strogatz_graph<Ty: GraphConstructor<u32, f32>>(
                 // Use the public API method `find_edge` to locate the edge.
                 if let Some(eid) = graph.find_edge(nodes[i], nodes[neighbor]) {
                     let _ = graph.remove_edge(eid);
-                    // Choose a new target at random (avoiding self-loop).
+                    // Choose a new target at random (avoiding self-loop and existing edges).
                     let mut new_target;
+                    let max_attempts = n * 2; // Prevent infinite loop
+                    let mut attempts = 0;
                     loop {
                         new_target = rng.random_range(0..n);
-                        if new_target != i {
+                        attempts += 1;
+                        // Check: not self-loop and edge doesn't already exist
+                        if new_target != i && graph.find_edge(nodes[i], nodes[new_target]).is_none()
+                        {
+                            break;
+                        }
+                        // Fallback: if we've tried many times, skip this rewiring
+                        if attempts >= max_attempts {
+                            // Re-add the original edge and skip rewiring
+                            graph.add_edge(nodes[i], nodes[neighbor], 1.0);
                             break;
                         }
                     }
-                    graph.add_edge(nodes[i], nodes[new_target], 1.0);
+                    // Only add new edge if we found a valid target
+                    if attempts < max_attempts {
+                        graph.add_edge(nodes[i], nodes[new_target], 1.0);
+                    }
                 }
             }
         }

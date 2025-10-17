@@ -57,13 +57,20 @@ where
     Ty: GraphConstructor<A, W>,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    if !graph.is_directed() {
-        return out_degree_centrality(graph);
-    }
     let mut cent = graph.to_nodemap_default();
-    for (src, dst, _) in graph.flow_edges() {
-        *cent.get_mut(&src).unwrap() += 1.0;
-        *cent.get_mut(&dst).unwrap() += 1.0;
+
+    if graph.is_directed() {
+        // For directed graphs, count both in-degree and out-degree
+        for (src, dst, _) in graph.edges() {
+            *cent.get_mut(&src).unwrap() += 1.0;
+            *cent.get_mut(&dst).unwrap() += 1.0;
+        }
+    } else {
+        // For undirected graphs, count each edge once per node
+        for (src, dst, _) in graph.edges() {
+            *cent.get_mut(&src).unwrap() += 1.0;
+            *cent.get_mut(&dst).unwrap() += 1.0;
+        }
     }
     cent
 }
