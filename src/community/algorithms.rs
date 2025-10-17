@@ -675,3 +675,33 @@ where
     }
     components
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+    #[test]
+    fn test_louvain_communities() {
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+        let communities = louvain(&graph, Some(10));
+        let total_nodes = communities.iter().map(|c| c.len()).sum::<usize>();
+        assert_eq!(total_nodes, graph.node_count());
+    }
+    #[test]
+    fn test_label_propagation() {
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        let labels = label_propagation(&graph, 10, Some(42));
+        assert_eq!(labels.len(), graph.node_count());
+    }
+}

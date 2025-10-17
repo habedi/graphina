@@ -500,3 +500,50 @@ where
         graph.neighbors(node).collect()
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+    #[test]
+    fn test_bfs() {
+        let mut graph = Graph::<i32, ()>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, ());
+        graph.add_edge(n2, n3, ());
+        let visited = bfs(&graph, n1);
+        assert_eq!(visited.len(), 3);
+        assert!(visited.contains(&n1));
+        assert!(visited.contains(&n2));
+        assert!(visited.contains(&n3));
+    }
+    #[test]
+    fn test_dfs() {
+        let mut graph = Graph::<i32, ()>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, ());
+        graph.add_edge(n2, n3, ());
+        let visited = dfs(&graph, n1);
+        assert_eq!(visited.len(), 3);
+        assert!(visited.contains(&n1));
+        assert!(visited.contains(&n2));
+        assert!(visited.contains(&n3));
+    }
+    #[test]
+    fn test_bidis() {
+        let mut graph = Graph::<i32, ()>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, ());
+        graph.add_edge(n2, n3, ());
+        let path = bidis(&graph, n1, n3);
+        assert!(path.is_some());
+        let path = path.unwrap();
+        assert_eq!(path[0], n1);
+        assert_eq!(path[path.len() - 1], n3);
+    }
+}

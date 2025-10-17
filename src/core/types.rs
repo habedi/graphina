@@ -756,3 +756,179 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> GraphBuilder<A, W, Ty> {
         graph
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_digraph() {
+        let mut dgraph = Digraph::<i32, f32>::new();
+        let n1 = dgraph.add_node(1);
+        let n2 = dgraph.add_node(2);
+        let n3 = dgraph.add_node(3);
+
+        let _e1 = dgraph.add_edge(n1, n2, 1.0);
+        let _e2 = dgraph.add_edge(n2, n3, 2.0);
+        let _e3 = dgraph.add_edge(n3, n1, 3.0);
+
+        assert_eq!(dgraph.node_count(), 3);
+        assert_eq!(dgraph.edge_count(), 3);
+
+        let neighbors_n1: Vec<NodeId> = dgraph.neighbors(n1).collect();
+        assert!(neighbors_n1.contains(&n2));
+        assert!(!neighbors_n1.contains(&n3));
+
+        assert_eq!(*dgraph.node_attr(n1).unwrap(), 1);
+        assert_eq!(*dgraph.node_attr(n2).unwrap(), 2);
+        assert_eq!(*dgraph.node_attr(n3).unwrap(), 3);
+
+        let matrix = dgraph.to_adjacency_matrix();
+        assert_eq!(matrix[0][1], Some(1.0));
+        assert_eq!(matrix[1][2], Some(2.0));
+        assert_eq!(matrix[2][0], Some(3.0));
+
+        let sparse = dgraph.to_sparse_adjacency_matrix();
+        assert_eq!(sparse.rows(), 3);
+        assert_eq!(sparse.get(0, 1), Some(&1.0));
+        assert_eq!(sparse.get(1, 2), Some(&2.0));
+        assert_eq!(sparse.get(2, 0), Some(&3.0));
+
+        let updated = dgraph.update_node(n1, 10);
+        assert!(updated);
+        assert_eq!(*dgraph.node_attr(n1).unwrap(), 10);
+    }
+
+    #[test]
+    fn test_graph() {
+        let mut graph = Graph::<&str, f32>::new();
+        let a = graph.add_node("A");
+        let b = graph.add_node("B");
+        let c = graph.add_node("C");
+
+        let _e1 = graph.add_edge(a, b, 0.0);
+        let _e2 = graph.add_edge(b, c, 0.0);
+        let _e3 = graph.add_edge(c, a, 0.0);
+
+        assert_eq!(graph.node_count(), 3);
+        assert_eq!(graph.edge_count(), 3);
+
+        let neighbors_a: Vec<NodeId> = graph.neighbors(a).collect();
+        assert!(neighbors_a.contains(&b));
+        assert!(neighbors_a.contains(&c));
+
+        assert_eq!(graph.node_attr(a).unwrap(), &"A");
+        assert_eq!(graph.node_attr(b).unwrap(), &"B");
+        assert_eq!(graph.node_attr(c).unwrap(), &"C");
+
+        let matrix = graph.to_adjacency_matrix();
+        assert_eq!(matrix[a.index()][b.index()], Some(0.0));
+        assert_eq!(matrix[b.index()][c.index()], Some(0.0));
+        assert_eq!(matrix[c.index()][a.index()], Some(0.0));
+
+        let sparse = graph.to_sparse_adjacency_matrix();
+        assert_eq!(sparse.rows(), 3);
+        assert_eq!(sparse.get(a.index(), b.index()), Some(&0.0));
+
+        let updated = graph.update_node(a, "Alpha");
+        assert!(updated);
+        assert_eq!(graph.node_attr(a).unwrap(), &"Alpha");
+    }
+
+    #[test]
+    fn test_removals() {
+        let mut dgraph = Digraph::<i32, f32>::new();
+        let n1 = dgraph.add_node(1);
+        let n2 = dgraph.add_node(2);
+        let n3 = dgraph.add_node(3);
+
+        let _e1 = dgraph.add_edge(n1, n2, 1.0);
+        let e2 = dgraph.add_edge(n2, n3, 2.0);
+        let _e3 = dgraph.add_edge(n3, n1, 3.0);
+
+        let removed_edge = dgraph.remove_edge(e2);
+        assert_eq!(removed_edge, Some(2.0));
+        assert_eq!(dgraph.edge_count(), 2);
+
+        let removed_attr = dgraph.remove_node(n2);
+        assert_eq!(removed_attr, Some(2));
+        assert_eq!(dgraph.node_count(), 2);
+
+        let update_result = dgraph.update_node(n2, 20);
+        assert!(!update_result);
+
+        let matrix = dgraph.to_adjacency_matrix();
+        assert_eq!(matrix.len(), 2);
+
+        let sparse = dgraph.to_sparse_adjacency_matrix();
+        assert_eq!(sparse.rows(), 2);
+    }
+
+    #[test]
+    fn test_api_improvements() {
+        let mut g = Graph::<i32, f64>::new();
+        assert!(g.is_empty());
+
+        let n1 = g.add_node(1);
+        assert!(!g.is_empty());
+
+        let n2 = g.add_node(2);
+        let e = g.add_edge(n1, n2, 3.5);
+
+        assert_eq!(g.edge_weight(e), Some(&3.5));
+        assert!(g.contains_node(n1));
+        assert!(g.contains_edge(n1, n2));
+        assert_eq!(g.degree(n1), Some(1));
+    }
+
+    #[test]
+    fn test_builder_pattern() {
+        let graph = Graph::<i32, f64>::builder()
+            .add_node(1)
+            .add_node(2)
+            .add_node(3)
+            .add_edge(0, 1, 1.0)
+            .add_edge(1, 2, 2.0)
+            .build();
+
+        assert_eq!(graph.node_count(), 3);
+        assert_eq!(graph.edge_count(), 2);
+    }
+
+    #[test]
+    fn test_density() {
+        let mut g = Graph::<i32, f64>::new();
+        assert_eq!(g.density(), 0.0);
+
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        assert_eq!(g.density(), 0.0);
+
+        g.add_edge(n1, n2, 1.0);
+        assert_eq!(g.density(), 1.0);
+    }
+
+    #[test]
+    fn test_clear_and_retain() {
+        let mut g = Graph::<i32, f64>::new();
+        g.add_node(1);
+        g.add_node(2);
+
+        assert_eq!(g.node_count(), 2);
+        g.clear();
+        assert!(g.is_empty());
+
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+        let n4 = g.add_node(4);
+
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n3, 1.0);
+
+        g.retain_nodes(|_id, attr| *attr % 2 == 0);
+        assert_eq!(g.node_count(), 2);
+        assert!(g.contains_node(n2));
+        assert!(g.contains_node(n4));
+    }
+}

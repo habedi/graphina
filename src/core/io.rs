@@ -375,3 +375,82 @@ where
     writer.flush()?;
     Ok(())
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+    use std::fs;
+    use std::io::Read;
+    #[test]
+    fn test_read_edge_list() {
+        let tmp_path = "tmp_edge_list.txt";
+        let edge_list = "\
+# This is a comment line and should be ignored
+1,2,1.5
+2,3,2.0
+3,1,3.0  # Comment after data should be ignored
+";
+        fs::write(tmp_path, edge_list).expect("Unable to write temporary file");
+        let mut graph = Graph::<i32, f32>::new();
+        read_edge_list(tmp_path, &mut graph, ',').expect("read_edge_list failed");
+        assert_eq!(graph.node_count(), 3);
+        assert_eq!(graph.edge_count(), 3);
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+    #[test]
+    fn test_write_edge_list() {
+        let mut graph = Graph::<i32, f32>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, 1.5);
+        graph.add_edge(n2, n3, 2.0);
+        graph.add_edge(n3, n1, 3.0);
+        let tmp_path = "tmp_edge_list_out.txt";
+        write_edge_list(tmp_path, &graph, ',').expect("write_edge_list failed");
+        let mut content = String::new();
+        fs::File::open(tmp_path)
+            .expect("Failed to open output file")
+            .read_to_string(&mut content)
+            .expect("Failed to read output file");
+        assert!(content.contains("1,2,1.5") || content.contains("2,1,1.5"));
+        assert!(content.contains("2,3,2") || content.contains("3,2,2"));
+        assert!(content.contains("3,1,3") || content.contains("1,3,3"));
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+    #[test]
+    fn test_read_adjacency_list() {
+        let tmp_path = "tmp_adj_list.txt";
+        let adj_list = "\
+# Adjacency list with comments
+1,2,1.5,3,2.5
+2,3,2.0
+3
+";
+        fs::write(tmp_path, adj_list).expect("Unable to write temporary file");
+        let mut graph = Graph::<i32, f32>::new();
+        read_adjacency_list(tmp_path, &mut graph, ',').expect("read_adjacency_list failed");
+        assert_eq!(graph.node_count(), 3);
+        assert_eq!(graph.edge_count(), 3);
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+    #[test]
+    fn test_write_adjacency_list() {
+        let mut graph = Graph::<i32, f32>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, 1.5);
+        graph.add_edge(n1, n3, 2.5);
+        graph.add_edge(n2, n3, 2.0);
+        let tmp_path = "tmp_adj_list_out.txt";
+        write_adjacency_list(tmp_path, &graph, ',').expect("write_adjacency_list failed");
+        let mut content = String::new();
+        fs::File::open(tmp_path)
+            .expect("Failed to open output file")
+            .read_to_string(&mut content)
+            .expect("Failed to read output file");
+        assert!(!content.is_empty());
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+}

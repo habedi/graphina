@@ -27,6 +27,7 @@ If other required conditions are violated, the algorithm may also signal an erro
 
 use crate::core::exceptions::GraphinaException;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use ordered_float::OrderedFloat;
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::convert::From;
@@ -370,4 +371,38 @@ where
     }
 
     Ok((mst_edges, total_weight))
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+    #[test]
+    fn test_kruskal_mst() {
+        let mut graph = Graph::<i32, OrderedFloat<f64>>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, OrderedFloat(1.0));
+        graph.add_edge(n1, n3, OrderedFloat(3.0));
+        graph.add_edge(n2, n3, OrderedFloat(2.0));
+        graph.add_edge(n2, n4, OrderedFloat(4.0));
+        graph.add_edge(n3, n4, OrderedFloat(5.0));
+        let mst = kruskal_mst(&graph).expect("MST should exist");
+        assert_eq!(mst.0.len(), 3);
+        let total_weight: f64 = mst.0.iter().map(|e| e.weight.0).sum();
+        assert!((total_weight - 7.0).abs() < 1e-6);
+    }
+    #[test]
+    fn test_prim_mst() {
+        let mut graph = Graph::<i32, OrderedFloat<f64>>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, OrderedFloat(1.0));
+        graph.add_edge(n1, n3, OrderedFloat(3.0));
+        graph.add_edge(n2, n3, OrderedFloat(2.0));
+        let mst = prim_mst(&graph).expect("MST should exist");
+        assert_eq!(mst.0.len(), 2);
+    }
 }

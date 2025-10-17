@@ -566,3 +566,34 @@ where
     }
     (treewidth, order)
 }
+#[cfg(test)]
+mod tests {
+    use crate::approximation::algorithms::maximum_independent_set;
+    use crate::approximation::algorithms::min_weighted_vertex_cover;
+    use crate::core::types::Graph;
+    #[test]
+    fn test_greedy_vertex_cover() {
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+        let cover = min_weighted_vertex_cover(&graph, None);
+        assert!(!cover.is_empty());
+        assert!(cover.len() <= graph.node_count());
+    }
+    #[test]
+    fn test_greedy_independent_set() {
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        let indep_set = maximum_independent_set(&graph);
+        assert!(!indep_set.is_empty());
+    }
+}

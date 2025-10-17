@@ -273,3 +273,45 @@ where
     }
     results
 }
+
+/// Common Neighbors
+/// For a pair (u, v), returns the number of common neighbors.
+pub fn common_neighbors<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, u: NodeId, v: NodeId) -> usize
+where
+    Ty: GraphConstructor<A, W>,
+{
+    let set_u: HashSet<_> = graph.neighbors(u).collect();
+    let set_v: HashSet<_> = graph.neighbors(v).collect();
+    set_u.intersection(&set_v).count()
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+    #[test]
+    fn test_jaccard_coefficient() {
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n1, n3, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+        let results = jaccard_coefficient(&graph, Some(&[(n1, n2)]));
+        let score = results[0].1;
+        assert!(score >= 0.0 && score <= 1.0);
+    }
+    #[test]
+    fn test_common_neighbors() {
+        let mut graph = Graph::<i32, ()>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n3, ());
+        graph.add_edge(n2, n3, ());
+        let count = common_neighbors(&graph, n1, n2);
+        assert_eq!(count, 1);
+    }
+}

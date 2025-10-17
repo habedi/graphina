@@ -1082,3 +1082,105 @@ where
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Digraph;
+    use ordered_float::OrderedFloat;
+    fn build_test_graph_f64() -> Digraph<i32, f64> {
+        let mut graph: Digraph<i32, f64> = Digraph::default();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n0, n1, 1.0);
+        graph.add_edge(n0, n2, 1.0);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n1, n3, 1.0);
+        graph.add_edge(n2, n0, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n0, 1.0);
+        graph.add_edge(n3, n1, 1.0);
+        graph
+    }
+    fn build_test_graph_ordered() -> Digraph<i32, OrderedFloat<f64>> {
+        let mut graph: Digraph<i32, OrderedFloat<f64>> = Digraph::default();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n0, n1, OrderedFloat(1.0));
+        graph.add_edge(n0, n2, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, OrderedFloat(1.0));
+        graph.add_edge(n1, n3, OrderedFloat(1.0));
+        graph.add_edge(n2, n0, OrderedFloat(1.0));
+        graph.add_edge(n2, n3, OrderedFloat(1.0));
+        graph.add_edge(n3, n0, OrderedFloat(1.0));
+        graph.add_edge(n3, n1, OrderedFloat(1.0));
+        graph
+    }
+    fn approx_eq(a: f64, b: f64, tol: f64) -> bool {
+        (a - b).abs() < tol
+    }
+    #[test]
+    fn test_degree_centrality() {
+        let graph = build_test_graph_f64();
+        let deg = degree_centrality(&graph);
+        for d in deg {
+            assert_eq!(d.1, 4.0);
+        }
+    }
+    #[test]
+    fn test_closeness_centrality() {
+        let graph = build_test_graph_f64();
+        let closeness = closeness_centrality(&graph, false).unwrap();
+        for (_, c) in closeness {
+            assert!(approx_eq(c, 0.75, 1e-6));
+        }
+    }
+    #[test]
+    fn test_betweenness_centrality() {
+        let graph = build_test_graph_f64();
+        let bc = betweenness_centrality(&graph);
+        for score in bc {
+            assert!(score >= 0.0);
+        }
+    }
+    #[test]
+    fn test_eigenvector_centrality() {
+        let graph = build_test_graph_f64();
+        let ev = eigenvector_centrality(&graph, 20, false);
+        assert_eq!(ev.len(), 4);
+        for (_, score) in ev.iter() {
+            assert!(*score > 0.0);
+        }
+    }
+    #[test]
+    fn test_pagerank() {
+        let graph = build_test_graph_f64();
+        let pr = pagerank(&graph, 0.85, 50);
+        let total: f64 = pr.values().sum();
+        assert!(approx_eq(total, 1.0, 1e-6));
+        for score in pr.into_values() {
+            assert!(score > 0.0);
+        }
+    }
+    #[test]
+    fn test_katz_centrality() {
+        let graph = build_test_graph_f64();
+        let kc = katz_centrality(&graph, 0.1, 1.0, 50, false, true);
+        assert_eq!(kc.len(), 4);
+        for (_, score) in kc {
+            assert!(score > 0.0);
+        }
+    }
+    #[test]
+    fn test_harmonic_centrality() {
+        let graph = build_test_graph_ordered();
+        let hc = harmonic_centrality(&graph).unwrap();
+        for score in hc {
+            assert!(approx_eq(score, 2.5, 1e-6));
+        }
+    }
+}
