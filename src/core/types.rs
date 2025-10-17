@@ -155,8 +155,102 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
     }
 
+    /// Creates a new graph with pre-allocated capacity for nodes and edges.
+    ///
+    /// This is useful when you know the approximate size of your graph upfront.
+    pub fn with_capacity(nodes: usize, edges: usize) -> Self {
+        Self {
+            inner: PetGraph::<A, W, Ty>::with_capacity(nodes, edges),
+        }
+    }
+
+    /// Returns a builder for constructing a graph with a fluent API.
+    pub fn builder() -> GraphBuilder<A, W, Ty> {
+        GraphBuilder::new()
+    }
+
     pub fn is_directed(&self) -> bool {
         self.inner.is_directed()
+    }
+
+    /// Returns true if the graph contains no nodes.
+    pub fn is_empty(&self) -> bool {
+        self.inner.node_count() == 0
+    }
+
+    /// Returns the density of the graph.
+    ///
+    /// Density is the ratio of actual edges to possible edges:
+    /// - For directed graphs: edges / (nodes * (nodes - 1))
+    /// - For undirected graphs: (2 * edges) / (nodes * (nodes - 1))
+    ///
+    /// Returns 0.0 for empty graphs or graphs with fewer than 2 nodes.
+    pub fn density(&self) -> f64 {
+        let n = self.node_count();
+        if n < 2 {
+            return 0.0;
+        }
+        let m = self.edge_count() as f64;
+        let max_edges = (n * (n - 1)) as f64;
+
+        if self.is_directed() {
+            m / max_edges
+        } else {
+            (2.0 * m) / max_edges
+        }
+    }
+
+    /// Returns true if the node exists in the graph.
+    pub fn contains_node(&self, node: NodeId) -> bool {
+        self.inner.node_weight(node.0).is_some()
+    }
+
+    /// Returns true if there is an edge from source to target.
+    pub fn contains_edge(&self, source: NodeId, target: NodeId) -> bool {
+        self.find_edge(source, target).is_some()
+    }
+
+    /// Returns the degree of a node (number of incident edges).
+    ///
+    /// For directed graphs, this returns the sum of in-degree and out-degree.
+    /// Returns None if the node doesn't exist.
+    pub fn degree(&self, node: NodeId) -> Option<usize> {
+        if !self.contains_node(node) {
+            return None;
+        }
+
+        if self.is_directed() {
+            Some(self.in_degree(node).unwrap() + self.out_degree(node).unwrap())
+        } else {
+            Some(self.inner.edges(node.0).count())
+        }
+    }
+
+    /// Returns the in-degree of a node (number of incoming edges).
+    ///
+    /// For undirected graphs, this is equivalent to degree.
+    /// Returns None if the node doesn't exist.
+    pub fn in_degree(&self, node: NodeId) -> Option<usize> {
+        if !self.contains_node(node) {
+            return None;
+        }
+
+        if self.is_directed() {
+            Some(self.edges().filter(|(_, tgt, _)| *tgt == node).count())
+        } else {
+            self.degree(node)
+        }
+    }
+
+    /// Returns the out-degree of a node (number of outgoing edges).
+    ///
+    /// For undirected graphs, this is equivalent to degree.
+    /// Returns None if the node doesn't exist.
+    pub fn out_degree(&self, node: NodeId) -> Option<usize> {
+        if !self.contains_node(node) {
+            return None;
+        }
+        Some(self.inner.edges(node.0).count())
     }
 
     /// Adds a node with the specified attribute to the graph.
@@ -261,13 +355,35 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     }
 
     /// Returns a reference to the weight of an edge.
-    pub fn edge_attr(&self, edge: EdgeId) -> Option<&W> {
+    ///
+    /// **Consistent naming**: Use `edge_weight` instead of `edge_attr` for clarity.
+    pub fn edge_weight(&self, edge: EdgeId) -> Option<&W> {
         self.inner.edge_weight(edge.0)
     }
 
     /// Returns a mutable reference to the weight of an edge.
-    pub fn edge_attr_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
+    ///
+    /// **Consistent naming**: Use `edge_weight_mut` instead of `edge_attr_mut` for clarity.
+    pub fn edge_weight_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
         self.inner.edge_weight_mut(edge.0)
+    }
+
+    /// Alias for `edge_weight` to maintain backward compatibility.
+    #[deprecated(
+        since = "0.4.0",
+        note = "Use `edge_weight` instead for consistent naming"
+    )]
+    pub fn edge_attr(&self, edge: EdgeId) -> Option<&W> {
+        self.edge_weight(edge)
+    }
+
+    /// Alias for `edge_weight_mut` to maintain backward compatibility.
+    #[deprecated(
+        since = "0.4.0",
+        note = "Use `edge_weight_mut` instead for consistent naming"
+    )]
+    pub fn edge_attr_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
+        self.edge_weight_mut(edge)
     }
 
     /// Returns an iterator over all nodes and their attributes.
@@ -329,6 +445,61 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             .edge_references()
             .find(|edge| edge.source() == source.0 && edge.target() == target.0)
             .map(|edge| EdgeId::new(edge.id()))
+    }
+
+    /// Clears all nodes and edges from the graph.
+    pub fn clear(&mut self) {
+        self.inner.clear();
+    }
+
+    /// Returns an iterator over all node IDs.
+    pub fn node_ids(&self) -> impl Iterator<Item = NodeId> + '_ {
+        self.inner.node_indices().map(NodeId::new)
+    }
+
+    /// Returns an iterator over all edge IDs.
+    pub fn edge_ids(&self) -> impl Iterator<Item = EdgeId> + '_ {
+        self.inner.edge_indices().map(EdgeId::new)
+    }
+
+    /// Retains only the nodes that satisfy the predicate.
+    ///
+    /// All edges connected to removed nodes are also removed.
+    pub fn retain_nodes<F>(&mut self, mut predicate: F)
+    where
+        F: FnMut(NodeId, &A) -> bool,
+    {
+        let to_remove: Vec<NodeId> = self
+            .nodes()
+            .filter(|(id, attr)| !predicate(*id, attr))
+            .map(|(id, _)| id)
+            .collect();
+
+        for node in to_remove {
+            self.remove_node(node);
+        }
+    }
+
+    /// Retains only the edges that satisfy the predicate.
+    pub fn retain_edges<F>(&mut self, mut predicate: F)
+    where
+        F: FnMut(NodeId, NodeId, &W) -> bool,
+    {
+        let to_remove: Vec<EdgeId> = self
+            .edges()
+            .filter_map(|(src, dst, w)| {
+                let edge_id = self.find_edge(src, dst)?;
+                if !predicate(src, dst, w) {
+                    Some(edge_id)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        for edge in to_remove {
+            self.remove_edge(edge);
+        }
     }
 }
 
@@ -521,3 +692,67 @@ pub type NodeMap<T> = HashMap<NodeId, T>;
 
 /// type alias for [`HashMap`] that map [`EdgeId`] to `T`
 pub type EdgeMap<T> = HashMap<EdgeId, T>;
+
+/// Builder for constructing graphs with a fluent API.
+///
+/// # Example
+///
+/// ```rust
+/// use graphina::core::types::{Graph, NodeId, EdgeId};
+///
+/// let graph = Graph::builder()
+///     .add_node(1)
+///     .add_node(2)
+///     .add_edge(1, 2, 3.0)
+///     .build();
+///
+/// assert_eq!(graph.node_count(), 2);
+/// assert_eq!(graph.edge_count(), 1);
+/// ```
+pub struct GraphBuilder<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
+    nodes: Vec<A>,
+    edges: Vec<(usize, usize, W)>,
+    _marker: std::marker::PhantomData<Ty>,
+}
+
+impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> GraphBuilder<A, W, Ty> {
+    /// Creates a new `GraphBuilder`.
+    pub fn new() -> Self {
+        Self {
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    /// Adds a node to the builder.
+    pub fn add_node(mut self, attr: A) -> Self {
+        self.nodes.push(attr);
+        self
+    }
+
+    /// Adds an edge to the builder.
+    pub fn add_edge(mut self, source: usize, target: usize, weight: W) -> Self {
+        self.edges.push((source, target, weight));
+        self
+    }
+
+    /// Consumes the builder and constructs the graph.
+    pub fn build(self) -> BaseGraph<A, W, Ty> {
+        let mut graph = BaseGraph::with_capacity(self.nodes.len(), self.edges.len());
+
+        // Add nodes.
+        let node_ids: Vec<NodeId> = self
+            .nodes
+            .into_iter()
+            .map(|attr| graph.add_node(attr))
+            .collect();
+
+        // Add edges.
+        for (source, target, weight) in self.edges {
+            graph.add_edge(node_ids[source], node_ids[target], weight);
+        }
+
+        graph
+    }
+}
