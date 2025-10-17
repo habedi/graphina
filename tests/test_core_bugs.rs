@@ -168,7 +168,7 @@ fn test_barabasi_albert_degree_distribution() {
     }
 
     // Just verify graph was created without checking exact distribution
-    assert!(degrees.len() > 0, "Graph should have edges");
+    assert!(!degrees.is_empty(), "Graph should have edges");
 }
 
 #[test]

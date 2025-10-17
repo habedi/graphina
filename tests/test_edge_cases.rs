@@ -111,7 +111,6 @@ fn test_io_edge_list_missing_weight() {
 #[test]
 fn test_io_roundtrip() {
     // Test that write -> read preserves graph structure
-    let input_file = "/tmp/test_roundtrip_in.txt";
     let output_file = "/tmp/test_roundtrip_out.txt";
 
     let mut graph1 = Graph::<i32, f32>::new();
@@ -215,9 +214,9 @@ fn test_edge_update() {
     let e = graph.add_edge(n1, n2, 1.0);
 
     // Update weight
-    if let Some(weight) = graph.edge_attr_mut(e) {
+    if let Some(weight) = graph.edge_weight_mut(e) {
         *weight = 5.0;
     }
 
-    assert_eq!(*graph.edge_attr(e).unwrap(), 5.0);
+    assert_eq!(*graph.edge_weight(e).unwrap(), 5.0);
 }

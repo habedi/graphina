@@ -138,7 +138,7 @@ impl EdgeId {
 /// - `Ty`: Graph type (directed/undirected) implementing `GraphConstructor` and `EdgeType`.
 #[derive(Debug, Clone)]
 pub struct BaseGraph<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
-    inner: PetGraph<A, W, Ty>,
+    pub(crate) inner: PetGraph<A, W, Ty>,
 }
 
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> Default for BaseGraph<A, W, Ty> {
@@ -713,6 +713,12 @@ pub struct GraphBuilder<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
     nodes: Vec<A>,
     edges: Vec<(usize, usize, W)>,
     _marker: std::marker::PhantomData<Ty>,
+}
+
+impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> Default for GraphBuilder<A, W, Ty> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> GraphBuilder<A, W, Ty> {

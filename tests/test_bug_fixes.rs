@@ -1,6 +1,6 @@
 // Test file for verifying bug fixes in Graphina
 
-use graphina::centrality::algorithms::{
+use graphina::centrality::degree::{
     degree_centrality, in_degree_centrality, out_degree_centrality,
 };
 use graphina::core::types::{Digraph, Graph};

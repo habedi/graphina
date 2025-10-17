@@ -1,6 +1,6 @@
 use graphina::core::types::Graph;
 
-use graphina::centrality::algorithms::eigenvector_centrality;
+use graphina::centrality::eigenvector::eigenvector_centrality;
 
 fn main() {
     let mut graph = Graph::new();
@@ -10,14 +10,9 @@ fn main() {
         graph.add_edge(ids[s], ids[d], w);
     }
 
-    let centrality = eigenvector_centrality(&graph, 1000, false);
-    println!("Unweighted",);
-    for (n, attr) in graph.nodes() {
-        println!(">> {} : {:.5}", attr, centrality[&n])
-    }
-    println!();
-    let centrality = eigenvector_centrality(&graph, 1000, true);
-    println!("Weighted",);
+    let centrality =
+        eigenvector_centrality(&graph, 1000, 1e-6_f64).expect("eigenvector centrality failed");
+    println!("Eigenvector centrality (tolerance=1e-6):");
     for (n, attr) in graph.nodes() {
         println!(">> {} : {:.5}", attr, centrality[&n])
     }

@@ -1,6 +1,6 @@
 use graphina::core::types::Digraph;
 
-use graphina::centrality::algorithms::katz_centrality;
+use graphina::centrality::katz::katz_centrality;
 
 fn main() {
     let mut graph = Digraph::new();
@@ -10,18 +10,20 @@ fn main() {
         graph.add_edge(ids[s], ids[d], w);
     }
 
-    let params = [
-        (0.1, 1.0, 1000, false, true),
-        (0.1, 1.0, 1000, false, false),
-        (0.01, 0.5, 1000, true, false),
-        (0.01, 0.5, 1000, true, true),
-    ];
+    // (alpha, beta_scalar, max_iter)
+    let params = [(0.1, 1.0, 1000), (0.01, 0.5, 1000)];
 
-    for (alpha, beta, max_iter, weighted, normalized) in params {
-        let centrality = katz_centrality(&graph, alpha, beta, max_iter, weighted, normalized);
+    for (alpha, beta_scalar, max_iter) in params {
+        let centrality = katz_centrality(
+            &graph,
+            alpha,
+            Some(&move |_| beta_scalar),
+            max_iter,
+            1e-6_f64,
+        );
         println!(
-            "alpha: {:.3}, beta: {:.3}, max iter: {:>5}, weighted: {}, normalized: {}",
-            alpha, beta, max_iter, weighted, normalized
+            "alpha: {:.3}, beta: {:.3}, max iter: {:>5}",
+            alpha, beta_scalar, max_iter
         );
         for (n, attr) in graph.nodes() {
             println!(">> {} : {:.5}", attr, centrality[&n])

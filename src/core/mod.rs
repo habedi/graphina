@@ -5,3 +5,4 @@ pub mod mst;
 pub mod paths;
 pub mod traversal;
 pub mod types;
+pub mod validation;

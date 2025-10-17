@@ -27,7 +27,6 @@ If other required conditions are violated, the algorithm may also signal an erro
 
 use crate::core::exceptions::GraphinaException;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
-use ordered_float::OrderedFloat;
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::convert::From;
@@ -376,6 +375,7 @@ where
 mod tests {
     use super::*;
     use crate::core::types::Graph;
+    use ordered_float::OrderedFloat;
     #[test]
     fn test_kruskal_mst() {
         let mut graph = Graph::<i32, OrderedFloat<f64>>::new();
