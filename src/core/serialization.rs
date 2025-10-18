@@ -227,12 +227,11 @@ where
         let file = File::create(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
         let mut writer = BufWriter::new(file);
 
-        bincode::serde::encode_into_std_write(
-            &serializable,
-            &mut writer,
-            bincode::config::standard(),
-        )
-        .map_err(|e| GraphinaException::new(&format!("Binary serialization error: {}", e)))?;
+        let encoded = bincode::serde::encode_to_vec(&serializable, bincode::config::standard())
+            .map_err(|e| GraphinaException::new(&format!("Binary serialization error: {}", e)))?;
+
+        std::io::Write::write_all(&mut writer, &encoded)
+            .map_err(|e| GraphinaException::new(&format!("Binary write error: {}", e)))?;
 
         Ok(())
     }
@@ -253,10 +252,14 @@ where
         W: for<'de> Deserialize<'de>,
     {
         let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
-        let reader = BufReader::new(file);
+        let mut reader = BufReader::new(file);
+
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut reader, &mut buffer)
+            .map_err(|e| GraphinaException::new(&format!("Binary read error: {}", e)))?;
 
         let (serializable, _): (SerializableGraph<A, W>, usize) =
-            bincode::serde::decode_from_reader(reader, bincode::config::standard()).map_err(
+            bincode::serde::decode_from_slice(&buffer, bincode::config::standard()).map_err(
                 |e| GraphinaException::new(&format!("Binary deserialization error: {}", e)),
             )?;
 
@@ -270,11 +273,17 @@ where
         W: for<'de> Deserialize<'de>,
     {
         let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
-        let reader = BufReader::new(file);
+        let mut reader = BufReader::new(file);
+
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut reader, &mut buffer)
+            .map_err(|e| GraphinaException::new(&format!("Binary read error: {}", e)))?;
+
         let (serializable, _): (SerializableGraph<A, W>, usize) =
-            bincode::serde::decode_from_reader(reader, bincode::config::standard()).map_err(
+            bincode::serde::decode_from_slice(&buffer, bincode::config::standard()).map_err(
                 |e| GraphinaException::new(&format!("Binary deserialization error: {}", e)),
             )?;
+
         Self::try_from_serializable(&serializable)
     }
 

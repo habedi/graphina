@@ -107,3 +107,4 @@ graph_*.json
 graph_*.html
 graph.html
 graph.png
+*.bin
