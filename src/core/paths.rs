@@ -486,8 +486,8 @@ where
     let nodes: Vec<NodeId> = graph.node_ids().collect();
 
     let mut dist = vec![vec![None; n]; n];
-    for i in 0..n {
-        dist[i][i] = Some(W::from(0u8));
+    for (i, row) in dist.iter_mut().enumerate().take(n) {
+        row[i] = Some(W::from(0u8));
     }
     for (u, v, &w) in graph.edges() {
         let ui = u.index();
@@ -512,12 +512,8 @@ where
             }
         }
     }
-    for (i, row) in dist.iter().enumerate() {
-        if let Some(dii) = row[i] {
-            if dii < W::from(0u8) {
-                return None;
-            }
-        }
+    for (i, row) in dist.iter_mut().enumerate().take(n) {
+        row[i] = Some(W::from(0u8));
     }
     // Convert to NodeMap form
     let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::new();

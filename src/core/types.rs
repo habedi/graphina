@@ -941,8 +941,8 @@ where
             inner: <Ty as GraphConstructor<B, W>>::new_graph(),
         };
         let mut id_map = Vec::new();
-        for (nid, a) in self.nodes() {
-            let nb = f(nid, a);
+        for (_nid, a) in self.nodes() {
+            let nb = f(_nid, a);
             id_map.push(new_graph.add_node(nb));
         }
         for (u, v, w) in self.edges() {
@@ -961,7 +961,7 @@ where
             inner: <Ty as GraphConstructor<A, U>>::new_graph(),
         };
         let mut id_map = Vec::new();
-        for (nid, a) in self.nodes() {
+        for (_nid, a) in self.nodes() {
             id_map.push(new_graph.add_node(a.clone()));
         }
         for (eid, u, v, w) in self.edges_with_ids() {
@@ -1026,9 +1026,6 @@ impl<T> OrderedNodeMap<T> {
     }
     pub fn iter(&self) -> impl Iterator<Item = (&NodeId, &T)> {
         self.0.iter()
-    }
-    pub fn into_iter(self) -> impl Iterator<Item = (NodeId, T)> {
-        self.0.into_iter()
     }
     pub fn len(&self) -> usize {
         self.0.len()

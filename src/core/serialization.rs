@@ -12,6 +12,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
 
+use bincode;
 use serde::{Deserialize, Serialize};
 
 use crate::core::exceptions::GraphinaException;
@@ -224,10 +225,14 @@ where
     pub fn save_binary<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaException> {
         let serializable = self.to_serializable();
         let file = File::create(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
-        let writer = BufWriter::new(file);
+        let mut writer = BufWriter::new(file);
 
-        bincode::serialize_into(writer, &serializable)
-            .map_err(|e| GraphinaException::new(&format!("Binary serialization error: {}", e)))?;
+        bincode::serde::encode_into_std_write(
+            &serializable,
+            &mut writer,
+            bincode::config::standard(),
+        )
+        .map_err(|e| GraphinaException::new(&format!("Binary serialization error: {}", e)))?;
 
         Ok(())
     }
@@ -250,8 +255,10 @@ where
         let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
         let reader = BufReader::new(file);
 
-        let serializable: SerializableGraph<A, W> = bincode::deserialize_from(reader)
-            .map_err(|e| GraphinaException::new(&format!("Binary deserialization error: {}", e)))?;
+        let (serializable, _): (SerializableGraph<A, W>, usize) =
+            bincode::serde::decode_from_reader(reader, bincode::config::standard()).map_err(
+                |e| GraphinaException::new(&format!("Binary deserialization error: {}", e)),
+            )?;
 
         Ok(Self::from_serializable(&serializable))
     }
@@ -264,8 +271,10 @@ where
     {
         let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
         let reader = BufReader::new(file);
-        let serializable: SerializableGraph<A, W> = bincode::deserialize_from(reader)
-            .map_err(|e| GraphinaException::new(&format!("Binary deserialization error: {}", e)))?;
+        let (serializable, _): (SerializableGraph<A, W>, usize) =
+            bincode::serde::decode_from_reader(reader, bincode::config::standard()).map_err(
+                |e| GraphinaException::new(&format!("Binary deserialization error: {}", e)),
+            )?;
         Self::try_from_serializable(&serializable)
     }
 
@@ -350,8 +359,7 @@ where
         }
 
         // Write edges
-        let mut edge_count = 0;
-        for (src, tgt, weight) in self.edges() {
+        for (edge_count, (src, tgt, weight)) in self.edges().enumerate() {
             writeln!(
                 writer,
                 "    <edge id=\"e{}\" source=\"n{}\" target=\"n{}\">",
@@ -363,7 +371,6 @@ where
             writeln!(writer, "      <data key=\"d1\">{}</data>", weight)
                 .map_err(|e| GraphinaException::new(&e.to_string()))?;
             writeln!(writer, "    </edge>").map_err(|e| GraphinaException::new(&e.to_string()))?;
-            edge_count += 1;
         }
 
         // Close graph and graphml
