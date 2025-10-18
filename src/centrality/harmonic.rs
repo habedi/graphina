@@ -1,6 +1,9 @@
 //! Harmonic centrality algorithms.
 //!
 //! This module provides harmonic centrality measures.
+//!
+//! Convention: returns `Result<_, crate::core::exceptions::GraphinaException>` to propagate
+//! path-computation errors and improve observability.
 
 use crate::core::exceptions::GraphinaException;
 use crate::core::paths::dijkstra;

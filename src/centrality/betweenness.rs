@@ -1,6 +1,9 @@
 //! Betweenness centrality algorithms.
 //!
 //! This module provides betweenness centrality measures.
+//!
+//! Convention: returns `Result<_, crate::core::exceptions::GraphinaException>` to surface
+//! invalid inputs and improve observability and error propagation.
 
 use crate::core::exceptions::GraphinaException;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};

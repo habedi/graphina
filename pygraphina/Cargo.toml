@@ -11,4 +11,5 @@ doc = false
 
 [dependencies]
 pyo3 = { version = "0.26.0", features = ["abi3-py310", "extension-module", "auto-initialize"] }
-graphina = { path = ".." }
+graphina = { path = "..", features = ["centrality", "approximation", "community", "links"] }
+ordered-float = "5.0.0"

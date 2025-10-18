@@ -498,7 +498,7 @@ fn test_cross_parallel_centrality_computation() {
 
     let start = std::time::Instant::now();
 
-    let deg_cent = degree_centrality(&graph);
+    let deg_cent = degree_centrality(&graph).unwrap();
     let close_cent = closeness_centrality(&graph).expect("Should work");
 
     let elapsed = start.elapsed();

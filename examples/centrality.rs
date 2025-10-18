@@ -17,7 +17,7 @@ fn main() {
         g.add_edge(nodes[0], nodes[1], ());
         g.add_edge(nodes[0], nodes[2], ());
 
-        let centrality = degree_centrality(&g);
+        let centrality = degree_centrality(&g).unwrap();
         // raw counts
         let expected = [2.0, 1.0, 1.0];
         for (i, f) in expected.into_iter().enumerate() {
@@ -34,7 +34,7 @@ fn main() {
         g.add_edge(nodes[0], nodes[1], ());
         g.add_edge(nodes[0], nodes[2], ());
 
-        let centrality = in_degree_centrality(&g);
+        let centrality = in_degree_centrality(&g).unwrap();
         // raw counts
         let expected = [0.0, 1.0, 1.0];
         for (i, f) in expected.into_iter().enumerate() {
@@ -51,7 +51,7 @@ fn main() {
         g.add_edge(nodes[0], nodes[1], ());
         g.add_edge(nodes[0], nodes[2], ());
 
-        let centrality = out_degree_centrality(&g);
+        let centrality = out_degree_centrality(&g).unwrap();
 
         // raw counts
         let expected = [2.0, 0.0, 0.0];
@@ -96,7 +96,7 @@ fn main() {
         g.add_edge(nodes[0], nodes[1], 1.0);
         g.add_edge(nodes[0], nodes[2], 2.0);
 
-        let centrality = katz_centrality(&g, 0.1, Some(&|_| 1.0), 1000, 1e-6_f64);
+        let centrality = katz_centrality(&g, 0.1, Some(&|_| 1.0), 1000, 1e-6_f64).unwrap();
         // Node 1 connected to two others should have highest centrality.
         assert!(centrality[&nodes[0]] > centrality[&nodes[1]]);
         assert!(centrality[&nodes[0]] > centrality[&nodes[2]]);
@@ -141,7 +141,7 @@ fn main() {
             graph.add_edge(nodes[s], nodes[d], w);
         }
 
-        let centrality = pagerank(&graph, 0.85, 1000, 1e-6_f64);
+        let centrality = pagerank(&graph, 0.85, 1000, 1e-6_f64).unwrap();
         // Sum close to 1, all non-negative
         let sum: f64 = nodes.iter().map(|n| centrality[n]).sum();
         assert!((sum - 1.0).abs() < 1e-6);

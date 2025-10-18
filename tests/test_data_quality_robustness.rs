@@ -236,8 +236,8 @@ fn test_robustness_algorithm_stability() {
 
     use graphina::centrality::degree::degree_centrality;
 
-    let result1 = degree_centrality(&graph);
-    let result2 = degree_centrality(&graph);
+    let result1 = degree_centrality(&graph).unwrap();
+    let result2 = degree_centrality(&graph).unwrap();
 
     assert_eq!(result1.len(), result2.len());
 
@@ -332,7 +332,7 @@ fn test_robustness_numerical_stability() {
 
     use graphina::centrality::degree::degree_centrality;
 
-    let centrality = degree_centrality(&graph);
+    let centrality = degree_centrality(&graph).unwrap();
 
     for (node, &value) in &centrality {
         assert!(

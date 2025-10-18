@@ -212,7 +212,7 @@ fn test_degree_centrality_on_real_graph() {
         }
     };
 
-    let centrality = degree_centrality(&graph);
+    let centrality = degree_centrality(&graph).unwrap();
 
     assert_eq!(centrality.len(), graph.node_count());
 

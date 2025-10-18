@@ -376,7 +376,7 @@ fn test_integration_centrality_algorithms() {
 
     // Test degree centrality
     use graphina::centrality::degree::degree_centrality;
-    let deg_centrality = degree_centrality(&graph);
+    let deg_centrality = degree_centrality(&graph).unwrap();
     assert_eq!(deg_centrality.len(), graph.node_count());
     println!(
         " Degree centrality computed for {} nodes",

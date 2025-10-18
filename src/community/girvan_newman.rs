@@ -25,17 +25,25 @@ where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
-    // Store only the endpoints (usize pairs), so no weight is needed.
+    // Build explicit node index mapping to avoid relying on StableGraph raw indices
+    let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
+    let mut node_to_idx: HashMap<NodeId, usize> = HashMap::new();
+    for (idx, &node) in node_list.iter().enumerate() {
+        node_to_idx.insert(node, idx);
+    }
+
+    // Store only the endpoints (usize pairs) using the compact indices.
     let mut active_edges: HashSet<(usize, usize)> = graph
         .edges()
         .map(|(u, v, _w)| {
-            let (a, b) = (u.index(), v.index());
-            if a < b { (a, b) } else { (b, a) }
+            let ui = node_to_idx[&u];
+            let vi = node_to_idx[&v];
+            if ui < vi { (ui, vi) } else { (vi, ui) }
         })
         .collect();
 
     // Build initial connectivity (neighbors set) from active edges.
-    let n = graph.node_count();
+    let n = node_list.len();
     let mut neighbors: Vec<HashSet<usize>> = vec![HashSet::new(); n];
     for &(u, v) in &active_edges {
         neighbors[u].insert(v);
@@ -56,11 +64,14 @@ where
             break;
         }
     }
-    compute_components_from_neighbors(&neighbors)
+    compute_components_from_neighbors(&neighbors, &node_list)
 }
 
-/// Helper: Compute connected components from an adjacency list.
-fn compute_components_from_neighbors(neighbors: &[HashSet<usize>]) -> Vec<Vec<NodeId>> {
+/// Helper: Compute connected components from an adjacency list and map back to NodeId.
+fn compute_components_from_neighbors(
+    neighbors: &[HashSet<usize>],
+    node_list: &[NodeId],
+) -> Vec<Vec<NodeId>> {
     let n = neighbors.len();
     let mut visited = vec![false; n];
     let mut components = Vec::new();
@@ -79,8 +90,8 @@ fn compute_components_from_neighbors(neighbors: &[HashSet<usize>]) -> Vec<Vec<No
                     }
                 }
             }
-            // Convert indices to NodeId using the private helper.
-            let component: Vec<NodeId> = comp.into_iter().map(node_from_index).collect();
+            // Convert indices to NodeId using the captured node_list mapping.
+            let component: Vec<NodeId> = comp.into_iter().map(|i| node_list[i]).collect();
             components.push(component);
         }
     }
@@ -89,7 +100,26 @@ fn compute_components_from_neighbors(neighbors: &[HashSet<usize>]) -> Vec<Vec<No
 
 /// Helper: Return the number of connected components.
 fn connected_components_count(neighbors: &[HashSet<usize>]) -> usize {
-    compute_components_from_neighbors(neighbors).len()
+    let n = neighbors.len();
+    let mut visited = vec![false; n];
+    let mut count = 0;
+    for i in 0..n {
+        if !visited[i] {
+            count += 1;
+            let mut queue = VecDeque::new();
+            queue.push_back(i);
+            visited[i] = true;
+            while let Some(u) = queue.pop_front() {
+                for &v in &neighbors[u] {
+                    if !visited[v] {
+                        visited[v] = true;
+                        queue.push_back(v);
+                    }
+                }
+            }
+        }
+    }
+    count
 }
 
 /// Helper: Compute edge betweenness centrality using Brandes’ algorithm.
@@ -131,9 +161,4 @@ fn compute_edge_betweenness(
         }
     }
     edge_btwn
-}
-
-/// Private helper: convert a raw index (usize) to a NodeId.
-fn node_from_index(i: usize) -> NodeId {
-    NodeId::new(petgraph::graph::NodeIndex::new(i))
 }

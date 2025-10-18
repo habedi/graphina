@@ -1,8 +1,14 @@
 //! Other centrality algorithms.
 //!
 //! This module provides additional centrality measures like local/global reaching, VoteRank, Laplacian centrality.
+//!
+//! Convention: most functions return `Result<_, crate::core::exceptions::GraphinaException>` for
+//! observability and error propagation. Selector-style routines that return node lists (e.g.,
+//! `voterank`) may return plain values.
 
+use crate::core::exceptions::GraphinaException;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 /// Local reaching centrality: measures the ability of a node to reach other nodes within a certain distance.
@@ -18,7 +24,7 @@ use std::collections::HashSet;
 pub fn local_reaching_centrality<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     distance: usize,
-) -> NodeMap<f64>
+) -> Result<NodeMap<f64>, GraphinaException>
 where
     Ty: GraphConstructor<A, W>,
 {
@@ -44,7 +50,7 @@ where
 
         centrality.insert(node, reached.len() as f64);
     }
-    centrality
+    Ok(centrality)
 }
 
 /// Global reaching centrality: similar to local but considers the entire graph.
@@ -56,7 +62,9 @@ where
 /// # Returns
 ///
 /// [`NodeMap`] of `f64` representing global reaching centralities of each node in the graph.
-pub fn global_reaching_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
+pub fn global_reaching_centrality<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<NodeMap<f64>, GraphinaException>
 where
     Ty: GraphConstructor<A, W>,
 {
@@ -77,11 +85,17 @@ pub fn voterank<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, num_seeds: usize) -> Vec<
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut votes = vec![0.0; graph.node_count()];
+    // Use a compact mapping to avoid relying on raw StableGraph indices
+    let node_list: Vec<NodeId> = graph.nodes().map(|(u, _)| u).collect();
+    let mut node_to_idx: HashMap<NodeId, usize> = HashMap::new();
+    for (i, &nid) in node_list.iter().enumerate() {
+        node_to_idx.insert(nid, i);
+    }
+    let mut votes = vec![0.0; node_list.len()];
     let mut selected = Vec::new();
-    let mut remaining: HashSet<NodeId> = graph.nodes().map(|(u, _)| u).collect();
+    let mut remaining: HashSet<NodeId> = node_list.iter().copied().collect();
 
-    for _ in 0..num_seeds.min(graph.node_count()) {
+    for _ in 0..num_seeds.min(node_list.len()) {
         let mut max_vote = -1.0;
         let mut candidate = None;
         for &node in &remaining {
@@ -99,7 +113,9 @@ where
             remaining.remove(&node);
             for neighbor in graph.neighbors(node) {
                 if remaining.contains(&neighbor) {
-                    votes[neighbor.index()] -= 1.0;
+                    if let Some(&idx) = node_to_idx.get(&neighbor) {
+                        votes[idx] -= 1.0;
+                    }
                 }
             }
         }
@@ -116,7 +132,9 @@ where
 /// # Returns
 ///
 /// [`NodeMap`] of `f64` representing Laplacian centralities of each node in the graph.
-pub fn laplacian_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64>
+pub fn laplacian_centrality<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<NodeMap<f64>, GraphinaException>
 where
     W: Copy + PartialOrd + Into<f64>,
     Ty: GraphConstructor<A, W>,
@@ -130,5 +148,5 @@ where
         }
         centrality.insert(node, sum);
     }
-    centrality
+    Ok(centrality)
 }

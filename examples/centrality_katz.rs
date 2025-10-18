@@ -22,7 +22,8 @@ fn main() {
             Some(&move |_| beta_scalar),
             max_iter,
             1e-6_f64,
-        );
+        )
+        .expect("Katz centrality computation failed");
         println!(
             "alpha: {:.3}, beta: {:.3}, max iter: {:>5}",
             alpha, beta_scalar, max_iter

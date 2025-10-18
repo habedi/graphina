@@ -6,6 +6,7 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use nalgebra::DMatrix;
 use rand::prelude::*;
 use rand::{SeedableRng, rngs::StdRng};
+use std::collections::HashMap;
 
 /// Private helper: Create a seeded RNG from an optional seed.
 fn create_rng(seed: Option<u64>) -> StdRng {
@@ -35,14 +36,21 @@ where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
-    let n = graph.node_count();
+    // Build explicit node index mapping to avoid relying on StableGraph raw indices
+    let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
+    let n = node_list.len();
+    let mut node_to_idx: HashMap<NodeId, usize> = HashMap::new();
+    for (idx, &node) in node_list.iter().enumerate() {
+        node_to_idx.insert(node, idx);
+    }
     let mut adj = DMatrix::<f64>::zeros(n, n);
     for (u, v, &w) in graph.edges() {
-        let ui = u.index();
-        let vi = v.index();
+        let ui = node_to_idx[&u];
+        let vi = node_to_idx[&v];
         let weight: f64 = w.into();
-        adj[(ui, vi)] = weight;
-        adj[(vi, ui)] = weight;
+        // Symmetric for undirected spectral methods
+        adj[(ui, vi)] += weight;
+        adj[(vi, ui)] += weight;
     }
     let mut deg = DMatrix::<f64>::zeros(n, n);
     for i in 0..n {
@@ -83,8 +91,10 @@ where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
+    // Build mapping for safe NodeId reconstruction
+    let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
     let embedding = spectral_embeddings(graph, k);
-    k_means(&embedding, k, seed)
+    k_means(&embedding, k, seed, &node_list)
 }
 
 /// A simple k-means routine on rows of a data matrix.
@@ -96,7 +106,12 @@ where
 ///
 /// # Returns
 /// Clusters as a vector of `NodeId`s grouped by cluster.
-fn k_means(data: &[Vec<f64>], k: usize, seed: Option<u64>) -> Vec<Vec<NodeId>> {
+fn k_means(
+    data: &[Vec<f64>],
+    k: usize,
+    seed: Option<u64>,
+    node_list: &[NodeId],
+) -> Vec<Vec<NodeId>> {
     let n = data.len();
     let d = if n > 0 { data[0].len() } else { 0 };
     let mut rng = create_rng(seed);
@@ -142,7 +157,7 @@ fn k_means(data: &[Vec<f64>], k: usize, seed: Option<u64>) -> Vec<Vec<NodeId>> {
     }
     let mut clusters: Vec<Vec<NodeId>> = vec![Vec::new(); k];
     for (i, &cluster) in assignments.iter().enumerate() {
-        clusters[cluster].push(NodeId::new(petgraph::graph::NodeIndex::new(i)));
+        clusters[cluster].push(node_list[i]);
     }
     clusters
 }

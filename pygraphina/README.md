@@ -1,8 +1,9 @@
 ## PyGraphina
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python version](https://img.shields.io/badge/Python-%3E=3.10-blue)](https://github.com/habedi/graphina)
 [![PyPI version](https://badge.fury.io/py/pygraphina.svg)](https://badge.fury.io/py/pygraphina)
+[![Documentation](https://img.shields.io/badge/docs-view-yellow.svg)](docs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 PyGraphina Python library allows users to use [Graphina](https://github.com/habedi/graphina) in Python.
 

@@ -1,11 +1,9 @@
 # filepath: /home/hassan/Workspace/RustRoverProjects/graphina/pygraphina/tests/test_core_metrics_validation.py
 import math
-import tempfile
 
 import networkx as nx
-import pytest
-
 import pygraphina
+import pytest
 
 
 def build_triangle_pg():
@@ -42,7 +40,8 @@ def test_metrics_triangle_parity():
     assert g.radius() == nx.radius(H)
 
     # Clustering
-    assert math.isclose(g.average_clustering(), nx.average_clustering(H), rel_tol=1e-6, abs_tol=1e-9)
+    assert math.isclose(g.average_clustering(), nx.average_clustering(H), rel_tol=1e-6,
+                        abs_tol=1e-9)
     c_local = g.clustering_of(a)
     assert math.isclose(c_local, nx.clustering(H, 0), rel_tol=1e-6, abs_tol=1e-9)
 
@@ -55,7 +54,8 @@ def test_metrics_triangle_parity():
     assert g.triangles_of(c) == 1
 
     # Average path length (connected)
-    assert math.isclose(g.average_path_length() or 0.0, nx.average_shortest_path_length(H), rel_tol=1e-6, abs_tol=1e-9)
+    assert math.isclose(g.average_path_length() or 0.0, nx.average_shortest_path_length(H),
+                        rel_tol=1e-6, abs_tol=1e-9)
 
     # Assortativity (on small graphs this can be nan in nx; guard for finite values)
     nx_assort = nx.degree_assortativity_coefficient(H)
@@ -134,4 +134,3 @@ def test_edge_list_roundtrip(tmp_path: "pytest.TempPathFactory"):
         return sorted(ds)
 
     assert degseq(g2) == degseq(g)
-
