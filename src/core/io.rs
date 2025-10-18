@@ -39,6 +39,7 @@ use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
 ///
 /// # Type Parameters
 ///
+/// * `W` - The weight type of the graph, which must implement `FromStr` and `Copy`.
 /// * `Ty` - The edge type of the graph, which must implement `GraphConstructor`.
 ///
 /// # Returns
@@ -57,9 +58,11 @@ use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
 /// // Assume "edges.txt" exists and follows the correct format.
 /// read_edge_list("edges.txt", &mut graph, ',').expect("Failed to read edge list");
 /// ```
-pub fn read_edge_list<Ty>(path: &str, graph: &mut BaseGraph<i32, f32, Ty>, sep: char) -> Result<()>
+pub fn read_edge_list<W, Ty>(path: &str, graph: &mut BaseGraph<i32, W, Ty>, sep: char) -> Result<()>
 where
-    Ty: GraphConstructor<i32, f32>,
+    W: Copy + std::str::FromStr,
+    <W as std::str::FromStr>::Err: std::fmt::Display + std::fmt::Debug,
+    Ty: GraphConstructor<i32, W>,
 {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
@@ -96,7 +99,7 @@ where
                 )),
             )
         })?;
-        let weight: f32 = if tokens.len() >= 3 {
+        let weight: W = if tokens.len() >= 3 {
             tokens[2].parse().map_err(|e| {
                 Error::new(
                     ErrorKind::InvalidData,
@@ -104,7 +107,7 @@ where
                 )
             })?
         } else {
-            1.0
+            "1.0".parse().unwrap()
         };
         let src_node = *node_map
             .entry(src_val)

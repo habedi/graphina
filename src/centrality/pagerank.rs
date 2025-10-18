@@ -49,11 +49,11 @@ where
         }
         dangling_sum *= damping / n as f64;
 
-        for i in 0..n {
-            pr_new[i] = (1.0 - damping) / n as f64 + dangling_sum;
+        for (i, pr_new_item) in pr_new.iter_mut().enumerate() {
+            *pr_new_item = (1.0 - damping) / n as f64 + dangling_sum;
             for (u, v, _) in graph.edges() {
                 if v.index() == i && out_degrees[u.index()] > 0 {
-                    pr_new[i] += damping * pr[u.index()] / out_degrees[u.index()] as f64;
+                    *pr_new_item += damping * pr[u.index()] / out_degrees[u.index()] as f64;
                 }
             }
         }

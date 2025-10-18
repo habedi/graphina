@@ -1058,6 +1058,14 @@ impl<T> From<OrderedNodeMap<T>> for NodeMap<T> {
     }
 }
 
+impl<T> IntoIterator for OrderedNodeMap<T> {
+    type Item = (NodeId, T);
+    type IntoIter = std::collections::btree_map::IntoIter<NodeId, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

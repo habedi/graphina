@@ -74,9 +74,10 @@ pub struct D3Graph {
 }
 
 /// Layout algorithms for graph visualization
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum LayoutAlgorithm {
     /// Force-directed layout (default)
+    #[default]
     ForceDirected,
     /// Circular layout
     Circular,
@@ -86,12 +87,6 @@ pub enum LayoutAlgorithm {
     Grid,
     /// Random layout
     Random,
-}
-
-impl Default for LayoutAlgorithm {
-    fn default() -> Self {
-        LayoutAlgorithm::ForceDirected
-    }
 }
 
 /// Configuration for graph visualization

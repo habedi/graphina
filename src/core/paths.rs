@@ -34,7 +34,7 @@ if a negative weight is encountered. Users should handle these `Result` types ac
 use crate::core::exceptions::GraphinaException;
 use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId, NodeMap};
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashSet};
+use std::collections::BinaryHeap;
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
 
@@ -512,8 +512,8 @@ where
             }
         }
     }
-    for i in 0..n {
-        if let Some(dii) = dist[i][i] {
+    for (i, row) in dist.iter().enumerate() {
+        if let Some(dii) = row[i] {
             if dii < W::from(0u8) {
                 return None;
             }

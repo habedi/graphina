@@ -431,12 +431,12 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
         // If we couldn't find m targets through preferential attachment,
         // fill remaining slots with random selection from available nodes
         if targets.len() < m {
-            for idx in 0..i {
+            for node in nodes.iter().take(i) {
                 if targets.len() >= m {
                     break;
                 }
-                if !targets.contains(&nodes[idx]) {
-                    targets.push(nodes[idx]);
+                if !targets.contains(node) {
+                    targets.push(*node);
                 }
             }
         }

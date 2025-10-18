@@ -5,9 +5,8 @@ This module provides common graph metrics and statistics used in network analysi
 Includes global metrics (entire graph) and local metrics (per node).
 */
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
-use crate::core::traversal::bfs;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
 
@@ -278,7 +277,6 @@ pub fn assortativity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     let mut sum_jk = 0.0;
     let mut sum_j = 0.0;
     let mut sum_k = 0.0;
-    let mut sum_jk2 = 0.0;
     let mut sum_j2 = 0.0;
     let mut sum_k2 = 0.0;
     let m = graph.edge_count() as f64;
@@ -290,7 +288,6 @@ pub fn assortativity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
         sum_jk += j * k;
         sum_j += j;
         sum_k += k;
-        sum_jk2 += j * k;
         sum_j2 += j * j;
         sum_k2 += k * k;
     }
@@ -321,8 +318,8 @@ fn bfs_distances<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
         let dist = distances[&node];
 
         for neighbor in graph.neighbors(node) {
-            if !distances.contains_key(&neighbor) {
-                distances.insert(neighbor, dist + 1);
+            if let std::collections::hash_map::Entry::Vacant(e) = distances.entry(neighbor) {
+                e.insert(dist + 1);
                 queue.push_back(neighbor);
             }
         }

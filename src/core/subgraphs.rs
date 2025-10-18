@@ -147,8 +147,9 @@ where
 
             if dist < radius {
                 for neighbor in self.neighbors(node) {
-                    if !distances.contains_key(&neighbor) {
-                        distances.insert(neighbor, dist + 1);
+                    if let std::collections::hash_map::Entry::Vacant(e) = distances.entry(neighbor)
+                    {
+                        e.insert(dist + 1);
                         nodes_in_ego.insert(neighbor);
                         queue.push_back(neighbor);
                     }
@@ -467,7 +468,7 @@ mod tests {
         let n3 = g.add_node(3);
 
         g.add_edge(n1, n2, 1.0);
-        // n3 isolated
+        // n3 is isolated
 
         let sub = g.component_subgraph(n1).unwrap();
         assert_eq!(sub.node_count(), 2);

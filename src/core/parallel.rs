@@ -345,8 +345,9 @@ where
                 let dist = distances[&node];
 
                 for neighbor in graph.neighbors(node) {
-                    if !distances.contains_key(&neighbor) {
-                        distances.insert(neighbor, dist + 1);
+                    if let std::collections::hash_map::Entry::Vacant(e) = distances.entry(neighbor)
+                    {
+                        e.insert(dist + 1);
                         queue.push_back(neighbor);
                     }
                 }
@@ -373,11 +374,20 @@ where
 /// let n1 = g.add_node(1);
 /// let n2 = g.add_node(2);
 /// let n3 = g.add_node(3);
+/// let n4 = g.add_node(4);
+///
 /// g.add_edge(n1, n2, 1.0);
-/// // n3 is isolated
+/// g.add_edge(n3, n4, 1.0);
 ///
 /// let components = connected_components_parallel(&g);
+///
+/// // n1 and n2 should be in same component
 /// assert_eq!(components[&n1], components[&n2]);
+///
+/// // n3 and n4 should be in same component
+/// assert_eq!(components[&n3], components[&n4]);
+///
+/// // But different from n1/n2
 /// assert_ne!(components[&n1], components[&n3]);
 /// ```
 pub fn connected_components_parallel<A, W, Ty>(
