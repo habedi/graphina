@@ -6,26 +6,31 @@
 
 ## Executive Summary
 
-This document details comprehensive API improvements and architectural fixes implemented in the Graphina library to address inconsistencies, improve usability, and enhance the developer experience.
+This document details comprehensive API improvements and architectural fixes implemented in the Graphina library to
+address inconsistencies, improve usability, and enhance the developer experience.
 
 ## Issues Identified and Fixed
 
 ### 1. Inconsistent Naming: `edge_attr` vs `edge_weight`
 
-**Issue:** The API used `node_attr()` for node attributes but `edge_attr()` for edge weights, creating confusion since edges have "weights" not "attributes" in graph theory terminology.
+**Issue:** The API used `node_attr()` for node attributes but `edge_attr()` for edge weights, creating confusion since
+edges have "weights" not "attributes" in graph theory terminology.
 
 **Fix:**
+
 - Added new methods: `edge_weight()` and `edge_weight_mut()`
 - Deprecated old methods: `edge_attr()` and `edge_attr_mut()`
 - Maintained backward compatibility with deprecation warnings
 
 **Before:**
+
 ```rust
 let weight = graph.edge_attr(edge_id);
 graph.edge_attr_mut(edge_id).map(|w| *w = 5.0);
 ```
 
 **After:**
+
 ```rust
 let weight = graph.edge_weight(edge_id);
 graph.edge_weight_mut(edge_id).map(|w| *w = 5.0);
@@ -42,6 +47,7 @@ graph.edge_weight_mut(edge_id).map(|w| *w = 5.0);
 **Fix:** Implemented `GraphBuilder` with method chaining support.
 
 **Before:**
+
 ```rust
 let mut graph = Graph::<i32, f64>::new();
 let n1 = graph.add_node(1);
@@ -52,6 +58,7 @@ graph.add_edge(n2, n3, 2.0);
 ```
 
 **After:**
+
 ```rust
 let graph = Graph::<i32, f64>::builder()
     .add_node(1)
@@ -63,6 +70,7 @@ let graph = Graph::<i32, f64>::builder()
 ```
 
 **Features:**
+
 - Fluent API with method chaining
 - Automatic capacity pre-allocation
 - Works with both directed and undirected graphs
@@ -77,6 +85,7 @@ let graph = Graph::<i32, f64>::builder()
 **Fix:** Added property query methods:
 
 #### `is_empty() -> bool`
+
 Returns true if the graph contains no nodes.
 
 ```rust
@@ -85,6 +94,7 @@ assert!(graph.is_empty());
 ```
 
 #### `density() -> f64`
+
 Returns the density of the graph (ratio of actual edges to possible edges).
 
 ```rust
@@ -93,10 +103,12 @@ println!("Graph density: {}", graph.density());
 ```
 
 **Formula:**
+
 - Directed: `edges / (nodes * (nodes - 1))`
 - Undirected: `(2 * edges) / (nodes * (nodes - 1))`
 
 #### `contains_node(node: NodeId) -> bool`
+
 Returns true if the node exists in the graph.
 
 ```rust
@@ -106,6 +118,7 @@ if graph.contains_node(node_id) {
 ```
 
 #### `contains_edge(source: NodeId, target: NodeId) -> bool`
+
 Returns true if an edge exists between the nodes.
 
 ```rust
@@ -123,17 +136,22 @@ if graph.contains_edge(n1, n2) {
 **Fix:** Added comprehensive degree query methods:
 
 #### `degree(node: NodeId) -> Option<usize>`
+
 Returns the total degree of a node.
+
 - For directed graphs: in-degree + out-degree
 - For undirected graphs: number of incident edges
 
 #### `in_degree(node: NodeId) -> Option<usize>`
+
 Returns the number of incoming edges (or degree for undirected graphs).
 
 #### `out_degree(node: NodeId) -> Option<usize>`
+
 Returns the number of outgoing edges (or degree for undirected graphs).
 
 **Example:**
+
 ```rust
 let degree = graph.degree(node_id).unwrap_or(0);
 println!("Node degree: {}", degree);
@@ -148,6 +166,7 @@ println!("Node degree: {}", degree);
 **Fix:** Added collection manipulation methods:
 
 #### `clear()`
+
 Removes all nodes and edges from the graph.
 
 ```rust
@@ -156,6 +175,7 @@ assert!(graph.is_empty());
 ```
 
 #### `node_ids() -> impl Iterator<Item = NodeId>`
+
 Returns an iterator over all node IDs (without attributes).
 
 ```rust
@@ -165,6 +185,7 @@ for node_id in graph.node_ids() {
 ```
 
 #### `edge_ids() -> impl Iterator<Item = EdgeId>`
+
 Returns an iterator over all edge IDs (without weights).
 
 ```rust
@@ -182,6 +203,7 @@ for edge_id in graph.edge_ids() {
 **Fix:** Added retention methods:
 
 #### `retain_nodes<F>(&mut self, predicate: F)`
+
 Retains only nodes that satisfy the predicate. All edges connected to removed nodes are also removed.
 
 ```rust
@@ -190,6 +212,7 @@ graph.retain_nodes(|_id, attr| *attr % 2 == 0);
 ```
 
 #### `retain_edges<F>(&mut self, predicate: F)`
+
 Retains only edges that satisfy the predicate.
 
 ```rust
@@ -203,71 +226,71 @@ graph.retain_edges(|_src, _dst, weight| *weight > 1.5);
 
 ### Construction Methods
 
-| Method | Description |
-|--------|-------------|
-| `new()` | Creates an empty graph |
-| `with_capacity(nodes, edges)` | Creates a graph with pre-allocated capacity |
-| `builder()` | Returns a builder for fluent API construction |
+| Method                        | Description                                   |
+|-------------------------------|-----------------------------------------------|
+| `new()`                       | Creates an empty graph                        |
+| `with_capacity(nodes, edges)` | Creates a graph with pre-allocated capacity   |
+| `builder()`                   | Returns a builder for fluent API construction |
 
 ### Property Queries
 
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `is_empty()` | `bool` | True if graph has no nodes |
-| `is_directed()` | `bool` | True if graph is directed |
-| `density()` | `f64` | Density of the graph (0.0 to 1.0) |
-| `node_count()` | `usize` | Number of nodes |
-| `edge_count()` | `usize` | Number of edges |
-| `contains_node(node)` | `bool` | True if node exists |
-| `contains_edge(src, dst)` | `bool` | True if edge exists |
+| Method                    | Return Type | Description                       |
+|---------------------------|-------------|-----------------------------------|
+| `is_empty()`              | `bool`      | True if graph has no nodes        |
+| `is_directed()`           | `bool`      | True if graph is directed         |
+| `density()`               | `f64`       | Density of the graph (0.0 to 1.0) |
+| `node_count()`            | `usize`     | Number of nodes                   |
+| `edge_count()`            | `usize`     | Number of edges                   |
+| `contains_node(node)`     | `bool`      | True if node exists               |
+| `contains_edge(src, dst)` | `bool`      | True if edge exists               |
 
 ### Degree Queries
 
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `degree(node)` | `Option<usize>` | Total degree of node |
-| `in_degree(node)` | `Option<usize>` | In-degree of node |
-| `out_degree(node)` | `Option<usize>` | Out-degree of node |
+| Method             | Return Type     | Description          |
+|--------------------|-----------------|----------------------|
+| `degree(node)`     | `Option<usize>` | Total degree of node |
+| `in_degree(node)`  | `Option<usize>` | In-degree of node    |
+| `out_degree(node)` | `Option<usize>` | Out-degree of node   |
 
 ### Node Operations
 
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `add_node(attr)` | `NodeId` | Adds a node with attribute |
-| `remove_node(node)` | `Option<A>` | Removes node and returns attribute |
-| `try_remove_node(node)` | `Result<A, NodeNotFound>` | Removes node or returns error |
-| `update_node(node, attr)` | `bool` | Updates node attribute |
-| `try_update_node(node, attr)` | `Result<(), NodeNotFound>` | Updates or returns error |
-| `node_attr(node)` | `Option<&A>` | Gets reference to node attribute |
-| `node_attr_mut(node)` | `Option<&mut A>` | Gets mutable reference to attribute |
+| Method                        | Return Type                | Description                         |
+|-------------------------------|----------------------------|-------------------------------------|
+| `add_node(attr)`              | `NodeId`                   | Adds a node with attribute          |
+| `remove_node(node)`           | `Option<A>`                | Removes node and returns attribute  |
+| `try_remove_node(node)`       | `Result<A, NodeNotFound>`  | Removes node or returns error       |
+| `update_node(node, attr)`     | `bool`                     | Updates node attribute              |
+| `try_update_node(node, attr)` | `Result<(), NodeNotFound>` | Updates or returns error            |
+| `node_attr(node)`             | `Option<&A>`               | Gets reference to node attribute    |
+| `node_attr_mut(node)`         | `Option<&mut A>`           | Gets mutable reference to attribute |
 
 ### Edge Operations
 
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `add_edge(src, dst, weight)` | `EdgeId` | Adds an edge with weight |
-| `remove_edge(edge)` | `Option<W>` | Removes edge and returns weight |
-| `try_remove_edge(edge)` | `Result<W, GraphinaException>` | Removes or returns error |
-| `edge_weight(edge)` | `Option<&W>` | Gets reference to edge weight |
-| `edge_weight_mut(edge)` | `Option<&mut W>` | Gets mutable reference to weight |
-| `find_edge(src, dst)` | `Option<EdgeId>` | Finds edge between nodes |
+| Method                       | Return Type                    | Description                      |
+|------------------------------|--------------------------------|----------------------------------|
+| `add_edge(src, dst, weight)` | `EdgeId`                       | Adds an edge with weight         |
+| `remove_edge(edge)`          | `Option<W>`                    | Removes edge and returns weight  |
+| `try_remove_edge(edge)`      | `Result<W, GraphinaException>` | Removes or returns error         |
+| `edge_weight(edge)`          | `Option<&W>`                   | Gets reference to edge weight    |
+| `edge_weight_mut(edge)`      | `Option<&mut W>`               | Gets mutable reference to weight |
+| `find_edge(src, dst)`        | `Option<EdgeId>`               | Finds edge between nodes         |
 
 ### Iteration Methods
 
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `nodes()` | `Iterator<(NodeId, &A)>` | Iterates over nodes with attributes |
-| `edges()` | `Iterator<(NodeId, NodeId, &W)>` | Iterates over edges with weights |
-| `node_ids()` | `Iterator<NodeId>` | Iterates over node IDs only |
-| `edge_ids()` | `Iterator<EdgeId>` | Iterates over edge IDs only |
-| `neighbors(node)` | `Iterator<NodeId>` | Iterates over neighbors of a node |
-| `outgoing_edges(node)` | `Iterator<(NodeId, &W)>` | Iterates over outgoing edges |
+| Method                 | Return Type                      | Description                         |
+|------------------------|----------------------------------|-------------------------------------|
+| `nodes()`              | `Iterator<(NodeId, &A)>`         | Iterates over nodes with attributes |
+| `edges()`              | `Iterator<(NodeId, NodeId, &W)>` | Iterates over edges with weights    |
+| `node_ids()`           | `Iterator<NodeId>`               | Iterates over node IDs only         |
+| `edge_ids()`           | `Iterator<EdgeId>`               | Iterates over edge IDs only         |
+| `neighbors(node)`      | `Iterator<NodeId>`               | Iterates over neighbors of a node   |
+| `outgoing_edges(node)` | `Iterator<(NodeId, &W)>`         | Iterates over outgoing edges        |
 
 ### Collection Methods
 
-| Method | Description |
-|--------|-------------|
-| `clear()` | Removes all nodes and edges |
+| Method                    | Description                           |
+|---------------------------|---------------------------------------|
+| `clear()`                 | Removes all nodes and edges           |
 | `retain_nodes(predicate)` | Keeps only nodes satisfying predicate |
 | `retain_edges(predicate)` | Keeps only edges satisfying predicate |
 
@@ -278,8 +301,8 @@ graph.retain_edges(|_src, _dst, weight| *weight > 1.5);
 All changes maintain backward compatibility:
 
 1. **Deprecated methods** still work but emit warnings:
-   - `edge_attr()` → Use `edge_weight()`
-   - `edge_attr_mut()` → Use `edge_weight_mut()`
+    - `edge_attr()` → Use `edge_weight()`
+    - `edge_attr_mut()` → Use `edge_weight_mut()`
 
 2. **Existing code** continues to work without modifications
 
@@ -372,6 +395,7 @@ Potential future improvements:
 **Deprecated methods:** 2 (with clear migration path)  
 **Tests added:** 25 comprehensive tests  
 **Breaking changes:** 0  
-**Backward compatibility:** 100%  
+**Backward compatibility:** 100%
 
-These improvements significantly enhance the usability and consistency of the Graphina API while maintaining full backward compatibility with existing code.
+These improvements significantly enhance the usability and consistency of the Graphina API while maintaining full
+backward compatibility with existing code.

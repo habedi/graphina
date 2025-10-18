@@ -6,21 +6,25 @@
 
 ## Overview
 
-The Graph Views & Subgraphs feature provides efficient ways to work with subsets of graphs without manually copying nodes and edges. Essential for analysis workflows like community detection, ego network analysis, and graph filtering.
+The Graph Views & Subgraphs feature provides efficient ways to work with subsets of graphs without manually copying
+nodes and edges. Essential for analysis workflows like community detection, ego network analysis, and graph filtering.
 
 ## Features Implemented
 
 ### Subgraph Extraction
+
 - `subgraph()` - Extract nodes and their connections
 - `induced_subgraph()` - Create induced subgraph
 - `component_subgraph()` - Extract connected component
 
 ### Network Analysis
+
 - `ego_graph()` - Ego network with radius
 - `k_hop_neighbors()` - K-hop neighborhood
 - `connected_component()` - Component membership
 
 ### Filtering
+
 - `filter_nodes()` - Filter by node attributes
 - `filter_edges()` - Filter by edge weights
 
@@ -76,6 +80,7 @@ assert_eq!(ego.node_count(), 3); // n1, n2, n3 (within 1 hop)
 ```
 
 **Use cases:**
+
 - Social network analysis (friends and friends-of-friends)
 - Local neighborhood exploration
 - Influence network detection
@@ -349,14 +354,14 @@ fn filter_by_demographics(graph: &Graph<Person, f64>) {
 
 ## Performance Characteristics
 
-| Operation | Time Complexity | Space Complexity | Notes |
-|-----------|----------------|------------------|-------|
-| `subgraph()` | O(V + E) | O(V + E) | Creates new graph |
-| `ego_graph()` | O(V + E) | O(V + E) | BFS + subgraph |
-| `filter_nodes()` | O(V + E) | O(V + E) | Full graph scan |
-| `filter_edges()` | O(V + E) | O(V + E) | Full graph scan |
-| `k_hop_neighbors()` | O(V + E) | O(V) | BFS traversal |
-| `connected_component()` | O(V + E) | O(V) | DFS traversal |
+| Operation               | Time Complexity | Space Complexity | Notes             |
+|-------------------------|-----------------|------------------|-------------------|
+| `subgraph()`            | O(V + E)        | O(V + E)         | Creates new graph |
+| `ego_graph()`           | O(V + E)        | O(V + E)         | BFS + subgraph    |
+| `filter_nodes()`        | O(V + E)        | O(V + E)         | Full graph scan   |
+| `filter_edges()`        | O(V + E)        | O(V + E)         | Full graph scan   |
+| `k_hop_neighbors()`     | O(V + E)        | O(V)             | BFS traversal     |
+| `connected_component()` | O(V + E)        | O(V)             | DFS traversal     |
 
 **Note:** All operations create new graphs (not zero-copy views). This ensures safety but requires memory allocation.
 
@@ -414,6 +419,7 @@ fn analyze_social_network() {
 ## Testing
 
 All subgraph functions are thoroughly tested:
+
 - ✅ Empty graphs
 - ✅ Single-node graphs
 - ✅ Disconnected graphs
@@ -470,6 +476,7 @@ let clustering = average_clustering_coefficient(
 ## Future Enhancements
 
 Planned additions:
+
 1. **Zero-copy views** - Read-only graph views without allocation
 2. **Lazy filtering** - Deferred evaluation for chained filters
 3. **Subgraph union/intersection** - Combine multiple subgraphs

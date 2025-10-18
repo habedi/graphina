@@ -31,8 +31,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::core::types::Graph;
+    // Import the function under test from the parent module
+    use super::maximum_independent_set;
 
     #[test]
     fn test_greedy_independent_set() {

@@ -96,7 +96,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{common_neighbors, jaccard_coefficient};
     use crate::core::types::Graph;
 
     #[test]

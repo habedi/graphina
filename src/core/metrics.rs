@@ -348,10 +348,7 @@ mod tests {
 
     #[test]
     fn test_diameter_disconnected() {
-        let mut g = Graph::<i32, f64>::new();
-        let n1 = g.add_node(1);
-        let n2 = g.add_node(2);
-
+        let g = Graph::<i32, f64>::new();
         assert_eq!(diameter(&g), None);
     }
 

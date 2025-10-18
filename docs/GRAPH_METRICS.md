@@ -6,11 +6,13 @@
 
 ## Overview
 
-The Graph Metrics module provides essential statistical measures and metrics for network analysis. These metrics help characterize graph structure, identify important patterns, and compare different networks.
+The Graph Metrics module provides essential statistical measures and metrics for network analysis. These metrics help
+characterize graph structure, identify important patterns, and compare different networks.
 
 ## Features Implemented
 
 ### Global Metrics (Entire Graph)
+
 - **Diameter** - Longest shortest path
 - **Radius** - Minimum eccentricity
 - **Average Clustering Coefficient** - Overall clustering tendency
@@ -19,6 +21,7 @@ The Graph Metrics module provides essential statistical measures and metrics for
 - **Assortativity** - Degree correlation measure
 
 ### Local Metrics (Per Node)
+
 - **Clustering Coefficient** - Local clustering tendency
 - **Triangles** - Number of triangles containing a node
 
@@ -242,6 +245,7 @@ fn main() {
 ## Real-World Applications
 
 ### Social Network Analysis
+
 ```rust
 // Identify tightly-knit communities
 for node in graph.node_ids() {
@@ -253,6 +257,7 @@ for node in graph.node_ids() {
 ```
 
 ### Network Robustness
+
 ```rust
 // Check if network maintains small-world property
 if let Some(avg_path) = average_path_length(graph) {
@@ -265,6 +270,7 @@ if let Some(avg_path) = average_path_length(graph) {
 ```
 
 ### Degree Correlation Analysis
+
 ```rust
 let assort = assortativity(graph);
 
@@ -281,36 +287,40 @@ if assort > 0.3 {
 
 ## Performance Characteristics
 
-| Metric | Time Complexity | Space | Best For |
-|--------|----------------|-------|----------|
-| Diameter | O(V²) | O(V) | Small-medium graphs (<10K nodes) |
-| Radius | O(V²) | O(V) | Small-medium graphs |
-| Avg Clustering | O(V·d²) | O(1) | All graph sizes |
-| Transitivity | O(V·d²) | O(1) | All graph sizes |
-| Triangles | O(d²) | O(1) | Per-node queries |
-| Avg Path Length | O(V²) | O(V) | Small-medium graphs |
-| Assortativity | O(E) | O(1) | All graph sizes ✓ |
+| Metric          | Time Complexity | Space | Best For                         |
+|-----------------|-----------------|-------|----------------------------------|
+| Diameter        | O(V²)           | O(V)  | Small-medium graphs (<10K nodes) |
+| Radius          | O(V²)           | O(V)  | Small-medium graphs              |
+| Avg Clustering  | O(V·d²)         | O(1)  | All graph sizes                  |
+| Transitivity    | O(V·d²)         | O(1)  | All graph sizes                  |
+| Triangles       | O(d²)           | O(1)  | Per-node queries                 |
+| Avg Path Length | O(V²)           | O(V)  | Small-medium graphs              |
+| Assortativity   | O(E)            | O(1)  | All graph sizes ✓                |
 
 ---
 
 ## Interpreting Metrics
 
 ### Diameter & Radius
+
 - **Small diameter** (< log V): Efficient information spread
 - **Large diameter** (> V/2): Slow communication, bottlenecks
 - **Radius ≈ Diameter/2**: Well-balanced network
 
 ### Clustering Coefficient
+
 - **High (> 0.6)**: Strong local structure, communities
 - **Medium (0.3-0.6)**: Balanced structure
 - **Low (< 0.3)**: Random-like, tree-like structure
 
 ### Average Path Length
+
 - **Small (< 6)**: "Small world" property
 - **Medium (6-10)**: Typical for real networks
 - **Large (> 10)**: Poor connectivity
 
 ### Assortativity
+
 - **Positive**: Social networks, collaboration networks
 - **Near zero**: Random networks
 - **Negative**: Internet, protein interaction networks
@@ -320,6 +330,7 @@ if assort > 0.3 {
 ## Testing
 
 All metrics functions are tested with:
+
 - ✅ Triangle graphs (perfect clustering)
 - ✅ Path graphs (minimal clustering)
 - ✅ Disconnected graphs

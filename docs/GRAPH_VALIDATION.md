@@ -6,7 +6,8 @@
 
 ## Overview
 
-The Graph Validation feature provides comprehensive utilities for checking graph properties and validating preconditions before running algorithms. This prevents silent failures, provides clear error messages, and improves code quality.
+The Graph Validation feature provides comprehensive utilities for checking graph properties and validating preconditions
+before running algorithms. This prevents silent failures, provides clear error messages, and improves code quality.
 
 ## Benefits
 
@@ -402,15 +403,15 @@ All validation functions provide descriptive error messages:
 
 All validation functions are efficient:
 
-| Function | Time Complexity | Space Complexity |
-|----------|----------------|------------------|
-| `is_empty` | O(1) | O(1) |
-| `is_connected` | O(V + E) | O(V) |
-| `has_negative_weights` | O(E) | O(1) |
-| `has_self_loops` | O(E) | O(1) |
-| `is_dag` | O(V + E) | O(V) |
-| `is_bipartite` | O(V + E) | O(V) |
-| `count_components` | O(V + E) | O(V) |
+| Function               | Time Complexity | Space Complexity |
+|------------------------|-----------------|------------------|
+| `is_empty`             | O(1)            | O(1)             |
+| `is_connected`         | O(V + E)        | O(V)             |
+| `has_negative_weights` | O(E)            | O(1)             |
+| `has_self_loops`       | O(E)            | O(1)             |
+| `is_dag`               | O(V + E)        | O(V)             |
+| `is_bipartite`         | O(V + E)        | O(V)             |
+| `count_components`     | O(V + E)        | O(V)             |
 
 ---
 

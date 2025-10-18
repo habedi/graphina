@@ -32,7 +32,7 @@ for alpha, beta, max_iter, weight, normalized in params:
     )
 
     print(f"alpha: {alpha:.3f}, beta: {beta:.3f}, max iter: {max_iter:>5}, ", end="")
-    print(f"weighted: {weight=='weight'}, normalized: {normalized}".lower())
+    print(f"weighted: {weight == 'weight'}, normalized: {normalized}".lower())
     for k, v in centrality.items():
         print(f">> {k} : {v:>.5f}")
     print()

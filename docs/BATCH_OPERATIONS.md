@@ -6,7 +6,8 @@
 
 ## Overview
 
-The Batch Operations feature provides high-performance methods for adding multiple nodes and edges to a graph at once. This is significantly faster than adding them one at a time, especially for large graphs.
+The Batch Operations feature provides high-performance methods for adding multiple nodes and edges to a graph at once.
+This is significantly faster than adding them one at a time, especially for large graphs.
 
 ## Performance Benefits
 
@@ -199,16 +200,17 @@ for batch_id in 0..10 {
 
 ### Benchmark Results (1000 nodes, 5000 edges)
 
-| Method | Time | Memory Allocations |
-|--------|------|-------------------|
-| Individual `add_node()` | 245 μs | 1,000 |
-| `add_nodes_bulk()` | 18 μs | 1 |
-| Individual `add_edge()` | 820 μs | 5,000 |
-| `add_edges_bulk()` | 52 μs | 1 |
-| `extend_nodes()` | 19 μs | 2 |
-| `extend_edges()` | 54 μs | 2 |
+| Method                  | Time   | Memory Allocations |
+|-------------------------|--------|--------------------|
+| Individual `add_node()` | 245 μs | 1,000              |
+| `add_nodes_bulk()`      | 18 μs  | 1                  |
+| Individual `add_edge()` | 820 μs | 5,000              |
+| `add_edges_bulk()`      | 52 μs  | 1                  |
+| `extend_nodes()`        | 19 μs  | 2                  |
+| `extend_edges()`        | 54 μs  | 2                  |
 
 **Speedup Summary:**
+
 - Nodes: **13.6x faster**
 - Edges: **15.8x faster**
 

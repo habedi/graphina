@@ -5,9 +5,10 @@
 
 use graphina::core::io::read_edge_list;
 use graphina::core::types::Graph;
+use std::path::Path;
+// Add missing imports for tests using OrderedFloat and HashMap
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
-use std::path::Path;
 
 fn datasets_available() -> bool {
     Path::new("tests/testdata/graphina-graphs").exists()

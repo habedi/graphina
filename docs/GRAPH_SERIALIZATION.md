@@ -6,23 +6,27 @@
 
 ## Overview
 
-The Graph Serialization feature enables saving and loading graphs in multiple formats, making it essential for production deployments, data persistence, and interoperability with other tools.
+The Graph Serialization feature enables saving and loading graphs in multiple formats, making it essential for
+production deployments, data persistence, and interoperability with other tools.
 
 ## Supported Formats
 
 ### 1. JSON Format (Human-Readable)
+
 - **Use case:** Debugging, configuration files, human inspection
 - **Speed:** Moderate
 - **Size:** Large
 - **Interoperability:** Universal
 
 ### 2. Binary Format (High Performance)
+
 - **Use case:** Production, large graphs, frequent save/load
 - **Speed:** **10-100x faster** than JSON
 - **Size:** **50-80% smaller** than JSON
 - **Interoperability:** Rust-specific (bincode)
 
 ### 3. GraphML Format (Standard)
+
 - **Use case:** Visualization tools, cross-platform exchange
 - **Speed:** Moderate
 - **Size:** Large (XML)
@@ -50,6 +54,7 @@ g.save_json("graph.json").expect("Failed to save");
 ```
 
 **JSON Output:**
+
 ```json
 {
   "directed": false,
@@ -125,6 +130,7 @@ g.save_graphml("graph.graphml").expect("Failed to export");
 ```
 
 **GraphML Output:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns">
@@ -150,11 +156,11 @@ g.save_graphml("graph.graphml").expect("Failed to export");
 
 ### Benchmark: 1000 nodes, 5000 edges
 
-| Format | Save Time | Load Time | File Size |
-|--------|-----------|-----------|-----------|
-| JSON | 45 ms | 52 ms | 250 KB |
-| Binary | **0.8 ms** | **1.2 ms** | **85 KB** |
-| GraphML | 68 ms | N/A | 420 KB |
+| Format  | Save Time  | Load Time  | File Size |
+|---------|------------|------------|-----------|
+| JSON    | 45 ms      | 52 ms      | 250 KB    |
+| Binary  | **0.8 ms** | **1.2 ms** | **85 KB** |
+| GraphML | 68 ms      | N/A        | 420 KB    |
 
 **Binary format is 50-100x faster!**
 
@@ -254,6 +260,7 @@ fn data_pipeline() {
 ## Format Selection Guide
 
 ### Use JSON When:
+
 - ✅ Debugging and inspection
 - ✅ Human-readable configuration files
 - ✅ Small graphs (<1000 nodes)
@@ -261,6 +268,7 @@ fn data_pipeline() {
 - ✅ Version control (text diffs work)
 
 ### Use Binary When:
+
 - ✅ Production deployments
 - ✅ Large graphs (>10K nodes)
 - ✅ Frequent save/load operations
@@ -268,6 +276,7 @@ fn data_pipeline() {
 - ✅ Storage space is limited
 
 ### Use GraphML When:
+
 - ✅ Exporting to visualization tools
 - ✅ Sharing with non-Rust tools
 - ✅ Academic/research workflows
@@ -358,15 +367,18 @@ match Graph::<i32, f64>::load_json("input.json") {
 ## Type Requirements
 
 For serialization to work, node attributes and edge weights must:
+
 - Implement `Serialize + Deserialize` (from serde)
 - Be `Clone`able
 
 **Built-in types work automatically:**
+
 - ✅ All primitive types: `i32`, `f64`, `String`, etc.
 - ✅ Standard collections: `Vec`, `HashMap`, etc.
 - ✅ Tuples and arrays
 
 **Custom types need derive macros:**
+
 ```rust
 use serde::{Serialize, Deserialize};
 
@@ -385,6 +397,7 @@ let graph = Graph::<Person, f64>::new();
 ## Testing
 
 All serialization functions are thoroughly tested:
+
 - ✅ Round-trip (save → load → verify)
 - ✅ Directed and undirected graphs
 - ✅ Empty graphs
@@ -400,6 +413,7 @@ All serialization functions are thoroughly tested:
 ## Dependencies
 
 The serialization feature uses:
+
 - `serde` - Serialization framework
 - `serde_json` - JSON support
 - `bincode` - Binary format support
@@ -411,12 +425,14 @@ These are automatically included when using Graphina.
 ## Interoperability Examples
 
 ### Loading GraphML in Gephi
+
 1. Save graph: `graph.save_graphml("network.graphml")`
 2. Open Gephi
 3. File → Open → Select `network.graphml`
 4. Visualize!
 
 ### Loading GraphML in Python (NetworkX)
+
 ```python
 import networkx as nx
 
@@ -426,6 +442,7 @@ print(f"Loaded {G.number_of_nodes()} nodes")
 ```
 
 ### Loading JSON in JavaScript
+
 ```javascript
 const fs = require('fs');
 
@@ -440,6 +457,7 @@ console.log(`Edges: ${data.edges.length}`);
 ## Future Enhancements
 
 Planned additions:
+
 1. **GML format** - Another common format
 2. **GEXF format** - Dynamic graph format
 3. **CSV export** - Simple edge list

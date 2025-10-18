@@ -6,9 +6,12 @@
 
 **Location:** `src/core/traversal.rs` - `bidis()` function (lines 330-360)
 
-**Issue:** The bidirectional search has a logic error in path reconstruction. The function checks for intersection after expanding each frontier, but the intersection check can find nodes that weren't actually part of the shortest path meeting point.
+**Issue:** The bidirectional search has a logic error in path reconstruction. The function checks for intersection after
+expanding each frontier, but the intersection check can find nodes that weren't actually part of the shortest path
+meeting point.
 
 **Problem Code:**
+
 ```rust
 // After expanding forward frontier
 if let Some(&meet) = forward_visited.intersection(&backward_visited).next() {
@@ -17,7 +20,8 @@ if let Some(&meet) = forward_visited.intersection(&backward_visited).next() {
 }
 ```
 
-**Impact:** May return suboptimal or incorrect paths when the meeting node is discovered in the visited set but not necessarily the shortest meeting point.
+**Impact:** May return suboptimal or incorrect paths when the meeting node is discovered in the visited set but not
+necessarily the shortest meeting point.
 
 **Recommendation:** Track the actual frontier (nodes added in current iteration) separately from visited set.
 
@@ -27,9 +31,11 @@ if let Some(&meet) = forward_visited.intersection(&backward_visited).next() {
 
 **Location:** `src/core/generators.rs` - `watts_strogatz_graph()` function
 
-**Issue:** When rewiring edges, the algorithm can create duplicate edges (multiple edges between the same pair of nodes) because it doesn't check if an edge already exists before adding a new one.
+**Issue:** When rewiring edges, the algorithm can create duplicate edges (multiple edges between the same pair of nodes)
+because it doesn't check if an edge already exists before adding a new one.
 
 **Problem Code:**
+
 ```rust
 loop {
     new_target = rng.random_range(0..n);
@@ -43,6 +49,7 @@ graph.add_edge(nodes[i], nodes[new_target], 1.0);
 **Impact:** Generated graphs may have multiple edges between node pairs, which is incorrect for simple graphs.
 
 **Fix Needed:** Check if edge already exists before adding:
+
 ```rust
 if graph.find_edge(nodes[i], nodes[new_target]).is_none() {
     graph.add_edge(nodes[i], nodes[new_target], 1.0);
@@ -55,9 +62,11 @@ if graph.find_edge(nodes[i], nodes[new_target]).is_none() {
 
 **Location:** `src/core/generators.rs` - `barabasi_albert_graph()` function
 
-**Issue:** The target selection loop can run indefinitely if the random selection keeps picking nodes already in the targets list.
+**Issue:** The target selection loop can run indefinitely if the random selection keeps picking nodes already in the
+targets list.
 
 **Problem Code:**
+
 ```rust
 while targets.len() < m {
     let r = rng.random_range(0..total_degree);
@@ -75,6 +84,7 @@ while targets.len() < m {
 ```
 
 **Impact:**
+
 - Infinite loop possible with high probability as graph grows
 - Very inefficient even when it terminates
 - May hang applications
@@ -87,9 +97,11 @@ while targets.len() < m {
 
 **Location:** `src/core/traversal.rs` - `get_backward_neighbors()` function
 
-**Issue:** For directed graphs, this function iterates through ALL edges in the graph to find incoming edges to a single node. This is O(E) per call.
+**Issue:** For directed graphs, this function iterates through ALL edges in the graph to find incoming edges to a single
+node. This is O(E) per call.
 
 **Problem Code:**
+
 ```rust
 graph
     .edges()
@@ -108,9 +120,11 @@ graph
 
 **Location:** `src/core/io.rs` - `read_adjacency_list()` function
 
-**Issue:** When processing adjacency lists, if the number of tokens is odd (excluding the source), the last neighbor will get default weight 1.0, which might be unintentional.
+**Issue:** When processing adjacency lists, if the number of tokens is odd (excluding the source), the last neighbor
+will get default weight 1.0, which might be unintentional.
 
 **Problem Code:**
+
 ```rust
 let weight: f32 = if i + 1 < tokens.len() {
     tokens[i + 1].parse()?
@@ -130,6 +144,7 @@ let weight: f32 = if i + 1 < tokens.len() {
 ### 1. **Inconsistent Return Types for "Not Found" Cases**
 
 **Issue:** Different functions use different approaches for "not found":
+
 - `bfs()` / `dfs()` - Return complete traversal (no failure case)
 - `iddfs()` - Returns `Option<Vec<NodeId>>`
 - `bidis()` - Returns `Option<Vec<NodeId>>`
@@ -144,6 +159,7 @@ let weight: f32 = if i + 1 < tokens.len() {
 **Issue:** All graph generators hardcode types to `BaseGraph<u32, f32, Ty>`, but user code typically uses other types.
 
 **Example:**
+
 ```rust
 pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize, p: f64, seed: u64
@@ -179,6 +195,7 @@ pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
 ## Design Improvements for Alpha Stage
 
 ### 1. **Add Graph Validation Helper**
+
 ```rust
 pub fn validate_node(&self, node: NodeId) -> Result<(), GraphinaException> {
     if self.node_attr(node).is_none() {
@@ -189,6 +206,7 @@ pub fn validate_node(&self, node: NodeId) -> Result<(), GraphinaException> {
 ```
 
 ### 2. **Add Builder Pattern for Graph Generators**
+
 ```rust
 GraphGenerator::erdos_renyi()
     .nodes(100)
@@ -198,13 +216,17 @@ GraphGenerator::erdos_renyi()
 ```
 
 ### 3. **Consistent Error Handling**
+
 Consider standardizing on either:
+
 - `Option` for simple cases
 - `Result` for all fallible operations
 - Both with clear naming (`find_*` vs `try_*`)
 
 ### 4. **Add Precondition Checks**
+
 For algorithms that require specific graph properties:
+
 ```rust
 pub fn dijkstra<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,

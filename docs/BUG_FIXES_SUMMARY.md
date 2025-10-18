@@ -5,7 +5,8 @@
 
 ## Executive Summary
 
-This report details critical bugs discovered and fixed in the Graphina graph data science library. Three high-severity bugs were identified and resolved, along with comprehensive test coverage to prevent regression.
+This report details critical bugs discovered and fixed in the Graphina graph data science library. Three high-severity
+bugs were identified and resolved, along with comprehensive test coverage to prevent regression.
 
 ---
 
@@ -16,7 +17,9 @@ This report details critical bugs discovered and fixed in the Graphina graph dat
 **Location:** `src/core/generators.rs` - `barabasi_albert_graph()` function (lines 395-424)
 
 **Problem:**
-The preferential attachment algorithm could enter an infinite loop when selecting target nodes for new connections. The rejection sampling approach would repeatedly try to select nodes without a maximum attempt limit, potentially running forever if random selection kept choosing already-selected targets.
+The preferential attachment algorithm could enter an infinite loop when selecting target nodes for new connections. The
+rejection sampling approach would repeatedly try to select nodes without a maximum attempt limit, potentially running
+forever if random selection kept choosing already-selected targets.
 
 ```rust
 // BUGGY CODE (old version):
@@ -36,17 +39,20 @@ while targets.len() < m {
 ```
 
 **Impact:**
+
 - Application hangs on graph generation
 - Probability of infinite loop increases with graph size
 - Production systems could freeze without warning
 
 **Solution:**
 Implemented a bounded retry mechanism with fallback:
+
 1. Added `max_attempts` counter (n × 10)
 2. If preferential attachment fails, fall back to deterministic selection
 3. Ensure all new nodes get exactly m connections (or fewer if impossible)
 
 **Code Changes:**
+
 ```rust
 let max_attempts = n * 10; // Prevent infinite loop
 let mut attempts = 0;
@@ -70,6 +76,7 @@ if targets.len() < m {
 ```
 
 **Tests Added:** `tests/test_generator_fixes.rs`
+
 - `test_barabasi_albert_no_infinite_loop()`
 - `test_barabasi_albert_large_graph()` (n=100, m=10)
 - `test_barabasi_albert_edge_case_m_equals_1()`
@@ -82,7 +89,9 @@ if targets.len() < m {
 **Location:** `src/core/traversal.rs` - `bidis()` function (lines 320-405)
 
 **Problem:**
-The bidirectional search algorithm checked for intersection between visited sets after expanding each frontier, but this could find nodes that weren't actually at the meeting point of the shortest path. The algorithm didn't properly track the current frontier separately from all visited nodes.
+The bidirectional search algorithm checked for intersection between visited sets after expanding each frontier, but this
+could find nodes that weren't actually at the meeting point of the shortest path. The algorithm didn't properly track
+the current frontier separately from all visited nodes.
 
 ```rust
 // BUGGY CODE (old version):
@@ -94,25 +103,30 @@ if let Some(&meet) = forward_visited.intersection(&backward_visited).next() {
 ```
 
 **Impact:**
+
 - Returns suboptimal paths (not shortest)
 - Path reconstruction could include incorrect nodes
 - Violates the algorithm's correctness guarantees
 
 **Root Cause Analysis:**
 The algorithm needs to distinguish between:
+
 1. **Visited nodes:** All nodes seen so far
 2. **Current frontier:** Nodes just added in the current iteration
 
-Checking intersection with all visited nodes can find a node that was visited many iterations ago, not the actual meeting point where both searches converged.
+Checking intersection with all visited nodes can find a node that was visited many iterations ago, not the actual
+meeting point where both searches converged.
 
 **Solution:**
 Track frontiers separately and check intersections at the correct points:
+
 1. Maintain `forward_frontier` and `backward_frontier` HashSets
 2. Clear and rebuild frontiers after each level expansion
 3. Check frontier-to-frontier intersection first
 4. Check frontier-to-visited intersection for asymmetric meeting
 
 **Code Changes:**
+
 ```rust
 // Track the current frontier separately from visited
 let mut forward_frontier = HashSet::new();
@@ -149,6 +163,7 @@ while !forward_queue.is_empty() && !backward_queue.is_empty() {
 ```
 
 **Tests Added:** `tests/test_traversal_fixes.rs`
+
 - `test_bidis_simple_path()` - Basic path verification
 - `test_bidis_shortest_path_selection()` - Ensures shortest path is found
 - `test_bidis_directed_graph()` - Directed graph support
@@ -165,16 +180,19 @@ while !forward_queue.is_empty() && !backward_queue.is_empty() {
 
 **Problem:**
 During edge rewiring, the algorithm could potentially:
+
 1. Enter infinite loops trying to find valid rewiring targets
 2. Create duplicate edges (though less likely with the fallback logic)
 
 **Solution:**
 The implementation already had partial protections, but I strengthened them:
+
 1. Added explicit `max_attempts` counter
 2. Implemented fallback to re-add original edge if rewiring fails
 3. Verified no duplicate edges are created
 
 **Tests Added:** `tests/test_generator_fixes.rs`
+
 - `test_watts_strogatz_no_duplicate_edges()`
 - `test_watts_strogatz_high_rewiring()` (beta=1.0)
 - `test_watts_strogatz_no_rewiring()` (beta=0.0)
@@ -203,11 +221,13 @@ graph
 Bidirectional search on directed graphs has O(E × V) complexity instead of O(E + V).
 
 **Potential Solutions:**
+
 1. Add reverse adjacency list to `BaseGraph` type
 2. Cache reverse edges in bidirectional search
 3. Use petgraph's incoming edge iterator if available
 
-**Recommendation:** This requires architectural changes to the `BaseGraph` type and should be addressed in a future performance optimization pass.
+**Recommendation:** This requires architectural changes to the `BaseGraph` type and should be addressed in a future
+performance optimization pass.
 
 ---
 
@@ -216,7 +236,8 @@ Bidirectional search on directed graphs has O(E × V) complexity instead of O(E 
 **Location:** `src/core/io.rs` - `read_adjacency_list()` function
 
 **Problem:**
-When processing adjacency lists, if the number of tokens is odd (excluding source), the last neighbor gets a default weight of 1.0 silently.
+When processing adjacency lists, if the number of tokens is odd (excluding source), the last neighbor gets a default
+weight of 1.0 silently.
 
 ```rust
 let weight: f32 = if i + 1 < tokens.len() {
@@ -238,15 +259,15 @@ Data loss when weight is accidentally omitted - no warning or error.
 ### New Test Files Created
 
 1. **`tests/test_generator_fixes.rs`** (11 tests)
-   - Barabási-Albert infinite loop prevention
-   - Watts-Strogatz duplicate edge prevention
-   - Edge cases and deterministic behavior
+    - Barabási-Albert infinite loop prevention
+    - Watts-Strogatz duplicate edge prevention
+    - Edge cases and deterministic behavior
 
 2. **`tests/test_traversal_fixes.rs`** (14 tests)
-   - Bidirectional search correctness
-   - Path reconstruction validation
-   - Various graph topologies (linear, cycles, star, complete)
-   - Directed vs undirected graphs
+    - Bidirectional search correctness
+    - Path reconstruction validation
+    - Various graph topologies (linear, cycles, star, complete)
+    - Directed vs undirected graphs
 
 **Total:** 25 new tests covering critical bug fixes
 
@@ -289,6 +310,7 @@ cargo test -- --nocapture
 ### Verification
 
 All tests pass successfully, confirming:
+
 - No infinite loops in graph generators
 - Correct path finding in bidirectional search
 - No duplicate edges created
@@ -301,34 +323,34 @@ All tests pass successfully, confirming:
 ### High Priority
 
 1. **Performance Optimization**
-   - Add reverse edge index for directed graphs
-   - Implement parallel centrality calculations (using Rayon)
+    - Add reverse edge index for directed graphs
+    - Implement parallel centrality calculations (using Rayon)
 
 2. **Input Validation**
-   - Add `require_connected()` helper
-   - Add `require_non_negative_weights()` helper
-   - Validate graph properties before expensive algorithms
+    - Add `require_connected()` helper
+    - Add `require_non_negative_weights()` helper
+    - Validate graph properties before expensive algorithms
 
 3. **Documentation**
-   - Document invariants for `unwrap()` usage
-   - Add complexity analysis to all algorithms
-   - Create migration guide for breaking changes
+    - Document invariants for `unwrap()` usage
+    - Add complexity analysis to all algorithms
+    - Create migration guide for breaking changes
 
 ### Medium Priority
 
 1. **Generic Type Flexibility**
-   - Make generators generic over node/edge types
-   - Add trait bounds like `From<u32>` for flexibility
+    - Make generators generic over node/edge types
+    - Add trait bounds like `From<u32>` for flexibility
 
 2. **Error Handling**
-   - Audit all `unwrap()` calls
-   - Replace with `expect()` with clear messages
-   - Add debug assertions for invariants
+    - Audit all `unwrap()` calls
+    - Replace with `expect()` with clear messages
+    - Add debug assertions for invariants
 
 3. **Testing**
-   - Add property-based tests (using quickcheck/proptest)
-   - Add benchmark suite for performance regression detection
-   - Add fuzzing for graph generators
+    - Add property-based tests (using quickcheck/proptest)
+    - Add benchmark suite for performance regression detection
+    - Add fuzzing for graph generators
 
 ---
 
@@ -340,13 +362,16 @@ Three critical bugs were identified and fixed in the Graphina library:
 2. **Bidirectional Search** - Fixed incorrect path reconstruction
 3. **Watts-Strogatz Generator** - Strengthened duplicate edge prevention
 
-All fixes include comprehensive test coverage to prevent regression. The library is now more robust and reliable for production use.
+All fixes include comprehensive test coverage to prevent regression. The library is now more robust and reliable for
+production use.
 
 **Files Modified:**
+
 - `src/core/generators.rs` - Barabási-Albert and Watts-Strogatz fixes
 - `src/core/traversal.rs` - Bidirectional search fix
 
 **Files Created:**
+
 - `tests/test_generator_fixes.rs` - 11 tests for generator bugs
 - `tests/test_traversal_fixes.rs` - 14 tests for traversal bugs
 - `docs/BUG_FIXES_SUMMARY.md` - This report

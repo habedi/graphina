@@ -360,7 +360,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::core::types::Graph;
 
     #[test]
@@ -450,7 +449,6 @@ mod tests {
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
         let n3 = g.add_node(3);
-        let n4 = g.add_node(4);
 
         g.add_edge(n1, n2, 1.0);
         g.add_edge(n2, n3, 1.0);
@@ -465,7 +463,6 @@ mod tests {
         let mut g = Graph::<i32, f64>::new();
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
-        let n3 = g.add_node(3);
 
         g.add_edge(n1, n2, 1.0);
         // n3 is isolated

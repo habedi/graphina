@@ -69,10 +69,10 @@ fn test_force_directed_layout() {
 #[test]
 fn test_circular_layout() {
     let mut graph = Graph::<i32, f64>::new();
-    let n1 = graph.add_node(1);
-    let n2 = graph.add_node(2);
-    let n3 = graph.add_node(3);
-    let n4 = graph.add_node(4);
+    let _n1 = graph.add_node(1);
+    let _n2 = graph.add_node(2);
+    let _n3 = graph.add_node(3);
+    let _n4 = graph.add_node(4);
 
     let positions = LayoutEngine::compute_layout(&graph, LayoutAlgorithm::Circular, 800.0, 600.0);
 

@@ -166,7 +166,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::louvain;
     use crate::core::types::Graph;
 
     #[test]

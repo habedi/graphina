@@ -316,7 +316,6 @@ fn test_integration_metrics_consistency() {
 
     for (node, _) in graph.nodes() {
         let deg = graph.degree(node).unwrap_or(0);
-        assert!(deg >= 0, "Degree should be non-negative");
         total_degree += deg;
         node_count += 1;
     }

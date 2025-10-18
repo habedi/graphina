@@ -2,13 +2,15 @@
 
 ## Summary
 
-The Graphina test suite has been completely reorganized with consistent naming, logical grouping, and comprehensive integration tests using real-world datasets.
+The Graphina test suite has been completely reorganized with consistent naming, logical grouping, and comprehensive
+integration tests using real-world datasets.
 
 ## Changes Made
 
 ### ✅ New Test Structure (10 files)
 
 **Core Module Tests (6 files):**
+
 1. `core_types.rs` - 20+ tests for graph data structures
 2. `core_generators.rs` - 15+ tests for graph generators
 3. `core_paths.rs` - 12+ tests for shortest path algorithms
@@ -16,10 +18,12 @@ The Graphina test suite has been completely reorganized with consistent naming, 
 5. `core_io.rs` - 5+ tests for I/O operations
 
 **Extension Tests (2 files):**
+
 6. `centrality.rs` - 10+ tests including betweenness fixes
 7. `community.rs` - 10+ tests including Louvain fixes
 
 **Integration & Property Tests (3 files):**
+
 8. `integration_real_graphs.rs` - **NEW!** 15+ tests with real datasets
 9. `test_property_based.rs` - Property-based tests (kept)
 10. `test_visualization.rs` - Visualization tests (kept)
@@ -27,6 +31,7 @@ The Graphina test suite has been completely reorganized with consistent naming, 
 ### ❌ Removed Files (9 files merged)
 
 Old inconsistently named files removed and content merged:
+
 - `test_bug_fixes.rs` → `centrality.rs`
 - `test_core_bugs.rs` → `core_generators.rs` + `core_traversal.rs`
 - `test_batch_operations.rs` → `core_types.rs`
@@ -42,12 +47,14 @@ Old inconsistently named files removed and content merged:
 ### Key Features
 
 **Automatic Skipping:** Tests automatically skip with helpful messages if datasets aren't available:
+
 ```
 Skipping test: datasets not found in tests/testdata/graphina-graphs/
 To download: huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir tests/testdata/graphina-graphs
 ```
 
 **Comprehensive Coverage:**
+
 - Core operations (loading, analyzing)
 - Traversal algorithms (BFS, DFS)
 - Path algorithms (Dijkstra)
@@ -58,6 +65,7 @@ To download: huggingface-cli download habedi/graphina-graphs --repo-type dataset
 - Known properties validation
 
 **Supported Datasets:**
+
 - Karate Club (34 nodes) - Social network
 - Dolphins (62 nodes) - Dolphin social network
 - Les Misérables (77 nodes) - Character co-occurrences
@@ -77,6 +85,7 @@ huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir 
 ## Naming Convention
 
 **Consistent Pattern:**
+
 - Core tests: `core_<module>.rs`
 - Extension tests: `<extension>.rs`
 - Integration tests: `integration_<type>.rs`
@@ -114,7 +123,7 @@ cargo test --test integration_real_graphs --all-features
 ## Test Coverage
 
 - **Core Module:** 65+ tests
-- **Extensions:** 20+ tests  
+- **Extensions:** 20+ tests
 - **Integration:** 15+ tests with real graphs
 - **Property-based:** Existing comprehensive tests
 - **Total:** 100+ well-organized tests
@@ -122,6 +131,7 @@ cargo test --test integration_real_graphs --all-features
 ## All Bug Fixes Preserved
 
 Every bug fix is now tested:
+
 - ✅ Betweenness O(V·E²) → `centrality.rs`
 - ✅ Betweenness variable shadowing → `centrality.rs`
 - ✅ Louvain robustness → `community.rs`
@@ -131,6 +141,7 @@ Every bug fix is now tested:
 ## Documentation
 
 Created comprehensive documentation:
+
 - `tests/README.md` - Full test suite documentation
 - Inline comments explain each test category
 - Helper functions documented
@@ -146,4 +157,3 @@ Created comprehensive documentation:
 6. 📋 Add more datasets as available
 
 **The test suite is now production-ready with comprehensive coverage and real-world validation!**
-

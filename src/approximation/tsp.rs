@@ -2,7 +2,7 @@
 
 use crate::core::exceptions::GraphinaException;
 use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, Graph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use ordered_float::OrderedFloat;
 use std::collections::HashSet;
 
@@ -151,7 +151,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // Bring required items into scope for tests
+    use super::{greedy_tsp, tour_cost};
+    use crate::core::types::Graph;
+    use ordered_float::OrderedFloat;
 
     #[test]
     fn greedy_tsp_on_square_graph() {

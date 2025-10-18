@@ -240,8 +240,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{betweenness_centrality, edge_betweenness_centrality};
     use crate::core::types::Graph;
+    use ordered_float::OrderedFloat;
 
     #[test]
     fn test_betweenness_centrality_simple() {

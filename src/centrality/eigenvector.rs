@@ -75,7 +75,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::eigenvector_centrality;
     use crate::core::types::{Digraph, Graph};
 
     #[test]

@@ -9,7 +9,9 @@
 
 ## Executive Summary
 
-A comprehensive analysis of the Graphina core modules identified and fixed **2 critical bugs** that were causing incorrect behavior. All fixes have been tested and verified with 109 passing tests including 11 new tests specifically written to catch these bugs.
+A comprehensive analysis of the Graphina core modules identified and fixed **2 critical bugs** that were causing
+incorrect behavior. All fixes have been tested and verified with 109 passing tests including 11 new tests specifically
+written to catch these bugs.
 
 ---
 
@@ -22,15 +24,18 @@ A comprehensive analysis of the Graphina core modules identified and fixed **2 c
 **Lines:** 276-335
 
 **Problem:**
-When rewiring edges in the Watts-Strogatz small-world graph generator, the algorithm did not check if an edge already existed before adding a new one, resulting in duplicate edges between node pairs.
+When rewiring edges in the Watts-Strogatz small-world graph generator, the algorithm did not check if an edge already
+existed before adding a new one, resulting in duplicate edges between node pairs.
 
 **Impact:**
+
 - Generated graphs had incorrect topology
 - Multiple edges between same node pairs violates simple graph property
 - Statistical properties of generated graphs were wrong
 - Affected any research or analysis using these graphs
 
 **Root Cause:**
+
 ```rust
 // BUGGY CODE
 loop {
@@ -43,6 +48,7 @@ graph.add_edge(nodes[i], nodes[new_target], 1.0);
 ```
 
 **Fix Applied:**
+
 ```rust
 // FIXED CODE
 let max_attempts = n * 2; // Prevent infinite loop
@@ -67,6 +73,7 @@ if attempts < max_attempts {
 ```
 
 **Verification:**
+
 - Test `test_watts_strogatz_no_duplicate_edges` now passes ✓
 - Validates no duplicate edges exist in generated graphs
 - Test runs with various parameters (n=10, k=4, beta=0.5)
@@ -80,15 +87,18 @@ if attempts < max_attempts {
 **Lines:** 56-77, 105-122
 
 **Problem:**
-The BFS and DFS functions did not validate whether the start node exists in the graph. When given a removed or invalid node, they would return unexpected results instead of an empty traversal.
+The BFS and DFS functions did not validate whether the start node exists in the graph. When given a removed or invalid
+node, they would return unexpected results instead of an empty traversal.
 
 **Impact:**
+
 - Confusing behavior for removed nodes
 - No way to distinguish between valid isolated nodes and invalid nodes
 - Potential for unexpected behavior in applications
 
 **Root Cause:**
 Functions immediately started traversal without checking if the start node exists:
+
 ```rust
 // BUGGY CODE
 pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> {
@@ -99,6 +109,7 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 ```
 
 **Fix Applied:**
+
 ```rust
 // FIXED CODE
 pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> {
@@ -111,6 +122,7 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 ```
 
 **Verification:**
+
 - Test `test_traversal_empty_graph` now passes ✓
 - Returns empty vector for removed/invalid nodes
 - Both BFS and DFS handle this consistently
@@ -132,6 +144,7 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 ### 2. **Inconsistent Return Types for Path Finding**
 
 **Documented patterns:**
+
 - `bfs()` / `dfs()` - Return `Vec<NodeId>` (always succeeds)
 - `iddfs()` / `bidis()` - Return `Option<Vec<NodeId>>`
 - `dijkstra()` - Returns `Result<Vec<Option<W>>>`
@@ -142,7 +155,8 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 
 ### 3. **Bidirectional Search Performance on Directed Graphs**
 
-**Issue:** The `get_backward_neighbors()` function iterates through ALL edges (O(E)) to find incoming edges for directed graphs.
+**Issue:** The `get_backward_neighbors()` function iterates through ALL edges (O(E)) to find incoming edges for directed
+graphs.
 
 **Impact:** Bidirectional search on directed graphs has O(E * V) complexity instead of optimal O(E + V).
 
@@ -156,11 +170,13 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 
 **Location:** `src/core/generators.rs` - `barabasi_albert_graph()`
 
-**Issue:** The target selection loop can theoretically run indefinitely if random selection keeps picking already-selected nodes.
+**Issue:** The target selection loop can theoretically run indefinitely if random selection keeps picking
+already-selected nodes.
 
 **Current Status:** Works in practice but has theoretical issue. Test confirms it terminates in reasonable time.
 
-**Recommendation:** Implement rejection sampling with guaranteed termination or use weighted sampling without replacement.
+**Recommendation:** Implement rejection sampling with guaranteed termination or use weighted sampling without
+replacement.
 
 ---
 
@@ -181,8 +197,9 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 11. ✅ `test_bidirectional_same_start_end` - Edge case
 
 ### Existing Tests: All Still Passing
+
 - Core types: 8 tests ✓
-- Centrality algorithms: 10 tests ✓  
+- Centrality algorithms: 10 tests ✓
 - Bug fixes (from previous work): 10 tests ✓
 - Edge cases: 13 tests ✓
 - Community detection: 4 tests ✓
@@ -200,15 +217,18 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 ## Files Modified
 
 ### Source Code Changes:
+
 1. ✅ `src/core/generators.rs` - Fixed Watts-Strogatz duplicate edges
 2. ✅ `src/core/traversal.rs` - Added node validation to BFS/DFS
 
 ### New Files Created:
+
 1. ✅ `tests/test_core_bugs.rs` - 11 new tests for core module bugs
 2. ✅ `docs/CORE_MODULE_BUGS.md` - Detailed technical documentation
 3. ✅ `docs/ANALYSIS_SUMMARY.md` - This comprehensive summary
 
 ### Previously Created (from earlier analysis):
+
 - `tests/test_bug_fixes.rs` - 10 tests for degree centrality fix
 - `tests/test_edge_cases.rs` - 13 tests for edge cases
 - `docs/BUG_FIXES.md` - Documentation of previous fixes
@@ -220,11 +240,13 @@ pub fn bfs<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, start: NodeId) -> Vec<NodeId> 
 Since Graphina is in alpha (v0.3.0-a1), these breaking changes are acceptable:
 
 ### 1. **BFS/DFS Behavior Change**
+
 - **Before:** Returned single-node traversal for removed nodes
 - **After:** Returns empty vector for removed/invalid nodes
 - **Migration:** Check for empty result to detect invalid nodes
 
 ### 2. **Watts-Strogatz May Generate Fewer Edges**
+
 - **Before:** Could generate multiple edges between nodes (incorrect)
 - **After:** Generates only simple graphs (one edge per node pair)
 - **Migration:** None needed - this fixes incorrect behavior
@@ -236,27 +258,30 @@ Since Graphina is in alpha (v0.3.0-a1), these breaking changes are acceptable:
 All fixes have minimal performance impact:
 
 1. **Watts-Strogatz:** Added `find_edge()` check during rewiring (O(E) per rewiring attempt)
-   - Bounded by `max_attempts = n * 2` to prevent excessive searching
-   - Negligible impact on overall generation time
+    - Bounded by `max_attempts = n * 2` to prevent excessive searching
+    - Negligible impact on overall generation time
 
 2. **BFS/DFS:** Added `node_attr()` check at start (O(1))
-   - No impact on traversal performance
+    - No impact on traversal performance
 
 ---
 
 ## Recommendations for Future Development
 
 ### High Priority:
+
 1. **Fix Barabási-Albert infinite loop risk** - Implement guaranteed-termination sampling
 2. **Add reverse edge index** - Improve bidirectional search on directed graphs
 3. **Generic generator types** - Allow custom node/edge types in generators
 
 ### Medium Priority:
+
 4. **Input validation helpers** - Add `validate_node()`, `validate_edge()` methods
 5. **Performance benchmarks** - Add benchmarks for all generators
 6. **Extended edge cases** - Test with very large graphs (millions of nodes)
 
 ### Low Priority:
+
 7. **Generator builder pattern** - Fluent API for graph generation
 8. **Parallel generators** - Use Rayon for large graph generation
 9. **Progress callbacks** - For long-running generation operations
@@ -266,12 +291,16 @@ All fixes have minimal performance impact:
 ## Conclusion
 
 The core module analysis successfully identified and fixed **2 critical bugs**:
+
 - ✅ Watts-Strogatz duplicate edges (HIGH severity)
 - ✅ BFS/DFS invalid node handling (MEDIUM severity)
 
-All **109 tests pass**, including 11 new tests specifically written to prevent regression of these bugs. The library is now more robust and correct for its alpha stage. The identified API inconsistencies have been documented and are acceptable design decisions for the current version.
+All **109 tests pass**, including 11 new tests specifically written to prevent regression of these bugs. The library is
+now more robust and correct for its alpha stage. The identified API inconsistencies have been documented and are
+acceptable design decisions for the current version.
 
 ### Quality Metrics:
+
 - **Test Coverage:** 109 tests (100% passing)
 - **Critical Bugs Fixed:** 2
 - **Lines of Code Changed:** ~100

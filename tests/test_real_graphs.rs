@@ -36,6 +36,7 @@ fn load_graph_dataset(filename: &str) -> Result<Graph<i32, f32>, std::io::Error>
     Ok(graph)
 }
 
+#[allow(dead_code)]
 fn load_digraph_dataset(filename: &str) -> Result<Digraph<i32, f32>, std::io::Error> {
     let path = format!("tests/testdata/graphina-graphs/{}", filename);
     let mut graph = Digraph::new();

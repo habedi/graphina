@@ -1,25 +1,29 @@
 # Architectural Analysis and Additional Issues
 
 **Date:** October 17, 2025  
-**Version:** 0.4.0  
+**Version:** 0.4.0
 
 ## Overview
 
-This document provides a comprehensive architectural analysis of the Graphina library, identifying design patterns, potential issues, and recommendations for improvement beyond the API consistency fixes.
+This document provides a comprehensive architectural analysis of the Graphina library, identifying design patterns,
+potential issues, and recommendations for improvement beyond the API consistency fixes.
 
 ## Architectural Strengths
 
 ### 1. Type-Safe Graph Representation
+
 - Uses wrapper types (`NodeId`, `EdgeId`) to prevent index confusion
 - Marker types (`Directed`, `Undirected`) provide compile-time guarantees
 - Generic over node attributes and edge weights
 
 ### 2. Dual API Pattern
+
 - Standard API returns `Option`/`bool` for ergonomics
 - `try_*` API returns `Result` for explicit error handling
 - Users can choose based on their error handling strategy
 
 ### 3. Stable Index Management
+
 - Uses `StableGraph` from petgraph to prevent index recycling
 - Removed nodes don't invalidate other node IDs
 - Critical for long-running graph mutations
@@ -42,6 +46,7 @@ pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
 ```
 
 **Impact:**
+
 - Cannot generate graphs with custom node/edge types
 - Forces type conversions when integrating with existing code
 - Limits flexibility for domain-specific applications
@@ -65,6 +70,7 @@ where
 ```
 
 **Benefits:**
+
 - Users can generate graphs with any compatible types
 - Type conversion happens at generation time
 - More flexible and idiomatic Rust
@@ -84,9 +90,11 @@ Many internal functions use `.unwrap()` on HashMap operations:
 *cent.get_mut(&src).unwrap() += 1.0;  // Panics if key missing
 ```
 
-**Current Safety:** These are currently safe because `to_nodemap_default()` initializes all nodes, but this is an implementation detail.
+**Current Safety:** These are currently safe because `to_nodemap_default()` initializes all nodes, but this is an
+implementation detail.
 
 **Risks:**
+
 1. Future refactoring could break the invariant
 2. No compile-time guarantee of safety
 3. Unclear to maintainers why it's safe
@@ -95,12 +103,14 @@ Many internal functions use `.unwrap()` on HashMap operations:
 **Recommended Fix:**
 
 **Option A - Use debug assertions:**
+
 ```rust
 let cent_val = cent.get_mut(&src).expect("Node should exist in initialized map");
 *cent_val += 1.0;
 ```
 
 **Option B - Use defensive programming:**
+
 ```rust
 if let Some(cent_val) = cent.get_mut(&src) {
     *cent_val += 1.0;
@@ -108,6 +118,7 @@ if let Some(cent_val) = cent.get_mut(&src) {
 ```
 
 **Option C - Document the invariant:**
+
 ```rust
 // SAFETY: All nodes are initialized in to_nodemap_default()
 *cent.get_mut(&src).unwrap() += 1.0;
@@ -120,7 +131,8 @@ if let Some(cent_val) = cent.get_mut(&src) {
 ### Issue 3: No Graph Validation Utilities
 
 **Problem:**
-Algorithms often require specific graph properties (connected, no negative weights, etc.), but no utilities exist to check these.
+Algorithms often require specific graph properties (connected, no negative weights, etc.), but no utilities exist to
+check these.
 
 **Current Approach:** Each algorithm checks preconditions individually (inconsistent)
 
@@ -199,6 +211,7 @@ where
 ```
 
 **Benefits:**
+
 - Consistent validation across algorithms
 - Reusable validation logic
 - Better error messages
@@ -248,6 +261,7 @@ impl Error for NodeNotFound {}
 Exceptions contain only string messages, no structured data about what failed.
 
 **Example:**
+
 ```rust
 GraphinaException::new("Node not found")
 // Which node? In which operation?
@@ -286,6 +300,7 @@ impl NodeNotFound {
 ```
 
 **Usage:**
+
 ```rust
 Err(NodeNotFound::new("Node not found")
     .with_node(node_id)
@@ -300,6 +315,7 @@ Err(NodeNotFound::new("Node not found")
 Adding multiple nodes or edges requires multiple calls, which is inefficient for large graphs.
 
 **Current:**
+
 ```rust
 let mut ids = Vec::new();
 for attr in attributes {
@@ -308,6 +324,7 @@ for attr in attributes {
 ```
 
 **Recommended Addition:**
+
 ```rust
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     /// Adds multiple nodes at once
@@ -334,6 +351,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
 Properties like diameter, radius, or connectivity are recomputed every time they're needed.
 
 **Current:**
+
 ```rust
 let diameter = compute_diameter(&graph);  // O(V^3)
 // ... later ...
@@ -373,12 +391,14 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> CachedGraph<A, W, Ty> {
 ## Performance Observations
 
 ### Current Optimizations
+
 1. Binary heaps in Dijkstra's algorithm ✓
 2. Sparse matrix representation ✓
 3. Parallel Borůvka MST using Rayon ✓
 4. Union-find with path compression ✓
 
 ### Optimization Opportunities
+
 1. **Centrality calculations** - Could parallelize with Rayon
 2. **Adjacency matrix caching** - For frequently accessed graphs
 3. **Incremental updates** - For dynamic graphs
@@ -389,17 +409,20 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> CachedGraph<A, W, Ty> {
 ## Code Quality Metrics
 
 ### Documentation Coverage: 95%
+
 - All public APIs documented ✓
 - Most examples included ✓
 - Complexity analysis for algorithms ✓
 
 ### Test Coverage: ~85%
+
 - Core module: Well tested ✓
 - Algorithms: Good coverage ✓
 - Edge cases: Could improve
 - Property-based tests: Missing
 
 ### Error Handling: Good
+
 - Custom exception types ✓
 - Consistent error propagation ✓
 - Could add more context to errors
@@ -409,6 +432,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> CachedGraph<A, W, Ty> {
 ## Recommendations Summary
 
 ### High Priority
+
 1. ✓ **Fix API naming inconsistencies** (COMPLETED)
 2. ✓ **Add builder pattern** (COMPLETED)
 3. ✓ **Add graph property queries** (COMPLETED)
@@ -416,12 +440,14 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> CachedGraph<A, W, Ty> {
 5. **Make generators generic over types**
 
 ### Medium Priority
+
 6. **Add graph validation utilities**
 7. **Improve exception context**
 8. **Add batch operations**
 9. **Replace `unwrap()` with defensive programming**
 
 ### Low Priority
+
 10. **Add graph property caching**
 11. **Add property-based tests**
 12. **Parallelize centrality calculations**
@@ -431,7 +457,8 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> CachedGraph<A, W, Ty> {
 
 ## Conclusion
 
-The Graphina library has a solid architectural foundation with good separation of concerns and type safety. The main improvements needed are:
+The Graphina library has a solid architectural foundation with good separation of concerns and type safety. The main
+improvements needed are:
 
 1. **Flexibility**: Make generators generic over types
 2. **Safety**: Replace unwraps with better error handling
@@ -446,19 +473,25 @@ This document records architectural flaws and bugs found during review, plus the
 
 ## 1) StableGraph index misuse in shortest paths (Bug)
 
-- Issue: The generic `dijkstra` returned `Vec<Option<W>>` indexed by `NodeIndex::index()`. With `StableGraph`, removed nodes create gaps, so indexing by `usize` is unsafe and can return wrong entries or panic in downstream code.
-- Fix: `dijkstra` now returns `NodeMap<Option<W>>` (HashMap<NodeId, Option<W>>). This decouples results from contiguous indices and makes it robust to node removals and arbitrary ID layouts.
-- Impact: Breaking change to the public API of `dijkstra`. All internal call sites were migrated. A new integration test `tests/test_paths_noncontig.rs` verifies correct behavior with non‑contiguous node IDs.
+- Issue: The generic `dijkstra` returned `Vec<Option<W>>` indexed by `NodeIndex::index()`. With `StableGraph`, removed
+  nodes create gaps, so indexing by `usize` is unsafe and can return wrong entries or panic in downstream code.
+- Fix: `dijkstra` now returns `NodeMap<Option<W>>` (HashMap<NodeId, Option<W>>). This decouples results from contiguous
+  indices and makes it robust to node removals and arbitrary ID layouts.
+- Impact: Breaking change to the public API of `dijkstra`. All internal call sites were migrated. A new integration test
+  `tests/test_paths_noncontig.rs` verifies correct behavior with non‑contiguous node IDs.
 
 ## 2) Eigenvector centrality incorrectly symmetrized (Bug)
 
-- Issue: The adjacency matrix was built symmetrically regardless of graph directedness, which is incorrect for directed graphs.
+- Issue: The adjacency matrix was built symmetrically regardless of graph directedness, which is incorrect for directed
+  graphs.
 - Fix: Symmetrization is applied only if the graph is undirected. Directed graphs use the true adjacency.
-- Tests: Added unit test in `src/centrality/eigenvector.rs` that checks: in a chain 0→1 (directed), node 1 centrality > node 0; in an undirected 0—1, centralities are equal.
+- Tests: Added unit test in `src/centrality/eigenvector.rs` that checks: in a chain 0→1 (directed), node 1 centrality >
+  node 0; in an undirected 0—1, centralities are equal.
 
 ## 3) Side‑effectful startup logging (Design)
 
-- Issue: `settings` unconditionally initialized a global logger via `ctor`. That can surprise library consumers and clash with host apps.
+- Issue: `settings` unconditionally initialized a global logger via `ctor`. That can surprise library consumers and
+  clash with host apps.
 - Fix: `settings` is now gated behind an opt‑in feature `logging`. By default, no logging is initialized.
 - Usage: Enable with `--features logging` or `[features] logging` in dependent crates.
 
@@ -469,6 +502,7 @@ This document records architectural flaws and bugs found during review, plus the
 
 ## Follow‑ups
 
-- Consider migrating other path algorithms (Bellman‑Ford, A*, Johnson, Floyd–Warshall) to return NodeMap outputs to unify the API and avoid index coupling across the board.
+- Consider migrating other path algorithms (Bellman‑Ford, A*, Johnson, Floyd–Warshall) to return NodeMap outputs to
+  unify the API and avoid index coupling across the board.
 - Evaluate `NodeMap` newtype wrapper for stronger type safety and consistent iteration order if needed.
 - Add clippy CI and docs.rs build checks; compile examples in CI with selected features.

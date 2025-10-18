@@ -75,7 +75,7 @@ install-deps: install-snap ## Install development dependencies
 	@cargo install cargo-tarpaulin
 	@cargo install cargo-audit
 	@cargo install cargo-nextest
-	@sudo apt-get install python3-pip
+	@sudo apt-get install python3-pip libfontconfig1-dev
 	@pip install $(PY_DEP_MNGR)
 
 .PHONY: lint
