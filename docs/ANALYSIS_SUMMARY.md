@@ -278,4 +278,3 @@ cargo test test_degree_centrality_undirected_no_double_counting
 ```
 
 This test creates a simple undirected graph and validates that degrees are counted correctly (not doubled).
-

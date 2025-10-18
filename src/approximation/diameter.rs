@@ -2,7 +2,7 @@
 
 use crate::core::exceptions::GraphinaException;
 use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor};
 use ordered_float::OrderedFloat;
 
 /// Compute a lower bound on the diameter using BFS from an arbitrary node.

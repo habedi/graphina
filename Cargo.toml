@@ -31,9 +31,83 @@ path = "src/lib.rs"
 [features]
 default = []  # No features enabled by default
 binaries = []
+all = [
+    # Centrality features
+    "centrality-betweenness",
+    "centrality-closeness",
+    "centrality-degree",
+    "centrality-eigenvector",
+    "centrality-harmonic",
+    "centrality-katz",
+    "centrality-other",
+    "centrality-pagerank",
+    # Community features
+    "community-connected-components",
+    "community-girvan-newman",
+    "community-infomap",
+    "community-label-propagation",
+    "community-louvain",
+    "community-personalized-pagerank",
+    "community-spectral",
+    # Links features
+    "links-allocation",
+    "links-attachment",
+    "links-centrality",
+    "links-cluster",
+    "links-similarity",
+    "links-soundarajan-hopcroft",
+    # Approximation features
+    "approximation-clique",
+    "approximation-clustering",
+    "approximation-connectivity",
+    "approximation-diameter",
+    "approximation-independent-set",
+    "approximation-matching",
+    "approximation-ramsey",
+    "approximation-subgraph",
+    "approximation-treewidth",
+    "approximation-tsp",
+    "approximation-vertex-cover",
+]
+# Centrality features
+centrality-betweenness = []
+centrality-closeness = []
+centrality-degree = []
+centrality-eigenvector = []
+centrality-harmonic = []
+centrality-katz = []
+centrality-other = []
+centrality-pagerank = []
+# Community features
+community-connected-components = []
+community-girvan-newman = []
+community-infomap = []
+community-label-propagation = []
+community-louvain = []
+community-personalized-pagerank = []
+community-spectral = []
+# Links features
+links-allocation = []
+links-attachment = []
+links-centrality = []
+links-cluster = []
+links-similarity = []
+links-soundarajan-hopcroft = []
+# Approximation features
+approximation-clique = []
+approximation-clustering = []
+approximation-connectivity = []
+approximation-diameter = []
+approximation-independent-set = []
+approximation-matching = []
+approximation-ramsey = []
+approximation-subgraph = []
+approximation-treewidth = []
+approximation-tsp = []
+approximation-vertex-cover = []
 
 [dependencies]
-ctor = "0.4.1"
+ctor = "0.6.0"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 rand = "0.9.0"
@@ -42,12 +116,17 @@ ordered-float = "5.0.0"
 rayon = "1.10.0"
 nalgebra = "0.33.2"
 petgraph = { version = "0.8.2", features = ["graphmap", "stable_graph", "matrix_graph", "serde-1", "rayon"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = "1.3"
+plotters = "0.3"
 
 [dev-dependencies]
 criterion = { version = "0.7.0", features = ["html_reports"] }
+proptest = "1.5.0"
 
 [[bench]]
-name = "project_benchmarks"
+name = "graph_benchmarks"
 harness = false
 
 [profile.release]

@@ -36,13 +36,13 @@ format: ## Format Rust files
 .PHONY: test
 test: format ## Run the tests
 	@echo "Running tests..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --all-targets \
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --features all --all-targets \
 	--workspace -- --nocapture
 
 .PHONY: coverage
 coverage: format ## Generate test coverage report
 	@echo "Generating test coverage report..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --out Xml --out Html
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --features all --out Xml --out Html
 
 .PHONY: build
 build: format ## Build the binary for the current platform
@@ -91,7 +91,7 @@ publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to b
 .PHONY: bench
 bench: ## Run benchmarks
 	@echo "Running benchmarks..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench --features all
 
 .PHONY: audit
 audit: ## Run security audit on Rust dependencies
@@ -111,7 +111,7 @@ fix-lint: ## Fix the linter warnings
 .PHONY: nextest
 nextest: ## Run tests using nextest
 	@echo "Running tests using nextest..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run --features all
 
 .PHONY: testdata
 testdata: ## Download the datasets used in tests
@@ -130,7 +130,7 @@ run-examples: ## Run all the scripts in the examples directory one by one
 	@for example in examples/*.rs; do \
 	   example_name=$$(basename $$example .rs); \
 	   echo "Running example: $$example_name"; \
-	   cargo run --example $$example_name; \
+	   cargo run --features all --example $$example_name; \
 	done
 
 ########################################################################################

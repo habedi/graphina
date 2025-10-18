@@ -99,3 +99,5 @@ output_*
 ci.yml
 src/main.rs
 *_output.txt
+*.proptest-regressions
+test_graph.html

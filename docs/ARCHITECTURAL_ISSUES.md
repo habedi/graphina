@@ -171,7 +171,7 @@ where
     if graph.is_empty() {
         return true;
     }
-    
+
     // Use BFS to check reachability
     use crate::core::traversal::bfs;
     let start = graph.node_ids().next().unwrap();
@@ -272,12 +272,12 @@ impl NodeNotFound {
             operation: String::new(),
         }
     }
-    
+
     pub fn with_node(mut self, node: NodeId) -> Self {
         self.node_id = Some(node);
         self
     }
-    
+
     pub fn with_operation(mut self, op: &str) -> Self {
         self.operation = op.to_string();
         self
@@ -316,7 +316,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             .map(|attr| self.add_node(attr))
             .collect()
     }
-    
+
     /// Adds multiple edges at once
     pub fn add_edges(&mut self, edges: impl IntoIterator<Item = (NodeId, NodeId, W)>) -> Vec<EdgeId> {
         edges.into_iter()
@@ -439,4 +439,3 @@ The Graphina library has a solid architectural foundation with good separation o
 4. **Performance**: Add caching for expensive properties
 
 All recommended changes maintain backward compatibility and follow Rust best practices.
-

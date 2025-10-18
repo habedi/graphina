@@ -322,27 +322,32 @@ pub fn watts_strogatz_graph<Ty: GraphConstructor<u32, f32>>(
                 if let Some(eid) = graph.find_edge(nodes[i], nodes[neighbor]) {
                     let _ = graph.remove_edge(eid);
                     // Choose a new target at random (avoiding self-loop and existing edges).
-                    let mut new_target;
                     let max_attempts = n * 2; // Prevent infinite loop
                     let mut attempts = 0;
-                    loop {
-                        new_target = rng.random_range(0..n);
+                    let mut found_valid_target = false;
+
+                    let new_target = loop {
+                        let target = rng.random_range(0..n);
                         attempts += 1;
-                        // Check: not self-loop and edge doesn't already exist
-                        if new_target != i && graph.find_edge(nodes[i], nodes[new_target]).is_none()
-                        {
-                            break;
+                        // Check: not self-loop, not the original neighbor, and edge doesn't already exist (in either direction for undirected graphs)
+                        let edge_exists = graph.find_edge(nodes[i], nodes[target]).is_some()
+                            || graph.find_edge(nodes[target], nodes[i]).is_some();
+
+                        if target != i && target != neighbor && !edge_exists {
+                            found_valid_target = true;
+                            break target;
                         }
                         // Fallback: if we've tried many times, skip this rewiring
                         if attempts >= max_attempts {
-                            // Re-add the original edge and skip rewiring
-                            graph.add_edge(nodes[i], nodes[neighbor], 1.0);
-                            break;
+                            break neighbor; // Use original neighbor as fallback
                         }
-                    }
-                    // Only add new edge if we found a valid target
-                    if attempts < max_attempts {
+                    };
+
+                    if found_valid_target {
                         graph.add_edge(nodes[i], nodes[new_target], 1.0);
+                    } else {
+                        // Re-add the original edge if rewiring failed
+                        graph.add_edge(nodes[i], nodes[neighbor], 1.0);
                     }
                 }
             }
@@ -400,26 +405,49 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
         let new_node = graph.add_node(i as u32);
         nodes.push(new_node);
         let mut targets = Vec::new();
-        while targets.len() < m {
-            let r = rng.random_range(0..total_degree);
-            let mut cumulative = 0;
-            for (idx, &deg) in degrees.iter().enumerate() {
-                cumulative += deg;
-                if r < cumulative {
-                    if !targets.contains(&nodes[idx]) {
-                        targets.push(nodes[idx]);
+        let max_attempts = n * 10; // Prevent infinite loop
+        let mut attempts = 0;
+
+        // Use preferential attachment only if total_degree > 0
+        if total_degree > 0 {
+            while targets.len() < m && attempts < max_attempts {
+                let r = rng.random_range(0..total_degree);
+                let mut cumulative = 0;
+                for (idx, &deg) in degrees.iter().enumerate() {
+                    cumulative += deg;
+                    if r < cumulative {
+                        let candidate = nodes[idx];
+                        // Only add if not already in targets and not the new node itself
+                        if !targets.contains(&candidate) && candidate != new_node {
+                            targets.push(candidate);
+                        }
+                        break;
                     }
+                }
+                attempts += 1;
+            }
+        }
+
+        // If we couldn't find m targets through preferential attachment,
+        // fill remaining slots with random selection from available nodes
+        if targets.len() < m {
+            for idx in 0..i {
+                if targets.len() >= m {
                     break;
+                }
+                if !targets.contains(&nodes[idx]) {
+                    targets.push(nodes[idx]);
                 }
             }
         }
+
         for target in &targets {
             graph.add_edge(new_node, *target, 1.0);
             let idx = nodes.iter().position(|&x| x == *target).unwrap();
             degrees[idx] += 1;
         }
-        degrees.push(m);
-        total_degree += 2 * m;
+        degrees.push(targets.len());
+        total_degree += 2 * targets.len();
     }
     Ok(graph)
 }

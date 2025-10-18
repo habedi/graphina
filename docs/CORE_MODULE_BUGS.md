@@ -74,7 +74,7 @@ while targets.len() < m {
 }
 ```
 
-**Impact:** 
+**Impact:**
 - Infinite loop possible with high probability as graph grows
 - Very inefficient even when it terminates
 - May hang applications
@@ -228,4 +228,3 @@ pub fn dijkstra<A, W, Ty>(
 **API Inconsistencies:** 4
 
 **Total Issues:** 9
-

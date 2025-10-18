@@ -33,7 +33,7 @@ pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64> 
 ```rust
 pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<f64> {
     let mut cent = graph.to_nodemap_default();
-    
+
     if graph.is_directed() {
         // For directed graphs, count both in-degree and out-degree
         for (src, dst, _) in graph.edges() {
@@ -174,4 +174,3 @@ The graph generators properly validate inputs:
 **Architectural issues identified:** 3 (for future consideration)
 
 The most critical bug affecting correctness has been fixed and thoroughly tested. The library is now more robust with better test coverage for edge cases.
-

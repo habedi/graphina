@@ -300,6 +300,123 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         EdgeId::new(self.inner.add_edge(source.0, target.0, weight))
     }
 
+    /// Adds multiple nodes at once from a slice of attributes.
+    ///
+    /// Returns a vector of `NodeId`s corresponding to the added nodes.
+    /// This is more efficient than calling `add_node` repeatedly as it can pre-allocate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use graphina::core::types::Graph;
+    /// let mut g = Graph::<i32, f64>::new();
+    /// let nodes = g.add_nodes_bulk(&[1, 2, 3, 4, 5]);
+    /// assert_eq!(nodes.len(), 5);
+    /// assert_eq!(g.node_count(), 5);
+    /// ```
+    pub fn add_nodes_bulk(&mut self, attributes: &[A]) -> Vec<NodeId>
+    where
+        A: Clone,
+    {
+        let mut node_ids = Vec::with_capacity(attributes.len());
+        for attr in attributes {
+            node_ids.push(self.add_node(attr.clone()));
+        }
+        node_ids
+    }
+
+    /// Adds multiple edges at once from a slice of (source, target, weight) tuples.
+    ///
+    /// Returns a vector of `EdgeId`s corresponding to the added edges.
+    /// This is more efficient than calling `add_edge` repeatedly.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use graphina::core::types::Graph;
+    /// let mut g = Graph::<i32, f64>::new();
+    /// let n1 = g.add_node(1);
+    /// let n2 = g.add_node(2);
+    /// let n3 = g.add_node(3);
+    /// let edges = g.add_edges_bulk(&[
+    ///     (n1, n2, 1.0),
+    ///     (n2, n3, 2.0),
+    ///     (n3, n1, 3.0),
+    /// ]);
+    /// assert_eq!(edges.len(), 3);
+    /// assert_eq!(g.edge_count(), 3);
+    /// ```
+    pub fn add_edges_bulk(&mut self, edges: &[(NodeId, NodeId, W)]) -> Vec<EdgeId>
+    where
+        W: Clone,
+    {
+        let mut edge_ids = Vec::with_capacity(edges.len());
+        for (src, tgt, weight) in edges {
+            edge_ids.push(self.add_edge(*src, *tgt, weight.clone()));
+        }
+        edge_ids
+    }
+
+    /// Extends the graph with nodes from an iterator.
+    ///
+    /// Returns a vector of `NodeId`s corresponding to the added nodes.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use graphina::core::types::Graph;
+    /// let mut g = Graph::<i32, f64>::new();
+    /// let nodes = g.extend_nodes(vec![10, 20, 30, 40]);
+    /// assert_eq!(g.node_count(), 4);
+    /// ```
+    pub fn extend_nodes<I>(&mut self, iter: I) -> Vec<NodeId>
+    where
+        I: IntoIterator<Item = A>,
+    {
+        let iter = iter.into_iter();
+        let (lower_bound, _) = iter.size_hint();
+        let mut node_ids = Vec::with_capacity(lower_bound);
+
+        for attr in iter {
+            node_ids.push(self.add_node(attr));
+        }
+        node_ids
+    }
+
+    /// Extends the graph with edges from an iterator.
+    ///
+    /// Returns a vector of `EdgeId`s corresponding to the added edges.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use graphina::core::types::Graph;
+    /// let mut g = Graph::<i32, f64>::new();
+    /// let n1 = g.add_node(1);
+    /// let n2 = g.add_node(2);
+    /// let n3 = g.add_node(3);
+    ///
+    /// let edges = vec![
+    ///     (n1, n2, 1.5),
+    ///     (n2, n3, 2.5),
+    /// ];
+    /// let edge_ids = g.extend_edges(edges);
+    /// assert_eq!(g.edge_count(), 2);
+    /// ```
+    pub fn extend_edges<I>(&mut self, iter: I) -> Vec<EdgeId>
+    where
+        I: IntoIterator<Item = (NodeId, NodeId, W)>,
+    {
+        let iter = iter.into_iter();
+        let (lower_bound, _) = iter.size_hint();
+        let mut edge_ids = Vec::with_capacity(lower_bound);
+
+        for (src, tgt, weight) in iter {
+            edge_ids.push(self.add_edge(src, tgt, weight));
+        }
+        edge_ids
+    }
+
     /// Removes a node from the graph, returning its attribute if it existed.
     /// All incident edges will be removed.
     pub fn remove_node(&mut self, node: NodeId) -> Option<A> {

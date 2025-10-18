@@ -358,47 +358,65 @@ where
     let mut forward_visited = HashSet::new();
     let mut backward_visited = HashSet::new();
 
+    // Track the current frontier separately from visited
+    let mut forward_frontier = HashSet::new();
+    let mut backward_frontier = HashSet::new();
+
     forward_queue.push_back(start);
     forward_visited.insert(start);
+    forward_frontier.insert(start);
     forward_parents.insert(start, None);
 
     backward_queue.push_back(target);
     backward_visited.insert(target);
+    backward_frontier.insert(target);
     backward_parents.insert(target, None);
 
     let mut meeting_node = None;
 
     while !forward_queue.is_empty() && !backward_queue.is_empty() {
-        // Expand the forward frontier one level.
+        // Check for intersection in current frontiers
+        if let Some(&meet) = forward_frontier.intersection(&backward_frontier).next() {
+            meeting_node = Some(meet);
+            break;
+        }
+
+        // Clear previous frontier and expand forward one level
+        forward_frontier.clear();
         let forward_level = forward_queue.len();
         for _ in 0..forward_level {
             let current = forward_queue.pop_front().unwrap();
             for neighbor in graph.neighbors(current) {
                 if forward_visited.insert(neighbor) {
                     forward_queue.push_back(neighbor);
+                    forward_frontier.insert(neighbor);
                     forward_parents.insert(neighbor, Some(current));
                 }
             }
         }
-        // Check if an intersection exists.
-        if let Some(&meet) = forward_visited.intersection(&backward_visited).next() {
+
+        // Check if forward frontier intersects with backward visited
+        if let Some(&meet) = forward_frontier.intersection(&backward_visited).next() {
             meeting_node = Some(meet);
             break;
         }
 
-        // Expand the backward frontier one level.
+        // Clear previous frontier and expand backward one level
+        backward_frontier.clear();
         let backward_level = backward_queue.len();
         for _ in 0..backward_level {
             let current = backward_queue.pop_front().unwrap();
             for neighbor in get_backward_neighbors(graph, current) {
                 if backward_visited.insert(neighbor) {
                     backward_queue.push_back(neighbor);
+                    backward_frontier.insert(neighbor);
                     backward_parents.insert(neighbor, Some(current));
                 }
             }
         }
-        // Check for intersection again.
-        if let Some(&meet) = forward_visited.intersection(&backward_visited).next() {
+
+        // Check if backward frontier intersects with forward visited
+        if let Some(&meet) = backward_frontier.intersection(&forward_visited).next() {
             meeting_node = Some(meet);
             break;
         }

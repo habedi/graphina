@@ -14,7 +14,7 @@ This document details comprehensive API improvements and architectural fixes imp
 
 **Issue:** The API used `node_attr()` for node attributes but `edge_attr()` for edge weights, creating confusion since edges have "weights" not "attributes" in graph theory terminology.
 
-**Fix:** 
+**Fix:**
 - Added new methods: `edge_weight()` and `edge_weight_mut()`
 - Deprecated old methods: `edge_attr()` and `edge_attr_mut()`
 - Maintained backward compatibility with deprecation warnings
@@ -375,4 +375,3 @@ Potential future improvements:
 **Backward compatibility:** 100%  
 
 These improvements significantly enhance the usability and consistency of the Graphina API while maintaining full backward compatibility with existing code.
-
