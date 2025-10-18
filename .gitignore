@@ -101,3 +101,9 @@ src/main.rs
 *_output.txt
 *.proptest-regressions
 test_graph.html
+graph_*.png
+graph_*.svg
+graph_*.json
+graph_*.html
+graph.html
+graph.png

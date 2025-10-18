@@ -439,3 +439,36 @@ The Graphina library has a solid architectural foundation with good separation o
 4. **Performance**: Add caching for expensive properties
 
 All recommended changes maintain backward compatibility and follow Rust best practices.
+
+# Architectural Issues and Fixes (Alpha)
+
+This document records architectural flaws and bugs found during review, plus the changes applied.
+
+## 1) StableGraph index misuse in shortest paths (Bug)
+
+- Issue: The generic `dijkstra` returned `Vec<Option<W>>` indexed by `NodeIndex::index()`. With `StableGraph`, removed nodes create gaps, so indexing by `usize` is unsafe and can return wrong entries or panic in downstream code.
+- Fix: `dijkstra` now returns `NodeMap<Option<W>>` (HashMap<NodeId, Option<W>>). This decouples results from contiguous indices and makes it robust to node removals and arbitrary ID layouts.
+- Impact: Breaking change to the public API of `dijkstra`. All internal call sites were migrated. A new integration test `tests/test_paths_noncontig.rs` verifies correct behavior with non‑contiguous node IDs.
+
+## 2) Eigenvector centrality incorrectly symmetrized (Bug)
+
+- Issue: The adjacency matrix was built symmetrically regardless of graph directedness, which is incorrect for directed graphs.
+- Fix: Symmetrization is applied only if the graph is undirected. Directed graphs use the true adjacency.
+- Tests: Added unit test in `src/centrality/eigenvector.rs` that checks: in a chain 0→1 (directed), node 1 centrality > node 0; in an undirected 0—1, centralities are equal.
+
+## 3) Side‑effectful startup logging (Design)
+
+- Issue: `settings` unconditionally initialized a global logger via `ctor`. That can surprise library consumers and clash with host apps.
+- Fix: `settings` is now gated behind an opt‑in feature `logging`. By default, no logging is initialized.
+- Usage: Enable with `--features logging` or `[features] logging` in dependent crates.
+
+## 4) Module decoupling (Architecture)
+
+- Rule: High‑level modules (approximation, centrality, community, links) must depend only on `core`.
+- Status: Grep audit found no cross‑module imports between high‑level modules. All use `crate::core::…` only.
+
+## Follow‑ups
+
+- Consider migrating other path algorithms (Bellman‑Ford, A*, Johnson, Floyd–Warshall) to return NodeMap outputs to unify the API and avoid index coupling across the board.
+- Evaluate `NodeMap` newtype wrapper for stronger type safety and consistent iteration order if needed.
+- Add clippy CI and docs.rs build checks; compile examples in CI with selected features.

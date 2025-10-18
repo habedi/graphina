@@ -29,8 +29,9 @@ name = "graphina"
 path = "src/lib.rs"
 
 [features]
-default = []  # No features enabled by default
+default = ["centrality-degree"]  # Enable commonly used centrality by default
 binaries = []
+logging = []
 all = [
     # Centrality features
     "centrality-betweenness",
@@ -128,6 +129,37 @@ proptest = "1.5.0"
 [[bench]]
 name = "graph_benchmarks"
 harness = false
+
+# Ensure examples compile only when the necessary features are enabled.
+[[example]]
+name = "centrality"
+required-features = [
+    "centrality-degree",
+    "centrality-eigenvector",
+    "centrality-katz",
+    "centrality-closeness",
+    "centrality-pagerank"
+]
+
+[[example]]
+name = "centrality_eigenvector"
+required-features = ["centrality-eigenvector"]
+
+[[example]]
+name = "centrality_katz"
+required-features = ["centrality-katz"]
+
+[[example]]
+name = "path_dijkstra"
+# No feature-gated modules used here
+
+[[example]]
+name = "core_io"
+# Uses core::io only; no extra features required
+
+[[example]]
+name = "visualization"
+# Uses core visualization; not behind feature flags currently
 
 [profile.release]
 strip = "debuginfo"

@@ -119,6 +119,30 @@ where
         graph
     }
 
+    /// Creates a graph from a serializable representation, validating directedness.
+    ///
+    /// Returns an error if the `SerializableGraph.directed` flag does not match the
+    /// target graph type `Ty` (Directed vs Undirected).
+    pub fn try_from_serializable(
+        data: &SerializableGraph<A, W>,
+    ) -> Result<Self, GraphinaException> {
+        if <Ty as GraphConstructor<A, W>>::is_directed() != data.directed {
+            return Err(GraphinaException::new(
+                "Directedness mismatch between SerializableGraph and target graph type",
+            ));
+        }
+        let mut graph = Self::with_capacity(data.nodes.len(), data.edges.len());
+        let node_ids: Vec<NodeId> = data
+            .nodes
+            .iter()
+            .map(|attr| graph.add_node(attr.clone()))
+            .collect();
+        for (src_idx, tgt_idx, weight) in &data.edges {
+            graph.add_edge(node_ids[*src_idx], node_ids[*tgt_idx], weight.clone());
+        }
+        Ok(graph)
+    }
+
     /// Saves the graph to a JSON file.
     ///
     /// # Example
@@ -166,6 +190,19 @@ where
             .map_err(|e| GraphinaException::new(&format!("JSON deserialization error: {}", e)))?;
 
         Ok(Self::from_serializable(&serializable))
+    }
+
+    /// Loads a graph from a JSON file, validating directedness.
+    pub fn load_json_strict<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaException>
+    where
+        A: for<'de> Deserialize<'de>,
+        W: for<'de> Deserialize<'de>,
+    {
+        let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let reader = BufReader::new(file);
+        let serializable: SerializableGraph<A, W> = serde_json::from_reader(reader)
+            .map_err(|e| GraphinaException::new(&format!("JSON deserialization error: {}", e)))?;
+        Self::try_from_serializable(&serializable)
     }
 
     /// Saves the graph to a binary file (using bincode).
@@ -217,6 +254,19 @@ where
             .map_err(|e| GraphinaException::new(&format!("Binary deserialization error: {}", e)))?;
 
         Ok(Self::from_serializable(&serializable))
+    }
+
+    /// Loads a graph from a binary file, validating directedness.
+    pub fn load_binary_strict<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaException>
+    where
+        A: for<'de> Deserialize<'de>,
+        W: for<'de> Deserialize<'de>,
+    {
+        let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let reader = BufReader::new(file);
+        let serializable: SerializableGraph<A, W> = bincode::deserialize_from(reader)
+            .map_err(|e| GraphinaException::new(&format!("Binary deserialization error: {}", e)))?;
+        Self::try_from_serializable(&serializable)
     }
 
     /// Saves the graph in GraphML format.
@@ -440,5 +490,27 @@ mod tests {
         assert_eq!(loaded.node_count(), g.node_count());
 
         fs::remove_file(path).ok();
+    }
+
+    #[test]
+    fn test_directedness_mismatch_strict_load() {
+        // Build a directed serializable graph
+        let serializable = SerializableGraph {
+            directed: true,
+            nodes: vec![1, 2],
+            edges: vec![(0, 1, 1.0)],
+        };
+        // Undirected Graph should error in strict mode
+        type UGraph = crate::core::types::Graph<i32, f64>;
+        let err = UGraph::try_from_serializable(&serializable)
+            .err()
+            .expect("expected mismatch error");
+        assert!(format!("{}", err).to_lowercase().contains("mismatch"));
+
+        // Directed graph should succeed
+        type DGraph = crate::core::types::Digraph<i32, f64>;
+        let g = DGraph::try_from_serializable(&serializable).expect("directed should load");
+        assert_eq!(g.node_count(), 2);
+        assert_eq!(g.edge_count(), 1);
     }
 }

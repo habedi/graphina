@@ -27,7 +27,7 @@ where
     for (node, _) in graph.nodes() {
         let distances = dijkstra(graph, node)?;
         let sum: f64 = distances
-            .into_iter()
+            .into_values()
             .filter_map(|d| d.map(|od| 1.0 / od.0))
             .sum();
         centrality.insert(node, sum);

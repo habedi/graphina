@@ -15,7 +15,7 @@ where
     if let Some((start, _)) = graph.nodes().next() {
         let distances = dijkstra(graph, start)?;
         let max_dist = distances
-            .into_iter()
+            .into_values()
             .filter_map(|d| d.map(|od| od.0))
             .fold(0.0, f64::max);
         Ok(max_dist)
