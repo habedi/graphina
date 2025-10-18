@@ -1,12 +1,6 @@
-#[cfg(feature = "links-allocation")]
 pub mod allocation;
-#[cfg(feature = "links-attachment")]
 pub mod attachment;
-#[cfg(feature = "links-centrality")]
 pub mod centrality;
-#[cfg(feature = "links-cluster")]
 pub mod cluster;
-#[cfg(feature = "links-similarity")]
 pub mod similarity;
-#[cfg(feature = "links-soundarajan-hopcroft")]
 pub mod soundarajan_hopcroft;

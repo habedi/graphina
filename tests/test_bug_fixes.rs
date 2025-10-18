@@ -1,3 +1,4 @@
+#![cfg(feature = "centrality")]
 // Test file for verifying bug fixes in Graphina
 
 use graphina::centrality::degree::{

@@ -1,14 +1,7 @@
-#[cfg(feature = "community-connected-components")]
 pub mod connected_components;
-#[cfg(feature = "community-girvan-newman")]
 pub mod girvan_newman;
-#[cfg(feature = "community-infomap")]
 pub mod infomap;
-#[cfg(feature = "community-label-propagation")]
 pub mod label_propagation;
-#[cfg(feature = "community-louvain")]
 pub mod louvain;
-#[cfg(feature = "community-personalized-pagerank")]
 pub mod personalized_pagerank;
-#[cfg(feature = "community-spectral")]
 pub mod spectral;

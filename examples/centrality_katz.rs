@@ -1,8 +1,10 @@
-use graphina::core::types::Digraph;
+#![cfg_attr(not(feature = "centrality"), allow(dead_code, unused_imports))]
 
-use graphina::centrality::katz::katz_centrality;
-
+#[cfg(feature = "centrality")]
 fn main() {
+    use graphina::centrality::katz::katz_centrality;
+    use graphina::core::types::Digraph;
+
     let mut graph = Digraph::new();
     let ids = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
     let edges = [(0, 1, 1.0), (0, 2, 2.0), (1, 3, 1.0)];
@@ -30,4 +32,11 @@ fn main() {
         }
         println!();
     }
+}
+
+#[cfg(not(feature = "centrality"))]
+fn main() {
+    eprintln!(
+        "This example requires the 'centrality' feature. Run with:\n  cargo run --example centrality_katz --features centrality"
+    );
 }

@@ -1,16 +1,8 @@
-#[cfg(feature = "centrality-betweenness")]
 pub mod betweenness;
-#[cfg(feature = "centrality-closeness")]
 pub mod closeness;
-#[cfg(feature = "centrality-degree")]
 pub mod degree;
-#[cfg(feature = "centrality-eigenvector")]
 pub mod eigenvector;
-#[cfg(feature = "centrality-harmonic")]
 pub mod harmonic;
-#[cfg(feature = "centrality-katz")]
 pub mod katz;
-#[cfg(feature = "centrality-other")]
 pub mod other;
-#[cfg(feature = "centrality-pagerank")]
 pub mod pagerank;

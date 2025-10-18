@@ -1,6 +1,6 @@
 [package]
 name = "graphina"
-version = "0.4.0"
+version = "0.4.0-a1"
 description = "A graph data science library for Rust"
 repository = "https://github.com/habedi/graphina"
 license = "MIT OR Apache-2.0"
@@ -29,83 +29,14 @@ name = "graphina"
 path = "src/lib.rs"
 
 [features]
-default = ["centrality-degree"]  # Enable commonly used centrality by default
+default = []
 binaries = []
 logging = []
-all = [
-    # Centrality features
-    "centrality-betweenness",
-    "centrality-closeness",
-    "centrality-degree",
-    "centrality-eigenvector",
-    "centrality-harmonic",
-    "centrality-katz",
-    "centrality-other",
-    "centrality-pagerank",
-    # Community features
-    "community-connected-components",
-    "community-girvan-newman",
-    "community-infomap",
-    "community-label-propagation",
-    "community-louvain",
-    "community-personalized-pagerank",
-    "community-spectral",
-    # Links features
-    "links-allocation",
-    "links-attachment",
-    "links-centrality",
-    "links-cluster",
-    "links-similarity",
-    "links-soundarajan-hopcroft",
-    # Approximation features
-    "approximation-clique",
-    "approximation-clustering",
-    "approximation-connectivity",
-    "approximation-diameter",
-    "approximation-independent-set",
-    "approximation-matching",
-    "approximation-ramsey",
-    "approximation-subgraph",
-    "approximation-treewidth",
-    "approximation-tsp",
-    "approximation-vertex-cover",
-]
-# Centrality features
-centrality-betweenness = []
-centrality-closeness = []
-centrality-degree = []
-centrality-eigenvector = []
-centrality-harmonic = []
-centrality-katz = []
-centrality-other = []
-centrality-pagerank = []
-# Community features
-community-connected-components = []
-community-girvan-newman = []
-community-infomap = []
-community-label-propagation = []
-community-louvain = []
-community-personalized-pagerank = []
-community-spectral = []
-# Links features
-links-allocation = []
-links-attachment = []
-links-centrality = []
-links-cluster = []
-links-similarity = []
-links-soundarajan-hopcroft = []
-# Approximation features
-approximation-clique = []
-approximation-clustering = []
-approximation-connectivity = []
-approximation-diameter = []
-approximation-independent-set = []
-approximation-matching = []
-approximation-ramsey = []
-approximation-subgraph = []
-approximation-treewidth = []
-approximation-tsp = []
-approximation-vertex-cover = []
+centrality = []
+community = []
+links = []
+approximation = []
+all = ["centrality", "community", "links", "approximation"]
 
 [dependencies]
 ctor = "0.6.0"
@@ -129,37 +60,6 @@ proptest = "1.5.0"
 [[bench]]
 name = "graph_benchmarks"
 harness = false
-
-# Ensure examples compile only when the necessary features are enabled.
-[[example]]
-name = "centrality"
-required-features = [
-    "centrality-degree",
-    "centrality-eigenvector",
-    "centrality-katz",
-    "centrality-closeness",
-    "centrality-pagerank"
-]
-
-[[example]]
-name = "centrality_eigenvector"
-required-features = ["centrality-eigenvector"]
-
-[[example]]
-name = "centrality_katz"
-required-features = ["centrality-katz"]
-
-[[example]]
-name = "path_dijkstra"
-# No feature-gated modules used here
-
-[[example]]
-name = "core_io"
-# Uses core::io only; no extra features required
-
-[[example]]
-name = "visualization"
-# Uses core visualization; not behind feature flags currently
 
 [profile.release]
 strip = "debuginfo"

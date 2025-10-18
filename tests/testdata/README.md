@@ -1,4 +1,4 @@
-## Test Data
+## Test Datasets
 
 You can download the graph datasets used in the tests, examples, and benchmarks from Hugging Face:
 
