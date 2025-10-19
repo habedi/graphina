@@ -17,11 +17,11 @@ The algorithms include:
   Simultaneously searches from the start and target nodes, potentially reducing search time by meeting in the middle.
 
 For the search-based algorithms that find a path (IDDFS and Bidirectional Search), additional "try"
-variants are provided that return a `Result` and use the custom exception
-`graphina::core::exceptions::GraphinaNoPath` if no valid path exists.
+variants are provided that return a `Result` and use `graphina::core::error::GraphinaError::NoPath`
+if no valid path exists.
 */
 
-use crate::core::exceptions::GraphinaNoPath;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -246,13 +246,30 @@ pub fn try_iddfs<A, W, Ty>(
     start: NodeId,
     target: NodeId,
     max_depth: usize,
-) -> Result<Vec<NodeId>, GraphinaNoPath>
+) -> Result<Vec<NodeId>>
 where
     Ty: GraphConstructor<A, W>,
 {
-    iddfs(graph, start, target, max_depth).ok_or_else(|| {
-        GraphinaNoPath::new("No path found using IDDFS within the given depth limit")
-    })
+    // Check if start and target nodes exist in the graph
+    if graph.node_attr(start).is_none() || graph.node_attr(target).is_none() {
+        return Err(GraphinaError::node_not_found(
+            "Start or target node not found",
+        ));
+    }
+
+    for depth in 0..=max_depth {
+        let mut path = Vec::new();
+        let mut visited = HashSet::new();
+        if dls(graph, start, target, depth, &mut visited, &mut path) {
+            return Ok(path);
+        }
+    }
+    Err(GraphinaError::no_path(format!(
+        "No path found from {} to {} within depth {}",
+        start.index(),
+        target.index(),
+        max_depth
+    )))
 }
 
 /// Depth-limited search helper for IDDFS.
@@ -485,12 +502,24 @@ pub fn try_bidirectional_search<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     start: NodeId,
     target: NodeId,
-) -> Result<Vec<NodeId>, GraphinaNoPath>
+) -> Result<Vec<NodeId>>
 where
     Ty: GraphConstructor<A, W>,
 {
-    bidis(graph, start, target)
-        .ok_or_else(|| GraphinaNoPath::new("No path exists between the specified nodes"))
+    // Check if start and target nodes exist in the graph
+    if graph.node_attr(start).is_none() || graph.node_attr(target).is_none() {
+        return Err(GraphinaError::node_not_found(
+            "Start or target node not found",
+        ));
+    }
+
+    bidis(graph, start, target).ok_or_else(|| {
+        GraphinaError::no_path(format!(
+            "No path found from {} to {}",
+            start.index(),
+            target.index()
+        ))
+    })
 }
 
 /// Helper function to obtain backward neighbors for bidirectional search.

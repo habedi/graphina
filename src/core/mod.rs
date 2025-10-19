@@ -1,6 +1,5 @@
 pub mod builders;
 pub mod error;
-pub mod exceptions;
 pub mod generators;
 pub mod io;
 pub mod metrics;

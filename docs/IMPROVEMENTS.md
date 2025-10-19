@@ -5,6 +5,7 @@ This document summarizes the architectural improvements, bug fixes, and enhancem
 ## Overview
 
 The improvements focus on four key areas requested:
+
 1. Unified Error Type with `thiserror`
 2. Trait-based Graph API for multiple backends
 3. Expanded Builder Patterns
@@ -15,6 +16,7 @@ The improvements focus on four key areas requested:
 ### Changes Made
 
 **File: `src/core/error.rs`**
+
 - Completely rewrote the error module to use `thiserror` crate
 - Implemented a single `GraphinaError` enum that consolidates all error types
 - Added automatic `Display` and `Error` trait implementations via `thiserror` macros
@@ -67,6 +69,7 @@ fn process_graph() -> Result<()> {
 ### Changes Made
 
 **File: `src/core/traits.rs`**
+
 - Created modular trait hierarchy following interface segregation principle
 - Defined separate traits for different aspects of graph operations
 - Enables multiple backend implementations while maintaining consistent API
@@ -74,38 +77,52 @@ fn process_graph() -> Result<()> {
 ### Traits Defined
 
 #### `GraphQuery<A, W>`
+
 Core read-only operations:
+
 - `is_directed()`, `is_empty()`, `node_count()`, `edge_count()`
 - `contains_node()`, `contains_edge()`
 - `node_attr()`, `edge_weight()`
 - `density()` - computed property
 
 #### `GraphMutate<A, W>: GraphQuery<A, W>`
+
 Modification operations:
+
 - `add_node()`, `add_edge()`
 - `update_node()`, `remove_node()`, `remove_edge()`
 - `clear()`
 
 #### `GraphTraversal<A, W>: GraphQuery<A, W>`
+
 Traversal operations with associated iterator types:
+
 - `node_ids()`, `neighbors()`
 - `degree()`, `in_degree()`, `out_degree()`
 
 #### `GraphBulkOps<A, W>: GraphMutate<A, W>`
+
 Performance-critical bulk operations:
+
 - `add_nodes_bulk()`
 - `add_edges_bulk()`
 
 #### `GraphAlgorithms<A, W>: GraphTraversal<A, W>`
+
 Algorithm-specific operations:
+
 - `is_connected()`, `is_acyclic()`, `validate()`
 
 #### `WeightedGraph<A, W>: GraphQuery<A, W>`
+
 Weighted graph specific operations:
+
 - `min_edge_weight()`, `max_edge_weight()`, `total_weight()`
 
 #### `GraphSerialization<A, W>: GraphQuery<A, W>`
+
 Serialization operations:
+
 - `save_json()`, `load_json()`
 - `save_binary()`, `load_binary()`
 
@@ -122,6 +139,7 @@ Serialization operations:
 ### Changes Made
 
 **File: `src/core/builders.rs`**
+
 - Created `AdvancedGraphBuilder` with validation and configuration options
 - Implemented `TopologyBuilder` for common graph patterns
 - Added fluent API for graph construction
@@ -129,9 +147,9 @@ Serialization operations:
 ### AdvancedGraphBuilder Features
 
 - **Capacity Pre-allocation**: `with_capacity(nodes, edges)`
-- **Validation Rules**: 
-  - `allow_self_loops(bool)` - Control self-loop edges
-  - `allow_parallel_edges(bool)` - Control duplicate edges
+- **Validation Rules**:
+    - `allow_self_loops(bool)` - Control self-loop edges
+    - `allow_parallel_edges(bool)` - Control duplicate edges
 - **Bulk Operations**: `add_nodes()`, `add_edges()`
 - **Validation**: `validate()` before building
 - **Error Handling**: Returns `Result<Graph, GraphinaError>`
@@ -139,6 +157,7 @@ Serialization operations:
 ### TopologyBuilder Patterns
 
 Provides factory methods for common graph topologies:
+
 - `complete(n, node_attr, edge_weight)` - Complete graph
 - `cycle(n, node_attr, edge_weight)` - Cycle graph
 - `path(n, node_attr, edge_weight)` - Path graph
@@ -152,12 +171,12 @@ use graphina::core::builders::{AdvancedGraphBuilder, TopologyBuilder};
 
 // Using AdvancedGraphBuilder
 let graph = AdvancedGraphBuilder::directed()
-    .with_capacity(100, 200)
-    .allow_self_loops(false)
-    .allow_parallel_edges(false)
-    .add_nodes(vec![1, 2, 3, 4, 5])
-    .add_edges(vec![(0, 1, 1.0), (1, 2, 2.0)])
-    .build()?;
+.with_capacity(100, 200)
+.allow_self_loops(false)
+.allow_parallel_edges(false)
+.add_nodes(vec![1, 2, 3, 4, 5])
+.add_edges(vec![(0, 1, 1.0), (1, 2, 2.0)])
+.build() ?;
 
 // Using TopologyBuilder
 let complete_graph = TopologyBuilder::complete(10, (), 1.0);
@@ -177,6 +196,7 @@ let grid_graph = TopologyBuilder::grid(5, 5, (), 1.0);
 ### Changes Made
 
 **File: `src/core/pool.rs`**
+
 - Implemented three pooling types: `NodeSetPool`, `NodeMapPool`, `NodeQueuePool`
 - Created RAII wrappers that automatically return objects to pool on drop
 - Provided thread-local default pools for convenience
@@ -184,14 +204,17 @@ let grid_graph = TopologyBuilder::grid(5, 5, (), 1.0);
 ### Pool Types
 
 #### `NodeSetPool`
+
 - Pools `HashSet<NodeId>` instances
 - Use case: BFS/DFS visited sets, temporary node collections
 
 #### `NodeMapPool<T>`
+
 - Pools `HashMap<NodeId, T>` instances
 - Use case: Distance maps, temporary node attributes
 
 #### `NodeQueuePool`
+
 - Pools `VecDeque<NodeId>` instances
 - Use case: BFS queues, processing queues
 
@@ -211,15 +234,15 @@ use graphina::core::pool::{NodeSetPool, acquire_node_set};
 // Custom pool
 let pool = NodeSetPool::new(10);
 {
-    let mut visited = pool.acquire();
-    visited.insert(some_node);
-    // automatically returned to pool when dropped
+let mut visited = pool.acquire();
+visited.insert(some_node);
+// automatically returned to pool when dropped
 }
 
 // Default thread-local pool
 {
-    let mut visited = acquire_node_set();
-    visited.insert(some_node);
+let mut visited = acquire_node_set();
+visited.insert(some_node);
 }
 ```
 
@@ -234,6 +257,7 @@ let pool = NodeSetPool::new(10);
 ## Testing
 
 All improvements include comprehensive unit tests:
+
 - `src/core/error.rs`: 6 tests covering all error scenarios
 - `src/core/traits.rs`: 2 tests with mock implementations
 - `src/core/builders.rs`: 11 tests covering all builder features
@@ -242,6 +266,7 @@ All improvements include comprehensive unit tests:
 ## Backward Compatibility
 
 While breaking changes are acceptable for alpha, we maintained compatibility where possible:
+
 - Old exception types convert to new error types via `From` traits
 - Existing graph API remains unchanged
 - New features are additions, not replacements
@@ -257,6 +282,7 @@ While breaking changes are acceptable for alpha, we maintained compatibility whe
 ## Future Enhancements
 
 The new architecture enables future improvements:
+
 1. **Alternative Graph Backends**: Implement traits for compressed graphs, GPU-based graphs
 2. **Async Support**: Add async trait variants for I/O operations
 3. **Custom Allocators**: Support custom memory allocation strategies
@@ -267,12 +293,14 @@ The new architecture enables future improvements:
 ### Error Handling
 
 **Old:**
+
 ```rust
 use graphina::core::exceptions::NodeNotFound;
 fn my_func() -> Result<(), NodeNotFound> { ... }
 ```
 
 **New:**
+
 ```rust
 use graphina::core::error::{GraphinaError, Result};
 fn my_func() -> Result<()> { ... }
@@ -281,6 +309,7 @@ fn my_func() -> Result<()> { ... }
 ### Graph Construction
 
 **Old:**
+
 ```rust
 let mut g = Graph::new();
 g.add_node(1);
@@ -289,16 +318,18 @@ g.add_edge(n1, n2, 1.0);
 ```
 
 **New (with builder):**
+
 ```rust
 let g = AdvancedGraphBuilder::directed()
-    .add_nodes(vec![1, 2])
-    .add_edge(0, 1, 1.0)
-    .build()?;
+.add_nodes(vec![1, 2])
+.add_edge(0, 1, 1.0)
+.build() ?;
 ```
 
 ### Performance-Critical Code
 
 **Old:**
+
 ```rust
 let mut visited = HashSet::new();
 // use visited
@@ -307,13 +338,14 @@ visited.clear();
 ```
 
 **New (with pooling):**
+
 ```rust
 {
-    let mut visited = acquire_node_set();
-    // use visited, automatically returned on drop
+let mut visited = acquire_node_set();
+// use visited, automatically returned on drop
 }
 {
-    let mut visited = acquire_node_set(); // reused!
+let mut visited = acquire_node_set(); // reused!
 }
 ```
 
@@ -330,5 +362,5 @@ The improvements follow these principles:
 
 ## Conclusion
 
-These improvements significantly enhance Graphina's architecture, making it more modular, performant, and maintainable. The changes provide a solid foundation for future development while maintaining the library's ease of use.
-
+These improvements significantly enhance Graphina's architecture, making it more modular, performant, and maintainable.
+The changes provide a solid foundation for future development while maintaining the library's ease of use.

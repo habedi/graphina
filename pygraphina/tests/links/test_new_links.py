@@ -1,6 +1,3 @@
-import pygraphina
-
-
 def make_simple_graph():
     """Create a simple graph for link prediction testing"""
     g = pygraphina.PyGraph()
@@ -31,6 +28,8 @@ def test_resource_allocation_index_with_ebunch():
     ra_scores = pygraphina.links.resource_allocation_index(g, ebunch=ebunch)
     assert isinstance(ra_scores, dict)
     assert len(ra_scores) == 2
+
+
 import pygraphina
 
 
@@ -62,4 +61,3 @@ def test_spectral_clustering():
     assert len(clusters) == 2
     total_nodes = sum(len(c) for c in clusters)
     assert total_nodes == 6
-

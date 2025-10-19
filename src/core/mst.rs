@@ -25,7 +25,7 @@ If the input graph is empty, algorithms will return a `Result` containing a `Gra
 If other required conditions are violated, the algorithm may also signal an error via a `Result`.
 */
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use rayon::prelude::*;
 use std::cmp::Ordering;
@@ -123,15 +123,13 @@ pub struct MstEdge<W> {
 ///
 /// let (mst_edges, total_weight) = boruvka_mst(&g).unwrap();
 /// ```
-pub fn boruvka_mst<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<(Vec<MstEdge<W>>, W), GraphinaException>
+pub fn boruvka_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<(Vec<MstEdge<W>>, W)>
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + Sub<Output = W> + From<u8> + Send + Sync,
     Ty: GraphConstructor<A, W>,
 {
     if graph.node_count() == 0 {
-        return Err(GraphinaException::new(
+        return Err(GraphinaError::invalid_graph(
             "Graph is empty, cannot compute MST.",
         ));
     }
@@ -223,15 +221,13 @@ where
 ///
 /// let (mst_edges, total_weight) = kruskal_mst(&g).unwrap();
 /// ```
-pub fn kruskal_mst<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<(Vec<MstEdge<W>>, W), GraphinaException>
+pub fn kruskal_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<(Vec<MstEdge<W>>, W)>
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
     Ty: GraphConstructor<A, W>,
 {
     if graph.node_count() == 0 {
-        return Err(GraphinaException::new(
+        return Err(GraphinaError::invalid_graph(
             "Graph is empty, cannot compute MST.",
         ));
     }
@@ -295,16 +291,14 @@ where
 ///
 /// let (mst_edges, total_weight) = prim_mst(&g).unwrap();
 /// ```
-pub fn prim_mst<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<(Vec<MstEdge<W>>, W), GraphinaException>
+pub fn prim_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<(Vec<MstEdge<W>>, W)>
 where
     W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
     Ty: GraphConstructor<A, W>,
     NodeId: Ord,
 {
     if graph.node_count() == 0 {
-        return Err(GraphinaException::new(
+        return Err(GraphinaError::invalid_graph(
             "Graph is empty, cannot compute MST.",
         ));
     }

@@ -25,4 +25,3 @@ doc = false
 
 [profile.release]
 debug = 1
-

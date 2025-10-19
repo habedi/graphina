@@ -25,13 +25,14 @@ It supports single‑source and all‑pairs computations via (classical) algorit
 
 ## Error Handling
 
-Preconditions for each algorithm are enforced at runtime using custom exceptions from `graphina::core::exceptions`.
-For example, algorithms that require nonnegative edge weights will return a `Result` containing a `GraphinaException`
-if a negative weight is encountered. Users should handle these `Result` types accordingly.
+Preconditions for each algorithm are enforced at runtime using `graphina::core::error::GraphinaError`.
+For example, algorithms that require nonnegative edge weights will return a `Result` containing a
+`GraphinaError::InvalidArgument` if a negative weight is encountered. Users should handle these
+`Result` types accordingly.
 
 */
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId, NodeMap};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -168,7 +169,7 @@ pub fn dijkstra_path_impl<A, W, Ty>(
     source: NodeId,
     cutoff: Option<f64>,
     eval_cost: impl Fn(&W) -> Option<f64>,
-) -> Result<PathFindResult, GraphinaException>
+) -> Result<PathFindResult>
 where
     W: Debug,
     A: Debug,
@@ -194,13 +195,13 @@ where
                 continue;
             };
             if w.is_sign_negative() {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "Dijkstra requires nonnegative costs, but found cost: {:?}, src: {:?}, dst: {:?}, edge: {:?}",
                     w, u, v, edge
                 )));
             }
             let Ok(w) = NotNan::new(w) else {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "Dijkstra requires not NaN costs, but found cost: {:?}, src: {:?}, dst: {:?}, edge: {:?}",
                     w, u, v, edge
                 )));
@@ -270,7 +271,7 @@ pub fn dijkstra_path_f64<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     source: NodeId,
     cutoff: Option<f64>,
-) -> Result<PathFindResult, GraphinaException>
+) -> Result<PathFindResult>
 where
     A: Debug,
     Ty: GraphConstructor<A, f64>,
@@ -293,10 +294,7 @@ where
 ///
 /// - Time: O(E log V)
 /// - Space: O(V)
-pub fn dijkstra<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-    source: NodeId,
-) -> Result<NodeMap<Option<W>>, GraphinaException>
+pub fn dijkstra<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, source: NodeId) -> Result<NodeMap<Option<W>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord + Debug,
     Ty: GraphConstructor<A, W>,
@@ -317,7 +315,7 @@ where
         }
         for (v, w) in outgoing_edges(graph, u) {
             if w < W::from(0u8) {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "Dijkstra requires nonnegative weights, but found weight: {:?}",
                     w
                 )));
@@ -405,7 +403,7 @@ pub fn a_star<A, W, Ty, F>(
     source: NodeId,
     target: NodeId,
     heuristic: F,
-) -> Result<Option<(W, Vec<NodeId>)>, GraphinaException>
+) -> Result<Option<(W, Vec<NodeId>)>>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord + Debug,
     Ty: GraphConstructor<A, W>,
@@ -431,7 +429,7 @@ where
         }
         for (v, w) in outgoing_edges(graph, u) {
             if w < W::from(0u8) {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "A* requires nonnegative weights, but found weight: {:?}",
                     w
                 )));
@@ -452,7 +450,7 @@ where
         while cur != source {
             path.push(cur);
             cur = prev[cur.index()].ok_or_else(|| {
-                GraphinaException::new("Path reconstruction failed unexpectedly.")
+                GraphinaError::algorithm_error("Path reconstruction failed unexpectedly.")
             })?;
         }
         path.push(source);

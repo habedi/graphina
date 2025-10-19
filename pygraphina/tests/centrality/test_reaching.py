@@ -29,4 +29,3 @@ def test_global_reaching_centrality():
     assert len(centrality) == 5
     # All nodes in a path should reach all other nodes
     assert all(val == 5.0 for val in centrality.values())
-

@@ -137,51 +137,25 @@ impl GraphinaError {
     pub fn not_implemented(message: impl Into<String>) -> Self {
         GraphinaError::NotImplemented(message.into())
     }
-}
 
-// Implement From conversions for backward compatibility with old exception types
-impl From<crate::core::exceptions::GraphinaException> for GraphinaError {
-    fn from(e: crate::core::exceptions::GraphinaException) -> Self {
-        GraphinaError::Generic(e.message)
+    /// Creates a has cycle error.
+    pub fn has_cycle(message: impl Into<String>) -> Self {
+        GraphinaError::HasCycle(message.into())
     }
-}
 
-impl From<crate::core::exceptions::NodeNotFound> for GraphinaError {
-    fn from(e: crate::core::exceptions::NodeNotFound) -> Self {
-        GraphinaError::NodeNotFound(e.message)
+    /// Creates a no cycle error.
+    pub fn no_cycle(message: impl Into<String>) -> Self {
+        GraphinaError::NoCycle(message.into())
     }
-}
 
-impl From<crate::core::exceptions::GraphinaNoPath> for GraphinaError {
-    fn from(e: crate::core::exceptions::GraphinaNoPath) -> Self {
-        GraphinaError::NoPath(e.message)
+    /// Creates an unfeasible error.
+    pub fn unfeasible(message: impl Into<String>) -> Self {
+        GraphinaError::Unfeasible(message.into())
     }
-}
 
-impl From<crate::core::exceptions::PowerIterationFailedConvergence> for GraphinaError {
-    fn from(e: crate::core::exceptions::PowerIterationFailedConvergence) -> Self {
-        GraphinaError::ConvergenceFailed {
-            iterations: e.num_iterations,
-            message: e.message,
-        }
-    }
-}
-
-impl From<crate::core::exceptions::GraphinaPointlessConcept> for GraphinaError {
-    fn from(e: crate::core::exceptions::GraphinaPointlessConcept) -> Self {
-        GraphinaError::PointlessConcept(e.message)
-    }
-}
-
-impl From<crate::core::exceptions::HasACycle> for GraphinaError {
-    fn from(e: crate::core::exceptions::HasACycle) -> Self {
-        GraphinaError::HasCycle(e.message)
-    }
-}
-
-impl From<crate::core::exceptions::GraphinaNoCycle> for GraphinaError {
-    fn from(e: crate::core::exceptions::GraphinaNoCycle) -> Self {
-        GraphinaError::NoCycle(e.message)
+    /// Creates a pointless concept error.
+    pub fn pointless_concept(message: impl Into<String>) -> Self {
+        GraphinaError::PointlessConcept(message.into())
     }
 }
 
@@ -230,13 +204,6 @@ mod tests {
         let err = GraphinaError::convergence_failed(100, "tolerance not met");
         assert!(err.to_string().contains("100 iterations"));
         assert!(err.to_string().contains("tolerance not met"));
-    }
-
-    #[test]
-    fn test_error_conversion_from_old_exceptions() {
-        let old_err = crate::core::exceptions::GraphinaException::new("old error");
-        let new_err: GraphinaError = old_err.into();
-        assert!(matches!(new_err, GraphinaError::Generic(_)));
     }
 
     #[test]

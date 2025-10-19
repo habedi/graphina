@@ -1,15 +1,13 @@
 //! Approximation algorithms for traveling salesman problems.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::paths::dijkstra;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use ordered_float::OrderedFloat;
 use std::collections::HashSet;
 
 /// Approximate a solution to the TSP using Christofides' algorithm (placeholder).
-pub fn christofides<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
-) -> Result<(Vec<NodeId>, f64), GraphinaException>
+pub fn christofides<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> Result<(Vec<NodeId>, f64)>
 where
     A: Clone,
     Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
@@ -18,14 +16,14 @@ where
         .nodes()
         .next()
         .map(|(u, _)| u)
-        .ok_or_else(|| GraphinaException::new("Cannot run TSP on an empty graph."))?;
+        .ok_or_else(|| GraphinaError::invalid_graph("Cannot run TSP on an empty graph."))?;
     greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start_node)
 }
 
 /// Approximate the TSP solution using a greedy algorithm.
 pub fn traveling_salesman_problem<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
-) -> Result<(Vec<NodeId>, f64), GraphinaException>
+) -> Result<(Vec<NodeId>, f64)>
 where
     A: Clone,
     Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
@@ -34,119 +32,154 @@ where
         .nodes()
         .next()
         .map(|(u, _)| u)
-        .ok_or_else(|| GraphinaException::new("Cannot run TSP on an empty graph."))?;
+        .ok_or_else(|| GraphinaError::invalid_graph("Cannot run TSP on an empty graph."))?;
     greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start_node)
 }
 
-/// Greedy TSP: starting at `source`, repeatedly go to the nearest unvisited node.
-/// This function requires the graph to use OrderedFloat<f64> weights.
+/// Greedy TSP approximation.
 pub fn greedy_tsp<A, Ty>(
     graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
-    source: NodeId,
-) -> Result<(Vec<NodeId>, f64), GraphinaException>
+    start: NodeId,
+) -> Result<(Vec<NodeId>, f64)>
 where
+    A: Clone,
     Ty: GraphConstructor<A, OrderedFloat<f64>>,
 {
-    if !graph.contains_node(source) {
-        return Err(GraphinaException::new(
-            "Source node does not exist in the graph.",
+    if graph.is_empty() {
+        return Err(GraphinaError::invalid_graph(
+            "Cannot run TSP on an empty graph.",
         ));
     }
 
-    let mut unvisited: HashSet<NodeId> = graph.nodes().map(|(u, _)| u).collect();
-    if unvisited.is_empty() {
-        return Err(GraphinaException::new("Cannot run TSP on an empty graph."));
+    if graph.node_count() == 1 {
+        return Err(GraphinaError::invalid_graph(
+            "Cannot run TSP on a single-node graph.",
+        ));
     }
 
     let mut tour = Vec::new();
-    let mut cost = 0.0;
-    let mut current = source;
+    let mut visited: HashSet<NodeId> = HashSet::new();
+    let mut current = start;
+
     tour.push(current);
-    unvisited.remove(&current);
+    visited.insert(current);
+
+    let mut unvisited: Vec<NodeId> = graph
+        .nodes()
+        .map(|(id, _)| id)
+        .filter(|id| !visited.contains(id))
+        .collect();
+
+    // Visit all remaining nodes
     while !unvisited.is_empty() {
-        let distances = dijkstra(graph, current)?;
-        let (next_node, next_cost) = unvisited
-            .iter()
-            .filter_map(|v| distances[v].map(|d| (*v, d.0)))
-            .min_by(|&(_, a_cost), &(_, b_cost)| {
-                a_cost
-                    .partial_cmp(&b_cost)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            })
-            .ok_or_else(|| {
-                GraphinaException::new("Could not find a path to any unvisited node.")
-            })?;
-        tour.push(next_node);
-        cost += next_cost;
-        current = next_node;
-        unvisited.remove(&current);
+        if let Ok(distance_map) = dijkstra(graph, current) {
+            let mut nearest = None;
+            let mut min_dist = OrderedFloat(f64::INFINITY);
+
+            for &candidate in &unvisited {
+                if candidate == current {
+                    continue;
+                }
+                if let Some(Some(d)) = distance_map.get(&candidate) {
+                    if *d < min_dist {
+                        min_dist = *d;
+                        nearest = Some(candidate);
+                    }
+                }
+            }
+
+            if let Some(next) = nearest {
+                tour.push(next);
+                visited.insert(next);
+                current = next;
+            } else {
+                return Err(GraphinaError::algorithm_error(
+                    "Could not find a path to any unvisited node.",
+                ));
+            }
+        } else {
+            return Err(GraphinaError::algorithm_error(
+                "Could not compute distances from the current node.",
+            ));
+        }
+
+        unvisited = graph
+            .nodes()
+            .map(|(id, _)| id)
+            .filter(|id| !visited.contains(id))
+            .collect();
     }
-    let distances = dijkstra(graph, current)?;
-    if let Some(d) = distances[&source] {
-        cost += d.0;
-        tour.push(source);
-    } else {
-        return Err(GraphinaException::new(
-            "Could not return to the starting node to complete the tour.",
+
+    // Add return to start to complete the tour
+    tour.push(start);
+
+    let total_cost = tour_cost(graph, &tour)?;
+    if total_cost.is_infinite() {
+        return Err(GraphinaError::algorithm_error(
+            "Could not compute finite tour cost (possibly disconnected).",
         ));
     }
-    Ok((tour, cost))
+
+    Ok((tour, total_cost.into_inner()))
 }
 
-/// Simulated Annealing TSP (placeholder): returns the initial cycle.
-pub fn simulated_annealing_tsp<A, Ty>(
+/// Helper to compute a simplified TSP with a naive nearest-neighbor approach.
+pub fn nearest_neighbor<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
-    init_cycle: Vec<NodeId>,
-) -> Result<(Vec<NodeId>, f64), GraphinaException>
+    start: NodeId,
+) -> Result<(Vec<NodeId>, f64)>
 where
     A: Clone,
     Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
 {
-    let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle)?;
-    Ok((init_cycle, cost))
+    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start)
 }
 
-/// Threshold Accepting TSP (placeholder): returns the initial cycle.
-pub fn threshold_accepting_tsp<A, Ty>(
+/// Helper to compute a simplified TSP with a greedy nearest-neighbor approach.
+pub fn greedy_nearest_neighbor<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
-    init_cycle: Vec<NodeId>,
-) -> Result<(Vec<NodeId>, f64), GraphinaException>
+    start: NodeId,
+) -> Result<(Vec<NodeId>, f64)>
 where
     A: Clone,
     Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
 {
-    let cost = tour_cost(&graph.convert::<OrderedFloat<f64>>(), &init_cycle)?;
-    Ok((init_cycle, cost))
+    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start)
 }
 
-/// Asadpour ATSP (not implemented).
-pub fn asadpour_atsp<A, Ty>(_graph: &BaseGraph<A, f64, Ty>) -> (Vec<NodeId>, f64)
-where
-    Ty: GraphConstructor<A, f64>,
-{
-    unimplemented!("Asadpour ATSP algorithm is not implemented yet")
-}
-
-/// Helper: Compute the total cost of a given tour.
 fn tour_cost<A, Ty>(
     graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
     tour: &[NodeId],
-) -> Result<f64, GraphinaException>
+) -> Result<OrderedFloat<f64>>
 where
+    A: Clone,
     Ty: GraphConstructor<A, OrderedFloat<f64>>,
 {
     if tour.len() < 2 {
-        return Ok(0.0);
+        return Ok(OrderedFloat(0.0));
     }
-    let mut cost = 0.0;
-    for i in 0..(tour.len() - 1) {
-        let distances = dijkstra(graph, tour[i])?;
-        match distances[&tour[i + 1]] {
-            Some(d) => cost += d.0,
-            None => return Err(GraphinaException::new("Tour contains an unreachable step.")),
+
+    let mut total_cost = 0.0;
+
+    // Sum costs between consecutive nodes in the tour
+    for i in 0..tour.len() - 1 {
+        let u = tour[i];
+        let v = tour[i + 1];
+
+        // Find shortest path distance from u to v
+        if let Ok(dist_map) = dijkstra(graph, u) {
+            if let Some(Some(d)) = dist_map.get(&v) {
+                total_cost += d.into_inner();
+            } else {
+                // No path from u to v - graph is disconnected
+                return Ok(OrderedFloat(f64::INFINITY));
+            }
+        } else {
+            return Ok(OrderedFloat(f64::INFINITY));
         }
     }
-    Ok(cost)
+
+    Ok(OrderedFloat(total_cost))
 }
 
 #[cfg(test)]

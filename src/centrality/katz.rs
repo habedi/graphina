@@ -2,10 +2,10 @@
 //!
 //! This module provides Katz centrality measures.
 //!
-//! Convention: returns `Result<_, crate::core::exceptions::GraphinaException>` to handle
+//! Convention: returns `Result<_, crate::core::error::GraphinaError>` to handle
 //! convergence/parameter validation with clear error propagation.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use nalgebra::{DMatrix, DVector};
 
@@ -33,7 +33,7 @@ pub fn katz_centrality<A, W, Ty>(
     beta: Option<&dyn Fn(NodeId) -> f64>,
     max_iter: usize,
     tolerance: f64,
-) -> Result<NodeMap<f64>, GraphinaException>
+) -> Result<NodeMap<f64>>
 where
     W: Copy + PartialOrd + Into<f64>,
     Ty: GraphConstructor<A, W>,
@@ -79,7 +79,8 @@ where
     }
 
     if !converged {
-        return Err(GraphinaException::new(
+        return Err(GraphinaError::convergence_failed(
+            max_iter,
             "Katz centrality failed to converge within maximum iterations",
         ));
     }

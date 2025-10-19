@@ -10,7 +10,7 @@ This module provides efficient ways to work with subsets of graphs:
 
 use std::collections::{HashSet, VecDeque};
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
 
@@ -40,13 +40,13 @@ where
     /// assert_eq!(subgraph.node_count(), 2);
     /// assert_eq!(subgraph.edge_count(), 1);
     /// ```
-    pub fn subgraph(&self, nodes: &[NodeId]) -> Result<Self, GraphinaException> {
+    pub fn subgraph(&self, nodes: &[NodeId]) -> Result<Self> {
         let node_set: HashSet<NodeId> = nodes.iter().copied().collect();
 
         // Verify all nodes exist
         for node in nodes {
             if !self.contains_node(*node) {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::node_not_found(format!(
                     "Node {} not found in graph",
                     node.index()
                 )));
@@ -97,7 +97,7 @@ where
     /// let induced = g.induced_subgraph(&nodes).unwrap();
     /// assert_eq!(induced.node_count(), 2);
     /// ```
-    pub fn induced_subgraph(&self, nodes: &HashSet<NodeId>) -> Result<Self, GraphinaException> {
+    pub fn induced_subgraph(&self, nodes: &HashSet<NodeId>) -> Result<Self> {
         let node_vec: Vec<NodeId> = nodes.iter().copied().collect();
         self.subgraph(&node_vec)
     }
@@ -125,9 +125,9 @@ where
     /// let ego = g.ego_graph(n2, 1).unwrap();
     /// assert_eq!(ego.node_count(), 3); // n1, n2, n3
     /// ```
-    pub fn ego_graph(&self, center: NodeId, radius: usize) -> Result<Self, GraphinaException> {
+    pub fn ego_graph(&self, center: NodeId, radius: usize) -> Result<Self> {
         if !self.contains_node(center) {
-            return Err(GraphinaException::new(&format!(
+            return Err(GraphinaError::node_not_found(format!(
                 "Center node {} not found",
                 center.index()
             )));
@@ -352,7 +352,7 @@ where
     /// let component = g.component_subgraph(n1).unwrap();
     /// assert_eq!(component.node_count(), 2);
     /// ```
-    pub fn component_subgraph(&self, start: NodeId) -> Result<Self, GraphinaException> {
+    pub fn component_subgraph(&self, start: NodeId) -> Result<Self> {
         let nodes = self.connected_component(start);
         self.subgraph(&nodes)
     }

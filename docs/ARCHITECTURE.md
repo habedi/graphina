@@ -12,7 +12,8 @@ Graphina is organized into high-level modules that must remain decoupled:
 - **Links Module** (`src/links/`): Link prediction algorithms
 - **Approximation Module** (`src/approximation/`): Approximation algorithms for NP-hard problems
 
-**Architectural Constraint**: High-level modules (centrality, community, links, approximation) must ONLY depend on the core module. They must NOT depend on each other.
+**Architectural Constraint**: High-level modules (centrality, community, links, approximation) must ONLY depend on the
+core module. They must NOT depend on each other.
 
 ### 2. Error Handling Strategy
 
@@ -83,17 +84,20 @@ src/
 ## Testing Strategy
 
 ### Unit Tests
+
 - Located within each module file using `#[cfg(test)]` modules
 - Test individual functions and edge cases
 - Should cover error conditions
 
 ### Integration Tests
+
 - Located in `tests/` directory
 - Test cross-module functionality
 - Test end-to-end workflows
 - Test real-world datasets
 
 ### Property-Based Tests
+
 - Use `proptest` for randomized testing
 - Verify invariants hold across random inputs
 - Located in `tests/test_property_based.rs`
@@ -105,4 +109,3 @@ src/
 3. **Builder Patterns**: Expand use of builder patterns for complex configurations
 4. **Memory Pooling**: For performance-critical operations with many temporary allocations
 5. **GPU Acceleration**: For large-scale graph algorithms
-

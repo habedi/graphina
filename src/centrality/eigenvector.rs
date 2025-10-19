@@ -2,10 +2,10 @@
 //!
 //! This module provides eigenvector centrality measures.
 //!
-//! Convention: functions in this module return `Result<_, crate::core::exceptions::GraphinaException>`
+//! Convention: functions in this module return `Result<_, crate::core::error::GraphinaError>`
 //! to surface convergence issues and aid observability and error propagation.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use nalgebra::SymmetricEigen;
 use nalgebra::{DMatrix, DVector};
@@ -33,7 +33,7 @@ pub fn eigenvector_centrality<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     max_iter: usize,
     tolerance: f64,
-) -> Result<NodeMap<f64>, GraphinaException>
+) -> Result<NodeMap<f64>>
 where
     W: Copy + PartialOrd + Into<f64>,
     Ty: GraphConstructor<A, W>,
@@ -162,7 +162,8 @@ where
     }
 
     if !converged {
-        return Err(GraphinaException::new(
+        return Err(GraphinaError::convergence_failed(
+            max_iter,
             "Eigenvector centrality failed to converge within maximum iterations",
         ));
     }

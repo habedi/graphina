@@ -9,7 +9,8 @@ use graphina::centrality::degree::{
 
 #[pyfunction]
 pub fn degree(py_graph: &PyGraph) -> PyResult<HashMap<usize, f64>> {
-    let res = degree_centrality(&py_graph.graph).map_err(|e| PyValueError::new_err(e.message))?;
+    let res =
+        degree_centrality(&py_graph.graph).map_err(|e| PyValueError::new_err(e.to_string()))?;
     let mut out = HashMap::new();
     for (nid, val) in res.into_iter() {
         let pyid = py_graph
@@ -24,7 +25,7 @@ pub fn degree(py_graph: &PyGraph) -> PyResult<HashMap<usize, f64>> {
 #[pyfunction]
 pub fn in_degree(py_graph: &PyGraph) -> PyResult<HashMap<usize, f64>> {
     let res =
-        in_degree_centrality(&py_graph.graph).map_err(|e| PyValueError::new_err(e.message))?;
+        in_degree_centrality(&py_graph.graph).map_err(|e| PyValueError::new_err(e.to_string()))?;
     let mut out = HashMap::new();
     for (nid, val) in res.into_iter() {
         let pyid = py_graph
@@ -39,7 +40,7 @@ pub fn in_degree(py_graph: &PyGraph) -> PyResult<HashMap<usize, f64>> {
 #[pyfunction]
 pub fn out_degree(py_graph: &PyGraph) -> PyResult<HashMap<usize, f64>> {
     let res =
-        out_degree_centrality(&py_graph.graph).map_err(|e| PyValueError::new_err(e.message))?;
+        out_degree_centrality(&py_graph.graph).map_err(|e| PyValueError::new_err(e.to_string()))?;
     let mut out = HashMap::new();
     for (nid, val) in res.into_iter() {
         let pyid = py_graph

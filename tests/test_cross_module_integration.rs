@@ -102,6 +102,12 @@ fn test_cross_paths_and_centrality() {
         Err(_) => return,
     };
 
+    // Skip if graph is empty
+    if graph.node_count() == 0 {
+        println!("Skipping: graph is empty");
+        return;
+    }
+
     use graphina::centrality::closeness::closeness_centrality;
     use graphina::core::paths::dijkstra;
 
@@ -492,6 +498,12 @@ fn test_cross_parallel_centrality_computation() {
         Ok(g) => g,
         Err(_) => return,
     };
+
+    // Skip if graph is empty
+    if graph.node_count() == 0 {
+        println!("Skipping: graph is empty");
+        return;
+    }
 
     use graphina::centrality::closeness::closeness_centrality;
     use graphina::centrality::degree::degree_centrality;

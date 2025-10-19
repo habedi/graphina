@@ -58,4 +58,3 @@ def test_ramsey_r2():
     clique2, independent2 = pygraphina.approximation.ramsey_r2(g)
     assert len(clique) == len(clique2)
     assert len(independent) == len(independent2)
-

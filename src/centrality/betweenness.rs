@@ -2,10 +2,10 @@
 //!
 //! This module provides betweenness centrality measures.
 //!
-//! Convention: returns `Result<_, crate::core::exceptions::GraphinaException>` to surface
+//! Convention: returns `Result<_, crate::core::error::GraphinaError>` to surface
 //! invalid inputs and improve observability and error propagation.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, VecDeque};
@@ -28,13 +28,13 @@ use std::collections::{HashMap, VecDeque};
 pub fn betweenness_centrality<A, Ty>(
     graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
     normalized: bool,
-) -> Result<NodeMap<f64>, GraphinaException>
+) -> Result<NodeMap<f64>>
 where
     Ty: GraphConstructor<A, OrderedFloat<f64>>,
 {
     let n = graph.node_count();
     if n == 0 {
-        return Err(GraphinaException::new(
+        return Err(GraphinaError::invalid_graph(
             "Cannot compute betweenness centrality on an empty graph.",
         ));
     }
@@ -144,13 +144,13 @@ where
 pub fn edge_betweenness_centrality<A, Ty>(
     graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
     normalized: bool,
-) -> Result<HashMap<(NodeId, NodeId), f64>, GraphinaException>
+) -> Result<HashMap<(NodeId, NodeId), f64>>
 where
     Ty: GraphConstructor<A, OrderedFloat<f64>>,
 {
     let n = graph.node_count();
     if n == 0 {
-        return Err(GraphinaException::new(
+        return Err(GraphinaError::invalid_graph(
             "Cannot compute edge betweenness centrality on an empty graph.",
         ));
     }

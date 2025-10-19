@@ -1,6 +1,6 @@
 //! Centrality algorithms facade.
 //!
-//! Convention: centrality routines in this crate generally return `Result<_, crate::core::exceptions::GraphinaException>`
+//! Convention: centrality routines in this crate generally return `Result<_, crate::core::error::GraphinaError>`
 //! to surface convergence issues, empty-graph cases, or invalid inputs in a structured way for
 //! better observability and error propagation. Selector-style routines that do not produce a
 //! numeric map (for example, community seed pickers) may return plain values instead.

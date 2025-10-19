@@ -2,10 +2,10 @@
 //!
 //! This module provides PageRank centrality measures.
 //!
-//! Convention: functions in this module return `Result<_, crate::core::exceptions::GraphinaException>`
+//! Convention: functions in this module return `Result<_, crate::core::error::GraphinaError>`
 //! for better observability and error propagation.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::Result;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 
 /// PageRank: a link analysis algorithm that assigns a numerical weighting to each element
@@ -27,7 +27,7 @@ pub fn pagerank<A, W, Ty>(
     damping: f64,
     max_iter: usize,
     tolerance: f64,
-) -> Result<NodeMap<f64>, GraphinaException>
+) -> Result<NodeMap<f64>>
 where
     W: Copy + PartialOrd + Into<f64>,
     Ty: GraphConstructor<A, W>,

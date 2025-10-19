@@ -10,14 +10,19 @@ use crate::core::types::{BaseGraph, Directed, GraphConstructor, NodeId, Undirect
 use petgraph::EdgeType;
 use std::marker::PhantomData;
 
+/// Ergonomic aliases for common builder types.
+pub type DirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Directed>;
+pub type UndirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Undirected>;
+
 /// Advanced builder for graphs with validation and configuration options.
 ///
 /// # Example
 ///
 /// ```rust
 /// use graphina::core::builders::AdvancedGraphBuilder;
+/// use graphina::core::types::Directed;
 ///
-/// let graph = AdvancedGraphBuilder::<i32, f64>::directed()
+/// let graph = AdvancedGraphBuilder::<i32, f64, Directed>::directed()
 ///     .with_capacity(100, 200)
 ///     .allow_self_loops(false)
 ///     .allow_parallel_edges(false)
@@ -166,17 +171,25 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> AdvancedGraphBuilder<A, W, Ty>
         // Check for node index validity in edges
         for (source, target, _) in &self.edges {
             if *source >= self.nodes.len() {
+                let max_info = if self.nodes.is_empty() {
+                    "none".to_string()
+                } else {
+                    (self.nodes.len() - 1).to_string()
+                };
                 return Err(GraphinaError::invalid_argument(format!(
                     "Edge source index {} is out of bounds (max: {})",
-                    source,
-                    self.nodes.len() - 1
+                    source, max_info
                 )));
             }
             if *target >= self.nodes.len() {
+                let max_info = if self.nodes.is_empty() {
+                    "none".to_string()
+                } else {
+                    (self.nodes.len() - 1).to_string()
+                };
                 return Err(GraphinaError::invalid_argument(format!(
                     "Edge target index {} is out of bounds (max: {})",
-                    target,
-                    self.nodes.len() - 1
+                    target, max_info
                 )));
             }
         }
@@ -242,6 +255,10 @@ impl TopologyBuilder {
         A: Clone,
         W: Clone,
     {
+        if n == 0 {
+            return AdvancedGraphBuilder::undirected().build().unwrap();
+        }
+
         let mut builder = AdvancedGraphBuilder::undirected().with_capacity(n, n.saturating_sub(1));
 
         // Add nodes
@@ -387,6 +404,17 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_no_nodes_with_edge() {
+        // Ensure that validate() does not panic when edges reference missing nodes and node list is empty.
+        let result = AdvancedGraphBuilder::<i32, f64, Directed>::directed()
+            .add_edge(0, 0, 1.0)
+            .build();
+        assert!(result.is_err());
+        let err = result.err().unwrap().to_string();
+        assert!(err.contains("out of bounds"));
+    }
+
+    #[test]
     fn test_topology_complete_graph() {
         let graph = TopologyBuilder::complete(5, (), 1.0);
         assert_eq!(graph.node_count(), 5);
@@ -405,6 +433,13 @@ mod tests {
         let graph = TopologyBuilder::path(5, (), 1.0);
         assert_eq!(graph.node_count(), 5);
         assert_eq!(graph.edge_count(), 4);
+    }
+
+    #[test]
+    fn test_topology_path_graph_zero_nodes() {
+        let graph = TopologyBuilder::path::<(), f64>(0, (), 1.0);
+        assert_eq!(graph.node_count(), 0);
+        assert_eq!(graph.edge_count(), 0);
     }
 
     #[test]

@@ -14,7 +14,7 @@ pub fn katz(
 ) -> PyResult<HashMap<usize, f64>> {
     // We don't support a beta callback from Python; pass None
     let res = katz_centrality(&py_graph.graph, alpha, None, max_iter, tolerance)
-        .map_err(|e| PyValueError::new_err(format!("Katz centrality failed: {}", e.message)))?;
+        .map_err(|e| PyValueError::new_err(format!("Katz centrality failed: {}", e.to_string())))?;
     let mut out = HashMap::new();
     for (nid, val) in res.into_iter() {
         let pyid = py_graph

@@ -16,31 +16,31 @@ This document details the implementation of the recommended next steps from the 
 Created a comprehensive benchmark suite covering:
 
 - **Graph Creation Benchmarks**
-  - Erdős-Rényi random graphs
-  - Barabási-Albert scale-free graphs  
-  - Watts-Strogatz small-world graphs
-  - Tests with 100, 500, 1000, 2000 nodes
+    - Erdős-Rényi random graphs
+    - Barabási-Albert scale-free graphs
+    - Watts-Strogatz small-world graphs
+    - Tests with 100, 500, 1000, 2000 nodes
 
 - **Centrality Algorithm Benchmarks**
-  - Degree centrality
-  - PageRank
-  - Betweenness centrality
-  - Tests on graphs with 50, 100, 200 nodes
+    - Degree centrality
+    - PageRank
+    - Betweenness centrality
+    - Tests on graphs with 50, 100, 200 nodes
 
 - **Community Detection Benchmarks**
-  - Louvain method
-  - Label propagation
-  - Tests on graphs with 100, 200, 500 nodes
+    - Louvain method
+    - Label propagation
+    - Tests on graphs with 100, 200, 500 nodes
 
 - **Graph Operations Benchmarks**
-  - Node/edge addition
-  - Neighbor queries
-  - Degree calculations
-  - Various graph sizes
+    - Node/edge addition
+    - Neighbor queries
+    - Degree calculations
+    - Various graph sizes
 
 - **Approximation Algorithm Benchmarks**
-  - Local node connectivity
-  - Tests on smaller graphs (50-200 nodes)
+    - Local node connectivity
+    - Tests on smaller graphs (50-200 nodes)
 
 ### How to Use
 
@@ -76,16 +76,16 @@ cargo bench --features all -- --save-baseline baseline_name
 Created fuzzing infrastructure with:
 
 - **`fuzz_graph_operations`** - Fuzzes core graph operations
-  - Node/edge addition
-  - Degree calculations
-  - Neighbor iteration
-  - Node removal
-  - Validates no panics occur
+    - Node/edge addition
+    - Degree calculations
+    - Neighbor iteration
+    - Node removal
+    - Validates no panics occur
 
 - **`fuzz_louvain`** - Fuzzes Louvain algorithm
-  - Tests with removed nodes
-  - Validates community detection results
-  - Ensures the critical index bug fix works
+    - Tests with removed nodes
+    - Validates community detection results
+    - Ensures the critical index bug fix works
 
 ### How to Use
 
@@ -122,29 +122,29 @@ cargo +nightly fuzz cmin fuzz_graph_operations
 Created comprehensive tutorial covering:
 
 1. **Quick Start Guide**
-   - Creating your first graph
-   - Basic graph operations
+    - Creating your first graph
+    - Basic graph operations
 
 2. **Common Use Cases**
-   - Finding important nodes
-   - Community detection
-   - Link prediction
-   - Social network analysis
+    - Finding important nodes
+    - Community detection
+    - Link prediction
+    - Social network analysis
 
 3. **Performance Tips**
-   - Using bulk operations
-   - Pre-allocation strategies
-   - Parallel algorithm usage
+    - Using bulk operations
+    - Pre-allocation strategies
+    - Parallel algorithm usage
 
 4. **Common Patterns**
-   - Graph analysis pipelines
-   - Real-world network analysis
-   - Data import/export workflows
+    - Graph analysis pipelines
+    - Real-world network analysis
+    - Data import/export workflows
 
 5. **Code Examples**
-   - 10+ fully working examples
-   - Practical social network scenarios
-   - Performance optimization patterns
+    - 10+ fully working examples
+    - Practical social network scenarios
+    - Performance optimization patterns
 
 ### How to Use
 
@@ -181,10 +181,11 @@ cargo run --example visualization
 ### What's Needed
 
 **Phase 1: Non-breaking additions** (Immediate)
+
 ```rust
 // Add unified error versions alongside existing functions
 pub fn louvain_v2<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>, 
+    graph: &BaseGraph<A, f64, Ty>,
     seed: Option<u64>
 ) -> Result<Vec<Vec<NodeId>>, GraphinaError>
 where
@@ -195,11 +196,13 @@ where
 ```
 
 **Phase 2: Gradual migration** (Next minor version)
+
 - Migrate one module at a time
 - Start with new features
 - Update documentation
 
 **Phase 3: Full migration** (Next major version)
+
 - Deprecate old error types
 - Complete migration
 - Remove deprecated types
@@ -214,7 +217,7 @@ pub fn algorithm() -> Result<T, GraphinaException> { ... }
 pub fn algorithm() -> Result<T, GraphinaError> { ... }
 
 // Or use: ?
-let result = some_operation().map_err(GraphinaError::from)?;
+let result = some_operation().map_err(GraphinaError::from) ?;
 ```
 
 ### Benefits When Complete
@@ -234,11 +237,13 @@ let result = some_operation().map_err(GraphinaError::from)?;
 ### Analysis
 
 **Current State:**
+
 - All I/O is synchronous
 - Uses `std::fs` and `std::io`
 - Works well for current use cases
 
 **Async Benefits:**
+
 - Non-blocking I/O for large files
 - Better integration with async ecosystems (tokio, async-std)
 - Improved throughput for concurrent operations
@@ -250,14 +255,14 @@ let result = some_operation().map_err(GraphinaError::from)?;
 #[cfg(feature = "async")]
 pub mod async_io {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
-    
+
     pub async fn read_edge_list_async<P: AsRef<Path>>(
         path: P,
         sep: char
     ) -> Result<Graph<i32, f64>, GraphinaError> {
         // Async implementation
     }
-    
+
     pub async fn write_edge_list_async<A, W, Ty>(
         graph: &BaseGraph<A, W, Ty>,
         path: impl AsRef<Path>,
@@ -274,6 +279,7 @@ pub mod async_io {
 ```
 
 **Requirements:**
+
 - Add tokio or async-std as optional dependency
 - Create async feature flag
 - Implement async versions of I/O functions
@@ -291,7 +297,7 @@ pub mod async_io {
 ✅ **Performance Benchmarks** - Comprehensive suite for all major algorithms  
 ✅ **Fuzzing Tests** - Validates robustness, especially for Louvain fix  
 ✅ **Expanded Documentation** - Tutorial with 10+ practical examples  
-🔄 **Error Migration** - Infrastructure ready, gradual migration plan in place  
+🔄 **Error Migration** - Infrastructure ready, gradual migration plan in place
 
 ### Deferred (1/5)
 
@@ -331,18 +337,21 @@ make test
 ## Next Actions
 
 ### Immediate (This Week)
+
 1. ✅ Review and merge all changes
 2. Run benchmarks to establish baseline
 3. Add benchmark results to documentation
 4. Run fuzzing for 24 hours to find edge cases
 
 ### Short Term (Next Sprint)
+
 1. Begin error type migration (start with new features)
 2. Add more fuzzing targets (centrality, community modules)
 3. Create video tutorial based on TUTORIAL.md
 4. Write blog post about bug fixes
 
 ### Medium Term (Next Release - v0.5.0)
+
 1. Complete error type migration
 2. Implement async I/O support
 3. Add more complex examples (graph databases, ML pipelines)
@@ -353,4 +362,3 @@ make test
 **Document Version:** 1.0  
 **Last Updated:** October 19, 2025  
 **Status:** ✅ READY FOR REVIEW
-

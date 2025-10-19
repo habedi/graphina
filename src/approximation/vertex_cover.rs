@@ -50,9 +50,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::core::types::Graph;
     // Import the function under test from the parent module
     use super::min_weighted_vertex_cover;
+    use crate::core::types::Graph;
 
     #[test]
     fn test_greedy_vertex_cover() {

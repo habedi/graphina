@@ -2,11 +2,11 @@
 //!
 //! This module provides additional centrality measures like local/global reaching, VoteRank, Laplacian centrality.
 //!
-//! Convention: most functions return `Result<_, crate::core::exceptions::GraphinaException>` for
+//! Convention: most functions return `Result<_, crate::core::error::GraphinaError>` for
 //! observability and error propagation. Selector-style routines that return node lists (e.g.,
 //! `voterank`) may return plain values.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::Result;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -24,7 +24,7 @@ use std::collections::HashSet;
 pub fn local_reaching_centrality<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     distance: usize,
-) -> Result<NodeMap<f64>, GraphinaException>
+) -> Result<NodeMap<f64>>
 where
     Ty: GraphConstructor<A, W>,
 {
@@ -62,9 +62,7 @@ where
 /// # Returns
 ///
 /// [`NodeMap`] of `f64` representing global reaching centralities of each node in the graph.
-pub fn global_reaching_centrality<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<NodeMap<f64>, GraphinaException>
+pub fn global_reaching_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMap<f64>>
 where
     Ty: GraphConstructor<A, W>,
 {
@@ -132,9 +130,7 @@ where
 /// # Returns
 ///
 /// [`NodeMap`] of `f64` representing Laplacian centralities of each node in the graph.
-pub fn laplacian_centrality<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<NodeMap<f64>, GraphinaException>
+pub fn laplacian_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMap<f64>>
 where
     W: Copy + PartialOrd + Into<f64>,
     Ty: GraphConstructor<A, W>,

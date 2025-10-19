@@ -2,43 +2,54 @@
 //!
 //! This module provides closeness centrality measures.
 //!
-//! Convention: returns `Result<_, crate::core::exceptions::GraphinaException>` to propagate
-//! path-computation errors and improve observability.
+//! Convention: returns `Result<_, crate::core::error::GraphinaError>` to propagate
+//!
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::paths::dijkstra;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeMap};
-use ordered_float::OrderedFloat;
 
-/// Closeness centrality: measures how close a node is to all other nodes in the graph.
-/// It is the reciprocal of the sum of the shortest path distances from the node to all other nodes.
-///
-/// # Arguments
-///
-/// * `graph`: the targeted graph.
-///
-/// # Returns
-///
-/// [`NodeMap`] of `f64` representing closeness centralities of each node in the graph.
-pub fn closeness_centrality<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
-) -> Result<NodeMap<f64>, GraphinaException>
+/// Compute closeness centrality for all nodes.
+pub fn closeness_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMap<f64>>
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    A: Clone,
+    W: Copy
+        + std::cmp::PartialOrd
+        + std::ops::Add<Output = W>
+        + std::ops::Sub<Output = W>
+        + From<u8>
+        + Ord
+        + std::fmt::Debug
+        + Into<f64>,
+    Ty: GraphConstructor<A, W>,
 {
-    let n = graph.node_count() as f64;
-    let mut centrality = NodeMap::new();
+    if graph.node_count() == 0 {
+        return Err(GraphinaError::invalid_graph("Empty graph"));
+    }
+
+    let mut centralities = NodeMap::new();
+
     for (node, _) in graph.nodes() {
-        let distances = dijkstra(graph, node)?;
-        let sum: f64 = distances
-            .into_values()
-            .filter_map(|d| d.map(|od| od.0))
-            .sum();
-        if sum > 0.0 {
-            centrality.insert(node, (n - 1.0) / sum);
+        let dist_map = dijkstra(graph, node)?;
+        let mut sum = 0.0;
+        let mut count = 0;
+        for (other_node, _) in graph.nodes() {
+            if node != other_node {
+                if let Some(Some(d)) = dist_map.get(&other_node) {
+                    let dist_f64: f64 = (*d).into();
+                    if dist_f64 > 0.0 && dist_f64.is_finite() {
+                        sum += 1.0 / dist_f64;
+                        count += 1;
+                    }
+                }
+            }
+        }
+        if count > 0 {
+            centralities.insert(node, sum);
         } else {
-            centrality.insert(node, 0.0);
+            centralities.insert(node, 0.0);
         }
     }
-    Ok(centrality)
+
+    Ok(centralities)
 }

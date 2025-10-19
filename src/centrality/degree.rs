@@ -2,10 +2,10 @@
 //!
 //! This module provides degree centrality measures.
 //!
-//! Convention: returns `Result<_, crate::core::exceptions::GraphinaException>` for consistency
+//! Convention: returns `Result<_, crate::core::error::GraphinaError>` for consistency
 //! and better observability.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::Result;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeMap};
 
 /// Degree centrality: number of incident edges (for directed, in + out).
@@ -14,9 +14,7 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeMap};
 /// - Returns raw counts (not normalized).
 /// - Directed graphs: degree = in-degree + out-degree.
 /// - Undirected graphs: counts each incident edge once; a self-loop counts as 2.
-pub fn degree_centrality<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<NodeMap<f64>, GraphinaException>
+pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMap<f64>>
 where
     Ty: GraphConstructor<A, W>,
 {
@@ -48,9 +46,7 @@ where
 /// Behavior and conventions:
 /// - Directed graphs: counts only incoming edges.
 /// - Undirected graphs: equal to total degree; a self-loop counts as 2.
-pub fn in_degree_centrality<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<NodeMap<f64>, GraphinaException>
+pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMap<f64>>
 where
     Ty: GraphConstructor<A, W>,
 {
@@ -80,9 +76,7 @@ where
 /// Behavior and conventions:
 /// - Directed graphs: counts only outgoing edges.
 /// - Undirected graphs: equal to total degree; a self-loop counts as 2.
-pub fn out_degree_centrality<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-) -> Result<NodeMap<f64>, GraphinaException>
+pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMap<f64>>
 where
     Ty: GraphConstructor<A, W>,
 {

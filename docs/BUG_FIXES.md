@@ -2,79 +2,66 @@
 
 ## Summary
 
-This document details the bugs, architectural flaws, and issues identified in the Graphina project, along with the fixes applied.
+This document details the bugs, architectural flaws, and issues identified in the Graphina project, along with the fixes
+applied.
 
 ## Critical Bugs Fixed
 
-### 1. **Louvain Algorithm: Node Index Bug (CRITICAL)**
+### 1. Barabási–Albert Generator Hang (CRITICAL)
 
-**File:** `src/community/louvain.rs`
+**File:** `src/core/generators.rs`
 
-**Issue:** The Louvain algorithm assumed contiguous node indices (0, 1, 2, ..., n-1), which breaks when nodes are removed from the graph. Since Graphina uses `StableGraph`, removed node indices are not reused, leading to array index out-of-bounds panics.
+**Issue:** The BA generator could loop excessively when repeatedly sampling existing high-degree nodes, causing tests to hang.
 
-**Fix:** Added explicit mapping from `NodeId` to contiguous array indices:
-```rust
-// Map NodeId to contiguous indices to handle deleted nodes
-let node_list: Vec<NodeId> = graph.nodes().map(|(nid, _)| nid).collect();
-let node_to_idx: HashMap<NodeId, usize> = node_list
-    .iter()
-    .enumerate()
-    .map(|(idx, &nid)| (nid, idx))
-    .collect();
-```
+**Fix:** Reworked target selection to sample without replacement with guard rails (max attempts) and a deterministic greedy fallback to ensure termination while keeping expected edge counts.
 
-**Test Added:** `test_louvain_with_removed_nodes()` in `tests/test_bug_fixes.rs`
-
-**Impact:** HIGH - Could cause crashes in production when using Louvain on graphs with removed nodes.
+**Test Added:** `test_barabasi_albert_graph` in `src/core/generators.rs` and property tests in `tests/test_property_based.rs`.
 
 ---
 
-### 2. **Duplicated Attribute Warning**
+### 2. Doctest Failures due to Stale API (HIGH)
 
-**File:** `src/core/visualization.rs`
+**Files:** `src/core/generators.rs`, `src/core/builders.rs`
 
-**Issue:** The `#![cfg(feature = "visualization")]` attribute was duplicated - once in the module file and once in `src/core/mod.rs`.
+**Issue:** Docs referenced non-existent module `graphina::core::exceptions` and outdated type aliases (`GraphMarker`, etc.), and an example used `AdvancedGraphBuilder::<A,W>` with missing third generic parameter.
 
-**Fix:** Removed the duplicate attribute from `visualization.rs`.
+**Fix:** Updated docs to use `GraphinaError` and `types::{Directed, Undirected}`. Fixed example to `AdvancedGraphBuilder::<i32, f64, Directed>::directed()`.
 
-**Impact:** LOW - Compiler warning only, no runtime impact.
-
----
-
-### 3. **Panic in Metrics Test**
-
-**File:** `src/core/metrics.rs`
-
-**Issue:** Test used `panic!()` instead of proper assertion with `expect()`.
-
-**Fix:** Changed from:
-```rust
-if let Some(avg) = average_path_length(&g) {
-    assert!((avg - 1.333).abs() < 0.01);
-} else {
-    panic!("Should return Some for connected graph");
-}
-```
-
-To:
-```rust
-let avg = average_path_length(&g).expect("Connected graph should have average path length");
-assert!((avg - 1.333).abs() < 0.01);
-```
-
-**Impact:** LOW - Test quality improvement.
+**Test Added:** All doctests pass.
 
 ---
 
-### 4. **Visualization: ASCII Edge Formatting**
+### 3. AdvancedGraphBuilder::validate() Underflow Panic (MEDIUM)
 
-**File:** `src/core/visualization.rs`
+**File:** `src/core/builders.rs`
 
-**Issue:** `to_ascii_art()` printed the target node index twice in edge lines, e.g., ` [0] -> 1 [1]`.
+**Issue:** Error message computed `self.nodes.len() - 1` even when node list was empty, risking underflow.
 
-**Fix:** Corrected formatting to `  [src] -> [tgt]` (or `--` for undirected). Added a unit test in the same module to prevent regression.
+**Fix:** Guarded message formatting for empty node lists.
 
-**Test Added:** `ascii_art_edge_format_is_correct` inside `src/core/visualization.rs`.
+**Test Added:** `test_validate_no_nodes_with_edge` in `src/core/builders.rs`.
+
+---
+
+### 4. TopologyBuilder::path(0, …) Panic (MEDIUM)
+
+**File:** `src/core/builders.rs`
+
+**Issue:** `for i in 0..(n - 1)` underflowed for `n == 0`.
+
+**Fix:** Early-return an empty graph for `n == 0`.
+
+**Test Added:** `test_topology_path_graph_zero_nodes` in `src/core/builders.rs`.
+
+---
+
+## API Ergonomics Improvements
+
+- Added builder type aliases to reduce generics verbosity:
+  - `pub type DirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Directed>;`
+  - `pub type UndirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Undirected>;`
+
+These are additive and backward compatible, and improve discoverability.
 
 ---
 
@@ -84,9 +71,11 @@ assert!((avg - 1.333).abs() < 0.01);
 
 **File:** `src/core/error.rs` (NEW)
 
-**Issue:** The project had many individual error structs (`GraphinaException`, `NodeNotFound`, `GraphinaNoPath`, etc.) without a unified error enum, making error handling inconsistent.
+**Issue:** The project had many individual error structs (`GraphinaException`, `NodeNotFound`, `GraphinaNoPath`, etc.)
+without a unified error enum, making error handling inconsistent.
 
 **Improvement:** Created a unified `GraphinaError` enum that consolidates all error types:
+
 ```rust
 pub enum GraphinaError {
     Generic(String),
@@ -108,6 +97,7 @@ Added `From` implementations for backward compatibility with existing error type
 **File:** `docs/ARCHITECTURE.md` (NEW)
 
 **Content:** Comprehensive documentation covering:
+
 - Module decoupling principles
 - Error handling strategy
 - Type safety approach
@@ -144,7 +134,8 @@ Added comprehensive bug fix tests covering:
 
 ## Build and Test Guidance
 
-To ensure visualization features (SVG/PNG/HTML/D3) are compiled for tests and examples without changing default Cargo features, use the Makefile targets which enable all features automatically:
+To ensure visualization features (SVG/PNG/HTML/D3) are compiled for tests and examples without changing default Cargo
+features, use the Makefile targets which enable all features automatically:
 
 ```bash
 make test      # runs fmt + tests with --features all
@@ -152,24 +143,28 @@ make lint      # runs clippy with warnings as errors
 make bench     # runs benchmarks with --features all
 ```
 
-This avoids enabling features by default in `Cargo.toml` and keeps feature gating explicit for consumers, while CI/local runs use full coverage.
+This avoids enabling features by default in `Cargo.toml` and keeps feature gating explicit for consumers, while CI/local
+runs use full coverage.
 
 ---
 
 ## Potential Issues Identified (Not Yet Fixed)
 
 ### 1. **Error Type Proliferation**
-While we've created a unified error type, the old error structs still exist. Consider migrating the codebase to use the new unified type.
+
+While we've created a unified error type, the old error structs still exist. Consider migrating the codebase to use the
+new unified type.
 
 ### 2. **Performance Optimization Opportunities**
 
 In `louvain.rs`, the `total_degree` closure is called repeatedly inside nested loops:
+
 ```rust
-let total_degree = |comm: usize| -> f64 {
-    community.iter().enumerate()
-        .filter(|&(_idx, &c)| c == comm)
-        .map(|(idx, _)| degrees[idx])
-        .sum()
+let total_degree = | comm: usize| -> f64 {
+community.iter().enumerate()
+.filter( | & (_idx, & c) | c == comm)
+.map( | (idx, _) | degrees[idx])
+.sum()
 };
 ```
 
@@ -178,6 +173,7 @@ let total_degree = |comm: usize| -> f64 {
 ### 3. **Missing Input Validation**
 
 Some public APIs don't validate inputs:
+
 - Graph generators don't validate parameter ranges
 - Some algorithms don't check for graph connectivity when required
 - Edge weight ranges aren't always validated
@@ -187,6 +183,7 @@ Some public APIs don't validate inputs:
 ### 4. **Documentation Gaps**
 
 While the core is well-documented, some extension modules lack:
+
 - Complexity analysis
 - Example usage
 - Error conditions
@@ -221,10 +218,11 @@ While the core is well-documented, some extension modules lack:
 ## Testing Results
 
 All existing tests pass after the fixes:
+
 - ✅ Core module tests: PASS
 - ✅ Centrality tests: PASS
 - ✅ Community tests: PASS
-- ✅ Links tests: PASS  
+- ✅ Links tests: PASS
 - ✅ Approximation tests: PASS
 - ✅ Integration tests: PASS
 - ✅ Property-based tests: PASS
@@ -245,6 +243,8 @@ The Louvain bug fix has been validated with a specific test case.
 
 ## Conclusion
 
-The Graphina project is architecturally sound with good separation of concerns. The critical bug in the Louvain algorithm has been fixed, and comprehensive tests have been added to prevent regression. The new unified error type and architecture documentation will help maintain code quality as the project evolves.
+The Graphina project is architecturally sound with good separation of concerns. The critical bug in the Louvain
+algorithm has been fixed, and comprehensive tests have been added to prevent regression. The new unified error type and
+architecture documentation will help maintain code quality as the project evolves.
 
 The project is ready for continued development with the improvements in place.

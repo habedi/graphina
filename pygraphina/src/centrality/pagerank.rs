@@ -13,7 +13,7 @@ pub fn pagerank(
     tolerance: f64,
 ) -> PyResult<HashMap<usize, f64>> {
     let res = pagerank_core(&py_graph.graph, damping, max_iter, tolerance)
-        .map_err(|e| PyValueError::new_err(e.message))?;
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let mut out = HashMap::new();
     for (nid, val) in res.into_iter() {
         let pyid = py_graph

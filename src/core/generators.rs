@@ -9,7 +9,7 @@ to `u32` and edge weights to `f32`.
 
 Most generators use a seeded random number generator for reproducibility. In case of
 invalid parameters (e.g. probability out of [0, 1] or insufficient nodes), functions
-return a `Result` with a relevant exception from `graphina::core::exceptions`.
+return a `Result` with a relevant error from `graphina::core::error::GraphinaError`.
 
 # Examples
 
@@ -17,10 +17,9 @@ Generating an Erdős–Rényi graph:
 
 ```rust
 use graphina::core::generators::erdos_renyi_graph;
-use graphina::core::types::DigraphMarker;
-use graphina::core::exceptions::GraphinaException;
+use graphina::core::types::Directed;
 
-let graph = erdos_renyi_graph::<DigraphMarker>(100, 0.1, 42)
+let graph = erdos_renyi_graph::<Directed>(100, 0.1, 42)
     .expect("Failed to generate Erdős–Rényi graph");
 ```
 
@@ -28,10 +27,9 @@ Generating a Watts–Strogatz graph:
 
 ```rust
 use graphina::core::generators::watts_strogatz_graph;
-use graphina::core::types::GraphMarker;
-use graphina::core::exceptions::GraphinaException;
+use graphina::core::types::Undirected;
 
-let ws = watts_strogatz_graph::<GraphMarker>(100, 6, 0.3, 42)
+let ws = watts_strogatz_graph::<Undirected>(100, 6, 0.3, 42)
     .expect("Failed to generate Watts–Strogatz graph");
 ```
 */
@@ -55,7 +53,7 @@ use rand::{Rng, SeedableRng};
 ///
 /// # Returns
 ///
-/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated graph, or an error if parameters are invalid.
+/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaError>` - The generated graph, or an error if parameters are invalid.
 pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
     p: f64,
@@ -110,7 +108,7 @@ pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Returns
 ///
-/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The complete graph.
+/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaError>` - The complete graph.
 pub fn complete_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
 ) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
@@ -157,7 +155,7 @@ pub fn complete_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Returns
 ///
-/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated bipartite graph.
+/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaError>` - The generated bipartite graph.
 pub fn bipartite_graph<Ty: GraphConstructor<u32, f32>>(
     n1: usize,
     n2: usize,
@@ -206,7 +204,7 @@ pub fn bipartite_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Returns
 ///
-/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated star graph.
+/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaError>` - The generated star graph.
 pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
 ) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
@@ -236,7 +234,7 @@ pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Returns
 ///
-/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated cycle graph.
+/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaError>` - The generated cycle graph.
 pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
 ) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
@@ -272,7 +270,7 @@ pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Returns
 ///
-/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated Watts–Strogatz graph.
+/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaError>` - The generated Watts–Strogatz graph.
 ///
 /// # Notes
 ///
@@ -372,7 +370,7 @@ pub fn watts_strogatz_graph<Ty: GraphConstructor<u32, f32>>(
 ///
 /// # Returns
 ///
-/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated Barabási–Albert graph.
+/// * `Result<BaseGraph<u32, f32, Ty>, GraphinaError>` - The generated Barabási–Albert graph.
 ///
 /// # Notes
 ///
@@ -400,57 +398,81 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
             graph.add_edge(nodes[i], nodes[j], 1.0);
         }
     }
+
     let mut rng = StdRng::seed_from_u64(seed);
-    let mut degrees: Vec<usize> = vec![m - 1; m];
-    let mut total_degree = m * (m - 1);
+
+    // Preferential attachment for remaining nodes.
     for i in m..n {
         let new_node = graph.add_node(i as u32);
-        nodes.push(new_node);
-        let mut targets = Vec::new();
-        let max_attempts = n * 10; // Prevent infinite loop
-        let mut attempts = 0;
 
-        // Use preferential attachment only if total_degree > 0
-        if total_degree > 0 {
-            while targets.len() < m && attempts < max_attempts {
-                let r = rng.random_range(0..total_degree);
-                let mut cumulative = 0;
-                for (idx, &deg) in degrees.iter().enumerate() {
-                    cumulative += deg;
+        // Attach to m existing nodes, sampling without replacement and with guard rails
+        let mut attached = 0usize;
+        let mut chosen_indices: std::collections::HashSet<usize> = std::collections::HashSet::new();
+        let max_attempts = nodes.len().saturating_mul(10).max(m * 5).max(50);
+        let mut attempts = 0usize;
+
+        while attached < m && chosen_indices.len() < nodes.len() {
+            attempts += 1;
+
+            // Compute a fresh total degree for weighted sampling
+            let current_total_degree: usize =
+                nodes.iter().map(|&u| graph.degree(u).unwrap_or(0)).sum();
+
+            // Fallback path if degrees are all zero (e.g., degenerate cases)
+            let candidate_idx = if current_total_degree == 0 {
+                rng.random_range(0..nodes.len())
+            } else {
+                let r = rng.random_range(0..current_total_degree);
+                let mut cumulative = 0usize;
+                let mut idx = 0usize;
+                for (j, &u) in nodes.iter().enumerate() {
+                    cumulative += graph.degree(u).unwrap_or(0);
                     if r < cumulative {
-                        let candidate = nodes[idx];
-                        // Only add if not already in targets and not the new node itself
-                        if !targets.contains(&candidate) && candidate != new_node {
-                            targets.push(candidate);
-                        }
+                        idx = j;
                         break;
                     }
                 }
-                attempts += 1;
-            }
-        }
+                idx
+            };
 
-        // If we couldn't find m targets through preferential attachment,
-        // fill remaining slots with random selection from available nodes
-        if targets.len() < m {
-            for node in nodes.iter().take(i) {
-                if targets.len() >= m {
+            if !chosen_indices.insert(candidate_idx) {
+                // already picked in this round; try again
+                if attempts >= max_attempts {
                     break;
                 }
-                if !targets.contains(node) {
-                    targets.push(*node);
+                continue;
+            }
+
+            let target = nodes[candidate_idx];
+            if graph.find_edge(new_node, target).is_none() {
+                graph.add_edge(new_node, target, 1.0);
+                attached += 1;
+            }
+
+            if attempts >= max_attempts {
+                break;
+            }
+        }
+
+        // If we failed to reach m attachments due to unlucky sampling, connect greedily to remaining nodes
+        if attached < m {
+            for (idx, &u) in nodes.iter().enumerate() {
+                if attached >= m {
+                    break;
+                }
+                if chosen_indices.contains(&idx) {
+                    continue;
+                }
+                if graph.find_edge(new_node, u).is_none() {
+                    graph.add_edge(new_node, u, 1.0);
+                    attached += 1;
                 }
             }
         }
 
-        for target in &targets {
-            graph.add_edge(new_node, *target, 1.0);
-            let idx = nodes.iter().position(|&x| x == *target).unwrap();
-            degrees[idx] += 1;
-        }
-        degrees.push(targets.len());
-        total_degree += 2 * targets.len();
+        nodes.push(new_node);
     }
+
     Ok(graph)
 }
 

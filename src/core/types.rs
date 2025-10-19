@@ -5,7 +5,7 @@ This module defines the core graph types supported by Graphina.
 The `BaseGraph` struct is a wrapper around petgraph’s `StableGraph` that provides a uniform API
 for both directed and undirected graphs. Graphina provides two sets of APIs:
 - The **standard API**, which returns simple values (such as booleans or `Option`s).
-- The **`try_…` API**, which returns `Result` types with custom errors defined in `graphina::core::exceptions`.
+- The **`try_…` API**, which returns `Result` types with custom errors defined in `graphina::core::error::GraphinaError`.
 
 # Examples
 
@@ -23,6 +23,8 @@ assert!(success);
 
 // Using the try_… API:
 g.try_update_node(n1, 30).expect("Node update should succeed");
+```
+
 */
 
 use petgraph::EdgeType;
@@ -34,8 +36,8 @@ use sprs::{CsMat, TriMat};
 use std::collections::HashMap;
 use std::ops::{Index, IndexMut};
 
-// Import exceptions from the core exceptions module.
-use crate::core::exceptions::{GraphinaException, NodeNotFound};
+// Import the new unified error type
+use crate::core::error::{GraphinaError, Result};
 
 /// Marker type for directed graphs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -237,7 +239,14 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
 
         if self.is_directed() {
-            Some(self.edges().filter(|(_, tgt, _)| *tgt == node).count())
+            // PERFORMANCE FIX: Use petgraph's edge_references which is more efficient
+            // than iterating through all edges in the graph
+            Some(
+                self.inner
+                    .edge_references()
+                    .filter(|edge| edge.target() == node.0)
+                    .count(),
+            )
         } else {
             self.degree(node)
         }
@@ -287,12 +296,14 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     /// # Errors
     ///
     /// Returns an error if the node does not exist (has been removed).
-    pub fn try_update_node(&mut self, node: NodeId, new_attr: A) -> Result<(), NodeNotFound> {
+    pub fn try_update_node(&mut self, node: NodeId, new_attr: A) -> Result<()> {
         if let Some(attr) = self.inner.node_weight_mut(node.0) {
             *attr = new_attr;
             Ok(())
         } else {
-            Err(NodeNotFound::new("Node not found during update"))
+            Err(GraphinaError::node_not_found(
+                "Node not found during update",
+            ))
         }
     }
 
@@ -427,10 +438,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     /// Attempts to remove a node from the graph.
     ///
     /// Returns the node's attribute if successful, or a `NodeNotFound` error if the node did not exist.
-    pub fn try_remove_node(&mut self, node: NodeId) -> Result<A, NodeNotFound> {
+    pub fn try_remove_node(&mut self, node: NodeId) -> Result<A> {
         self.inner
             .remove_node(node.0)
-            .ok_or_else(|| NodeNotFound::new("Node not found during removal"))
+            .ok_or_else(|| GraphinaError::node_not_found("Node not found during removal"))
     }
 
     /// Removes an edge from the graph, returning its weight if it existed.
@@ -441,10 +452,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     /// Attempts to remove an edge from the graph.
     ///
     /// Returns the edge's weight if successful, or a `GraphinaException` if the edge was not found.
-    pub fn try_remove_edge(&mut self, edge: EdgeId) -> Result<W, GraphinaException> {
+    pub fn try_remove_edge(&mut self, edge: EdgeId) -> Result<W> {
         self.inner
             .remove_edge(edge.0)
-            .ok_or_else(|| GraphinaException::new("Edge not found during removal"))
+            .ok_or_else(|| GraphinaError::edge_not_found("Edge not found during removal"))
     }
 
     /// Returns the number of nodes in the graph.

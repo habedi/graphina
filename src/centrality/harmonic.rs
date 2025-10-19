@@ -2,10 +2,10 @@
 //!
 //! This module provides harmonic centrality measures.
 //!
-//! Convention: returns `Result<_, crate::core::exceptions::GraphinaException>` to propagate
+//! Convention: returns `Result<_, crate::core::error::GraphinaError>` to propagate
 //! path-computation errors and improve observability.
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::Result;
 use crate::core::paths::dijkstra;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeMap};
 use ordered_float::OrderedFloat;
@@ -22,7 +22,7 @@ use ordered_float::OrderedFloat;
 /// [`NodeMap`] of `f64` representing harmonic centralities of each node in the graph.
 pub fn harmonic_centrality<A, Ty>(
     graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
-) -> Result<NodeMap<f64>, GraphinaException>
+) -> Result<NodeMap<f64>>
 where
     Ty: GraphConstructor<A, OrderedFloat<f64>>,
 {

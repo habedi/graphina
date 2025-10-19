@@ -8,7 +8,7 @@ algorithms, reducing duplication and improving maintainability.
 
 use std::collections::{HashSet, VecDeque};
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
 
@@ -29,7 +29,13 @@ pub fn is_connected<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     }
 
     let mut visited = HashSet::new();
-    let start = graph.inner.node_indices().next().unwrap();
+
+    // Safe: we've checked that the graph is not empty
+    let start = match graph.inner.node_indices().next() {
+        Some(node) => node,
+        None => return false, // Defensive: should never happen after is_empty check
+    };
+
     let mut stack = vec![start];
     visited.insert(start);
 
@@ -197,9 +203,13 @@ pub fn count_components<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 pub fn require_non_empty<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     algo_name: &str,
-) -> Result<(), GraphinaException> {
+) -> Result<()>
+where
+    A: std::fmt::Debug,
+    W: std::fmt::Debug,
+{
     if is_empty(graph) {
-        Err(GraphinaException::new(&format!(
+        Err(GraphinaError::invalid_graph(format!(
             "{} requires a non-empty graph",
             algo_name
         )))
@@ -214,9 +224,13 @@ pub fn require_non_empty<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 pub fn require_connected<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     algo_name: &str,
-) -> Result<(), GraphinaException> {
+) -> Result<()>
+where
+    A: std::fmt::Debug,
+    W: std::fmt::Debug,
+{
     if !is_connected(graph) {
-        Err(GraphinaException::new(&format!(
+        Err(GraphinaError::invalid_graph(format!(
             "{} requires a connected graph",
             algo_name
         )))
@@ -231,12 +245,12 @@ pub fn require_connected<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 pub fn require_non_negative_weights<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     algo_name: &str,
-) -> Result<(), GraphinaException>
+) -> Result<()>
 where
     W: Copy + Into<f64>,
 {
     if has_negative_weights(graph) {
-        Err(GraphinaException::new(&format!(
+        Err(GraphinaError::invalid_argument(format!(
             "{} requires non-negative edge weights",
             algo_name
         )))
@@ -251,9 +265,13 @@ where
 pub fn require_no_self_loops<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     algo_name: &str,
-) -> Result<(), GraphinaException> {
+) -> Result<()>
+where
+    A: std::fmt::Debug,
+    W: std::fmt::Debug,
+{
     if has_self_loops(graph) {
-        Err(GraphinaException::new(&format!(
+        Err(GraphinaError::invalid_graph(format!(
             "{} does not support graphs with self-loops",
             algo_name
         )))
@@ -268,16 +286,20 @@ pub fn require_no_self_loops<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 pub fn require_dag<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     algo_name: &str,
-) -> Result<(), GraphinaException> {
+) -> Result<()>
+where
+    A: std::fmt::Debug,
+    W: std::fmt::Debug,
+{
     if !graph.is_directed() {
-        return Err(GraphinaException::new(&format!(
+        return Err(GraphinaError::invalid_graph(format!(
             "{} requires a directed graph",
             algo_name
         )));
     }
 
     if !is_dag(graph) {
-        Err(GraphinaException::new(&format!(
+        Err(GraphinaError::has_cycle(format!(
             "{} requires a directed acyclic graph (DAG)",
             algo_name
         )))
@@ -300,9 +322,11 @@ pub fn require_dag<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 pub fn validate_for_algorithm<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     algo_name: &str,
-) -> Result<(), GraphinaException>
+) -> Result<()>
 where
     W: Copy + Into<f64>,
+    A: std::fmt::Debug,
+    W: std::fmt::Debug,
 {
     require_non_empty(graph, algo_name)?;
     require_connected(graph, algo_name)?;

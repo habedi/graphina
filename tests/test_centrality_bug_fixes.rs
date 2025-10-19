@@ -137,7 +137,7 @@ fn test_eigenvector_convergence_error() {
     match result {
         Ok(_) => {} // Converged quickly
         Err(e) => {
-            assert!(e.message.contains("converge"));
+            assert!(e.to_string().contains("converge"));
         }
     }
 }
@@ -158,7 +158,7 @@ fn test_katz_convergence_error() {
     match result {
         Ok(_) => {} // Converged in 1 iteration (unlikely)
         Err(e) => {
-            assert!(e.message.contains("converge"));
+            assert!(e.to_string().contains("converge"));
         }
     }
 }

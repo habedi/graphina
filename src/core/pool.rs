@@ -62,7 +62,7 @@ pub struct PooledNodeSet<'a> {
     pool: &'a NodeSetPool,
 }
 
-impl<'a> std::ops::Deref for PooledNodeSet<'a> {
+impl std::ops::Deref for PooledNodeSet<'_> {
     type Target = HashSet<NodeId>;
 
     fn deref(&self) -> &Self::Target {
@@ -70,13 +70,13 @@ impl<'a> std::ops::Deref for PooledNodeSet<'a> {
     }
 }
 
-impl<'a> std::ops::DerefMut for PooledNodeSet<'a> {
+impl std::ops::DerefMut for PooledNodeSet<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.set
     }
 }
 
-impl<'a> Drop for PooledNodeSet<'a> {
+impl Drop for PooledNodeSet<'_> {
     fn drop(&mut self) {
         let set = std::mem::take(&mut self.set);
         self.pool.release(set);
@@ -127,7 +127,7 @@ pub struct PooledNodeMap<'a, T> {
     pool: &'a NodeMapPool<T>,
 }
 
-impl<'a, T> std::ops::Deref for PooledNodeMap<'a, T> {
+impl<T> std::ops::Deref for PooledNodeMap<'_, T> {
     type Target = HashMap<NodeId, T>;
 
     fn deref(&self) -> &Self::Target {
@@ -135,13 +135,13 @@ impl<'a, T> std::ops::Deref for PooledNodeMap<'a, T> {
     }
 }
 
-impl<'a, T> std::ops::DerefMut for PooledNodeMap<'a, T> {
+impl<T> std::ops::DerefMut for PooledNodeMap<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.map
     }
 }
 
-impl<'a, T> Drop for PooledNodeMap<'a, T> {
+impl<T> Drop for PooledNodeMap<'_, T> {
     fn drop(&mut self) {
         let map = std::mem::take(&mut self.map);
         self.pool.release(map);
@@ -192,7 +192,7 @@ pub struct PooledNodeQueue<'a> {
     pool: &'a NodeQueuePool,
 }
 
-impl<'a> std::ops::Deref for PooledNodeQueue<'a> {
+impl std::ops::Deref for PooledNodeQueue<'_> {
     type Target = VecDeque<NodeId>;
 
     fn deref(&self) -> &Self::Target {
@@ -200,13 +200,13 @@ impl<'a> std::ops::Deref for PooledNodeQueue<'a> {
     }
 }
 
-impl<'a> std::ops::DerefMut for PooledNodeQueue<'a> {
+impl std::ops::DerefMut for PooledNodeQueue<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.queue
     }
 }
 
-impl<'a> Drop for PooledNodeQueue<'a> {
+impl Drop for PooledNodeQueue<'_> {
     fn drop(&mut self) {
         let queue = std::mem::take(&mut self.queue);
         self.pool.release(queue);
