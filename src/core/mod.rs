@@ -1,3 +1,4 @@
+pub mod builders;
 pub mod error;
 pub mod exceptions;
 pub mod generators;
@@ -6,8 +7,10 @@ pub mod metrics;
 pub mod mst;
 pub mod parallel;
 pub mod paths;
+pub mod pool;
 pub mod serialization;
 pub mod subgraphs;
+pub mod traits;
 pub mod traversal;
 pub mod types;
 pub mod validation;

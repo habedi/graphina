@@ -1,69 +1,93 @@
 /*!
 # Unified Error Type
 
-This module provides a unified error enum that consolidates all Graphina error types
+This module provides a unified error enum using `thiserror` that consolidates all Graphina error types
 for better ergonomics and error handling consistency.
 */
 
-use std::error::Error;
-use std::fmt;
+use thiserror::Error;
 
 /// Unified error type for all Graphina operations.
 ///
 /// This enum consolidates all error types for better error handling and pattern matching.
-#[derive(Debug)]
+/// Uses `thiserror` for automatic `Display` and `Error` trait implementations.
+#[derive(Error, Debug, Clone)]
 pub enum GraphinaError {
     /// General-purpose error
+    #[error("Graphina error: {0}")]
     Generic(String),
 
     /// Node not found in graph
+    #[error("Node not found: {0}")]
     NodeNotFound(String),
 
     /// Edge not found in graph
+    #[error("Edge not found: {0}")]
     EdgeNotFound(String),
 
     /// No path exists between nodes
+    #[error("No path exists: {0}")]
     NoPath(String),
 
     /// No cycle exists in graph
+    #[error("No cycle exists: {0}")]
     NoCycle(String),
 
     /// Graph has a cycle when acyclic structure is expected
+    #[error("Graph has a cycle: {0}")]
     HasCycle(String),
 
     /// Graph is empty or invalid for the operation
+    #[error("Invalid graph: {0}")]
     InvalidGraph(String),
 
     /// Algorithm terminated unexpectedly
+    #[error("Algorithm error: {0}")]
     AlgorithmError(String),
 
     /// No feasible solution exists
+    #[error("No feasible solution: {0}")]
     Unfeasible(String),
 
     /// Optimization problem is unbounded
+    #[error("Unbounded solution: {0}")]
     Unbounded(String),
 
     /// Feature not implemented for this graph type
+    #[error("Not implemented: {0}")]
     NotImplemented(String),
 
     /// Ambiguous solution exists
+    #[error("Ambiguous solution: {0}")]
     AmbiguousSolution(String),
 
     /// Exceeded maximum iterations
+    #[error("Exceeded max iterations ({iterations}): {message}")]
     ExceededMaxIterations { iterations: usize, message: String },
 
     /// Power iteration failed to converge
+    #[error("Convergence failed after {iterations} iterations: {message}")]
     ConvergenceFailed { iterations: usize, message: String },
 
     /// I/O error
+    #[error("I/O error: {0}")]
     IoError(String),
 
     /// Serialization/deserialization error
+    #[error("Serialization error: {0}")]
     SerializationError(String),
 
     /// Invalid argument or parameter
+    #[error("Invalid argument: {0}")]
     InvalidArgument(String),
+
+    /// Graph operation on pointless/degenerate graph
+    #[error("Pointless concept: {0}")]
+    PointlessConcept(String),
 }
+
+/// Result type alias for Graphina operations
+pub type Result<T> = std::result::Result<T, GraphinaError>;
 
 impl GraphinaError {
     /// Creates a generic error with the given message.
@@ -103,49 +127,19 @@ impl GraphinaError {
             message: message.into(),
         }
     }
-}
 
-impl fmt::Display for GraphinaError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            GraphinaError::Generic(msg) => write!(f, "Graphina error: {}", msg),
-            GraphinaError::NodeNotFound(msg) => write!(f, "Node not found: {}", msg),
-            GraphinaError::EdgeNotFound(msg) => write!(f, "Edge not found: {}", msg),
-            GraphinaError::NoPath(msg) => write!(f, "No path exists: {}", msg),
-            GraphinaError::NoCycle(msg) => write!(f, "No cycle exists: {}", msg),
-            GraphinaError::HasCycle(msg) => write!(f, "Graph has a cycle: {}", msg),
-            GraphinaError::InvalidGraph(msg) => write!(f, "Invalid graph: {}", msg),
-            GraphinaError::AlgorithmError(msg) => write!(f, "Algorithm error: {}", msg),
-            GraphinaError::Unfeasible(msg) => write!(f, "No feasible solution: {}", msg),
-            GraphinaError::Unbounded(msg) => write!(f, "Unbounded solution: {}", msg),
-            GraphinaError::NotImplemented(msg) => write!(f, "Not implemented: {}", msg),
-            GraphinaError::AmbiguousSolution(msg) => write!(f, "Ambiguous solution: {}", msg),
-            GraphinaError::ExceededMaxIterations {
-                iterations,
-                message,
-            } => {
-                write!(f, "Exceeded max iterations ({}): {}", iterations, message)
-            }
-            GraphinaError::ConvergenceFailed {
-                iterations,
-                message,
-            } => {
-                write!(
-                    f,
-                    "Convergence failed after {} iterations: {}",
-                    iterations, message
-                )
-            }
-            GraphinaError::IoError(msg) => write!(f, "I/O error: {}", msg),
-            GraphinaError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
-            GraphinaError::InvalidArgument(msg) => write!(f, "Invalid argument: {}", msg),
-        }
+    /// Creates an invalid argument error.
+    pub fn invalid_argument(message: impl Into<String>) -> Self {
+        GraphinaError::InvalidArgument(message.into())
+    }
+
+    /// Creates a not implemented error.
+    pub fn not_implemented(message: impl Into<String>) -> Self {
+        GraphinaError::NotImplemented(message.into())
     }
 }
 
-impl Error for GraphinaError {}
-
-// Implement From conversions for backward compatibility
+// Implement From conversions for backward compatibility with old exception types
 impl From<crate::core::exceptions::GraphinaException> for GraphinaError {
     fn from(e: crate::core::exceptions::GraphinaException) -> Self {
         GraphinaError::Generic(e.message)
@@ -170,6 +164,24 @@ impl From<crate::core::exceptions::PowerIterationFailedConvergence> for Graphina
             iterations: e.num_iterations,
             message: e.message,
         }
+    }
+}
+
+impl From<crate::core::exceptions::GraphinaPointlessConcept> for GraphinaError {
+    fn from(e: crate::core::exceptions::GraphinaPointlessConcept) -> Self {
+        GraphinaError::PointlessConcept(e.message)
+    }
+}
+
+impl From<crate::core::exceptions::HasACycle> for GraphinaError {
+    fn from(e: crate::core::exceptions::HasACycle) -> Self {
+        GraphinaError::HasCycle(e.message)
+    }
+}
+
+impl From<crate::core::exceptions::GraphinaNoCycle> for GraphinaError {
+    fn from(e: crate::core::exceptions::GraphinaNoCycle) -> Self {
+        GraphinaError::NoCycle(e.message)
     }
 }
 
@@ -204,22 +216,41 @@ mod tests {
     #[test]
     fn test_error_display() {
         let err = GraphinaError::generic("test error");
-        assert_eq!(format!("{}", err), "Graphina error: test error");
-
-        let err = GraphinaError::node_not_found("node 5");
-        assert_eq!(format!("{}", err), "Node not found: node 5");
-
-        let err = GraphinaError::convergence_failed(100, "did not converge");
-        assert_eq!(
-            format!("{}", err),
-            "Convergence failed after 100 iterations: did not converge"
-        );
+        assert_eq!(err.to_string(), "Graphina error: test error");
     }
 
     #[test]
-    fn test_error_conversions() {
-        let old_err = crate::core::exceptions::GraphinaException::new("test");
+    fn test_node_not_found() {
+        let err = GraphinaError::node_not_found("Node 5");
+        assert_eq!(err.to_string(), "Node not found: Node 5");
+    }
+
+    #[test]
+    fn test_convergence_failed() {
+        let err = GraphinaError::convergence_failed(100, "tolerance not met");
+        assert!(err.to_string().contains("100 iterations"));
+        assert!(err.to_string().contains("tolerance not met"));
+    }
+
+    #[test]
+    fn test_error_conversion_from_old_exceptions() {
+        let old_err = crate::core::exceptions::GraphinaException::new("old error");
         let new_err: GraphinaError = old_err.into();
         assert!(matches!(new_err, GraphinaError::Generic(_)));
+    }
+
+    #[test]
+    fn test_error_is_clonable() {
+        let err = GraphinaError::generic("test");
+        let cloned = err.clone();
+        assert_eq!(err.to_string(), cloned.to_string());
+    }
+
+    #[test]
+    fn test_result_alias() {
+        fn returns_result() -> Result<i32> {
+            Ok(42)
+        }
+        assert_eq!(returns_result().unwrap(), 42);
     }
 }

@@ -1,3 +1,3 @@
-## Graphina Tests (Integration, Property-based, etc.)
+## Graphina Tests (Non-Unit Test)
 
 To be added.

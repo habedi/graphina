@@ -111,7 +111,7 @@ impl NodeId {
         self.0.index()
     }
     /// Creates a new `NodeId` from a `NodeIndex`.
-    pub(crate) fn new(index: NodeIndex) -> Self {
+    pub fn new(index: NodeIndex) -> Self {
         Self(index)
     }
 }
