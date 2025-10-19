@@ -233,19 +233,54 @@ impl PyGraph {
 fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyGraph>()?;
 
-    // Register core module functions
+    // Register core module functions (kept at top-level for now)
     core::generators::register_generators(m)?;
     core::mst::register_mst(m)?;
     core::parallel::register_parallel(m)?;
     core::subgraphs::register_subgraphs(m)?;
 
-    // Register centrality functions
-    centrality::register_centrality(m)?;
+    // Register top-level approximation functions
+    m.add_function(wrap_pyfunction!(approximation::clique::max_clique, m)?)?;
+    m.add_function(wrap_pyfunction!(approximation::clique::clique_removal, m)?)?;
+    m.add_function(wrap_pyfunction!(
+        approximation::clique::large_clique_size,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        approximation::vertex_cover::min_weighted_vertex_cover,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(approximation::diameter::diameter, m)?)?;
+    m.add_function(wrap_pyfunction!(
+        approximation::independent_set::maximum_independent_set,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        approximation::subgraph::densest_subgraph,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        approximation::clustering::average_clustering_approx,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(approximation::ramsey::ramsey_r2, m)?)?;
 
-    // Register additional modules
-    approximation::register_approximation(m)?;
-    community::register_community(m)?;
-    links::register_links(m)?;
+    // Create namespaced submodules
+    let centrality_mod = PyModule::new(m.py(), "centrality")?;
+    centrality::register_centrality(&centrality_mod)?;
+    m.add_submodule(&centrality_mod)?;
+
+    let approximation_mod = PyModule::new(m.py(), "approximation")?;
+    approximation::register_approximation(&approximation_mod)?;
+    m.add_submodule(&approximation_mod)?;
+
+    let community_mod = PyModule::new(m.py(), "community")?;
+    community::register_community(&community_mod)?;
+    m.add_submodule(&community_mod)?;
+
+    let links_mod = PyModule::new(m.py(), "links")?;
+    links::register_links(&links_mod)?;
+    m.add_submodule(&links_mod)?;
 
     Ok(())
 }

@@ -1,9 +1,10 @@
 ## PyGraphina
 
-[![Python version](https://img.shields.io/badge/Python-%3E=3.10-blue)](https://github.com/habedi/graphina)
+[![Python version](https://img.shields.io/badge/python-%3E=3.10-blue)](https://github.com/habedi/graphina)
 [![PyPI version](https://badge.fury.io/py/pygraphina.svg)](https://badge.fury.io/py/pygraphina)
-[![Documentation](https://img.shields.io/badge/docs-view-yellow.svg)](docs)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-view-blue.svg)](docs)
+[![Examples](https://img.shields.io/badge/examples-view-orange.svg)](examples)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 PyGraphina Python library allows users to use [Graphina](https://github.com/habedi/graphina) in Python.
 
@@ -15,6 +16,30 @@ PyGraphina Python library allows users to use [Graphina](https://github.com/habe
 
 ```bash
 pip install --pre pygraphina
+```
+
+### Quick Start
+
+```python
+import pygraphina as pg
+
+# Make a small graph
+g = pg.PyGraph()
+a, b, c = [g.add_node(i) for i in range(3)]
+g.add_edge(a, b, 1.0)
+g.add_edge(b, c, 1.0)
+
+# Get the PageRank centrality scores of the nodes
+pr = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
+
+# Get the size of the largest clique in the graph
+size = pg.approximation.large_clique_size(g)
+
+# Get the connected components of the graph
+comps = pg.community.connected_components(g)
+
+# Get the Jaccard coefficient of the links
+jc = pg.links.jaccard_coefficient(g)
 ```
 
 ### License

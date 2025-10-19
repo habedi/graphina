@@ -15,16 +15,6 @@ fn create_rng(seed: Option<u64>) -> StdRng {
     }
 }
 
-/// Helper: Compute the total degree for nodes in a given community.
-fn total_degree(decomp: &[usize], degrees: &[f64], comm: usize) -> f64 {
-    decomp
-        .iter()
-        .enumerate()
-        .filter(|&(_i, &c)| c == comm)
-        .map(|(i, _)| degrees[i])
-        .sum()
-}
-
 /// Production-level Louvain Method for community detection.
 ///
 /// Designed for undirected graphs with nonnegative f64 weights. It works in two phases:
@@ -62,27 +52,37 @@ where
         return graph.nodes().map(|(nid, _)| vec![nid]).collect();
     }
 
+    // BUGFIX: Map NodeId to contiguous indices to handle deleted nodes
+    let node_list: Vec<NodeId> = graph.nodes().map(|(nid, _)| nid).collect();
+    let node_to_idx: HashMap<NodeId, usize> = node_list
+        .iter()
+        .enumerate()
+        .map(|(idx, &nid)| (nid, idx))
+        .collect();
+
     let mut community: Vec<usize> = (0..n).collect();
 
-    // Compute node degrees.
+    // Compute node degrees using the mapping
     let mut degrees = vec![0.0; n];
     for (u, v, &w) in graph.edges() {
-        degrees[u.index()] += w;
-        degrees[v.index()] += w;
+        let ui = node_to_idx[&u];
+        let vi = node_to_idx[&v];
+        degrees[ui] += w;
+        degrees[vi] += w;
     }
 
-    // Precompute neighbors: for each node, store (neighbor_index, weight).
+    // Precompute neighbors: for each node, store (neighbor_index, weight)
     let mut neighbors: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
     for (u, v, &w) in graph.edges() {
-        let ui = u.index();
-        let vi = v.index();
+        let ui = node_to_idx[&u];
+        let vi = node_to_idx[&v];
         neighbors[ui].push((vi, w));
         neighbors[vi].push((ui, w));
     }
 
     let mut rng = create_rng(seed);
     let mut improvement = true;
-    let max_iterations = 100; // Prevent infinite loops
+    let max_iterations = 100;
     let mut iteration_count = 0;
 
     while improvement && iteration_count < max_iterations {
@@ -107,13 +107,18 @@ where
                 *comm_weights.entry(comm_j).or_insert(0.0) += w;
             }
 
-            let total_current = total_degree(&community, &degrees, current_comm);
-            let k_i_in = comm_weights.get(&current_comm).copied().unwrap_or(0.0);
+            // Helper: Compute the total degree for nodes in a given community
+            let total_degree = |comm: usize| -> f64 {
+                community
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_idx, &c)| c == comm)
+                    .map(|(idx, _)| degrees[idx])
+                    .sum()
+            };
 
-            // Avoid division by zero
-            if m == 0.0 {
-                continue;
-            }
+            let total_current = total_degree(current_comm);
+            let k_i_in = comm_weights.get(&current_comm).copied().unwrap_or(0.0);
 
             let delta_remove = k_i_in - (total_current * k_i) / (2.0 * m);
 
@@ -124,7 +129,7 @@ where
                 if comm == current_comm {
                     continue;
                 }
-                let total_comm = total_degree(&community, &degrees, comm);
+                let total_comm = total_degree(comm);
                 let delta = w_in - (total_comm * k_i) / (2.0 * m);
 
                 if delta > best_delta {
@@ -141,7 +146,7 @@ where
         }
     }
 
-    // Phase 2: Aggregate nodes by community.
+    // Phase 2: Aggregate nodes by community
     let mut comm_map: HashMap<usize, usize> = HashMap::new();
     for &c in &community {
         if !comm_map.contains_key(&c) {
@@ -153,9 +158,8 @@ where
     let mut new_comms: Vec<Vec<NodeId>> = vec![Vec::new(); comm_map.len()];
     for (i, &comm) in community.iter().enumerate() {
         let new_comm = comm_map[&comm];
-        if let Some((node, _)) = graph.nodes().find(|(node, _)| node.index() == i) {
-            new_comms[new_comm].push(node);
-        }
+        let node = node_list[i];
+        new_comms[new_comm].push(node);
     }
 
     // Remove empty communities
@@ -212,5 +216,33 @@ mod tests {
 
         let communities = louvain(&graph, Some(42));
         assert_eq!(communities.len(), 3);
+    }
+
+    #[test]
+    fn test_louvain_with_removed_nodes() {
+        let mut graph = Graph::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+
+        // Create a simple community structure
+        graph.add_edge(n0, n1, 1.0);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+
+        // Remove a node in the middle
+        graph.remove_node(n2);
+
+        // This should not panic or cause array out of bounds
+        let communities = louvain(&graph, Some(42));
+
+        // Should have valid communities
+        assert!(!communities.is_empty());
+
+        // Total nodes in communities should match graph node count
+        let total_nodes: usize = communities.iter().map(|c| c.len()).sum();
+        assert_eq!(total_nodes, graph.node_count());
     }
 }

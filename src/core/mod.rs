@@ -1,3 +1,4 @@
+pub mod error;
 pub mod exceptions;
 pub mod generators;
 pub mod io;
@@ -10,4 +11,6 @@ pub mod subgraphs;
 pub mod traversal;
 pub mod types;
 pub mod validation;
+
+#[cfg(feature = "visualization")]
 pub mod visualization;

@@ -440,11 +440,8 @@ mod tests {
         g.add_edge(n2, n3, 1.0);
 
         // Paths: 1->2 (1), 2->3 (1), 1->3 (2), avg = 4/3 ≈ 1.33
-        if let Some(avg) = average_path_length(&g) {
-            assert!((avg - 1.333).abs() < 0.01);
-        } else {
-            panic!("Should return Some for connected graph");
-        }
+        let avg = average_path_length(&g).expect("Connected graph should have average path length");
+        assert!((avg - 1.333).abs() < 0.01);
     }
 
     #[test]
