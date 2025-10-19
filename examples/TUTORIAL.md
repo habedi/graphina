@@ -1,24 +1,24 @@
-# Graphina Examples and Tutorials
+## Graphina Examples and Tutorials
 
-This directory contains comprehensive examples demonstrating how to use Graphina for various graph analysis tasks.
+This directory contains examples that show how to use Graphina for various graph analysis tasks.
 
-## Getting Started
+### Getting Started
 
-### Basic Examples
+#### Basic Examples
 
 1. **[core_io.rs](core_io.rs)** - Reading and writing graphs from files
 2. **[centrality.rs](centrality.rs)** - Computing node centrality measures
 3. **[path_dijkstra.rs](path_dijkstra.rs)** - Finding shortest paths
 4. **[visualization.rs](visualization.rs)** - Visualizing graphs
 
-### Advanced Examples
+#### Advanced Examples
 
 1. **[centrality_eigenvector.rs](centrality_eigenvector.rs)** - Eigenvector centrality analysis
 2. **[centrality_katz.rs](centrality_katz.rs)** - Katz centrality for influence measurement
 
-## Quick Start Tutorial
+### Quick Start Tutorial
 
-### Creating Your First Graph
+#### Creating Your First Graph
 
 ```rust
 use graphina::core::types::Graph;
@@ -44,7 +44,7 @@ fn main() {
 }
 ```
 
-### Finding Important Nodes
+#### Finding Important Nodes
 
 ```rust
 use graphina::core::types::Graph;
@@ -71,7 +71,7 @@ fn analyze_network() {
 }
 ```
 
-### Community Detection
+#### Community Detection
 
 ```rust
 use graphina::core::types::Graph;
@@ -91,7 +91,7 @@ fn find_communities() {
 }
 ```
 
-### Link Prediction
+#### Link Prediction
 
 ```rust
 use graphina::core::types::Graph;
@@ -128,9 +128,9 @@ fn predict_future_connections() {
 }
 ```
 
-## Performance Tips
+### Performance Tips
 
-### 1. Use Bulk Operations
+#### 1. Use Bulk Operations
 
 ```rust
 // Instead of:
@@ -142,14 +142,14 @@ for i in 0..1000 {
 let nodes = graph.add_nodes_bulk(&(0..1000).collect::<Vec<_>>());
 ```
 
-### 2. Pre-allocate When Possible
+#### 2. Pre-allocate When Possible
 
 ```rust
 // If you know the graph size upfront:
 let graph = Graph::<i32, f64>::with_capacity(1000, 5000);
 ```
 
-### 3. Use Parallel Algorithms for Large Graphs
+#### 3. Use Parallel Algorithms for Large Graphs
 
 ```rust
 use graphina::core::parallel::{
@@ -162,9 +162,9 @@ let degrees = degrees_parallel(&large_graph);
 let pagerank_scores = pagerank_parallel(&large_graph, 0.85, 100, 1e-6);
 ```
 
-## Common Patterns
+### Common Patterns
 
-### Pattern 1: Graph Pipeline
+#### Pattern 1: Graph Pipeline
 
 ```rust
 use graphina::core::types::Graph;
@@ -192,7 +192,7 @@ fn analysis_pipeline() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Pattern 2: Real-World Network Analysis
+#### Pattern 2: Real-World Network Analysis
 
 ```rust
 use graphina::core::types::Graph;
@@ -226,32 +226,17 @@ fn analyze_real_network() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Running the Examples
+### Running the Examples
 
 To run any example:
 
 ```bash
-# Run a specific example
+## Run a specific example
 cargo run --features all --example centrality
 
-# Run with visualization
+## Run with visualization
 cargo run --features all --example visualization
 
-# Run all examples
+## Run all examples
 make run-examples
 ```
-
-## Benchmarking
-
-To benchmark the algorithms:
-
-```bash
-cargo bench --features all
-```
-
-## Further Reading
-
-- [API Documentation](https://docs.rs/graphina)
-- [Architecture Guide](../docs/ARCHITECTURE.md)
-- [Contributing Guide](../CONTRIBUTING.md)
-

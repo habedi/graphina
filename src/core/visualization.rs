@@ -33,7 +33,7 @@ g.save_as_html("graph.html", &config).unwrap();
 ```
 */
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::GraphinaError;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
 use serde::{Deserialize, Serialize};
@@ -453,17 +453,16 @@ where
     Ty: GraphConstructor<A, W> + EdgeType,
 {
     /// Export graph to D3.js-compatible JSON format
-    pub fn to_d3_json(&self) -> Result<String, GraphinaException> {
+    pub fn to_d3_json(&self) -> Result<String, GraphinaError> {
         let d3_graph = self.to_d3_graph(None)?;
-        serde_json::to_string_pretty(&d3_graph)
-            .map_err(|e| GraphinaException::new(&format!("JSON serialization failed: {}", e)))
+        serde_json::to_string_pretty(&d3_graph).map_err(GraphinaError::from)
     }
 
     /// Export graph to D3Graph structure with optional positions
     pub fn to_d3_graph(
         &self,
         positions: Option<&HashMap<NodeId, NodePosition>>,
-    ) -> Result<D3Graph, GraphinaException> {
+    ) -> Result<D3Graph, GraphinaError> {
         let mut nodes = Vec::new();
         let mut links = Vec::new();
 
@@ -530,10 +529,9 @@ where
         for (src, tgt, weight) in self.edges() {
             let arrow = if self.is_directed() { "->" } else { "--" };
             output.push_str(&format!(
-                "  [{}] {} {} [{}] (weight: {})\n",
+                "  [{}] {} [{}] (weight: {})\n",
                 src.index(),
                 arrow,
-                tgt.index(),
                 tgt.index(),
                 weight
             ));
@@ -570,7 +568,7 @@ where
         &self,
         path: P,
         config: &VisualizationConfig,
-    ) -> Result<(), GraphinaException> {
+    ) -> Result<(), GraphinaError> {
         let positions = LayoutEngine::compute_layout(
             self,
             config.layout,
@@ -579,16 +577,14 @@ where
         );
 
         let d3_graph = self.to_d3_graph(Some(&positions))?;
-        let graph_json = serde_json::to_string(&d3_graph)
-            .map_err(|e| GraphinaException::new(&format!("JSON serialization failed: {}", e)))?;
+        let graph_json = serde_json::to_string(&d3_graph).map_err(GraphinaError::from)?;
 
         let html = Self::generate_html_template(config, &graph_json);
 
-        let mut file = File::create(path.as_ref())
-            .map_err(|e| GraphinaException::new(&format!("Failed to create HTML file: {}", e)))?;
+        let mut file = File::create(path.as_ref()).map_err(GraphinaError::from)?;
 
         file.write_all(html.as_bytes())
-            .map_err(|e| GraphinaException::new(&format!("Failed to write HTML file: {}", e)))?;
+            .map_err(GraphinaError::from)?;
 
         Ok(())
     }
@@ -804,7 +800,7 @@ where
         &self,
         path: P,
         config: &VisualizationConfig,
-    ) -> Result<(), GraphinaException> {
+    ) -> Result<(), GraphinaError> {
         use plotters::prelude::*;
 
         let positions = LayoutEngine::compute_layout(
@@ -818,12 +814,12 @@ where
             BitMapBackend::new(path.as_ref(), (config.width, config.height)).into_drawing_area();
 
         root.fill(&WHITE)
-            .map_err(|e| GraphinaException::new(&format!("Failed to fill background: {}", e)))?;
+            .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
         let mut chart = ChartBuilder::on(&root)
             .margin(10)
             .build_cartesian_2d(0.0..config.width as f64, 0.0..config.height as f64)
-            .map_err(|e| GraphinaException::new(&format!("Failed to build chart: {}", e)))?;
+            .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
         // Draw edges
         for (src, tgt, _weight) in self.edges() {
@@ -834,7 +830,7 @@ where
                         ShapeStyle::from(&RGBColor(150, 150, 150))
                             .stroke_width(config.edge_width as u32),
                     )))
-                    .map_err(|e| GraphinaException::new(&format!("Failed to draw edge: {}", e)))?;
+                    .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
             }
         }
 
@@ -847,7 +843,7 @@ where
                         config.node_size as i32,
                         ShapeStyle::from(&RGBColor(105, 179, 162)).filled(),
                     )))
-                    .map_err(|e| GraphinaException::new(&format!("Failed to draw node: {}", e)))?;
+                    .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
                 // Draw label if enabled
                 if config.show_labels {
@@ -857,15 +853,13 @@ where
                             (pos.x + config.node_size + 2.0, pos.y),
                             ("sans-serif", config.font_size).into_font(),
                         )))
-                        .map_err(|e| {
-                            GraphinaException::new(&format!("Failed to draw label: {}", e))
-                        })?;
+                        .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
                 }
             }
         }
 
         root.present()
-            .map_err(|e| GraphinaException::new(&format!("Failed to save PNG: {}", e)))?;
+            .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
         Ok(())
     }
@@ -875,7 +869,7 @@ where
         &self,
         path: P,
         config: &VisualizationConfig,
-    ) -> Result<(), GraphinaException> {
+    ) -> Result<(), GraphinaError> {
         use plotters::prelude::*;
 
         let positions = LayoutEngine::compute_layout(
@@ -889,12 +883,12 @@ where
             SVGBackend::new(path.as_ref(), (config.width, config.height)).into_drawing_area();
 
         root.fill(&WHITE)
-            .map_err(|e| GraphinaException::new(&format!("Failed to fill background: {}", e)))?;
+            .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
         let mut chart = ChartBuilder::on(&root)
             .margin(10)
             .build_cartesian_2d(0.0..config.width as f64, 0.0..config.height as f64)
-            .map_err(|e| GraphinaException::new(&format!("Failed to build chart: {}", e)))?;
+            .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
         // Draw edges
         for (src, tgt, _weight) in self.edges() {
@@ -905,7 +899,7 @@ where
                         ShapeStyle::from(&RGBColor(150, 150, 150))
                             .stroke_width(config.edge_width as u32),
                     )))
-                    .map_err(|e| GraphinaException::new(&format!("Failed to draw edge: {}", e)))?;
+                    .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
             }
         }
 
@@ -918,7 +912,7 @@ where
                         config.node_size as i32,
                         ShapeStyle::from(&RGBColor(105, 179, 162)).filled(),
                     )))
-                    .map_err(|e| GraphinaException::new(&format!("Failed to draw node: {}", e)))?;
+                    .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
                 // Draw label if enabled
                 if config.show_labels {
@@ -928,16 +922,32 @@ where
                             (pos.x + config.node_size + 2.0, pos.y),
                             ("sans-serif", config.font_size).into_font(),
                         )))
-                        .map_err(|e| {
-                            GraphinaException::new(&format!("Failed to draw label: {}", e))
-                        })?;
+                        .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
                 }
             }
         }
 
         root.present()
-            .map_err(|e| GraphinaException::new(&format!("Failed to save SVG: {}", e)))?;
+            .map_err(|e| GraphinaError::AlgorithmError(e.to_string()))?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+
+    #[test]
+    fn ascii_art_edge_format_is_correct() {
+        let mut g = Graph::<&str, f64>::new();
+        let a = g.add_node("A");
+        let b = g.add_node("B");
+        g.add_edge(a, b, 1.0);
+
+        let ascii = g.to_ascii_art();
+        // For undirected graphs by default, arrow is "--"
+        assert!(ascii.contains(&format!("[{}] -- [{}]", a.index(), b.index())));
     }
 }

@@ -66,6 +66,18 @@ assert!((avg - 1.333).abs() < 0.01);
 
 ---
 
+### 4. **Visualization: ASCII Edge Formatting**
+
+**File:** `src/core/visualization.rs`
+
+**Issue:** `to_ascii_art()` printed the target node index twice in edge lines, e.g., ` [0] -> 1 [1]`.
+
+**Fix:** Corrected formatting to `  [src] -> [tgt]` (or `--` for undirected). Added a unit test in the same module to prevent regression.
+
+**Test Added:** `ascii_art_edge_format_is_correct` inside `src/core/visualization.rs`.
+
+---
+
 ## Architectural Improvements
 
 ### 1. **Unified Error Type**
@@ -127,6 +139,20 @@ Added comprehensive bug fix tests covering:
 12. **test_dag_validation** - Tests cycle detection
 13. **test_subgraph_attribute_preservation** - Tests attribute preservation
 14. **test_serialization_special_values** - Tests special float handling
+
+---
+
+## Build and Test Guidance
+
+To ensure visualization features (SVG/PNG/HTML/D3) are compiled for tests and examples without changing default Cargo features, use the Makefile targets which enable all features automatically:
+
+```bash
+make test      # runs fmt + tests with --features all
+make lint      # runs clippy with warnings as errors
+make bench     # runs benchmarks with --features all
+```
+
+This avoids enabling features by default in `Cargo.toml` and keeps feature gating explicit for consumers, while CI/local runs use full coverage.
 
 ---
 
@@ -222,4 +248,3 @@ The Louvain bug fix has been validated with a specific test case.
 The Graphina project is architecturally sound with good separation of concerns. The critical bug in the Louvain algorithm has been fixed, and comprehensive tests have been added to prevent regression. The new unified error type and architecture documentation will help maintain code quality as the project evolves.
 
 The project is ready for continued development with the improvements in place.
-

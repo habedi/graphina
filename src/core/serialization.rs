@@ -15,7 +15,7 @@ use std::path::Path;
 use bincode;
 use serde::{Deserialize, Serialize};
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::GraphinaError;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
 
@@ -124,12 +124,10 @@ where
     ///
     /// Returns an error if the `SerializableGraph.directed` flag does not match the
     /// target graph type `Ty` (Directed vs Undirected).
-    pub fn try_from_serializable(
-        data: &SerializableGraph<A, W>,
-    ) -> Result<Self, GraphinaException> {
+    pub fn try_from_serializable(data: &SerializableGraph<A, W>) -> Result<Self, GraphinaError> {
         if <Ty as GraphConstructor<A, W>>::is_directed() != data.directed {
-            return Err(GraphinaException::new(
-                "Directedness mismatch between SerializableGraph and target graph type",
+            return Err(GraphinaError::InvalidGraph(
+                "Directedness mismatch between SerializableGraph and target graph type".into(),
             ));
         }
         let mut graph = Self::with_capacity(data.nodes.len(), data.edges.len());
@@ -158,13 +156,12 @@ where
     ///
     /// g.save_json("graph.json").expect("Failed to save");
     /// ```
-    pub fn save_json<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaException> {
+    pub fn save_json<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaError> {
         let serializable = self.to_serializable();
-        let file = File::create(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let file = File::create(path).map_err(GraphinaError::from)?;
         let writer = BufWriter::new(file);
 
-        serde_json::to_writer_pretty(writer, &serializable)
-            .map_err(|e| GraphinaException::new(&format!("JSON serialization error: {}", e)))?;
+        serde_json::to_writer_pretty(writer, &serializable).map_err(GraphinaError::from)?;
 
         Ok(())
     }
@@ -179,30 +176,30 @@ where
     /// let graph = Graph::<i32, f64>::load_json("graph.json")
     ///     .expect("Failed to load");
     /// ```
-    pub fn load_json<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaException>
+    pub fn load_json<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaError>
     where
         A: for<'de> Deserialize<'de>,
         W: for<'de> Deserialize<'de>,
     {
-        let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let file = File::open(path).map_err(GraphinaError::from)?;
         let reader = BufReader::new(file);
 
-        let serializable: SerializableGraph<A, W> = serde_json::from_reader(reader)
-            .map_err(|e| GraphinaException::new(&format!("JSON deserialization error: {}", e)))?;
+        let serializable: SerializableGraph<A, W> =
+            serde_json::from_reader(reader).map_err(GraphinaError::from)?;
 
         Ok(Self::from_serializable(&serializable))
     }
 
     /// Loads a graph from a JSON file, validating directedness.
-    pub fn load_json_strict<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaException>
+    pub fn load_json_strict<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaError>
     where
         A: for<'de> Deserialize<'de>,
         W: for<'de> Deserialize<'de>,
     {
-        let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let file = File::open(path).map_err(GraphinaError::from)?;
         let reader = BufReader::new(file);
-        let serializable: SerializableGraph<A, W> = serde_json::from_reader(reader)
-            .map_err(|e| GraphinaException::new(&format!("JSON deserialization error: {}", e)))?;
+        let serializable: SerializableGraph<A, W> =
+            serde_json::from_reader(reader).map_err(GraphinaError::from)?;
         Self::try_from_serializable(&serializable)
     }
 
@@ -222,16 +219,15 @@ where
     ///
     /// g.save_binary("graph.bin").expect("Failed to save");
     /// ```
-    pub fn save_binary<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaException> {
+    pub fn save_binary<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaError> {
         let serializable = self.to_serializable();
-        let file = File::create(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let file = File::create(path).map_err(GraphinaError::from)?;
         let mut writer = BufWriter::new(file);
 
         let encoded = bincode::serde::encode_to_vec(&serializable, bincode::config::standard())
-            .map_err(|e| GraphinaException::new(&format!("Binary serialization error: {}", e)))?;
+            .map_err(GraphinaError::from)?;
 
-        std::io::Write::write_all(&mut writer, &encoded)
-            .map_err(|e| GraphinaException::new(&format!("Binary write error: {}", e)))?;
+        std::io::Write::write_all(&mut writer, &encoded).map_err(GraphinaError::from)?;
 
         Ok(())
     }
@@ -246,43 +242,39 @@ where
     /// let graph = Graph::<i32, f64>::load_binary("graph.bin")
     ///     .expect("Failed to load");
     /// ```
-    pub fn load_binary<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaException>
+    pub fn load_binary<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaError>
     where
         A: for<'de> Deserialize<'de>,
         W: for<'de> Deserialize<'de>,
     {
-        let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let file = File::open(path).map_err(GraphinaError::from)?;
         let mut reader = BufReader::new(file);
 
         let mut buffer = Vec::new();
-        std::io::Read::read_to_end(&mut reader, &mut buffer)
-            .map_err(|e| GraphinaException::new(&format!("Binary read error: {}", e)))?;
+        std::io::Read::read_to_end(&mut reader, &mut buffer).map_err(GraphinaError::from)?;
 
         let (serializable, _): (SerializableGraph<A, W>, usize) =
-            bincode::serde::decode_from_slice(&buffer, bincode::config::standard()).map_err(
-                |e| GraphinaException::new(&format!("Binary deserialization error: {}", e)),
-            )?;
+            bincode::serde::decode_from_slice(&buffer, bincode::config::standard())
+                .map_err(GraphinaError::from)?;
 
         Ok(Self::from_serializable(&serializable))
     }
 
     /// Loads a graph from a binary file, validating directedness.
-    pub fn load_binary_strict<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaException>
+    pub fn load_binary_strict<P: AsRef<Path>>(path: P) -> Result<Self, GraphinaError>
     where
         A: for<'de> Deserialize<'de>,
         W: for<'de> Deserialize<'de>,
     {
-        let file = File::open(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let file = File::open(path).map_err(GraphinaError::from)?;
         let mut reader = BufReader::new(file);
 
         let mut buffer = Vec::new();
-        std::io::Read::read_to_end(&mut reader, &mut buffer)
-            .map_err(|e| GraphinaException::new(&format!("Binary read error: {}", e)))?;
+        std::io::Read::read_to_end(&mut reader, &mut buffer).map_err(GraphinaError::from)?;
 
         let (serializable, _): (SerializableGraph<A, W>, usize) =
-            bincode::serde::decode_from_slice(&buffer, bincode::config::standard()).map_err(
-                |e| GraphinaException::new(&format!("Binary deserialization error: {}", e)),
-            )?;
+            bincode::serde::decode_from_slice(&buffer, bincode::config::standard())
+                .map_err(GraphinaError::from)?;
 
         Self::try_from_serializable(&serializable)
     }
@@ -304,49 +296,49 @@ where
     ///
     /// g.save_graphml("graph.graphml").expect("Failed to save");
     /// ```
-    pub fn save_graphml<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaException>
+    pub fn save_graphml<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaError>
     where
         A: std::fmt::Display,
         W: std::fmt::Display,
     {
-        let file = File::create(path).map_err(|e| GraphinaException::new(&e.to_string()))?;
+        let file = File::create(path).map_err(GraphinaError::from)?;
         let mut writer = BufWriter::new(file);
 
         // Write GraphML header
         writeln!(writer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-            .map_err(|e| GraphinaException::new(&e.to_string()))?;
+            .map_err(GraphinaError::from)?;
         writeln!(
             writer,
             "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\""
         )
-        .map_err(|e| GraphinaException::new(&e.to_string()))?;
+        .map_err(GraphinaError::from)?;
         writeln!(
             writer,
             "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
         )
-        .map_err(|e| GraphinaException::new(&e.to_string()))?;
+        .map_err(GraphinaError::from)?;
         writeln!(
             writer,
             "         xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns"
         )
-        .map_err(|e| GraphinaException::new(&e.to_string()))?;
+        .map_err(GraphinaError::from)?;
         writeln!(
             writer,
             "         http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">"
         )
-        .map_err(|e| GraphinaException::new(&e.to_string()))?;
+        .map_err(GraphinaError::from)?;
 
         // Define attributes
         writeln!(
             writer,
             "  <key id=\"d0\" for=\"node\" attr.name=\"value\" attr.type=\"string\"/>"
         )
-        .map_err(|e| GraphinaException::new(&e.to_string()))?;
+        .map_err(GraphinaError::from)?;
         writeln!(
             writer,
             "  <key id=\"d1\" for=\"edge\" attr.name=\"weight\" attr.type=\"double\"/>"
         )
-        .map_err(|e| GraphinaException::new(&e.to_string()))?;
+        .map_err(GraphinaError::from)?;
 
         // Start graph
         let graph_type = if self.is_directed() {
@@ -355,16 +347,16 @@ where
             "undirected"
         };
         writeln!(writer, "  <graph id=\"G\" edgedefault=\"{}\">", graph_type)
-            .map_err(|e| GraphinaException::new(&e.to_string()))?;
+            .map_err(GraphinaError::from)?;
 
         // Write nodes
         let nodes: Vec<(NodeId, &A)> = self.nodes().collect();
         for (node_id, attr) in &nodes {
             writeln!(writer, "    <node id=\"n{}\">", node_id.index())
-                .map_err(|e| GraphinaException::new(&e.to_string()))?;
+                .map_err(GraphinaError::from)?;
             writeln!(writer, "      <data key=\"d0\">{}</data>", attr)
-                .map_err(|e| GraphinaException::new(&e.to_string()))?;
-            writeln!(writer, "    </node>").map_err(|e| GraphinaException::new(&e.to_string()))?;
+                .map_err(GraphinaError::from)?;
+            writeln!(writer, "    </node>").map_err(GraphinaError::from)?;
         }
 
         // Write edges
@@ -376,15 +368,15 @@ where
                 src.index(),
                 tgt.index()
             )
-            .map_err(|e| GraphinaException::new(&e.to_string()))?;
+            .map_err(GraphinaError::from)?;
             writeln!(writer, "      <data key=\"d1\">{}</data>", weight)
-                .map_err(|e| GraphinaException::new(&e.to_string()))?;
-            writeln!(writer, "    </edge>").map_err(|e| GraphinaException::new(&e.to_string()))?;
+                .map_err(GraphinaError::from)?;
+            writeln!(writer, "    </edge>").map_err(GraphinaError::from)?;
         }
 
         // Close graph and graphml
-        writeln!(writer, "  </graph>").map_err(|e| GraphinaException::new(&e.to_string()))?;
-        writeln!(writer, "</graphml>").map_err(|e| GraphinaException::new(&e.to_string()))?;
+        writeln!(writer, "  </graph>").map_err(GraphinaError::from)?;
+        writeln!(writer, "</graphml>").map_err(GraphinaError::from)?;
 
         Ok(())
     }

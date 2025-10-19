@@ -36,7 +36,7 @@ let ws = watts_strogatz_graph::<GraphMarker>(100, 6, 0.3, 42)
 ```
 */
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::GraphinaError;
 use crate::core::types::{BaseGraph, GraphConstructor};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -60,15 +60,15 @@ pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
     p: f64,
     seed: u64,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
     if n == 0 {
-        return Err(GraphinaException::new(
-            "Number of nodes must be greater than zero.",
+        return Err(GraphinaError::InvalidArgument(
+            "Number of nodes must be greater than zero.".into(),
         ));
     }
     if !(0.0..=1.0).contains(&p) {
-        return Err(GraphinaException::new(
-            "Probability p must be in the range [0.0, 1.0].",
+        return Err(GraphinaError::InvalidArgument(
+            "Probability p must be in the range [0.0, 1.0].".into(),
         ));
     }
 
@@ -113,10 +113,10 @@ pub fn erdos_renyi_graph<Ty: GraphConstructor<u32, f32>>(
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The complete graph.
 pub fn complete_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
     if n == 0 {
-        return Err(GraphinaException::new(
-            "Number of nodes must be greater than zero.",
+        return Err(GraphinaError::InvalidArgument(
+            "Number of nodes must be greater than zero.".into(),
         ));
     }
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
@@ -163,15 +163,15 @@ pub fn bipartite_graph<Ty: GraphConstructor<u32, f32>>(
     n2: usize,
     p: f64,
     seed: u64,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
     if n1 == 0 || n2 == 0 {
-        return Err(GraphinaException::new(
-            "Both partitions must have at least one node.",
+        return Err(GraphinaError::InvalidArgument(
+            "Both partitions must have at least one node.".into(),
         ));
     }
     if !(0.0..=1.0).contains(&p) {
-        return Err(GraphinaException::new(
-            "Probability p must be in the range [0.0, 1.0].",
+        return Err(GraphinaError::InvalidArgument(
+            "Probability p must be in the range [0.0, 1.0].".into(),
         ));
     }
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
@@ -209,11 +209,11 @@ pub fn bipartite_graph<Ty: GraphConstructor<u32, f32>>(
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated star graph.
 pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
     if n == 0 {
-        return Err(GraphinaException::new(
-            "Star graph must have at least one node.",
+        return Err(GraphinaError::InvalidArgument(
+            "Star graph must have at least one node.".into(),
         ));
     }
     let center = graph.add_node(0);
@@ -239,10 +239,10 @@ pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
 /// * `Result<BaseGraph<u32, f32, Ty>, GraphinaException>` - The generated cycle graph.
 pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
     if n < 3 {
-        return Err(GraphinaException::new(
-            "Cycle graph must have at least three nodes.",
+        return Err(GraphinaError::InvalidArgument(
+            "Cycle graph must have at least three nodes.".into(),
         ));
     }
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
@@ -284,18 +284,20 @@ pub fn watts_strogatz_graph<Ty: GraphConstructor<u32, f32>>(
     k: usize,
     beta: f64,
     seed: u64,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
     if n == 0 {
-        return Err(GraphinaException::new(
-            "Number of nodes must be greater than zero.",
+        return Err(GraphinaError::InvalidArgument(
+            "Number of nodes must be greater than zero.".into(),
         ));
     }
     if k % 2 != 0 || k >= n {
-        return Err(GraphinaException::new("k must be even and less than n."));
+        return Err(GraphinaError::InvalidArgument(
+            "k must be even and less than n.".into(),
+        ));
     }
     if !(0.0..=1.0).contains(&beta) {
-        return Err(GraphinaException::new(
-            "Beta must be in the range [0.0, 1.0].",
+        return Err(GraphinaError::InvalidArgument(
+            "Beta must be in the range [0.0, 1.0].".into(),
         ));
     }
 
@@ -381,10 +383,10 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
     m: usize,
     seed: u64,
-) -> Result<BaseGraph<u32, f32, Ty>, GraphinaException> {
+) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
     if m == 0 || n < m {
-        return Err(GraphinaException::new(
-            "n must be at least m and m must be > 0.",
+        return Err(GraphinaError::InvalidArgument(
+            "n must be at least m and m must be > 0.".into(),
         ));
     }
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
@@ -540,5 +542,61 @@ mod tests {
         assert_eq!(graph.node_count(), n);
         let expected_edges = (m * (m - 1) / 2) + (n - m) * m;
         assert_eq!(graph.edge_count(), expected_edges);
+    }
+
+    #[test]
+    fn invalid_erdos_params_rejected() {
+        assert!(matches!(
+            erdos_renyi_graph::<Undirected>(0, 0.5, 1),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            erdos_renyi_graph::<Undirected>(10, 1.5, 1),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_ws_params_rejected() {
+        assert!(matches!(
+            watts_strogatz_graph::<Undirected>(0, 2, 0.1, 1),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            watts_strogatz_graph::<Undirected>(10, 3, 0.1, 1),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            watts_strogatz_graph::<Undirected>(10, 2, 1.5, 1),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_cycle_rejected() {
+        assert!(matches!(
+            cycle_graph::<Undirected>(2),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_star_rejected() {
+        assert!(matches!(
+            star_graph::<Directed>(0),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_ba_params_rejected() {
+        assert!(matches!(
+            barabasi_albert_graph::<Undirected>(5, 0, 1),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            barabasi_albert_graph::<Undirected>(3, 4, 1),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
     }
 }

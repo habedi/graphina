@@ -80,6 +80,12 @@ where
         neighbors[vi].push((ui, w));
     }
 
+    // Cache: community degree sums; indexed by community id (which starts as node index)
+    let mut community_degree = vec![0.0f64; n];
+    for i in 0..n {
+        community_degree[i] = degrees[i];
+    }
+
     let mut rng = create_rng(seed);
     let mut improvement = true;
     let max_iterations = 100;
@@ -107,17 +113,8 @@ where
                 *comm_weights.entry(comm_j).or_insert(0.0) += w;
             }
 
-            // Helper: Compute the total degree for nodes in a given community
-            let total_degree = |comm: usize| -> f64 {
-                community
-                    .iter()
-                    .enumerate()
-                    .filter(|&(_idx, &c)| c == comm)
-                    .map(|(idx, _)| degrees[idx])
-                    .sum()
-            };
-
-            let total_current = total_degree(current_comm);
+            // Use cached totals
+            let total_current = community_degree[current_comm];
             let k_i_in = comm_weights.get(&current_comm).copied().unwrap_or(0.0);
 
             let delta_remove = k_i_in - (total_current * k_i) / (2.0 * m);
@@ -129,7 +126,7 @@ where
                 if comm == current_comm {
                     continue;
                 }
-                let total_comm = total_degree(comm);
+                let total_comm = community_degree[comm];
                 let delta = w_in - (total_comm * k_i) / (2.0 * m);
 
                 if delta > best_delta {
@@ -140,6 +137,9 @@ where
 
             // Only move if there's a significant improvement
             if best_delta > delta_remove + 1e-10 {
+                // update cache before moving
+                community_degree[current_comm] -= k_i;
+                community_degree[best_comm] += k_i;
                 community[i] = best_comm;
                 improvement = true;
             }
@@ -244,5 +244,27 @@ mod tests {
         // Total nodes in communities should match graph node count
         let total_nodes: usize = communities.iter().map(|c| c.len()).sum();
         assert_eq!(total_nodes, graph.node_count());
+    }
+
+    #[test]
+    fn test_louvain_performance_smoke() {
+        // Generate a moderately sized graph and ensure louvain completes quickly
+        let mut g = Graph::<u32, f64>::new();
+        let n = 200;
+        let nodes: Vec<_> = (0..n).map(|i| g.add_node(i as u32)).collect();
+        for i in 0..n {
+            for j in (i + 1)..n {
+                if (j - i) <= 3 {
+                    // sparse banded connections
+                    g.add_edge(nodes[i], nodes[j], 1.0);
+                }
+            }
+        }
+        let start = std::time::Instant::now();
+        let comms = louvain(&g, Some(123));
+        let dur = start.elapsed();
+        assert!(!comms.is_empty());
+        // very lenient bound to avoid flakiness in CI
+        assert!(dur.as_secs_f32() < 1.5, "Louvain took too long: {:?}", dur);
     }
 }

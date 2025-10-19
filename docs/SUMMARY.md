@@ -209,7 +209,7 @@ Comprehensive architectural documentation:
 
 3. **Migrate to Unified Error Type**
    - Old error structs still exist alongside new `GraphinaError`
-   - **Recommendation:** Gradually migrate codebase to use unified type
+   - **Recommendation:** migrate codebase to use unified type
 
 ### Medium Priority
 1. **Documentation Gaps** - Some extension modules lack complexity analysis
