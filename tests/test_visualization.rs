@@ -60,7 +60,7 @@ fn test_force_directed_layout() {
         LayoutEngine::compute_layout(&graph, LayoutAlgorithm::ForceDirected, 800.0, 600.0);
 
     assert_eq!(positions.len(), 3);
-    for (_, pos) in &positions {
+    for pos in positions.values() {
         assert!(pos.x >= 0.0 && pos.x <= 800.0);
         assert!(pos.y >= 0.0 && pos.y <= 600.0);
     }
@@ -82,7 +82,7 @@ fn test_circular_layout() {
     let center_x = 400.0;
     let center_y = 300.0;
 
-    for (_, pos) in &positions {
+    for pos in positions.values() {
         let dx = pos.x - center_x;
         let dy = pos.y - center_y;
         let distance = (dx * dx + dy * dy).sqrt();
@@ -104,7 +104,7 @@ fn test_grid_layout() {
     assert_eq!(positions.len(), 9);
 
     // Check all positions are within bounds
-    for (_, pos) in &positions {
+    for pos in positions.values() {
         assert!(pos.x >= 0.0 && pos.x <= 900.0);
         assert!(pos.y >= 0.0 && pos.y <= 900.0);
     }

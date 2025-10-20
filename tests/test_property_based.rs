@@ -122,7 +122,7 @@ proptest! {
         let graph = erdos_renyi_graph::<Undirected>(n, p, seed)
             .expect("Should generate graph");
         let density = graph.density();
-        prop_assert!(density >= 0.0 && density <= 1.0);
+        prop_assert!((0.0..=1.0).contains(&density));
     }
 }
 

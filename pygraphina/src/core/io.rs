@@ -35,7 +35,7 @@ impl PyGraph {
         for (u, v, &w) in tmp.edges() {
             let iu = *tmp_to_internal.get(&u).unwrap();
             let iv = *tmp_to_internal.get(&v).unwrap();
-            self.graph.add_edge(iu, iv, w as f64);
+            self.graph.add_edge(iu, iv, w);
         }
 
         Ok((self.graph.node_count(), self.graph.edge_count()))
@@ -160,7 +160,7 @@ impl PyDiGraph {
         for (u, v, &w) in tmp.edges() {
             let iu = *tmp_to_internal.get(&u).unwrap();
             let iv = *tmp_to_internal.get(&v).unwrap();
-            self.graph.add_edge(iu, iv, w as f64);
+            self.graph.add_edge(iu, iv, w);
         }
 
         Ok((self.graph.node_count(), self.graph.edge_count()))

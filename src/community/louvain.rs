@@ -186,7 +186,7 @@ mod tests {
         graph.add_edge(n3, n4, 1.0);
 
         let communities = louvain(&graph, Some(42));
-        assert!(communities.len() >= 1);
+        assert!(!communities.is_empty());
     }
 
     #[test]

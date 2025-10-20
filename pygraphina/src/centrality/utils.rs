@@ -24,7 +24,7 @@ pub fn to_ordered_graph(
     for (u, v, w) in py_graph.graph.edges() {
         let nu = old_to_new[&u];
         let nv = old_to_new[&v];
-        g.add_edge(nu, nv, OrderedFloat((*w) as f64));
+        g.add_edge(nu, nv, OrderedFloat(*w));
     }
 
     (g, old_to_new)

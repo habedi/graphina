@@ -510,9 +510,8 @@ mod tests {
         };
         // Undirected Graph should error in strict mode
         type UGraph = crate::core::types::Graph<i32, f64>;
-        let err = UGraph::try_from_serializable(&serializable)
-            .err()
-            .expect("expected mismatch error");
+        let err =
+            UGraph::try_from_serializable(&serializable).expect_err("expected mismatch error");
         assert!(format!("{}", err).to_lowercase().contains("mismatch"));
 
         // Directed graph should succeed

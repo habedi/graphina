@@ -199,7 +199,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             return None;
         }
         if self.is_directed() {
-            Some(self.in_degree(node).unwrap() + self.out_degree(node).unwrap())
+            Some(self.in_degree(node).unwrap_or(0) + self.out_degree(node).unwrap_or(0))
         } else {
             Some(self.inner.edges(node.0).count())
         }
@@ -637,9 +637,9 @@ where
         }
         for (u, v, weight) in self.edges() {
             let new_weight = U::from(*weight);
-            let new_source = mapping.get(&u).expect("Missing mapping for source node");
-            let new_target = mapping.get(&v).expect("Missing mapping for target node");
-            new_graph.add_edge(*new_source, *new_target, new_weight);
+            if let (Some(&new_source), Some(&new_target)) = (mapping.get(&u), mapping.get(&v)) {
+                new_graph.add_edge(new_source, new_target, new_weight);
+            }
         }
         new_graph
     }
@@ -694,7 +694,8 @@ where
 {
     type Output = A;
     fn index(&self, index: NodeId) -> &Self::Output {
-        self.node_attr(index).expect("invalid NodeId")
+        self.node_attr(index)
+            .unwrap_or_else(|| panic!("invalid NodeId: {:?}", index))
     }
 }
 impl<A, W, Ty> IndexMut<NodeId> for BaseGraph<A, W, Ty>
@@ -702,7 +703,8 @@ where
     Ty: GraphConstructor<A, W> + EdgeType,
 {
     fn index_mut(&mut self, index: NodeId) -> &mut Self::Output {
-        self.node_attr_mut(index).expect("invalid NodeId")
+        self.node_attr_mut(index)
+            .unwrap_or_else(|| panic!("invalid NodeId: {:?}", index))
     }
 }
 /// Builder for constructing graphs with a fluent API.

@@ -103,7 +103,12 @@ where
                 )
             })?
         } else {
-            "1.0".parse().unwrap()
+            "1.0".parse::<W>().map_err(|e| {
+                Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Error parsing default weight '1.0': {}", e),
+                )
+            })?
         };
         let src_node = *node_map
             .entry(src_val)

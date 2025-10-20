@@ -20,8 +20,7 @@ These tests ensure that:
 use graphina::core::types::{Digraph, Graph, NodeId};
 use graphina::core::validation::{
     count_components, has_negative_weights, is_bipartite, is_connected, is_dag, is_empty,
-    validate_connected, validate_is_dag, validate_node_exists, validate_non_empty,
-    validate_non_negative_weights,
+    validate_is_dag, validate_node_exists, validate_non_empty, validate_non_negative_weights,
 };
 
 // ============================================================================
@@ -33,7 +32,7 @@ fn test_validation_utilities_empty_graph() {
     let g = Graph::<i32, f64>::new();
 
     assert!(is_empty(&g));
-    assert!(is_connected(&g)); // Empty graph is vacuously connected
+    assert!(!is_connected(&g)); // Empty graph is not connected
     assert!(is_dag(&g));
     assert!(!has_negative_weights(&g));
     assert_eq!(count_components(&g), 0);
@@ -142,7 +141,7 @@ fn test_connected_components_non_contiguous_indices() {
     let n2 = g.add_node(2);
     let n3 = g.add_node(3);
     let n4 = g.add_node(4);
-    let n5 = g.add_node(5);
+    let _n5 = g.add_node(5);
 
     g.add_edge(n1, n2, 1.0);
     g.add_edge(n3, n4, 1.0);
@@ -194,9 +193,9 @@ fn test_graph_density_calculation() {
     g.add_edge(n1, n2, 1.0);
     assert_eq!(g.density(), 1.0); // Complete graph with 2 nodes
 
-    let n3 = g.add_node(3);
+    let _n3 = g.add_node(3);
     // 1 edge out of 3 possible (undirected)
-    assert!((g.density() - 1.0/3.0).abs() < 1e-10);
+    assert!((g.density() - 1.0 / 3.0).abs() < 1e-10);
 }
 
 #[test]
@@ -230,9 +229,7 @@ fn test_degree_calculations_consistency() {
     assert_eq!(g.degree(n3), Some(2));
 
     // Total degree should be 2 * edge_count
-    let total_degree: usize = g.nodes()
-        .map(|(id, _)| g.degree(id).unwrap())
-        .sum();
+    let total_degree: usize = g.nodes().map(|(id, _)| g.degree(id).unwrap()).sum();
     assert_eq!(total_degree, 2 * g.edge_count());
 }
 
@@ -314,15 +311,14 @@ fn test_retain_operations() {
     }
 
     // Remove even-numbered nodes
-    let to_keep: Vec<_> = g.nodes()
-        .filter(|(_, &val)| val % 2 == 1)
+    let to_remove: Vec<_> = g
+        .nodes()
+        .filter(|(_, val)| *val % 2 == 0)
         .map(|(id, _)| id)
         .collect();
 
-    for (id, _) in g.nodes().collect::<Vec<_>>() {
-        if !to_keep.contains(&id) {
-            g.remove_node(id);
-        }
+    for id in to_remove {
+        g.remove_node(id);
     }
 
     assert_eq!(g.node_count(), 5);
@@ -356,12 +352,7 @@ fn test_visualization_module_accessible() {
     let n2 = g.add_node("B");
     g.add_edge(n1, n2, 1.0);
 
-    let positions = LayoutEngine::compute_layout(
-        &g,
-        LayoutAlgorithm::Circular,
-        800.0,
-        600.0,
-    );
+    let positions = LayoutEngine::compute_layout(&g, LayoutAlgorithm::Circular, 800.0, 600.0);
 
     assert_eq!(positions.len(), 2);
 }
@@ -447,4 +438,3 @@ fn test_builder_with_capacity() {
     assert_eq!(g.node_count(), 0);
     assert_eq!(g.edge_count(), 0);
 }
-

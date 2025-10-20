@@ -88,7 +88,7 @@ fn test_data_quality_graph_invariants() {
         // Invariant 4: Density should be in valid range
         let density = graph.density();
         assert!(
-            density >= 0.0 && density <= 1.0,
+            (0.0..=1.0).contains(&density),
             "{}: Invalid density {}",
             dataset,
             density

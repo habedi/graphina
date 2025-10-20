@@ -82,7 +82,7 @@ fn test_cross_traversal_and_metrics() {
             visited.len()
         );
 
-        assert!(visited.len() > 0);
+        assert!(!visited.is_empty());
     }
 
     println!("\nTraversal + Metrics integration verified\n");

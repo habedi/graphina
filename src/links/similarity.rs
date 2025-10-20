@@ -112,7 +112,7 @@ mod tests {
         graph.add_edge(n3, n4, 1.0);
         let results = jaccard_coefficient(&graph, Some(&[(n1, n2)]));
         let score = results[0].1;
-        assert!(score >= 0.0 && score <= 1.0);
+        assert!((0.0..=1.0).contains(&score));
     }
 
     #[test]

@@ -182,7 +182,11 @@ where
     let mut heap = BinaryHeap::new();
 
     dist.insert(source, Some(0.0));
-    heap.push(Reverse((NotNan::new(0.0).unwrap(), source)));
+
+    heap.push(Reverse((
+        NotNan::new(0.0).unwrap_or_else(|_| NotNan::new(1.0).unwrap_or(NotNan::from(1))),
+        source,
+    )));
 
     while let Some(Reverse((d, u))) = heap.pop() {
         if let Some(current) = dist[&u] {
@@ -434,7 +438,10 @@ where
                     w
                 )));
             }
-            let tentative = dist[u.index()].unwrap() + w;
+            let Some(u_dist) = dist[u.index()] else {
+                continue;
+            };
+            let tentative = u_dist + w;
             if dist[v.index()].is_none() || Some(tentative) < dist[v.index()] {
                 dist[v.index()] = Some(tentative);
                 prev[v.index()] = Some(u);

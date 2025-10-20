@@ -373,12 +373,12 @@ fn test_max_clique_with_deleted_nodes() {
     let mut graph = Graph::new();
     let n1 = graph.add_node(1);
     let n2 = graph.add_node(2);
-    let n3 = graph.add_node(3);
-    let n4 = graph.add_node(4);
+    let _n3 = graph.add_node(3);
+    let _n4 = graph.add_node(4);
 
     graph.add_edge(n1, n2, 1.0);
-    graph.add_edge(n2, n3, 1.0);
-    graph.add_edge(n3, n4, 1.0);
+    graph.add_edge(n2, _n3, 1.0);
+    graph.add_edge(_n3, _n4, 1.0);
 
     graph.remove_node(n2);
 
@@ -424,8 +424,8 @@ fn test_force_directed_layout_sparse_graph() {
     let mut graph = Graph::<i32, f64>::new();
     let n1 = graph.add_node(1);
     let n2 = graph.add_node(2);
-    let n3 = graph.add_node(3);
-    let n4 = graph.add_node(4);
+    let _n3 = graph.add_node(3);
+    let _n4 = graph.add_node(4);
 
     graph.add_edge(n1, n2, 1.0);
 

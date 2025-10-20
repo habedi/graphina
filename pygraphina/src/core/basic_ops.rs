@@ -112,8 +112,7 @@ impl PyGraph {
     pub fn nodes_impl(&self) -> Vec<usize> {
         self.graph
             .nodes()
-            .map(|(nid, _)| self.internal_to_py.get(&nid).copied())
-            .flatten()
+            .filter_map(|(nid, _)| self.internal_to_py.get(&nid).copied())
             .collect()
     }
 

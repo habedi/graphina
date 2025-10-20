@@ -192,7 +192,7 @@ fn bench_add_nodes(c: &mut Criterion) {
             b.iter(|| {
                 let mut graph = graphina::core::types::Graph::<i32, f32>::new();
                 for i in 0..size {
-                    graph.add_node(i as i32);
+                    graph.add_node(i);
                 }
                 black_box(graph)
             });

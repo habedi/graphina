@@ -372,6 +372,6 @@ mod tests {
 
         // Just check it returns a value in valid range
         let assort = assortativity(&g);
-        assert!(assort >= -1.0 && assort <= 1.0);
+        assert!((-1.0..=1.0).contains(&assort));
     }
 }

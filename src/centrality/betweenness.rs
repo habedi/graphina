@@ -287,6 +287,6 @@ mod tests {
         assert!(result.is_ok());
 
         let centrality = result.unwrap();
-        assert!(centrality.len() > 0);
+        assert!(!centrality.is_empty());
     }
 }

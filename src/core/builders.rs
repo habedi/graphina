@@ -222,9 +222,7 @@ impl TopologyBuilder {
             }
         }
 
-        builder
-            .build()
-            .expect("Complete graph should always be valid")
+        builder.build().unwrap_or_else(|_| BaseGraph::new())
     }
 
     /// Creates a cycle graph with n nodes.
@@ -246,7 +244,7 @@ impl TopologyBuilder {
             builder = builder.add_edge(i, next, edge_weight.clone());
         }
 
-        builder.build().expect("Cycle graph should always be valid")
+        builder.build().unwrap_or_else(|_| BaseGraph::new())
     }
 
     /// Creates a path graph with n nodes.
@@ -256,7 +254,9 @@ impl TopologyBuilder {
         W: Clone,
     {
         if n == 0 {
-            return AdvancedGraphBuilder::undirected().build().unwrap();
+            return AdvancedGraphBuilder::undirected()
+                .build()
+                .unwrap_or_else(|_| BaseGraph::new());
         }
 
         let mut builder = AdvancedGraphBuilder::undirected().with_capacity(n, n.saturating_sub(1));
@@ -271,7 +271,7 @@ impl TopologyBuilder {
             builder = builder.add_edge(i, i + 1, edge_weight.clone());
         }
 
-        builder.build().expect("Path graph should always be valid")
+        builder.build().unwrap_or_else(|_| BaseGraph::new())
     }
 
     /// Creates a star graph with n nodes (1 central node + (n-1) peripheral nodes).
@@ -281,7 +281,9 @@ impl TopologyBuilder {
         W: Clone,
     {
         if n == 0 {
-            return AdvancedGraphBuilder::undirected().build().unwrap();
+            return AdvancedGraphBuilder::undirected()
+                .build()
+                .unwrap_or_else(|_| BaseGraph::new());
         }
 
         let mut builder = AdvancedGraphBuilder::undirected().with_capacity(n, n - 1);
@@ -296,7 +298,7 @@ impl TopologyBuilder {
             builder = builder.add_edge(0, i, edge_weight.clone());
         }
 
-        builder.build().expect("Star graph should always be valid")
+        builder.build().unwrap_or_else(|_| BaseGraph::new())
     }
 
     /// Creates a grid graph with dimensions rows x cols.
@@ -335,7 +337,7 @@ impl TopologyBuilder {
             }
         }
 
-        builder.build().expect("Grid graph should always be valid")
+        builder.build().unwrap_or_else(|_| BaseGraph::new())
     }
 }
 

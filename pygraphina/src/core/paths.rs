@@ -86,7 +86,7 @@ impl PyGraph {
             let mut out = HashMap::new();
             for (nid, dist_opt) in nm.into_iter() {
                 if let Some(py) = self.internal_to_py.get(&nid) {
-                    out.insert(*py, dist_opt.map(|x| x as f64));
+                    out.insert(*py, dist_opt);
                 }
             }
             out
@@ -102,7 +102,7 @@ impl PyGraph {
                     let mut out_inner = HashMap::new();
                     for (v, dopt) in inner.into_iter() {
                         if let Some(py_v) = self.internal_to_py.get(&v) {
-                            out_inner.insert(*py_v, dopt.map(|x| x as f64));
+                            out_inner.insert(*py_v, dopt);
                         }
                     }
                     out_outer.insert(*py_u, out_inner);
@@ -192,7 +192,7 @@ impl PyDiGraph {
             let mut out = HashMap::new();
             for (nid, dist_opt) in nm.into_iter() {
                 if let Some(py) = self.internal_to_py.get(&nid) {
-                    out.insert(*py, dist_opt.map(|x| x as f64));
+                    out.insert(*py, dist_opt);
                 }
             }
             out
@@ -208,7 +208,7 @@ impl PyDiGraph {
                     let mut out_inner = HashMap::new();
                     for (v, dopt) in inner.into_iter() {
                         if let Some(py_v) = self.internal_to_py.get(&v) {
-                            out_inner.insert(*py_v, dopt.map(|x| x as f64));
+                            out_inner.insert(*py_v, dopt);
                         }
                     }
                     out_outer.insert(*py_u, out_inner);

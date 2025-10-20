@@ -75,13 +75,14 @@ install-deps: install-snap ## Install development dependencies
 	@cargo install cargo-tarpaulin
 	@cargo install cargo-audit
 	@cargo install cargo-nextest
+	@cargo install cargo-careful
 	@sudo apt-get install python3-pip libfontconfig1-dev
 	@pip install $(PY_DEP_MNGR)
 
 .PHONY: lint
 lint: format ## Run linters on Rust files
 	@echo "Linting Rust files..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -- -D warnings
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
 
 .PHONY: publish
 publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to be set)
@@ -98,15 +99,20 @@ audit: ## Run security audit on Rust dependencies
 	@echo "Running security audit..."
 	@cargo audit
 
-.PHONY: doc
-doc: format ## Generate the documentation
+.PHONY: careful
+careful: ## Run security checks with cargo-careful
+	@echo "Running cargo-careful..."
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo careful run
+
+.PHONY: docs
+docs: format ## Generate the documentation
 	@echo "Generating documentation..."
 	@cargo doc --no-deps --document-private-items
 
 .PHONY: fix-lint
 fix-lint: ## Fix the linter warnings
 	@echo "Fixing linter warnings..."
-	@cargo clippy --fix --allow-dirty --all-targets --workspace --all-features -- -D warnings
+	@cargo clippy --fix --allow-dirty --all-targets --workspace --all-features -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
 
 .PHONY: nextest
 nextest: ## Run tests using nextest
