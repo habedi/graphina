@@ -99,6 +99,35 @@ audit: ## Run security audit on Rust dependencies
 	@echo "Running security audit..."
 	@cargo audit
 
+.PHONY: check-module-deps
+check-module-deps: ## Check that top-level modules only depend on core (not on each other)
+	@echo "Checking module dependencies..."
+	@ERROR=0; \
+	TOP_MODULES="approximation centrality community links metrics mst parallel subgraphs traversal visualization"; \
+	for module in $$TOP_MODULES; do \
+		if [ -d "src/$$module" ]; then \
+			for other_module in $$TOP_MODULES; do \
+				if [ "$$module" != "$$other_module" ]; then \
+					VIOLATIONS=$$(grep -r "use crate::$$other_module" src/$$module/ 2>/dev/null || true); \
+					if [ -n "$$VIOLATIONS" ]; then \
+						echo "ERROR: Module '$$module' has forbidden dependency on '$$other_module':"; \
+						echo "$$VIOLATIONS" | sed 's/^/  /'; \
+						ERROR=1; \
+					fi; \
+				fi; \
+			done; \
+		fi; \
+	done; \
+	if [ $$ERROR -eq 0 ]; then \
+		echo "All module dependencies are valid - only 'core' is used"; \
+	else \
+		echo "Module dependency violations found!"; \
+		echo ""; \
+		echo "Rule: Top-level modules can only depend on 'core', not on each other."; \
+		echo "Top-level modules: $$TOP_MODULES"; \
+		exit 1; \
+	fi
+
 .PHONY: careful
 careful: ## Run security checks with cargo-careful
 	@echo "Running cargo-careful..."
