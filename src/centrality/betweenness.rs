@@ -113,7 +113,7 @@ where
         }
     }
 
-    if normalized && n > 1 {
+    if normalized && n > 2 {
         let norm = if graph.is_directed() {
             1.0 / ((n - 1) * (n - 2)) as f64
         } else {
@@ -227,7 +227,7 @@ where
         }
     }
 
-    if normalized && n > 1 {
+    if normalized && n > 2 {
         let norm = if graph.is_directed() {
             1.0 / ((n - 1) * (n - 2)) as f64
         } else {
