@@ -129,8 +129,8 @@ check-module-deps: ## Check that top-level modules only depend on core (not on e
 	fi
 
 .PHONY: careful
-careful: ## Run security checks with cargo-careful
-	@echo "Running cargo-careful..."
+careful: ## Run security checks on Rust code
+	@echo "Running security checks..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo careful run
 
 .PHONY: docs
