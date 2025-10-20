@@ -108,3 +108,4 @@ graph_*.html
 graph.html
 graph.png
 *.bin
+*.log

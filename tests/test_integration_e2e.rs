@@ -8,6 +8,8 @@
 
 use graphina::core::io::read_edge_list;
 use graphina::core::types::{Digraph, Graph};
+#[cfg(feature = "subgraphs")]
+use graphina::subgraphs::SubgraphOps;
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
 use std::path::Path;
@@ -163,7 +165,7 @@ fn test_e2e_complete_graph_analysis_pipeline() {
     std::fs::remove_file(temp_bin).ok();
 
     // Step 4: Traversal algorithms
-    use graphina::core::traversal::{bfs, dfs};
+    use graphina::traversal::{bfs, dfs};
 
     if let Some((start, _)) = graph.nodes().next() {
         let bfs_visited = bfs(&graph, start);
@@ -496,7 +498,7 @@ fn test_integration_traversal_consistency() {
         return;
     }
 
-    use graphina::core::traversal::{bfs, dfs};
+    use graphina::traversal::{bfs, dfs};
 
     let mut bfs_total = 0;
     let mut dfs_total = 0;
@@ -767,7 +769,7 @@ fn test_stress_large_graph_operations() {
     );
 
     // Test traversal on sample nodes
-    use graphina::core::traversal::bfs;
+    use graphina::traversal::bfs;
     if let Some((node, _)) = graph.nodes().next() {
         let start_bfs = std::time::Instant::now();
         let visited = bfs(&graph, node);

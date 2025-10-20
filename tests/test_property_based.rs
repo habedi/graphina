@@ -9,8 +9,8 @@ range of inputs.
 use graphina::core::generators::{
     barabasi_albert_graph, complete_graph, cycle_graph, erdos_renyi_graph,
 };
-use graphina::core::traversal::{bfs, bidis, dfs};
 use graphina::core::types::{Directed, Graph, Undirected};
+use graphina::traversal::{bfs, bidis, dfs};
 use proptest::prelude::*;
 
 // ============================================================================

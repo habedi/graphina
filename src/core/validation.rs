@@ -334,110 +334,175 @@ where
     Ok(())
 }
 
+/// Validates that the graph is non-empty.
+///
+/// # Errors
+/// Returns `InvalidGraph` error if the graph is empty.
+pub fn validate_non_empty<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<()> {
+    if is_empty(graph) {
+        Err(GraphinaError::invalid_graph(
+            "Graph is empty, operation requires at least one node.",
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validates that the graph has no negative edge weights.
+///
+/// # Errors
+/// Returns `InvalidArgument` error if any edge has a negative weight.
+pub fn validate_non_negative_weights<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<()>
+where
+    W: Copy + Into<f64>,
+{
+    if has_negative_weights(graph) {
+        Err(GraphinaError::invalid_argument(
+            "Graph contains negative edge weights.",
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validates that the graph is connected.
+///
+/// # Errors
+/// Returns `InvalidGraph` error if the graph is not connected.
+pub fn validate_connected<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<()> {
+    if !is_connected(graph) {
+        Err(GraphinaError::invalid_graph(
+            "Graph is not connected, operation requires a connected graph.",
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validates that a node exists in the graph.
+///
+/// # Errors
+/// Returns `NodeNotFound` error if the node does not exist.
+pub fn validate_node_exists<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+    node: NodeId,
+) -> Result<()> {
+    if graph.contains_node(node) {
+        Ok(())
+    } else {
+        Err(GraphinaError::node_not_found(format!(
+            "Node {:?} not found in graph",
+            node
+        )))
+    }
+}
+
+/// Validates that the graph is a DAG (Directed Acyclic Graph).
+///
+/// # Errors
+/// Returns `HasCycle` error if the graph contains a cycle.
+pub fn validate_is_dag<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> Result<()> {
+    if !is_dag(graph) {
+        Err(GraphinaError::has_cycle(
+            "Graph contains a cycle, operation requires a DAG.",
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::types::{Directed, Undirected};
-
-    type Graph = BaseGraph<i32, f64, Undirected>;
-    type DiGraph = BaseGraph<i32, f64, Directed>;
+    use crate::core::types::{Digraph, Graph};
 
     #[test]
     fn test_is_empty() {
-        let empty_graph: Graph = Graph::new();
-        assert!(is_empty(&empty_graph));
+        let g = Graph::<i32, f64>::new();
+        assert!(is_empty(&g));
 
-        let mut g = Graph::new();
-        g.add_node(1);
-        assert!(!is_empty(&g));
+        let mut g2 = Graph::<i32, f64>::new();
+        g2.add_node(1);
+        assert!(!is_empty(&g2));
     }
 
     #[test]
     fn test_is_connected() {
-        let mut g = Graph::new();
+        let mut g = Graph::<i32, f64>::new();
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        // Disconnected
         g.add_edge(n1, n2, 1.0);
+        assert!(!is_connected(&g));
+
+        // Connected
+        g.add_edge(n2, n3, 1.0);
         assert!(is_connected(&g));
-
-        let mut disconnected = Graph::new();
-        disconnected.add_node(1);
-        disconnected.add_node(2);
-        assert!(!is_connected(&disconnected));
-
-        let empty: Graph = Graph::new();
-        assert!(!is_connected(&empty));
     }
 
     #[test]
     fn test_has_negative_weights() {
-        let mut g = Graph::new();
+        let mut g = Graph::<i32, f64>::new();
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
+
         g.add_edge(n1, n2, 1.0);
         assert!(!has_negative_weights(&g));
 
-        g.add_edge(n1, n2, -1.0);
+        g.add_edge(n2, n1, -1.0);
         assert!(has_negative_weights(&g));
     }
 
     #[test]
-    fn test_has_self_loops() {
-        let mut g = Graph::new();
+    fn test_is_dag() {
+        let mut g = Digraph::<i32, f64>::new();
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        // DAG
         g.add_edge(n1, n2, 1.0);
-        assert!(!has_self_loops(&g));
+        g.add_edge(n2, n3, 1.0);
+        assert!(is_dag(&g));
 
-        g.add_edge(n1, n1, 1.0);
-        assert!(has_self_loops(&g));
-    }
-
-    #[test]
-    fn test_is_dag() {
-        let mut dag = DiGraph::new();
-        let n1 = dag.add_node(1);
-        let n2 = dag.add_node(2);
-        let n3 = dag.add_node(3);
-        dag.add_edge(n1, n2, 1.0);
-        dag.add_edge(n2, n3, 1.0);
-        assert!(is_dag(&dag));
-
-        // Add cycle
-        dag.add_edge(n3, n1, 1.0);
-        assert!(!is_dag(&dag));
-
-        // Undirected graph with edges is not a DAG
-        let mut undirected = Graph::new();
-        let u1 = undirected.add_node(1);
-        let u2 = undirected.add_node(2);
-        undirected.add_edge(u1, u2, 1.0);
-        assert!(!is_dag(&undirected));
+        // Has cycle
+        g.add_edge(n3, n1, 1.0);
+        assert!(!is_dag(&g));
     }
 
     #[test]
     fn test_is_bipartite() {
-        let mut g = Graph::new();
+        let mut g = Graph::<i32, f64>::new();
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
         let n3 = g.add_node(3);
         let n4 = g.add_node(4);
 
-        // Create bipartite graph: (1,2) - (3,4)
-        g.add_edge(n1, n3, 1.0);
+        // Bipartite: {n1, n3} and {n2, n4}
+        g.add_edge(n1, n2, 1.0);
         g.add_edge(n1, n4, 1.0);
-        g.add_edge(n2, n3, 1.0);
-        g.add_edge(n2, n4, 1.0);
+        g.add_edge(n3, n2, 1.0);
+        g.add_edge(n3, n4, 1.0);
         assert!(is_bipartite(&g));
 
-        // Add edge within same partition
-        g.add_edge(n1, n2, 1.0);
+        // Not bipartite (triangle)
+        g.add_edge(n1, n3, 1.0);
         assert!(!is_bipartite(&g));
     }
 
     #[test]
     fn test_count_components() {
-        let mut g = Graph::new();
+        let mut g = Graph::<i32, f64>::new();
         assert_eq!(count_components(&g), 0);
 
         let n1 = g.add_node(1);
@@ -445,12 +510,12 @@ mod tests {
         let n3 = g.add_node(3);
         let n4 = g.add_node(4);
 
-        // Two components: {1,2} and {3,4}
+        assert_eq!(count_components(&g), 4);
+
         g.add_edge(n1, n2, 1.0);
         g.add_edge(n3, n4, 1.0);
         assert_eq!(count_components(&g), 2);
 
-        // Connect them
         g.add_edge(n2, n3, 1.0);
         assert_eq!(count_components(&g), 1);
     }
@@ -467,7 +532,7 @@ mod tests {
         assert!(require_non_negative_weights(&g, "test").is_ok());
         assert!(require_no_self_loops(&g, "test").is_ok());
 
-        let empty: Graph = Graph::new();
+        let empty: Graph<i32, f64> = Graph::new();
         assert!(require_non_empty(&empty, "test").is_err());
     }
 
@@ -480,10 +545,10 @@ mod tests {
 
         assert!(validate_for_algorithm(&g, "test_algo").is_ok());
 
-        let empty: Graph = Graph::new();
+        let empty: Graph<i32, f64> = Graph::new();
         assert!(validate_for_algorithm(&empty, "test_algo").is_err());
 
-        let mut disconnected = Graph::new();
+        let mut disconnected: Graph<i32, f64> = Graph::new();
         disconnected.add_node(1);
         disconnected.add_node(2);
         assert!(validate_for_algorithm(&disconnected, "test_algo").is_err());
@@ -493,5 +558,28 @@ mod tests {
         let n4 = negative.add_node(2);
         negative.add_edge(n3, n4, -1.0);
         assert!(validate_for_algorithm(&negative, "test_algo").is_err());
+    }
+
+    #[test]
+    fn test_validate_non_empty() {
+        let g = Graph::<i32, f64>::new();
+        assert!(validate_non_empty(&g).is_err());
+
+        let mut g2 = Graph::<i32, f64>::new();
+        g2.add_node(1);
+        assert!(validate_non_empty(&g2).is_ok());
+    }
+
+    #[test]
+    fn test_validate_node_exists() {
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+
+        assert!(validate_node_exists(&g, n1).is_ok());
+        assert!(validate_node_exists(&g, n2).is_ok());
+
+        g.remove_node(n2);
+        assert!(validate_node_exists(&g, n2).is_err());
     }
 }

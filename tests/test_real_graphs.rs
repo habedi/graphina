@@ -115,7 +115,7 @@ fn test_load_multiple_datasets() {
 fn test_bfs_on_real_graph() {
     skip_if_no_datasets!();
 
-    use graphina::core::traversal::bfs;
+    use graphina::traversal::bfs;
 
     let graph = match load_graph_dataset("karate_club.txt") {
         Ok(g) => g,
@@ -139,7 +139,7 @@ fn test_bfs_on_real_graph() {
 fn test_dfs_on_real_graph() {
     skip_if_no_datasets!();
 
-    use graphina::core::traversal::dfs;
+    use graphina::traversal::dfs;
 
     let graph = match load_graph_dataset("dolphins.txt") {
         Ok(g) => g,
@@ -490,7 +490,7 @@ fn test_karate_club_known_properties() {
         assert!(!graph.is_directed());
 
         // Should be connected (all nodes reachable from any node)
-        use graphina::core::traversal::bfs;
+        use graphina::traversal::bfs;
         if let Some((start, _)) = graph.nodes().next() {
             let visited = bfs(&graph, start);
             assert_eq!(visited.len(), 34, "Karate Club should be fully connected");

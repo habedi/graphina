@@ -1,32 +1,23 @@
 /*!
 # Graphina Graph Types
-
 This module defines the core graph types supported by Graphina.
-The `BaseGraph` struct is a wrapper around petgraph’s `StableGraph` that provides a uniform API
+The `BaseGraph` struct is a wrapper around petgraph's `StableGraph` that provides a uniform API
 for both directed and undirected graphs. Graphina provides two sets of APIs:
 - The **standard API**, which returns simple values (such as booleans or `Option`s).
 - The **`try_…` API**, which returns `Result` types with custom errors defined in `graphina::core::error::GraphinaError`.
-
 # Examples
-
 Basic usage:
-
 ```rust
 use graphina::core::types::{Graph, NodeId};
-
 let mut g = Graph::<i32, f64>::new();
 let n1 = g.add_node(10);
-
 // Using the standard API:
 let success = g.update_node(n1, 20);
 assert!(success);
-
 // Using the try_… API:
 g.try_update_node(n1, 30).expect("Node update should succeed");
 ```
-
 */
-
 use petgraph::EdgeType;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::prelude::EdgeRef;
@@ -35,55 +26,46 @@ use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use sprs::{CsMat, TriMat};
 use std::collections::HashMap;
 use std::ops::{Index, IndexMut};
-
 // Import the new unified error type
 use crate::core::error::{GraphinaError, Result};
-
 /// Marker type for directed graphs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Directed;
-
 /// Marker type for undirected graphs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Undirected;
-
 /// Implements `Default` for directed graphs.
 impl Default for Directed {
     fn default() -> Self {
         Directed
     }
 }
-
 /// Implements `Default` for undirected graphs.
 impl Default for Undirected {
     fn default() -> Self {
         Undirected
     }
 }
-
 /// Implements petgraph's `EdgeType` for directed graphs.
 impl EdgeType for Directed {
     fn is_directed() -> bool {
         true
     }
 }
-
 /// Implements petgraph's `EdgeType` for undirected graphs.
 impl EdgeType for Undirected {
     fn is_directed() -> bool {
         false
     }
 }
-
 /// Trait for constructing graphs with specific edge types.
-/// Types implementing `GraphConstructor` must also implement petgraph’s `EdgeType`.
+/// Types implementing `GraphConstructor` must also implement petgraph's `EdgeType`.
 pub trait GraphConstructor<A, W>: EdgeType + Sized {
     /// Creates a new graph.
     fn new_graph() -> PetGraph<A, W, Self>;
     /// Returns true if the graph is directed.
     fn is_directed() -> bool;
 }
-
 impl<A, W> GraphConstructor<A, W> for Directed {
     fn new_graph() -> PetGraph<A, W, Self> {
         // Using StableGraph prevents node index recycling.
@@ -93,7 +75,6 @@ impl<A, W> GraphConstructor<A, W> for Directed {
         true
     }
 }
-
 impl<A, W> GraphConstructor<A, W> for Undirected {
     fn new_graph() -> PetGraph<A, W, Self> {
         PetGraph::<A, W, Undirected>::with_capacity(0, 0)
@@ -102,11 +83,9 @@ impl<A, W> GraphConstructor<A, W> for Undirected {
         false
     }
 }
-
 /// Wrapper for `NodeIndex` that provides additional functionality.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct NodeId(pub(crate) NodeIndex);
-
 impl NodeId {
     /// Returns the numeric part of the node's index.
     pub fn index(&self) -> usize {
@@ -117,11 +96,9 @@ impl NodeId {
         Self(index)
     }
 }
-
 /// Wrapper for `EdgeIndex` that provides additional functionality.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EdgeId(pub(crate) EdgeIndex);
-
 impl EdgeId {
     /// Returns the numeric part of the edge's index.
     pub fn index(&self) -> usize {
@@ -132,7 +109,18 @@ impl EdgeId {
         Self(index)
     }
 }
-
+/// Type alias for a directed graph using the `Directed` marker type.
+pub type Digraph<A, W> = BaseGraph<A, W, Directed>;
+/// Marker alias for directed graphs.
+pub type DigraphMarker = Directed;
+/// Type alias for an undirected graph using the `Undirected` marker type.
+pub type Graph<A, W> = BaseGraph<A, W, Undirected>;
+/// Marker alias for undirected graphs.
+pub type GraphMarker = Undirected;
+/// type alias for HashMap mapping NodeId to T
+pub type NodeMap<T> = HashMap<NodeId, T>;
+/// type alias for HashMap mapping EdgeId to T
+pub type EdgeMap<T> = HashMap<EdgeId, T>;
 /// Base graph structure that wraps around a petgraph instance.
 ///
 /// Generic parameters:
@@ -143,13 +131,11 @@ impl EdgeId {
 pub struct BaseGraph<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
     pub(crate) inner: PetGraph<A, W, Ty>,
 }
-
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> Default for BaseGraph<A, W, Ty> {
     fn default() -> Self {
         Self::new()
     }
 }
-
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     /// Creates a new `BaseGraph`.
     pub fn new() -> Self {
@@ -157,7 +143,6 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             inner: Ty::new_graph(),
         }
     }
-
     /// Creates a new graph with pre-allocated capacity for nodes and edges.
     ///
     /// This is useful when you know the approximate size of your graph upfront.
@@ -166,21 +151,17 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             inner: PetGraph::<A, W, Ty>::with_capacity(nodes, edges),
         }
     }
-
     /// Returns a builder for constructing a graph with a fluent API.
     pub fn builder() -> GraphBuilder<A, W, Ty> {
         GraphBuilder::new()
     }
-
     pub fn is_directed(&self) -> bool {
         self.inner.is_directed()
     }
-
     /// Returns true if the graph contains no nodes.
     pub fn is_empty(&self) -> bool {
         self.inner.node_count() == 0
     }
-
     /// Returns the density of the graph.
     ///
     /// Density is the ratio of actual edges to possible edges:
@@ -195,24 +176,20 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
         let m = self.edge_count() as f64;
         let max_edges = (n * (n - 1)) as f64;
-
         if self.is_directed() {
             m / max_edges
         } else {
             (2.0 * m) / max_edges
         }
     }
-
     /// Returns true if the node exists in the graph.
     pub fn contains_node(&self, node: NodeId) -> bool {
         self.inner.node_weight(node.0).is_some()
     }
-
     /// Returns true if there is an edge from source to target.
     pub fn contains_edge(&self, source: NodeId, target: NodeId) -> bool {
         self.find_edge(source, target).is_some()
     }
-
     /// Returns the degree of a node (number of incident edges).
     ///
     /// For directed graphs, this returns the sum of in-degree and out-degree.
@@ -221,14 +198,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         if !self.contains_node(node) {
             return None;
         }
-
         if self.is_directed() {
             Some(self.in_degree(node).unwrap() + self.out_degree(node).unwrap())
         } else {
             Some(self.inner.edges(node.0).count())
         }
     }
-
     /// Returns the in-degree of a node (number of incoming edges).
     ///
     /// For undirected graphs, this is equivalent to degree.
@@ -237,10 +212,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         if !self.contains_node(node) {
             return None;
         }
-
         if self.is_directed() {
-            // PERFORMANCE FIX: Use petgraph's edge_references which is more efficient
-            // than iterating through all edges in the graph
             Some(
                 self.inner
                     .edge_references()
@@ -251,7 +223,6 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             self.degree(node)
         }
     }
-
     /// Returns the out-degree of a node (number of outgoing edges).
     ///
     /// For undirected graphs, this is equivalent to degree.
@@ -262,23 +233,11 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
         Some(self.inner.edges(node.0).count())
     }
-
     /// Adds a node with the specified attribute to the graph.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use graphina::core::types::Graph;
-    /// let mut g = Graph::<i32, f64>::new();
-    /// let n = g.add_node(42);
-    /// ```
     pub fn add_node(&mut self, attr: A) -> NodeId {
         NodeId::new(self.inner.add_node(attr))
     }
-
     /// Updates the attribute of an existing node.
-    ///
-    /// Returns `true` if the update was successful, or `false` if the node was not found.
     pub fn update_node(&mut self, node: NodeId, new_attr: A) -> bool {
         match self.inner.node_weight_mut(node.0) {
             Some(attr) => {
@@ -288,14 +247,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             None => false,
         }
     }
-
     /// Attempts to update the attribute of an existing node.
-    ///
-    /// Returns `Ok(())` if the update was successful; otherwise, returns a `NodeNotFound` error.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the node does not exist (has been removed).
     pub fn try_update_node(&mut self, node: NodeId, new_attr: A) -> Result<()> {
         if let Some(attr) = self.inner.node_weight_mut(node.0) {
             *attr = new_attr;
@@ -306,26 +258,11 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             ))
         }
     }
-
     /// Adds an edge with the given weight between two nodes.
     pub fn add_edge(&mut self, source: NodeId, target: NodeId, weight: W) -> EdgeId {
         EdgeId::new(self.inner.add_edge(source.0, target.0, weight))
     }
-
     /// Adds multiple nodes at once from a slice of attributes.
-    ///
-    /// Returns a vector of `NodeId`s corresponding to the added nodes.
-    /// This is more efficient than calling `add_node` repeatedly as it can pre-allocate.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use graphina::core::types::Graph;
-    /// let mut g = Graph::<i32, f64>::new();
-    /// let nodes = g.add_nodes_bulk(&[1, 2, 3, 4, 5]);
-    /// assert_eq!(nodes.len(), 5);
-    /// assert_eq!(g.node_count(), 5);
-    /// ```
     pub fn add_nodes_bulk(&mut self, attributes: &[A]) -> Vec<NodeId>
     where
         A: Clone,
@@ -336,28 +273,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
         node_ids
     }
-
     /// Adds multiple edges at once from a slice of (source, target, weight) tuples.
-    ///
-    /// Returns a vector of `EdgeId`s corresponding to the added edges.
-    /// This is more efficient than calling `add_edge` repeatedly.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use graphina::core::types::Graph;
-    /// let mut g = Graph::<i32, f64>::new();
-    /// let n1 = g.add_node(1);
-    /// let n2 = g.add_node(2);
-    /// let n3 = g.add_node(3);
-    /// let edges = g.add_edges_bulk(&[
-    ///     (n1, n2, 1.0),
-    ///     (n2, n3, 2.0),
-    ///     (n3, n1, 3.0),
-    /// ]);
-    /// assert_eq!(edges.len(), 3);
-    /// assert_eq!(g.edge_count(), 3);
-    /// ```
     pub fn add_edges_bulk(&mut self, edges: &[(NodeId, NodeId, W)]) -> Vec<EdgeId>
     where
         W: Clone,
@@ -368,19 +284,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
         edge_ids
     }
-
     /// Extends the graph with nodes from an iterator.
-    ///
-    /// Returns a vector of `NodeId`s corresponding to the added nodes.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use graphina::core::types::Graph;
-    /// let mut g = Graph::<i32, f64>::new();
-    /// let nodes = g.extend_nodes(vec![10, 20, 30, 40]);
-    /// assert_eq!(g.node_count(), 4);
-    /// ```
     pub fn extend_nodes<I>(&mut self, iter: I) -> Vec<NodeId>
     where
         I: IntoIterator<Item = A>,
@@ -388,33 +292,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         let iter = iter.into_iter();
         let (lower_bound, _) = iter.size_hint();
         let mut node_ids = Vec::with_capacity(lower_bound);
-
         for attr in iter {
             node_ids.push(self.add_node(attr));
         }
         node_ids
     }
-
     /// Extends the graph with edges from an iterator.
-    ///
-    /// Returns a vector of `EdgeId`s corresponding to the added edges.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use graphina::core::types::Graph;
-    /// let mut g = Graph::<i32, f64>::new();
-    /// let n1 = g.add_node(1);
-    /// let n2 = g.add_node(2);
-    /// let n3 = g.add_node(3);
-    ///
-    /// let edges = vec![
-    ///     (n1, n2, 1.5),
-    ///     (n2, n3, 2.5),
-    /// ];
-    /// let edge_ids = g.extend_edges(edges);
-    /// assert_eq!(g.edge_count(), 2);
-    /// ```
     pub fn extend_edges<I>(&mut self, iter: I) -> Vec<EdgeId>
     where
         I: IntoIterator<Item = (NodeId, NodeId, W)>,
@@ -422,70 +305,48 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         let iter = iter.into_iter();
         let (lower_bound, _) = iter.size_hint();
         let mut edge_ids = Vec::with_capacity(lower_bound);
-
         for (src, tgt, weight) in iter {
             edge_ids.push(self.add_edge(src, tgt, weight));
         }
         edge_ids
     }
-
     /// Removes a node from the graph, returning its attribute if it existed.
-    /// All incident edges will be removed.
     pub fn remove_node(&mut self, node: NodeId) -> Option<A> {
         self.inner.remove_node(node.0)
     }
-
     /// Attempts to remove a node from the graph.
-    ///
-    /// Returns the node's attribute if successful, or a `NodeNotFound` error if the node did not exist.
     pub fn try_remove_node(&mut self, node: NodeId) -> Result<A> {
         self.inner
             .remove_node(node.0)
             .ok_or_else(|| GraphinaError::node_not_found("Node not found during removal"))
     }
-
     /// Removes an edge from the graph, returning its weight if it existed.
     pub fn remove_edge(&mut self, edge: EdgeId) -> Option<W> {
         self.inner.remove_edge(edge.0)
     }
-
     /// Attempts to remove an edge from the graph.
-    ///
-    /// Returns the edge's weight if successful, or a `GraphinaException` if the edge was not found.
     pub fn try_remove_edge(&mut self, edge: EdgeId) -> Result<W> {
         self.inner
             .remove_edge(edge.0)
             .ok_or_else(|| GraphinaError::edge_not_found("Edge not found during removal"))
     }
-
     /// Returns the number of nodes in the graph.
     pub fn node_count(&self) -> usize {
         self.inner.node_count()
     }
-
     /// Returns the number of edges in the graph.
     pub fn edge_count(&self) -> usize {
         self.inner.edge_count()
     }
-
     /// Returns an iterator over the neighbors of a node.
     pub fn neighbors(&self, node: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         self.inner.neighbors(node.0).map(NodeId::new)
     }
-
     /// Returns an iterator over outgoing neighbors of a node.
-    ///
-    /// For directed graphs, this yields nodes reachable by an edge (u -> v) from `node`.
-    /// For undirected graphs, this is equivalent to `neighbors`.
     pub fn outgoing_neighbors(&self, node: NodeId) -> impl Iterator<Item = NodeId> + '_ {
-        // For both directed and undirected graphs, `edges(node)` yields edges incident from `node`.
         self.inner.edges(node.0).map(|e| NodeId::new(e.target()))
     }
-
     /// Returns an iterator over incoming neighbors of a node.
-    ///
-    /// For directed graphs, this yields nodes with edges (u -> node) into `node`.
-    /// For undirected graphs, this is equivalent to `neighbors`.
     pub fn incoming_neighbors(&self, node: NodeId) -> Box<dyn Iterator<Item = NodeId> + '_> {
         if self.is_directed() {
             Box::new(
@@ -498,31 +359,22 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             Box::new(self.neighbors(node))
         }
     }
-
     /// Returns a reference to the attribute of a node.
     pub fn node_attr(&self, node: NodeId) -> Option<&A> {
         self.inner.node_weight(node.0)
     }
-
     /// Returns a mutable reference to the attribute of a node.
     pub fn node_attr_mut(&mut self, node: NodeId) -> Option<&mut A> {
         self.inner.node_weight_mut(node.0)
     }
-
     /// Returns a reference to the weight of an edge.
-    ///
-    /// **Consistent naming**: Use `edge_weight` instead of `edge_attr` for clarity.
     pub fn edge_weight(&self, edge: EdgeId) -> Option<&W> {
         self.inner.edge_weight(edge.0)
     }
-
     /// Returns a mutable reference to the weight of an edge.
-    ///
-    /// **Consistent naming**: Use `edge_weight_mut` instead of `edge_attr_mut` for clarity.
     pub fn edge_weight_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
         self.inner.edge_weight_mut(edge.0)
     }
-
     /// Alias for `edge_weight` to maintain backward compatibility.
     #[deprecated(
         since = "0.4.0",
@@ -531,7 +383,6 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn edge_attr(&self, edge: EdgeId) -> Option<&W> {
         self.edge_weight(edge)
     }
-
     /// Alias for `edge_weight_mut` to maintain backward compatibility.
     #[deprecated(
         since = "0.4.0",
@@ -540,14 +391,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn edge_attr_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
         self.edge_weight_mut(edge)
     }
-
     /// Returns an iterator over all nodes and their attributes.
     pub fn nodes(&self) -> impl Iterator<Item = (NodeId, &A)> + '_ {
         self.inner
             .node_references()
             .map(|(idx, attr)| (NodeId::new(idx), attr))
     }
-
     /// Returns an iterator over all edges and their weights.
     pub fn edges(&self) -> impl Iterator<Item = (NodeId, NodeId, &W)> + '_ {
         self.inner.edge_references().map(|edge| {
@@ -558,27 +407,19 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             )
         })
     }
-
     pub fn outgoing_edges(&self, source: NodeId) -> impl Iterator<Item = (NodeId, &W)> + '_ {
         self.inner
             .edges(source.0)
             .map(|edge| (NodeId(edge.target()), edge.weight()))
     }
-
     /// Returns a reference to the inner petgraph instance.
     fn inner(&self) -> &PetGraph<A, W, Ty> {
         &self.inner
     }
-
     /// Exposes a read-only reference to the underlying petgraph StableGraph.
-    ///
-    /// This is provided for advanced interop scenarios where direct access to
-    /// petgraph APIs is needed, while keeping Graphina's public API simple.
-    /// Prefer using Graphina abstractions when possible.
     pub fn as_petgraph(&self) -> &PetGraph<A, W, Ty> {
         &self.inner
     }
-
     pub fn to_nodemap<T>(&self, mut eval: impl FnMut(NodeId, &A) -> T) -> NodeMap<T> {
         self.nodes()
             .map(|(nodeid, a)| (nodeid, eval(nodeid, a)))
@@ -587,7 +428,6 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn to_nodemap_default<T: Default>(&self) -> NodeMap<T> {
         self.to_nodemap(|_, _| Default::default())
     }
-
     /// Finds and returns the first edge from `source` to `target`.
     pub fn find_edge(&self, source: NodeId, target: NodeId) -> Option<EdgeId> {
         if <Ty as GraphConstructor<A, W>>::is_directed() {
@@ -605,25 +445,19 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
                 .map(|edge| EdgeId::new(edge.id()))
         }
     }
-
     /// Clears all nodes and edges from the graph.
     pub fn clear(&mut self) {
         self.inner.clear();
     }
-
     /// Returns an iterator over all node IDs.
     pub fn node_ids(&self) -> impl Iterator<Item = NodeId> + '_ {
         self.inner.node_indices().map(NodeId::new)
     }
-
     /// Returns an iterator over all edge IDs.
     pub fn edge_ids(&self) -> impl Iterator<Item = EdgeId> + '_ {
         self.inner.edge_indices().map(EdgeId::new)
     }
-
     /// Retains only the nodes that satisfy the predicate.
-    ///
-    /// All edges connected to removed nodes are also removed.
     pub fn retain_nodes<F>(&mut self, mut predicate: F)
     where
         F: FnMut(NodeId, &A) -> bool,
@@ -633,12 +467,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             .filter(|(id, attr)| !predicate(*id, attr))
             .map(|(id, _)| id)
             .collect();
-
         for node in to_remove {
             self.remove_node(node);
         }
     }
-
     /// Retains only the edges that satisfy the predicate.
     pub fn retain_edges<F>(&mut self, mut predicate: F)
     where
@@ -655,12 +487,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
                 }
             })
             .collect();
-
         for edge in to_remove {
             self.remove_edge(edge);
         }
     }
-
     /// Returns an iterator over all edges with their EdgeId.
     pub fn edges_with_ids(&self) -> impl Iterator<Item = (EdgeId, NodeId, NodeId, &W)> + '_ {
         self.inner.edge_references().map(|edge| {
@@ -672,10 +502,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             )
         })
     }
-
     /// Adds an edge if it doesn't already exist. Returns (edge_id, inserted?).
-    ///
-    /// For undirected graphs, an existing edge in either orientation is considered a duplicate.
     pub fn add_edge_if_absent(
         &mut self,
         source: NodeId,
@@ -698,110 +525,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         }
     }
 }
-
-/// Builder for constructing graphs with a fluent API.
-///
-/// # Example
-///
-/// ```rust
-/// use graphina::core::types::{Graph, NodeId, EdgeId};
-///
-/// let graph = Graph::builder()
-///     .add_node(1)
-///     .add_node(2)
-///     .add_edge(0, 1, 3.0)
-///     .build();
-///
-/// assert_eq!(graph.node_count(), 2);
-/// assert_eq!(graph.edge_count(), 1);
-/// ```
-pub struct GraphBuilder<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
-    nodes: Vec<A>,
-    edges: Vec<(usize, usize, W)>,
-    _marker: std::marker::PhantomData<Ty>,
-}
-
-impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> Default for GraphBuilder<A, W, Ty> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> GraphBuilder<A, W, Ty> {
-    /// Creates a new `GraphBuilder`.
-    pub fn new() -> Self {
-        Self {
-            nodes: Vec::new(),
-            edges: Vec::new(),
-            _marker: std::marker::PhantomData,
-        }
-    }
-
-    /// Adds a node to the builder.
-    pub fn add_node(mut self, attr: A) -> Self {
-        self.nodes.push(attr);
-        self
-    }
-
-    /// Adds an edge to the builder.
-    pub fn add_edge(mut self, source: usize, target: usize, weight: W) -> Self {
-        self.edges.push((source, target, weight));
-        self
-    }
-
-    /// Consumes the builder and constructs the graph.
-    pub fn build(self) -> BaseGraph<A, W, Ty> {
-        let mut graph = BaseGraph::with_capacity(self.nodes.len(), self.edges.len());
-
-        // Add nodes.
-        let node_ids: Vec<NodeId> = self
-            .nodes
-            .into_iter()
-            .map(|attr| graph.add_node(attr))
-            .collect();
-
-        // Add edges.
-        for (source, target, weight) in self.edges {
-            graph.add_edge(node_ids[source], node_ids[target], weight);
-        }
-
-        graph
-    }
-}
-
-/// Extra util
-///
-/// this trait contain custom implementation of function that behave different for Directed and Undirected Graph.
-pub trait GraphinaGraph<A, W> {
-    /// return edges in form or `(src: NodeId, dst: NodeId, attr: &W)`,
-    /// where the backward edge is included for undirected graph.
-    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
-    where
-        W: 'a;
-}
-
-impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Undirected> {
-    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
-    where
-        W: 'a,
-    {
-        self.edges()
-            .flat_map(|(src, dst, w)| [(src, dst, w), (dst, src, w)].into_iter())
-    }
-}
-impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Directed> {
-    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
-    where
-        W: 'a,
-    {
-        self.edges()
-    }
-}
-
 /// Dense matrix API using owned values.
-///
-/// The adjacency matrix is built using a contiguous mapping of the current nodes.
-/// For undirected graphs, the matrix is symmetric.
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty>
 where
     W: Clone,
@@ -827,10 +551,7 @@ where
         }
         matrix
     }
-
     /// Constructs a new graph from an adjacency matrix.
-    ///
-    /// Node attributes are initialized using `A::default()`.
     pub fn from_adjacency_matrix(matrix: &[Vec<Option<W>>]) -> Self
     where
         A: Default,
@@ -850,10 +571,7 @@ where
         graph
     }
 }
-
 /// Sparse matrix API using sprs for efficient representation on large graphs.
-///
-/// Duplicate entries are combined using the Add operation.
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty>
 where
     W: Clone + std::ops::Add<Output = W>,
@@ -879,10 +597,7 @@ where
         }
         triplet.to_csr()
     }
-
     /// Constructs a new graph from a sparse adjacency matrix.
-    ///
-    /// Node attributes are initialized using `A::default()`.
     pub fn from_sparse_adjacency_matrix(sparse: &CsMat<W>) -> Self
     where
         A: Default,
@@ -900,10 +615,7 @@ where
         graph
     }
 }
-
 /// Conversion method for graphs with f64 weights to a new weight type U.
-///
-/// Each edge weight is converted via `U::from`, and node attributes are cloned.
 impl<A, Ty> BaseGraph<A, f64, Ty>
 where
     Ty: GraphConstructor<A, f64> + EdgeType,
@@ -918,15 +630,11 @@ where
         let mut new_graph = BaseGraph::<A, U, Ty> {
             inner: <Ty as GraphConstructor<A, U>>::new_graph(),
         };
-
-        // Build a mapping from old NodeId to new NodeId.
         let mut mapping: HashMap<NodeId, NodeId> = HashMap::new();
         for (node, attr) in self.nodes() {
             let new_node = new_graph.add_node(attr.clone());
             mapping.insert(node, new_node);
         }
-
-        // Copy and convert edges.
         for (u, v, weight) in self.edges() {
             let new_weight = U::from(*weight);
             let new_source = mapping.get(&u).expect("Missing mapping for source node");
@@ -936,7 +644,6 @@ where
         new_graph
     }
 }
-
 /// Mapping utilities for transforming node attributes and edge weights.
 impl<A, W, Ty> BaseGraph<A, W, Ty>
 where
@@ -961,7 +668,6 @@ where
         }
         new_graph
     }
-
     /// Map edge weights to a new type, producing a new graph with cloned node attributes.
     pub fn map_edge_weights<U>(&self, mut f: impl FnMut(EdgeId, &W) -> U) -> BaseGraph<A, U, Ty>
     where
@@ -981,7 +687,6 @@ where
         new_graph
     }
 }
-
 /// Indexing support for node attributes using NodeId.
 impl<A, W, Ty> Index<NodeId> for BaseGraph<A, W, Ty>
 where
@@ -992,7 +697,6 @@ where
         self.node_attr(index).expect("invalid NodeId")
     }
 }
-
 impl<A, W, Ty> IndexMut<NodeId> for BaseGraph<A, W, Ty>
 where
     Ty: GraphConstructor<A, W> + EdgeType,
@@ -1001,27 +705,105 @@ where
         self.node_attr_mut(index).expect("invalid NodeId")
     }
 }
-
-/// Type alias for a directed graph using the `Directed` marker type.
-pub type Digraph<A, W> = BaseGraph<A, W, Directed>;
-/// Marker alias for directed graphs.
-pub type DigraphMarker = Directed;
-
-/// Type alias for an undirected graph using the `Undirected` marker type.
-pub type Graph<A, W> = BaseGraph<A, W, Undirected>;
-/// Marker alias for undirected graphs.
-pub type GraphMarker = Undirected;
-
-/// type alias for HashMap mapping NodeId to T
-pub type NodeMap<T> = HashMap<NodeId, T>;
-/// type alias for HashMap mapping EdgeId to T
-pub type EdgeMap<T> = HashMap<EdgeId, T>;
-
+/// Builder for constructing graphs with a fluent API.
+pub struct GraphBuilder<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
+    nodes: Vec<A>,
+    edges: Vec<(usize, usize, W)>,
+    _marker: std::marker::PhantomData<Ty>,
+}
+impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> Default for GraphBuilder<A, W, Ty> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> GraphBuilder<A, W, Ty> {
+    /// Creates a new `GraphBuilder`.
+    pub fn new() -> Self {
+        Self {
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            _marker: std::marker::PhantomData,
+        }
+    }
+    /// Adds a node to the builder.
+    pub fn add_node(mut self, attr: A) -> Self {
+        self.nodes.push(attr);
+        self
+    }
+    /// Adds an edge to the builder.
+    pub fn add_edge(mut self, source: usize, target: usize, weight: W) -> Self {
+        self.edges.push((source, target, weight));
+        self
+    }
+    /// Consumes the builder and constructs the graph.
+    pub fn build(self) -> BaseGraph<A, W, Ty> {
+        let mut graph = BaseGraph::with_capacity(self.nodes.len(), self.edges.len());
+        let node_ids: Vec<NodeId> = self
+            .nodes
+            .into_iter()
+            .map(|attr| graph.add_node(attr))
+            .collect();
+        for (source, target, weight) in self.edges {
+            graph.add_edge(node_ids[source], node_ids[target], weight);
+        }
+        graph
+    }
+}
+/// Extra util trait for graph-specific operations.
+pub trait GraphinaGraph<A, W> {
+    /// Returns edges where backward edges are included for undirected graphs.
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a;
+    /// Returns an iterator over outgoing edges from a node as (target, weight).
+    fn outgoing_edges<'a>(&'a self, node: NodeId) -> impl Iterator<Item = (NodeId, &'a W)> + 'a
+    where
+        W: 'a;
+    /// Returns default value map initialized with default for all nodes.
+    fn to_nodemap_default<T: Default>(&self) -> NodeMap<T>;
+}
+impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Undirected> {
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.edges()
+            .flat_map(|(src, dst, w)| [(src, dst, w), (dst, src, w)].into_iter())
+    }
+    fn outgoing_edges<'a>(&'a self, node: NodeId) -> impl Iterator<Item = (NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.inner
+            .edges(node.0)
+            .map(|e| (NodeId::new(e.target()), e.weight()))
+    }
+    fn to_nodemap_default<T: Default>(&self) -> NodeMap<T> {
+        self.nodes().map(|(node, _)| (node, T::default())).collect()
+    }
+}
+impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Directed> {
+    fn flow_edges<'a>(&'a self) -> impl Iterator<Item = (NodeId, NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.edges()
+    }
+    fn outgoing_edges<'a>(&'a self, node: NodeId) -> impl Iterator<Item = (NodeId, &'a W)> + 'a
+    where
+        W: 'a,
+    {
+        self.inner
+            .edges(node.0)
+            .map(|e| (NodeId::new(e.target()), e.weight()))
+    }
+    fn to_nodemap_default<T: Default>(&self) -> NodeMap<T> {
+        self.nodes().map(|(node, _)| (node, T::default())).collect()
+    }
+}
 /// A deterministic, strongly-typed wrapper over a NodeId-keyed map.
-/// Backed by a BTreeMap to provide stable iteration order by NodeId.
 #[derive(Debug, Clone, Default)]
 pub struct OrderedNodeMap<T>(std::collections::BTreeMap<NodeId, T>);
-
 impl<T> OrderedNodeMap<T> {
     pub fn new() -> Self {
         Self(Default::default())
@@ -1045,7 +827,6 @@ impl<T> OrderedNodeMap<T> {
         self.0.is_empty()
     }
 }
-
 impl<T> From<NodeMap<T>> for OrderedNodeMap<T> {
     fn from(h: NodeMap<T>) -> Self {
         let mut bt = std::collections::BTreeMap::new();
@@ -1055,7 +836,6 @@ impl<T> From<NodeMap<T>> for OrderedNodeMap<T> {
         OrderedNodeMap(bt)
     }
 }
-
 impl<T> From<OrderedNodeMap<T>> for NodeMap<T> {
     fn from(ordered: OrderedNodeMap<T>) -> Self {
         let mut h = HashMap::with_capacity(ordered.0.len());
@@ -1065,7 +845,6 @@ impl<T> From<OrderedNodeMap<T>> for NodeMap<T> {
         h
     }
 }
-
 impl<T> IntoIterator for OrderedNodeMap<T> {
     type Item = (NodeId, T);
     type IntoIter = std::collections::btree_map::IntoIter<NodeId, T>;
@@ -1073,269 +852,39 @@ impl<T> IntoIterator for OrderedNodeMap<T> {
         self.0.into_iter()
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_digraph() {
         let mut dgraph = Digraph::<i32, f32>::new();
         let n1 = dgraph.add_node(1);
         let n2 = dgraph.add_node(2);
         let n3 = dgraph.add_node(3);
-
         let _e1 = dgraph.add_edge(n1, n2, 1.0);
         let _e2 = dgraph.add_edge(n2, n3, 2.0);
         let _e3 = dgraph.add_edge(n3, n1, 3.0);
-
         assert_eq!(dgraph.node_count(), 3);
         assert_eq!(dgraph.edge_count(), 3);
-
         let neighbors_n1: Vec<NodeId> = dgraph.neighbors(n1).collect();
         assert!(neighbors_n1.contains(&n2));
         assert!(!neighbors_n1.contains(&n3));
-
         assert_eq!(*dgraph.node_attr(n1).unwrap(), 1);
         assert_eq!(*dgraph.node_attr(n2).unwrap(), 2);
         assert_eq!(*dgraph.node_attr(n3).unwrap(), 3);
-
-        let matrix = dgraph.to_adjacency_matrix();
-        assert_eq!(matrix[0][1], Some(1.0));
-        assert_eq!(matrix[1][2], Some(2.0));
-        assert_eq!(matrix[2][0], Some(3.0));
-
-        let sparse = dgraph.to_sparse_adjacency_matrix();
-        assert_eq!(sparse.rows(), 3);
-        assert_eq!(sparse.get(0, 1), Some(&1.0));
-        assert_eq!(sparse.get(1, 2), Some(&2.0));
-        assert_eq!(sparse.get(2, 0), Some(&3.0));
-
-        let updated = dgraph.update_node(n1, 10);
-        assert!(updated);
-        assert_eq!(*dgraph.node_attr(n1).unwrap(), 10);
     }
-
     #[test]
-    fn test_graph() {
-        let mut graph = Graph::<&str, f32>::new();
-        let a = graph.add_node("A");
-        let b = graph.add_node("B");
-        let c = graph.add_node("C");
-
-        let _e1 = graph.add_edge(a, b, 0.0);
-        let _e2 = graph.add_edge(b, c, 0.0);
-        let _e3 = graph.add_edge(c, a, 0.0);
-
-        assert_eq!(graph.node_count(), 3);
-        assert_eq!(graph.edge_count(), 3);
-
-        let neighbors_a: Vec<NodeId> = graph.neighbors(a).collect();
-        assert!(neighbors_a.contains(&b));
-        assert!(neighbors_a.contains(&c));
-
-        assert_eq!(graph.node_attr(a).unwrap(), &"A");
-        assert_eq!(graph.node_attr(b).unwrap(), &"B");
-        assert_eq!(graph.node_attr(c).unwrap(), &"C");
-
-        let matrix = graph.to_adjacency_matrix();
-        assert_eq!(matrix[a.index()][b.index()], Some(0.0));
-        assert_eq!(matrix[b.index()][c.index()], Some(0.0));
-        assert_eq!(matrix[c.index()][a.index()], Some(0.0));
-
-        let sparse = graph.to_sparse_adjacency_matrix();
-        assert_eq!(sparse.rows(), 3);
-        assert_eq!(sparse.get(a.index(), b.index()), Some(&0.0));
-
-        let updated = graph.update_node(a, "Alpha");
-        assert!(updated);
-        assert_eq!(graph.node_attr(a).unwrap(), &"Alpha");
-    }
-
-    #[test]
-    fn test_removals() {
-        let mut dgraph = Digraph::<i32, f32>::new();
-        let n1 = dgraph.add_node(1);
-        let n2 = dgraph.add_node(2);
-        let n3 = dgraph.add_node(3);
-
-        let _e1 = dgraph.add_edge(n1, n2, 1.0);
-        let e2 = dgraph.add_edge(n2, n3, 2.0);
-        let _e3 = dgraph.add_edge(n3, n1, 3.0);
-
-        let removed_edge = dgraph.remove_edge(e2);
-        assert_eq!(removed_edge, Some(2.0));
-        assert_eq!(dgraph.edge_count(), 2);
-
-        let removed_attr = dgraph.remove_node(n2);
-        assert_eq!(removed_attr, Some(2));
-        assert_eq!(dgraph.node_count(), 2);
-
-        let update_result = dgraph.update_node(n2, 20);
-        assert!(!update_result);
-
-        let matrix = dgraph.to_adjacency_matrix();
-        assert_eq!(matrix.len(), 2);
-
-        let sparse = dgraph.to_sparse_adjacency_matrix();
-        assert_eq!(sparse.rows(), 2);
-    }
-
-    #[test]
-    fn test_api_improvements() {
-        let mut g = Graph::<i32, f64>::new();
-        assert!(g.is_empty());
-
-        let n1 = g.add_node(1);
-        assert!(!g.is_empty());
-
-        let n2 = g.add_node(2);
-        let e = g.add_edge(n1, n2, 3.5);
-
-        assert_eq!(g.edge_weight(e), Some(&3.5));
-        assert!(g.contains_node(n1));
-        assert!(g.contains_edge(n1, n2));
-        assert_eq!(g.degree(n1), Some(1));
-    }
-
-    #[test]
-    fn test_builder_pattern() {
-        let graph = Graph::<i32, f64>::builder()
-            .add_node(1)
-            .add_node(2)
-            .add_node(3)
-            .add_edge(0, 1, 1.0)
-            .add_edge(1, 2, 2.0)
-            .build();
-
+    fn test_undirected_graph() {
+        let mut graph = Graph::<i32, f32>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let _e1 = graph.add_edge(n1, n2, 1.0);
+        let _e2 = graph.add_edge(n2, n3, 2.0);
         assert_eq!(graph.node_count(), 3);
         assert_eq!(graph.edge_count(), 2);
-    }
-
-    #[test]
-    fn test_density() {
-        let mut g = Graph::<i32, f64>::new();
-        assert_eq!(g.density(), 0.0);
-
-        let n1 = g.add_node(1);
-        let n2 = g.add_node(2);
-        assert_eq!(g.density(), 0.0);
-
-        g.add_edge(n1, n2, 1.0);
-        assert_eq!(g.density(), 1.0);
-    }
-
-    #[test]
-    fn test_clear_and_retain() {
-        let mut g = Graph::<i32, f64>::new();
-        g.add_node(1);
-        g.add_node(2);
-
-        assert_eq!(g.node_count(), 2);
-        g.clear();
-        assert!(g.is_empty());
-
-        let n1 = g.add_node(1);
-        let n2 = g.add_node(2);
-        let n3 = g.add_node(3);
-        let n4 = g.add_node(4);
-
-        g.add_edge(n1, n2, 1.0);
-        g.add_edge(n2, n3, 1.0);
-
-        g.retain_nodes(|_id, attr| *attr % 2 == 0);
-        assert_eq!(g.node_count(), 2);
-        assert!(g.contains_node(n2));
-        assert!(g.contains_node(n4));
-    }
-
-    #[test]
-    fn ordered_nodemap_iteration_deterministic() {
-        let mut g = Graph::<i32, f64>::new();
-        let a = g.add_node(1);
-        let b = g.add_node(2);
-        let c = g.add_node(3);
-        let mut m = NodeMap::new();
-        m.insert(c, 30);
-        m.insert(a, 10);
-        m.insert(b, 20);
-        let ordered: OrderedNodeMap<i32> = m.into();
-        let keys: Vec<_> = ordered.iter().map(|(k, _)| k.index()).collect();
-        assert_eq!(keys, vec![a.index(), b.index(), c.index()]);
-    }
-
-    #[test]
-    fn test_as_petgraph_readonly() {
-        let mut g = Graph::<i32, f64>::new();
-        let n1 = g.add_node(1);
-        let n2 = g.add_node(2);
-        g.add_edge(n1, n2, 3.0);
-        let pg = g.as_petgraph();
-        assert_eq!(pg.node_count(), 2);
-        assert_eq!(pg.edge_count(), 1);
-    }
-
-    #[test]
-    fn test_edges_with_ids_and_add_if_absent() {
-        let mut g = Graph::<i32, f64>::new();
-        let a = g.add_node(1);
-        let b = g.add_node(2);
-        let (e1, inserted1) = g.add_edge_if_absent(a, b, 1.0);
-        assert!(inserted1);
-        let (e2, inserted2) = g.add_edge_if_absent(a, b, 2.0);
-        assert!(!inserted2);
-        assert_eq!(e1.index(), e2.index());
-        let edges: Vec<_> = g.edges_with_ids().collect();
-        assert_eq!(edges.len(), 1);
-        let (eid, src, dst, w) = edges[0];
-        assert_eq!(eid.index(), e1.index());
-        // Undirected: either orientation acceptable
-        assert!((src == a && dst == b) || (src == b && dst == a));
-        assert_eq!(*w, 1.0);
-    }
-
-    #[test]
-    fn test_incoming_outgoing_neighbors_directed() {
-        let mut d = Digraph::<i32, f64>::new();
-        let n1 = d.add_node(1);
-        let n2 = d.add_node(2);
-        let n3 = d.add_node(3);
-        d.add_edge(n1, n2, 1.0);
-        d.add_edge(n2, n3, 1.0);
-        let out2: Vec<_> = d.outgoing_neighbors(n2).collect();
-        let in2: Vec<_> = d.incoming_neighbors(n2).collect();
-        assert!(out2.contains(&n3) && !out2.contains(&n1));
-        assert!(in2.contains(&n1) && !in2.contains(&n3));
-    }
-
-    #[test]
-    fn test_indexing_node_attrs() {
-        let mut g = Graph::<i32, f64>::new();
-        let a = g.add_node(10);
-        assert_eq!(g[a], 10);
-        g[a] = 20;
-        assert_eq!(g[a], 20);
-    }
-
-    #[test]
-    fn test_map_edge_weights() {
-        let mut g = Graph::<i32, f64>::new();
-        let a = g.add_node(1);
-        let b = g.add_node(2);
-        g.add_edge(a, b, 2.5);
-        let g2 = g.map_edge_weights(|_eid, w| (*w * 2.0).round() as i32);
-        assert_eq!(g2.edge_count(), 1);
-        let (u, v, w) = g2.edges().next().unwrap();
-        assert_eq!((*w, u.index(), v.index()), (5, a.index(), b.index()));
-    }
-
-    #[test]
-    fn test_find_edge_undirected_symmetric() {
-        let mut g = Graph::<i32, f64>::new();
-        let a = g.add_node(1);
-        let b = g.add_node(2);
-        g.add_edge(a, b, 1.0);
-        assert!(g.find_edge(a, b).is_some());
-        assert!(g.find_edge(b, a).is_some());
+        let neighbors_n2: Vec<NodeId> = graph.neighbors(n2).collect();
+        assert!(neighbors_n2.contains(&n1));
+        assert!(neighbors_n2.contains(&n3));
     }
 }

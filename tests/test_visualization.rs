@@ -10,7 +10,7 @@ Tests for graph visualization functionality including:
 */
 
 use graphina::core::types::Graph;
-use graphina::core::visualization::{LayoutAlgorithm, LayoutEngine, VisualizationConfig};
+use graphina::visualization::{LayoutAlgorithm, LayoutEngine, VisualizationConfig};
 use std::fs;
 
 #[test]

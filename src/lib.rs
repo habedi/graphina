@@ -7,5 +7,17 @@ pub mod community;
 pub mod core;
 #[cfg(feature = "links")]
 pub mod links;
+#[cfg(feature = "metrics")]
+pub mod metrics;
+#[cfg(feature = "mst")]
+pub mod mst;
+#[cfg(feature = "parallel")]
+pub mod parallel;
 #[cfg(feature = "logging")]
 mod settings;
+#[cfg(feature = "subgraphs")]
+pub mod subgraphs;
+#[cfg(feature = "traversal")]
+pub mod traversal;
+#[cfg(feature = "visualization")]
+pub mod visualization;

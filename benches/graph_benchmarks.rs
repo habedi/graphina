@@ -10,8 +10,8 @@ use graphina::core::generators::{
     barabasi_albert_graph, complete_graph, erdos_renyi_graph, watts_strogatz_graph,
 };
 use graphina::core::paths::dijkstra;
-use graphina::core::traversal::{bfs, bidis, dfs};
 use graphina::core::types::Undirected;
+use graphina::traversal::{bfs, bidis, dfs};
 use std::hint::black_box;
 
 // ============================================================================

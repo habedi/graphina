@@ -10,6 +10,29 @@ use graphina::core::types::GraphMarker;
 
 use crate::PyGraph;
 
+/// Helper to convert Graph<u32, f32> from generators to Graph<i64, f64> for PyGraph
+fn convert_generated_graph(
+    graph: graphina::core::types::Graph<u32, f32>,
+) -> graphina::core::types::Graph<i64, f64> {
+    let mut converted = graphina::core::types::Graph::<i64, f64>::new();
+    let mut node_map = std::collections::HashMap::new();
+
+    // Convert nodes: u32 -> i64 (safe, no data loss)
+    for (nid, &attr) in graph.nodes() {
+        let new_id = converted.add_node(attr as i64);
+        node_map.insert(nid, new_id);
+    }
+
+    // Convert edges: f32 -> f64 (safe, no precision loss for typical values)
+    for (u, v, &w) in graph.edges() {
+        let iu = node_map[&u];
+        let iv = node_map[&v];
+        converted.add_edge(iu, iv, w as f64);
+    }
+
+    converted
+}
+
 /// Generate an Erdős-Rényi random graph (undirected only).
 ///
 /// Args:
@@ -28,8 +51,9 @@ pub fn erdos_renyi(n: usize, p: f64, seed: u64) -> PyResult<PyGraph> {
 
     match result {
         Ok(graph) => {
+            let converted = convert_generated_graph(graph);
             let mut py_graph = PyGraph::new();
-            py_graph.populate_from_internal(graph);
+            py_graph.populate_from_internal(converted);
             Ok(py_graph)
         }
         Err(e) => Err(PyValueError::new_err(format!(
@@ -55,8 +79,9 @@ pub fn complete_graph(n: usize) -> PyResult<PyGraph> {
 
     match result {
         Ok(graph) => {
+            let converted = convert_generated_graph(graph);
             let mut py_graph = PyGraph::new();
-            py_graph.populate_from_internal(graph);
+            py_graph.populate_from_internal(converted);
             Ok(py_graph)
         }
         Err(e) => Err(PyValueError::new_err(format!(
@@ -85,8 +110,9 @@ pub fn bipartite(n1: usize, n2: usize, p: f64, seed: u64) -> PyResult<PyGraph> {
 
     match result {
         Ok(graph) => {
+            let converted = convert_generated_graph(graph);
             let mut py_graph = PyGraph::new();
-            py_graph.populate_from_internal(graph);
+            py_graph.populate_from_internal(converted);
             Ok(py_graph)
         }
         Err(e) => Err(PyValueError::new_err(format!(
@@ -112,8 +138,9 @@ pub fn star_graph(n: usize) -> PyResult<PyGraph> {
 
     match result {
         Ok(graph) => {
+            let converted = convert_generated_graph(graph);
             let mut py_graph = PyGraph::new();
-            py_graph.populate_from_internal(graph);
+            py_graph.populate_from_internal(converted);
             Ok(py_graph)
         }
         Err(e) => Err(PyValueError::new_err(format!(
@@ -139,8 +166,9 @@ pub fn cycle_graph(n: usize) -> PyResult<PyGraph> {
 
     match result {
         Ok(graph) => {
+            let converted = convert_generated_graph(graph);
             let mut py_graph = PyGraph::new();
-            py_graph.populate_from_internal(graph);
+            py_graph.populate_from_internal(converted);
             Ok(py_graph)
         }
         Err(e) => Err(PyValueError::new_err(format!(
@@ -169,8 +197,9 @@ pub fn watts_strogatz(n: usize, k: usize, beta: f64, seed: u64) -> PyResult<PyGr
 
     match result {
         Ok(graph) => {
+            let converted = convert_generated_graph(graph);
             let mut py_graph = PyGraph::new();
-            py_graph.populate_from_internal(graph);
+            py_graph.populate_from_internal(converted);
             Ok(py_graph)
         }
         Err(e) => Err(PyValueError::new_err(format!(
@@ -198,8 +227,9 @@ pub fn barabasi_albert(n: usize, m: usize, seed: u64) -> PyResult<PyGraph> {
 
     match result {
         Ok(graph) => {
+            let converted = convert_generated_graph(graph);
             let mut py_graph = PyGraph::new();
-            py_graph.populate_from_internal(graph);
+            py_graph.populate_from_internal(converted);
             Ok(py_graph)
         }
         Err(e) => Err(PyValueError::new_err(format!(

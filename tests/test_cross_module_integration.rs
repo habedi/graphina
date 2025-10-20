@@ -5,6 +5,8 @@
 
 use graphina::core::io::read_edge_list;
 use graphina::core::types::{Digraph, Graph};
+#[cfg(feature = "subgraphs")]
+use graphina::subgraphs::SubgraphOps;
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
 use std::path::Path;
@@ -58,7 +60,7 @@ fn test_cross_traversal_and_metrics() {
         Err(_) => return,
     };
 
-    use graphina::core::traversal::bfs;
+    use graphina::traversal::bfs;
 
     // Find node with highest degree
     let mut max_degree = 0;
@@ -221,7 +223,7 @@ fn test_cross_serialization_preserves_algorithm_results() {
         return;
     }
 
-    use graphina::core::traversal::bfs;
+    use graphina::traversal::bfs;
 
     let start_node = original.nodes().next().map(|(n, _)| n).unwrap();
     let original_bfs = bfs(&original, start_node);
@@ -362,8 +364,8 @@ fn test_cross_mst_and_paths() {
         return;
     }
 
-    use graphina::core::mst::kruskal_mst;
     use graphina::core::paths::dijkstra;
+    use graphina::mst::kruskal_mst;
 
     let (mst_edges, _total_weight) = kruskal_mst(&graph).expect("MST should work");
     println!("MST has {} edges", mst_edges.len());
@@ -415,7 +417,7 @@ fn test_cross_directed_graph_algorithms() {
         return;
     }
 
-    use graphina::core::traversal::bfs;
+    use graphina::traversal::bfs;
 
     let mut max_out = 0;
     let mut hub = None;
@@ -464,7 +466,7 @@ fn test_cross_validation_ensures_algorithm_correctness() {
     println!("Has self-loops: {}", has_loops);
 
     if connected {
-        use graphina::core::traversal::bfs;
+        use graphina::traversal::bfs;
 
         if let Some((start, _)) = graph.nodes().next() {
             let visited = bfs(&graph, start);

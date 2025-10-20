@@ -1,6 +1,8 @@
 // Bug fix tests for architectural and algorithmic issues
 
 use graphina::core::types::{Digraph, Graph};
+#[cfg(feature = "subgraphs")]
+use graphina::subgraphs::SubgraphOps;
 
 #[cfg(test)]
 mod bug_fixes {
@@ -71,7 +73,7 @@ mod bug_fixes {
     /// Bug: Division by zero in metrics for single-node graphs
     #[test]
     fn test_metrics_single_node() {
-        use graphina::core::metrics::{average_clustering_coefficient, diameter};
+        use graphina::metrics::{average_clustering_coefficient, diameter};
 
         let mut g = Graph::<i32, f64>::new();
         g.add_node(1);
@@ -156,7 +158,7 @@ mod bug_fixes {
     /// Bug: Parallel algorithm correctness
     #[test]
     fn test_parallel_vs_sequential_consistency() {
-        use graphina::core::parallel::degrees_parallel;
+        use graphina::parallel::degrees_parallel;
 
         let mut g = Graph::<i32, f64>::new();
         let nodes: Vec<_> = (0..100).map(|i| g.add_node(i)).collect();

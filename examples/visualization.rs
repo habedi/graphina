@@ -7,7 +7,7 @@
 //! - PNG and SVG exports
 
 use graphina::core::types::Graph;
-use graphina::core::visualization::{LayoutAlgorithm, VisualizationConfig};
+use graphina::visualization::{LayoutAlgorithm, VisualizationConfig};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Graph Visualization Example\n");

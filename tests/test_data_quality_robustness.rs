@@ -5,6 +5,8 @@
 
 use graphina::core::io::read_edge_list;
 use graphina::core::types::Graph;
+#[cfg(feature = "subgraphs")]
+use graphina::subgraphs::SubgraphOps;
 // Add missing imports for tests using OrderedFloat and HashMap
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
@@ -142,7 +144,7 @@ fn test_data_quality_high_degree_nodes() {
     println!("Median degree: {}", median_degree);
     println!("95th percentile: {}", p95_degree);
 
-    use graphina::core::traversal::bfs;
+    use graphina::traversal::bfs;
 
     for (node, _) in graph.nodes() {
         let deg = graph.degree(node).unwrap_or(0);
@@ -448,7 +450,7 @@ fn test_performance_algorithm_scalability() {
             continue;
         }
 
-        use graphina::core::traversal::bfs;
+        use graphina::traversal::bfs;
 
         let start = std::time::Instant::now();
 
