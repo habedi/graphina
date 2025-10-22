@@ -13,6 +13,12 @@ TEST_DATA_DIR  := tests/testdata
 SHELL           := /bin/bash
 MSRV          := 1.86
 
+# Pinned versions for Rust development tools
+TARPAULIN_VERSION=0.32.8
+NEXTEST_VERSION=0.9.101
+AUDIT_VERSION=0.21.2
+CAREFUL_VERSION=0.4.8
+
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
 
@@ -72,10 +78,11 @@ install-snap: ## Install dependencies using Snapcraft
 install-deps: install-snap ## Install development dependencies
 	@echo "Installing development dependencies..."
 	@rustup component add rustfmt clippy
-	@cargo install cargo-tarpaulin
-	@cargo install cargo-audit
-	@cargo install cargo-nextest
-	@cargo install cargo-careful
+	# Install each tool with a specific, pinned version
+	@cargo install --locked cargo-tarpaulin --version ${TARPAULIN_VERSION}
+	@cargo install --locked cargo-nextest --version ${NEXTEST_VERSION}
+	@cargo install --locked cargo-audit --version ${AUDIT_VERSION}
+	@cargo install --locked cargo-careful --version ${CAREFUL_VERSION}
 	@sudo apt-get install python3-pip libfontconfig1-dev
 	@pip install $(PY_DEP_MNGR)
 
