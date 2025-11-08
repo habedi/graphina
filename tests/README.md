@@ -1,3 +1,3 @@
-## Graphina Tests (Non-Unit Test)
+## Graphina Tests (Non-unit Test)
 
 To be added.

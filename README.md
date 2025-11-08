@@ -12,9 +12,8 @@
 [![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=flat&labelColor=282c34&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
 [![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=f46623&logo=rust)](https://crates.io/crates/graphina)
 [![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
-[![Downloads](https://img.shields.io/crates/d/graphina?style=flat&labelColor=282c34&color=4caf50&logo=rust)](https://crates.io/crates/graphina)
 [![MSRV](https://img.shields.io/badge/MSRV-1.86.0-007ec6?label=msrv&style=flat&labelColor=282c34&logo=rust)](https://github.com/rust-lang/rust/releases/tag/1.86.0)
-[![Docs](https://img.shields.io/badge/docs-view-3776ab?style=flat&labelColor=282c34&logo=readthedocs)](docs)
+[![Docs](https://img.shields.io/badge/docs-read-3776ab?style=flat&labelColor=282c34&logo=readthedocs)](docs)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
 Graphina is a graph data science library for Rust.
@@ -24,15 +23,15 @@ social, transportation, and biological networks.
 Compared to other Rust graph libraries like [petgraph](https://github.com/petgraph/petgraph)
 and [rustworkx](https://www.rustworkx.org/), Graphina aims to provide a more high-level API and a wide range of
 ready-to-use algorithms for network analysis and graph mining tasks.
-The main goal is to make Graphina as feature-rich as [NetworkX](https://networkx.org/),
-but with the performance of Rust.
+Graphina aims to be as feature-rich as [NetworkX](https://networkx.org/) but with the speed and performance benefits of Rust.
 
 Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
 Check out [pygraphina](pygraphina/README.md) directory for more details.
 
+See the [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
+
 > [!IMPORTANT]
-> Graphina is in the early stages of development, so breaking changes may occur.
-> Bugs and API inconsistencies are also expected, and the algorithms may not yet be optimized for performance.
+> This project is in early development, so bugs and breaking changes are expected.
 > Please use the [issues page](https://github.com/habedi/graphina/issues) to report bugs or request features.
 
 ---
@@ -55,7 +54,7 @@ The extensions are independent of each other. However, they depend on the core l
 | [**Builders**](src/core/builders.rs)           | <ul><li>AdvancedGraphBuilder with validation</li><li>TopologyBuilder (path, cycle, star, and complete graph builders)</li><li>Type aliases (DirectedGraphBuilder, UndirectedGraphBuilder)</li></ul>                                                   | Ergonomic graph construction with fluent APIs              |
 | [**IO**](src/core/io.rs)                       | <ul><li>Edge list (read and write)</li><li>Adjacency list (read and write)</li></ul>                                                                                                                                                                  | I/O routines for reading and writing graph data            |
 | [**Serialization**](src/core/serialization.rs) | <ul><li>JSON serialization</li><li>Binary serialization</li><li>GraphML export</li><li>SerializableGraph format</li></ul>                                                                                                                             | Multiple serialization formats for interoperability        |
-| [**Generators**](src/core/generators.rs)       | <ul><li>Erdős-Rényi graph</li><li>Watts-Strogatz graph</li><li>Barabási-Albert graph</li><li>Complete graph (directed and undirected)</li><li>Bipartite graph</li><li>Star graph</li><li>Cycle graph</li><li>Path graph</li><li>Random tree</li></ul> | Graph generators for random and structured graphs          |
+| [**Generators**](src/core/generators.rs)       | <ul><li>ErdÅs-RÃ©nyi graph</li><li>Watts-Strogatz graph</li><li>BarabÃ¡si-Albert graph</li><li>Complete graph (directed and undirected)</li><li>Bipartite graph</li><li>Star graph</li><li>Cycle graph</li><li>Path graph</li><li>Random tree</li></ul> | Graph generators for random and structured graphs          |
 | [**Paths**](src/core/paths.rs)                 | <ul><li>Dijkstra's algorithm</li><li>Bellman-Ford algorithm</li><li>Floyd-Warshall algorithm</li><li>Johnson's algorithm</li><li>A* search algorithm</li><li>Iterative deepening A* (IDA*)</li></ul>                                                  | Shortest paths algorithms                                  |
 | [**Validation**](src/core/validation.rs)       | <ul><li>Graph connectivity check</li><li>DAG validation</li><li>Bipartite check</li><li>Negative weights detection</li><li>Self-loops detection</li><li>Component counting</li><li>Algorithm precondition validators</li></ul>                        | Graph property validation utilities                        |
 | [**Pool**](src/core/pool.rs)                   | <ul><li>NodeMap pool</li><li>NodeSet pool</li><li>NodeQueue pool</li><li>Thread-local pooling</li></ul>                                                                                                                                               | Memory pooling for performance optimization                |
@@ -66,7 +65,7 @@ The extensions are independent of each other. However, they depend on the core l
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|
 | [**Centrality**](src/centrality/)       | <ul><li>Degree centrality</li><li>Closeness centrality</li><li>Betweenness centrality (node and edge)</li><li>Eigenvector centrality</li><li>PageRank centrality</li><li>Katz centrality</li><li>Harmonic centrality</li><li>Local reaching centrality</li><li>Global reaching centrality</li><li>Voterank centrality</li><li>Laplacian centrality</li><li>Percolation centrality</li></ul>                                                                                                                                                                                                                        | Centrality measures for node importance       |
 | [**Metrics**](src/metrics/)             | <ul><li>Diameter</li><li>Radius</li><li>Average clustering coefficient</li><li>Clustering coefficient (local)</li><li>Average path length</li><li>Transitivity</li><li>Triangles count</li><li>Assortativity coefficient</li></ul>                                                                                                                                                                                                                                                                                                                                                                                 | Graph-level and node-level metrics            |
-| [**MST**](src/mst/)                     | <ul><li>Prim's algorithm</li><li>Kruskal's algorithm</li><li>Borůvka's algorithm</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Minimum spanning tree algorithms              |
+| [**MST**](src/mst/)                     | <ul><li>Prim's algorithm</li><li>Kruskal's algorithm</li><li>BorÅ¯vka's algorithm</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Minimum spanning tree algorithms              |
 | [**Traversal**](src/traversal/)         | <ul><li>Breadth-first search (BFS)</li><li>Depth-first search (DFS)</li><li>Iterative deepening DFS (IDDFS)</li><li>Bidirectional search</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Graph traversal algorithms                    |
 | [**Subgraphs**](src/subgraphs/)         | <ul><li>Subgraph extraction</li><li>Induced subgraph</li><li>Ego graph</li><li>K-hop neighbors</li><li>Filter nodes or edges</li><li>Connected component extraction</li><li>Component subgraph</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                           | Subgraph operations and filtering             |
 | [**Links**](src/links/)                 | <ul><li>Resource allocation index</li><li>Jaccard coefficient</li><li>Adamic-Adar index</li><li>Preferential attachment</li><li>Common neighbors</li><li>CN Soundarajan-Hopcroft</li><li>RA index Soundarajan-Hopcroft</li><li>Within-inter-cluster ratio</li><li>Common neighbor centrality</li></ul>                                                                                                                                                                                                                                                                                                             | Link prediction algorithms                    |
@@ -85,7 +84,7 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.4.0-a1"
+graphina = "0.4.0"
 ```
 
 *Graphina requires Rust 1.86 or later.*
