@@ -36,7 +36,7 @@ impl NodeSetPool {
     }
 
     /// Gets a HashSet from the pool, or creates a new one if the pool is empty.
-    pub fn acquire(&self) -> PooledNodeSet {
+    pub fn acquire(&self) -> PooledNodeSet<'_> {
         let set = self.pool.borrow_mut().pop().unwrap_or_default();
         PooledNodeSet { set, pool: self }
     }
@@ -101,7 +101,7 @@ impl<T> NodeMapPool<T> {
     }
 
     /// Gets a HashMap from the pool, or creates a new one if the pool is empty.
-    pub fn acquire(&self) -> PooledNodeMap<T> {
+    pub fn acquire(&self) -> PooledNodeMap<'_, T> {
         let map = self.pool.borrow_mut().pop().unwrap_or_default();
         PooledNodeMap { map, pool: self }
     }
@@ -166,7 +166,7 @@ impl NodeQueuePool {
     }
 
     /// Gets a VecDeque from the pool, or creates a new one if the pool is empty.
-    pub fn acquire(&self) -> PooledNodeQueue {
+    pub fn acquire(&self) -> PooledNodeQueue<'_> {
         let queue = self.pool.borrow_mut().pop().unwrap_or_default();
         PooledNodeQueue { queue, pool: self }
     }
