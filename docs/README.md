@@ -1,3 +1,3 @@
-# Graphina Documentation
+## Graphina Documentation
 
 To be added.

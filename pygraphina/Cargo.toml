@@ -1,6 +1,6 @@
 [package]
 name = "pygraphina"
-version = "0.1.1-a1"
+version = "0.2.0-a2"
 edition = "2024"
 publish = false
 
@@ -9,6 +9,12 @@ name = "pygraphina"
 crate-type = ["cdylib"]
 doc = false
 
+[features]
+# Enable NetworkX interop by default; disable with `--no-default-features`
+default = ["networkx"]
+networkx = []
+
 [dependencies]
-pyo3 = { version = "0.25.1", features = ["abi3-py310", "extension-module", "auto-initialize"] }
-graphina = { path = ".." }
+pyo3 = { version = "0.27.0", features = ["abi3-py310", "extension-module", "auto-initialize"] }
+graphina = { path = "..", features = ["centrality", "approximation", "community", "links", "metrics", "mst", "traversal", "subgraphs", "parallel"] }
+ordered-float = "5.0.0"

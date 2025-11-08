@@ -1,6 +1,6 @@
 [package]
 name = "graphina"
-version = "0.3.0-a1"
+version = "0.4.0-a1"
 description = "A graph data science library for Rust"
 repository = "https://github.com/habedi/graphina"
 license = "MIT OR Apache-2.0"
@@ -29,11 +29,23 @@ name = "graphina"
 path = "src/lib.rs"
 
 [features]
-default = []  # No features enabled by default
+default = []
 binaries = []
+logging = []
+centrality = []
+community = []
+links = []
+approximation = []
+parallel = []
+visualization = ["plotters"]
+metrics = []
+mst = []
+traversal = []
+subgraphs = []
+all = ["centrality", "community", "links", "approximation", "parallel", "visualization", "metrics", "mst", "traversal", "subgraphs"]
 
 [dependencies]
-ctor = "0.4.1"
+ctor = "0.6.0"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 rand = "0.9.0"
@@ -41,10 +53,24 @@ sprs = "0.11.3"
 ordered-float = "5.0.0"
 rayon = "1.10.0"
 nalgebra = "0.33.2"
-petgraph = { version = "0.8.2", features = ["graphmap", "stable_graph", "matrix_graph", "serde-1", "rayon"] }
+petgraph = { version = "0.8.3", features = ["graphmap", "stable_graph", "matrix_graph", "serde-1", "rayon"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = { version = "2.0.1", features = ["serde"] }
+plotters = { version = "0.3", optional = true }
+thiserror = "2.0"
 
 [dev-dependencies]
 criterion = { version = "0.7.0", features = ["html_reports"] }
+proptest = "1.5.0"
+
+[[bench]]
+name = "graph_benchmarks"
+harness = false
+
+[[bench]]
+name = "algorithm_benchmarks"
+harness = false
 
 [[bench]]
 name = "project_benchmarks"
@@ -56,11 +82,11 @@ panic = "abort"
 codegen-units = 1
 lto = true
 
-[profile.bench]
-debug = true
-
 [profile.test]
 debug = true
+
+[profile.bench]
+inherits = "release"
 
 [profile.example]
 inherits = "release"

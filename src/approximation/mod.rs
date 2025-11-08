@@ -1,1 +1,11 @@
-pub mod algorithms;
+pub mod clique;
+pub mod clustering;
+pub mod connectivity;
+pub mod diameter;
+pub mod independent_set;
+pub mod matching;
+pub mod ramsey;
+pub mod subgraph;
+pub mod treewidth;
+pub mod tsp;
+pub mod vertex_cover;

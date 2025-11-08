@@ -13,6 +13,12 @@ TEST_DATA_DIR  := tests/testdata
 SHELL           := /bin/bash
 MSRV          := 1.86
 
+# Pinned versions for Rust development tools
+TARPAULIN_VERSION=0.32.8
+NEXTEST_VERSION=0.9.101
+AUDIT_VERSION=0.21.2
+CAREFUL_VERSION=0.4.8
+
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
 
@@ -36,13 +42,13 @@ format: ## Format Rust files
 .PHONY: test
 test: format ## Run the tests
 	@echo "Running tests..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --all-targets \
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --features all --all-targets \
 	--workspace -- --nocapture
 
 .PHONY: coverage
 coverage: format ## Generate test coverage report
 	@echo "Generating test coverage report..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --out Xml --out Html
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --features all --out Xml --out Html
 
 .PHONY: build
 build: format ## Build the binary for the current platform
@@ -72,16 +78,18 @@ install-snap: ## Install dependencies using Snapcraft
 install-deps: install-snap ## Install development dependencies
 	@echo "Installing development dependencies..."
 	@rustup component add rustfmt clippy
-	@cargo install cargo-tarpaulin
-	@cargo install cargo-audit
-	@cargo install cargo-nextest
-	@sudo apt-get install python3-pip
+	# Install each tool with a specific, pinned version
+	@cargo install --locked cargo-tarpaulin --version ${TARPAULIN_VERSION}
+	@cargo install --locked cargo-nextest --version ${NEXTEST_VERSION}
+	@cargo install --locked cargo-audit --version ${AUDIT_VERSION}
+	@cargo install --locked cargo-careful --version ${CAREFUL_VERSION}
+	@sudo apt-get install python3-pip libfontconfig1-dev
 	@pip install $(PY_DEP_MNGR)
 
 .PHONY: lint
 lint: format ## Run linters on Rust files
 	@echo "Linting Rust files..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -- -D warnings
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
 
 .PHONY: publish
 publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to be set)
@@ -91,27 +99,61 @@ publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to b
 .PHONY: bench
 bench: ## Run benchmarks
 	@echo "Running benchmarks..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench --features all
 
 .PHONY: audit
 audit: ## Run security audit on Rust dependencies
 	@echo "Running security audit..."
 	@cargo audit
 
-.PHONY: doc
-doc: format ## Generate the documentation
+.PHONY: check-module-deps
+check-module-deps: ## Check that top-level modules only depend on core (not on each other)
+	@echo "Checking module dependencies..."
+	@ERROR=0; \
+	TOP_MODULES="approximation centrality community links metrics mst parallel subgraphs traversal visualization"; \
+	for module in $$TOP_MODULES; do \
+		if [ -d "src/$$module" ]; then \
+			for other_module in $$TOP_MODULES; do \
+				if [ "$$module" != "$$other_module" ]; then \
+					VIOLATIONS=$$(grep -r "use crate::$$other_module" src/$$module/ 2>/dev/null || true); \
+					if [ -n "$$VIOLATIONS" ]; then \
+						echo "ERROR: Module '$$module' has forbidden dependency on '$$other_module':"; \
+						echo "$$VIOLATIONS" | sed 's/^/  /'; \
+						ERROR=1; \
+					fi; \
+				fi; \
+			done; \
+		fi; \
+	done; \
+	if [ $$ERROR -eq 0 ]; then \
+		echo "All module dependencies are valid - only 'core' is used"; \
+	else \
+		echo "Module dependency violations found!"; \
+		echo ""; \
+		echo "Rule: Top-level modules can only depend on 'core', not on each other."; \
+		echo "Top-level modules: $$TOP_MODULES"; \
+		exit 1; \
+	fi
+
+.PHONY: careful
+careful: ## Run security checks on Rust code
+	@echo "Running security checks..."
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo careful run
+
+.PHONY: docs
+docs: format ## Generate the documentation
 	@echo "Generating documentation..."
 	@cargo doc --no-deps --document-private-items
 
 .PHONY: fix-lint
 fix-lint: ## Fix the linter warnings
 	@echo "Fixing linter warnings..."
-	@cargo clippy --fix --allow-dirty --all-targets --workspace --all-features -- -D warnings
+	@cargo clippy --fix --allow-dirty --all-targets --workspace --all-features -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
 
 .PHONY: nextest
 nextest: ## Run tests using nextest
 	@echo "Running tests using nextest..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run --features all
 
 .PHONY: testdata
 testdata: ## Download the datasets used in tests
@@ -130,7 +172,7 @@ run-examples: ## Run all the scripts in the examples directory one by one
 	@for example in examples/*.rs; do \
 	   example_name=$$(basename $$example .rs); \
 	   echo "Running example: $$example_name"; \
-	   cargo run --example $$example_name; \
+	   cargo run --features all --example $$example_name; \
 	done
 
 ########################################################################################

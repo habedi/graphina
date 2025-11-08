@@ -1,28 +1,23 @@
 [project]
 name = "graphina"
 version = "0.1.0"
-description = "Python environment for the Graphina library"
-readme = "README.md"
-authors = [
-  { name = "Hassan Abedi", email = "hassan.abedi.t@gmail.com" }
-]
+description = "The Python environment for the Graphina project"
 requires-python = ">=3.10,<4.0"
 dependencies = [
-  "maturin[zig]>=1.8.3,<2.0.0",
-  "huggingface-hub>=0.29.3,<0.30.0",
-  "networkx>=3.4.2,<4.0.0",
-  "pygraphina>=0.1.0",
+  "maturin[zig] (>=1.8.3,<2.0.0)",
+  "huggingface-hub (>=0.29.3,<0.30.0)",
+  "networkx (>=3.4.2,<4.0.0)",
+  "numpy (>=2.2.6,<3.0.0)",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.3.5",
-  "pytest-cov>=6.0.0",
-  "pytest-mock>=3.14.0",
-  "pytest-benchmark>=5.1.0",
-  "mypy>=1.11.1",
-  "ruff>=0.11.0",
-  "twine>=6.1.0"
+  "pytest (>=8.3.5,<9.0.0)",
+  "pytest-cov (>=6.0.0,<7.0.0)",
+  "pytest-mock (>=3.14.0,<4.0.0)",
+  "mypy (>=1.11.1,<2.0.0)",
+  "ruff (>=0.11.0,<0.12.0)",
+  "twine (>=6.1.0,<7.0.0)",
 ]
 
 [tool.pytest.ini_options]
@@ -64,8 +59,7 @@ exclude = [
   ".bzr", ".direnv", ".eggs", ".git", ".git-rewrite", ".hg", ".mypy_cache",
   ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv",
   "__pypackages__", "_build", "buck-out", "build", "dist", "node_modules",
-  "venv",
-  "tests"
+  "venv", "tests"
 ]
 line-length = 100
 indent-width = 4

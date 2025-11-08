@@ -12,18 +12,17 @@ Specifically, it supports:
   - Reading an adjacency list from a file into a graph.
   - Writing a graph's adjacency list to a file.
 
-Functions use the core graph abstractions defined in `graphina::core::types`.
-and use the custom exception `graphina::core::exceptions::GraphinaException` for reporting errors.
+Functions use the core graph abstractions defined in `graphina::core::types` and report errors using
+`graphina::core::error::GraphinaError` where appropriate.
 
 The input files support comments (lines or inline comments beginning with `#` are ignored)
 and allow for optional weight specifications. If a weight is missing, a default of `1.0` is used.
 */
 
-use crate::core::exceptions::GraphinaException;
 use crate::core::types::{BaseGraph, GraphConstructor};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
+use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Write};
 
 /// Reads an edge list from a file and populates the given graph.
 ///
@@ -39,13 +38,13 @@ use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
 ///
 /// # Type Parameters
 ///
+/// * `W` - The weight type of the graph, which must implement `FromStr` and `Copy`.
 /// * `Ty` - The edge type of the graph, which must implement `GraphConstructor`.
 ///
 /// # Returns
 ///
 /// * `Result<()>` - An `io::Result` indicating success or failure. Failure can occur due to I/O errors,
-///   or if any token fails to parse, in which case a `graphina::core::exceptions::GraphinaException`
-///   is returned as part of the error message.
+///   or if any token fails to parse; in such cases, the error message will include details suitable for debugging.
 ///
 /// # Example
 ///
@@ -57,9 +56,15 @@ use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Result, Write};
 /// // Assume "edges.txt" exists and follows the correct format.
 /// read_edge_list("edges.txt", &mut graph, ',').expect("Failed to read edge list");
 /// ```
-pub fn read_edge_list<Ty>(path: &str, graph: &mut BaseGraph<i32, f32, Ty>, sep: char) -> Result<()>
+pub fn read_edge_list<W, Ty>(
+    path: &str,
+    graph: &mut BaseGraph<i32, W, Ty>,
+    sep: char,
+) -> std::io::Result<()>
 where
-    Ty: GraphConstructor<i32, f32>,
+    W: Copy + std::str::FromStr,
+    <W as std::str::FromStr>::Err: std::fmt::Display + std::fmt::Debug,
+    Ty: GraphConstructor<i32, W>,
 {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
@@ -81,30 +86,29 @@ where
         let src_val: i32 = tokens[0].parse().map_err(|e| {
             Error::new(
                 ErrorKind::InvalidData,
-                GraphinaException::new(&format!(
-                    "Error parsing source value '{}': {}",
-                    tokens[0], e
-                )),
+                format!("Error parsing source value '{}': {}", tokens[0], e),
             )
         })?;
         let tgt_val: i32 = tokens[1].parse().map_err(|e| {
             Error::new(
                 ErrorKind::InvalidData,
-                GraphinaException::new(&format!(
-                    "Error parsing target value '{}': {}",
-                    tokens[1], e
-                )),
+                format!("Error parsing target value '{}': {}", tokens[1], e),
             )
         })?;
-        let weight: f32 = if tokens.len() >= 3 {
+        let weight: W = if tokens.len() >= 3 {
             tokens[2].parse().map_err(|e| {
                 Error::new(
                     ErrorKind::InvalidData,
-                    GraphinaException::new(&format!("Error parsing weight '{}': {}", tokens[2], e)),
+                    format!("Error parsing weight '{}': {}", tokens[2], e),
                 )
             })?
         } else {
-            1.0
+            "1.0".parse::<W>().map_err(|e| {
+                Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Error parsing default weight '1.0': {}", e),
+                )
+            })?
         };
         let src_node = *node_map
             .entry(src_val)
@@ -135,7 +139,7 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - An `io::Result` indicating success or failure. Failure occurs if a node attribute is missing
-///   (triggering a [`GraphinaException`](../exceptions/index.html#graphinaexception)) or if writing to the file fails.
+///   or if writing to the file fails.
 ///
 /// # Example
 ///
@@ -149,7 +153,11 @@ where
 /// graph.add_edge(n1, n2, 3.5);
 /// write_edge_list("output_edges.txt", &graph, ',').expect("Failed to write edge list");
 /// ```
-pub fn write_edge_list<Ty>(path: &str, graph: &BaseGraph<i32, f32, Ty>, sep: char) -> Result<()>
+pub fn write_edge_list<Ty>(
+    path: &str,
+    graph: &BaseGraph<i32, f32, Ty>,
+    sep: char,
+) -> std::io::Result<()>
 where
     Ty: GraphConstructor<i32, f32>,
 {
@@ -159,19 +167,13 @@ where
         let src_attr = graph.node_attr(src).ok_or_else(|| {
             Error::new(
                 ErrorKind::InvalidData,
-                GraphinaException::new(&format!(
-                    "Missing node attribute for source node: {:?}",
-                    src
-                )),
+                format!("Missing node attribute for source node: {:?}", src),
             )
         })?;
         let tgt_attr = graph.node_attr(tgt).ok_or_else(|| {
             Error::new(
                 ErrorKind::InvalidData,
-                GraphinaException::new(&format!(
-                    "Missing node attribute for target node: {:?}",
-                    tgt
-                )),
+                format!("Missing node attribute for target node: {:?}", tgt),
             )
         })?;
         writeln!(writer, "{}{}{}{}{}", src_attr, sep, tgt_attr, sep, weight)?;
@@ -204,8 +206,7 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - An `io::Result` indicating success or failure. Parsing errors are returned if any token
-///   fails to convert to the expected type. In such cases, a [`GraphinaException`](../exceptions/index.html#graphinaexception)
-///   is used to encapsulate the error.
+///   fails to convert to the expected type.
 ///
 /// # Example
 ///
@@ -221,7 +222,7 @@ pub fn read_adjacency_list<Ty>(
     path: &str,
     graph: &mut BaseGraph<i32, f32, Ty>,
     sep: char,
-) -> Result<()>
+) -> std::io::Result<()>
 where
     Ty: GraphConstructor<i32, f32>,
 {
@@ -245,10 +246,7 @@ where
         let src_val: i32 = tokens[0].parse().map_err(|e| {
             Error::new(
                 ErrorKind::InvalidData,
-                GraphinaException::new(&format!(
-                    "Error parsing source value '{}': {}",
-                    tokens[0], e
-                )),
+                format!("Error parsing source value '{}': {}", tokens[0], e),
             )
         })?;
         let src_node = *node_map
@@ -260,21 +258,14 @@ where
             let neighbor_val: i32 = tokens[i].parse().map_err(|e| {
                 Error::new(
                     ErrorKind::InvalidData,
-                    GraphinaException::new(&format!(
-                        "Error parsing neighbor value '{}': {}",
-                        tokens[i], e
-                    )),
+                    format!("Error parsing neighbor value '{}': {}", tokens[i], e),
                 )
             })?;
             let weight: f32 = if i + 1 < tokens.len() {
                 tokens[i + 1].parse().map_err(|e| {
                     Error::new(
                         ErrorKind::InvalidData,
-                        GraphinaException::new(&format!(
-                            "Error parsing weight '{}': {}",
-                            tokens[i + 1],
-                            e
-                        )),
+                        format!("Error parsing weight '{}': {}", tokens[i + 1], e),
                     )
                 })?
             } else {
@@ -311,7 +302,7 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - An `io::Result` indicating success or failure. An error is returned if any node attribute
-///   is missing (with a [`GraphinaException`](../exceptions/index.html#graphinaexception)) or if writing to the file fails.
+///   is missing or if writing to the file fails.
 ///
 /// # Example
 ///
@@ -329,31 +320,24 @@ pub fn write_adjacency_list<Ty>(
     path: &str,
     graph: &BaseGraph<i32, f32, Ty>,
     sep: char,
-) -> Result<()>
+) -> std::io::Result<()>
 where
     Ty: GraphConstructor<i32, f32>,
 {
     let file = File::create(path)?;
     let mut writer = BufWriter::new(file);
-    // Build a mapping from each source node (by its attribute) to its neighbors.
     let mut adj_map: HashMap<i32, Vec<(i32, f32)>> = HashMap::new();
     for (src, tgt, weight) in graph.edges() {
         let src_attr = graph.node_attr(src).ok_or_else(|| {
             Error::new(
                 ErrorKind::InvalidData,
-                GraphinaException::new(&format!(
-                    "Missing node attribute for source node: {:?}",
-                    src
-                )),
+                format!("Missing node attribute for source node: {:?}", src),
             )
         })?;
         let tgt_attr = graph.node_attr(tgt).ok_or_else(|| {
             Error::new(
                 ErrorKind::InvalidData,
-                GraphinaException::new(&format!(
-                    "Missing node attribute for target node: {:?}",
-                    tgt
-                )),
+                format!("Missing node attribute for target node: {:?}", tgt),
             )
         })?;
         adj_map
@@ -374,4 +358,83 @@ where
     }
     writer.flush()?;
     Ok(())
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+    use std::fs;
+    use std::io::Read;
+    #[test]
+    fn test_read_edge_list() {
+        let tmp_path = "tmp_edge_list.txt";
+        let edge_list = "\
+# This is a comment line and should be ignored
+1,2,1.5
+2,3,2.0
+3,1,3.0  # Comment after data should be ignored
+";
+        fs::write(tmp_path, edge_list).expect("Unable to write temporary file");
+        let mut graph = Graph::<i32, f32>::new();
+        read_edge_list(tmp_path, &mut graph, ',').expect("read_edge_list failed");
+        assert_eq!(graph.node_count(), 3);
+        assert_eq!(graph.edge_count(), 3);
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+    #[test]
+    fn test_write_edge_list() {
+        let mut graph = Graph::<i32, f32>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, 1.5);
+        graph.add_edge(n2, n3, 2.0);
+        graph.add_edge(n3, n1, 3.0);
+        let tmp_path = "tmp_edge_list_out.txt";
+        write_edge_list(tmp_path, &graph, ',').expect("write_edge_list failed");
+        let mut content = String::new();
+        fs::File::open(tmp_path)
+            .expect("Failed to open output file")
+            .read_to_string(&mut content)
+            .expect("Failed to read output file");
+        assert!(content.contains("1,2,1.5") || content.contains("2,1,1.5"));
+        assert!(content.contains("2,3,2") || content.contains("3,2,2"));
+        assert!(content.contains("3,1,3") || content.contains("1,3,3"));
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+    #[test]
+    fn test_read_adjacency_list() {
+        let tmp_path = "tmp_adj_list.txt";
+        let adj_list = "\
+# Adjacency list with comments
+1,2,1.5,3,2.5
+2,3,2.0
+3
+";
+        fs::write(tmp_path, adj_list).expect("Unable to write temporary file");
+        let mut graph = Graph::<i32, f32>::new();
+        read_adjacency_list(tmp_path, &mut graph, ',').expect("read_adjacency_list failed");
+        assert_eq!(graph.node_count(), 3);
+        assert_eq!(graph.edge_count(), 3);
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+    #[test]
+    fn test_write_adjacency_list() {
+        let mut graph = Graph::<i32, f32>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, 1.5);
+        graph.add_edge(n1, n3, 2.5);
+        graph.add_edge(n2, n3, 2.0);
+        let tmp_path = "tmp_adj_list_out.txt";
+        write_adjacency_list(tmp_path, &graph, ',').expect("write_adjacency_list failed");
+        let mut content = String::new();
+        fs::File::open(tmp_path)
+            .expect("Failed to open output file")
+            .read_to_string(&mut content)
+            .expect("Failed to read output file");
+        assert!(!content.is_empty());
+        fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
 }

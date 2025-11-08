@@ -6,6 +6,9 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+        - '**.md'
+        - 'docs/**'
   push:
     tags:
       - 'v*'
@@ -14,7 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  tests:
+  test:
     runs-on: ubuntu-latest
 
     strategy:
@@ -25,17 +28,28 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
-      - name: Set up Rust ${{ matrix.rust-version }}
+      - name: Set Up Rust ${{ matrix.rust-version }}
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust-version }}
+          cache: true
 
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y make
           make install-deps
+
+      - name: Download Test Datasets (for Integration and E2E tests)
+        run: |
+          pip install uv
+          uv sync --extra dev
+          source .venv/bin/activate
+          make testdata
+        continue-on-error: true
 
       - name: Run Tests and Generate Coverage Report
         run: make coverage

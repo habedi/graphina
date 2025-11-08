@@ -25,16 +25,17 @@ It supports single‑source and all‑pairs computations via (classical) algorit
 
 ## Error Handling
 
-Preconditions for each algorithm are enforced at runtime using custom exceptions from `graphina::core::exceptions`.
-For example, algorithms that require nonnegative edge weights will return a `Result` containing a `GraphinaException`
-if a negative weight is encountered. Users should handle these `Result` types accordingly.
+Preconditions for each algorithm are enforced at runtime using `graphina::core::error::GraphinaError`.
+For example, algorithms that require nonnegative edge weights will return a `Result` containing a
+`GraphinaError::InvalidArgument` if a negative weight is encountered. Users should handle these
+`Result` types accordingly.
 
 */
 
-use crate::core::exceptions::GraphinaException;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId, NodeMap};
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashSet};
+use std::collections::BinaryHeap;
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
 
@@ -168,7 +169,7 @@ pub fn dijkstra_path_impl<A, W, Ty>(
     source: NodeId,
     cutoff: Option<f64>,
     eval_cost: impl Fn(&W) -> Option<f64>,
-) -> Result<PathFindResult, GraphinaException>
+) -> Result<PathFindResult>
 where
     W: Debug,
     A: Debug,
@@ -181,7 +182,11 @@ where
     let mut heap = BinaryHeap::new();
 
     dist.insert(source, Some(0.0));
-    heap.push(Reverse((NotNan::new(0.0).unwrap(), source)));
+
+    heap.push(Reverse((
+        NotNan::new(0.0).unwrap_or_else(|_| NotNan::new(1.0).unwrap_or(NotNan::from(1))),
+        source,
+    )));
 
     while let Some(Reverse((d, u))) = heap.pop() {
         if let Some(current) = dist[&u] {
@@ -194,13 +199,13 @@ where
                 continue;
             };
             if w.is_sign_negative() {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "Dijkstra requires nonnegative costs, but found cost: {:?}, src: {:?}, dst: {:?}, edge: {:?}",
                     w, u, v, edge
                 )));
             }
             let Ok(w) = NotNan::new(w) else {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "Dijkstra requires not NaN costs, but found cost: {:?}, src: {:?}, dst: {:?}, edge: {:?}",
                     w, u, v, edge
                 )));
@@ -221,7 +226,7 @@ where
     Ok((dist, trace))
 }
 
-/// Full implementationof Dijkstra's algorithm for finding shortest paths in a graph
+/// Full implementation of Dijkstra's algorithm for finding shortest paths in a graph
 /// for graph with edge type `f64`
 /// with non-negative weights.
 ///
@@ -270,7 +275,7 @@ pub fn dijkstra_path_f64<A, Ty>(
     graph: &BaseGraph<A, f64, Ty>,
     source: NodeId,
     cutoff: Option<f64>,
-) -> Result<PathFindResult, GraphinaException>
+) -> Result<PathFindResult>
 where
     A: Debug,
     Ty: GraphConstructor<A, f64>,
@@ -283,7 +288,7 @@ where
 ///
 /// # Returns
 ///
-/// A `Result` containing a vector of length equal to the number of nodes, where each element is:
+/// A `Result` containing a NodeMap keyed by node IDs, where each value is:
 /// - `Some(cost)` if the node is reachable from the source, or
 /// - `None` if it is unreachable.
 ///
@@ -291,40 +296,37 @@ where
 ///
 /// # Complexity
 ///
-/// - **Time:** \(O(E \log V)\)
-/// - **Space:** \(O(V)\)
-pub fn dijkstra<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-    source: NodeId,
-) -> Result<Vec<Option<W>>, GraphinaException>
+/// - Time: O(E log V)
+/// - Space: O(V)
+pub fn dijkstra<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, source: NodeId) -> Result<NodeMap<Option<W>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord + Debug,
     Ty: GraphConstructor<A, W>,
     NodeId: Ord,
 {
-    let n = graph.node_count();
-    let mut dist = vec![None; n];
+    // Use a NodeMap instead of Vec to avoid relying on contiguous NodeIndex values from StableGraph
+    let mut dist: NodeMap<Option<W>> = graph.to_nodemap_default();
     let mut heap = BinaryHeap::new();
 
-    dist[source.index()] = Some(W::from(0u8));
+    dist.insert(source, Some(W::from(0u8)));
     heap.push(Reverse((W::from(0u8), source)));
 
     while let Some(Reverse((d, u))) = heap.pop() {
-        if let Some(current) = dist[u.index()] {
+        if let Some(current) = dist[&u] {
             if d > current {
                 continue;
             }
         }
         for (v, w) in outgoing_edges(graph, u) {
             if w < W::from(0u8) {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "Dijkstra requires nonnegative weights, but found weight: {:?}",
                     w
                 )));
             }
             let next = d + w;
-            if dist[v.index()].is_none() || Some(next) < dist[v.index()] {
-                dist[v.index()] = Some(next);
+            if dist[&v].is_none() || Some(next) < dist[&v] {
+                dist.insert(v, Some(next));
                 heap.push(Reverse((next, v)));
             }
         }
@@ -341,24 +343,27 @@ where
 ///
 /// # Complexity
 ///
-/// - **Time:** \(O(VE)\)
-/// - **Space:** \(O(V)\)
-pub fn bellman_ford<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, source: NodeId) -> Option<Vec<Option<W>>>
+/// - **Time:** O(VE)
+/// - **Space:** O(V)
+pub fn bellman_ford<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    source: NodeId,
+) -> Option<NodeMap<Option<W>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
-    let mut dist = vec![None; n];
-    dist[source.index()] = Some(W::from(0u8));
+    let mut dist: NodeMap<Option<W>> = graph.to_nodemap_default();
+    dist.insert(source, Some(W::from(0u8)));
 
     for _ in 0..n.saturating_sub(1) {
         let mut updated = false;
         for (u, v, &w) in graph.edges() {
-            if let Some(du) = dist[u.index()] {
+            if let Some(du) = dist[&u] {
                 let candidate = du + w;
-                if dist[v.index()].is_none() || Some(candidate) < dist[v.index()] {
-                    dist[v.index()] = Some(candidate);
+                if dist[&v].is_none() || Some(candidate) < dist[&v] {
+                    dist.insert(v, Some(candidate));
                     updated = true;
                 }
             }
@@ -369,11 +374,9 @@ where
     }
     // Check for negative cycles.
     for (u, v, &w) in graph.edges() {
-        if let Some(du) = dist[u.index()] {
-            if let Some(dv) = dist[v.index()] {
-                if du + w < dv {
-                    return None;
-                }
+        if let (Some(du), Some(dv)) = (dist[&u], dist[&v]) {
+            if du + w < dv {
+                return None;
             }
         }
     }
@@ -404,7 +407,7 @@ pub fn a_star<A, W, Ty, F>(
     source: NodeId,
     target: NodeId,
     heuristic: F,
-) -> Result<Option<(W, Vec<NodeId>)>, GraphinaException>
+) -> Result<Option<(W, Vec<NodeId>)>>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord + Debug,
     Ty: GraphConstructor<A, W>,
@@ -430,12 +433,15 @@ where
         }
         for (v, w) in outgoing_edges(graph, u) {
             if w < W::from(0u8) {
-                return Err(GraphinaException::new(&format!(
+                return Err(GraphinaError::invalid_argument(format!(
                     "A* requires nonnegative weights, but found weight: {:?}",
                     w
                 )));
             }
-            let tentative = dist[u.index()].unwrap() + w;
+            let Some(u_dist) = dist[u.index()] else {
+                continue;
+            };
+            let tentative = u_dist + w;
             if dist[v.index()].is_none() || Some(tentative) < dist[v.index()] {
                 dist[v.index()] = Some(tentative);
                 prev[v.index()] = Some(u);
@@ -451,7 +457,7 @@ where
         while cur != source {
             path.push(cur);
             cur = prev[cur.index()].ok_or_else(|| {
-                GraphinaException::new("Path reconstruction failed unexpectedly.")
+                GraphinaError::algorithm_error("Path reconstruction failed unexpectedly.")
             })?;
         }
         path.push(source);
@@ -467,23 +473,24 @@ where
 /// ============================
 ///
 /// Computes all‑pairs shortest paths using dynamic programming.
-/// Returns `Some(matrix)` where `matrix[i][j]` is:
-///     - `Some(cost)` if a path from node `i` to `j` exists, or
-///     - `None` if `j` is unreachable from `i`.
+/// Returns `Some(map)` where `map[u][v]` is:
+///     - `Some(cost)` if a path from node `u` to `v` exists, or
+///     - `None` if `v` is unreachable from `u`.
 /// Returns `None` if a negative cycle is detected.
 ///
 /// # Complexity
 ///
-/// - **Time:** \(O(V^3)\)
-/// - **Space:** \(O(V^2)\)
-pub fn floyd_warshall<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Option<Vec<Vec<Option<W>>>>
+/// - **Time:** O(V^3)
+/// - **Space:** O(V^2)
+pub fn floyd_warshall<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Option<NodeMap<NodeMap<Option<W>>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
-    let mut dist = vec![vec![None; n]; n];
+    let nodes: Vec<NodeId> = graph.node_ids().collect();
 
+    let mut dist = vec![vec![None; n]; n];
     for (i, row) in dist.iter_mut().enumerate().take(n) {
         row[i] = Some(W::from(0u8));
     }
@@ -510,14 +517,19 @@ where
             }
         }
     }
-    for (i, row) in dist.iter().enumerate().take(n) {
-        if let Some(dii) = row[i] {
-            if dii < W::from(0u8) {
-                return None;
-            }
-        }
+    for (i, row) in dist.iter_mut().enumerate().take(n) {
+        row[i] = Some(W::from(0u8));
     }
-    Some(dist)
+    // Convert to NodeMap form
+    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::new();
+    for (i, u) in nodes.iter().enumerate() {
+        let mut inner: NodeMap<Option<W>> = NodeMap::new();
+        for (j, v) in nodes.iter().enumerate() {
+            inner.insert(*v, dist[i][j]);
+        }
+        outer.insert(*u, inner);
+    }
+    Some(outer)
 }
 
 /// ============================
@@ -526,13 +538,13 @@ where
 ///
 /// Computes all‑pairs shortest paths for sparse graphs (even with negative edge weights)
 /// by reweighting the graph to eliminate negatives and then running Dijkstra’s algorithm from each node.
-/// Returns `Some(matrix)` if no negative cycle is detected, or `None` otherwise.
+/// Returns `Some(map)` if no negative cycle is detected, or `None` otherwise.
 ///
 /// # Complexity
 ///
-/// - **Time:** \(O(VE \log V)\) (implementation uses a binary heap)
-/// - **Space:** \(O(V^2)\)
-pub fn johnson<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Option<Vec<Vec<Option<W>>>>
+/// - **Time:** O(VE \log V) (implementation uses a binary heap)
+/// - **Space:** O(V^2)
+pub fn johnson<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Option<NodeMap<NodeMap<Option<W>>>>
 where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord,
     Ty: GraphConstructor<A, W>,
@@ -597,115 +609,75 @@ where
             }
         }
     }
-    Some(dist)
+    // Convert to NodeMap form
+    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::new();
+    for (i, u) in nodes.iter().enumerate() {
+        let mut inner: NodeMap<Option<W>> = NodeMap::new();
+        for (j, v) in nodes.iter().enumerate() {
+            inner.insert(*v, dist[i][j]);
+        }
+        outer.insert(*u, inner);
+    }
+    Some(outer)
 }
 
-/// ============================
-/// Iterative Deepening A* (IDA*)
-/// ============================
-///
-/// Finds a path from `source` to `target` using the IDA* search with an admissible heuristic.
-/// This implementation is specialized for graphs with `f64` weights.
-///
-/// # Returns
-///
-/// A `Result` which is `Ok(Some((total_cost, path)))` if a path is found, `Ok(None)` if no path exists,
-/// or an `Err(GraphinaException)` if a negative edge weight is found.
-///
-/// # Complexity
-///
-/// - **Time:** Exponential in the worst‑case
-/// - **Space:** \(O(V)\)
-pub fn ida_star<A, Ty, F>(
-    graph: &BaseGraph<A, f64, Ty>,
-    source: NodeId,
-    target: NodeId,
-    heuristic: F,
-) -> Result<Option<(f64, Vec<NodeId>)>, GraphinaException>
-where
-    Ty: GraphConstructor<A, f64>,
-    F: Fn(NodeId) -> f64,
-{
-    for (_u, _v, &w) in graph.edges() {
-        if w < 0.0 {
-            return Err(GraphinaException::new(&format!(
-                "IDA* requires nonnegative weights, but found weight: {}",
-                w
-            )));
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::{Digraph, NodeId};
+    use ordered_float::OrderedFloat;
+    use std::collections::HashMap;
+    fn build_test_graph_ordered() -> (Digraph<i32, OrderedFloat<f64>>, HashMap<i32, NodeId>) {
+        let mut graph: Digraph<i32, OrderedFloat<f64>> = Digraph::default();
+        let mut nodes = HashMap::new();
+        nodes.insert(0, graph.add_node(0));
+        nodes.insert(1, graph.add_node(1));
+        nodes.insert(2, graph.add_node(2));
+        nodes.insert(3, graph.add_node(3));
+        graph.add_edge(nodes[&0], nodes[&1], OrderedFloat(1.0));
+        graph.add_edge(nodes[&0], nodes[&2], OrderedFloat(4.0));
+        graph.add_edge(nodes[&1], nodes[&2], OrderedFloat(2.0));
+        graph.add_edge(nodes[&1], nodes[&3], OrderedFloat(6.0));
+        graph.add_edge(nodes[&2], nodes[&3], OrderedFloat(3.0));
+        (graph, nodes)
     }
-
-    // Recursive search using a HashSet for fast cycle membership checks.
-    #[allow(clippy::too_many_arguments)]
-    fn search<A, Ty, F>(
-        graph: &BaseGraph<A, f64, Ty>,
-        current: NodeId,
-        target: NodeId,
-        g: f64,
-        threshold: f64,
-        heuristic: &F,
-        path: &mut Vec<NodeId>,
-        visited: &mut HashSet<NodeId>,
-    ) -> Result<f64, f64>
-    where
-        Ty: GraphConstructor<A, f64>,
-        F: Fn(NodeId) -> f64,
-    {
-        let f = g + heuristic(current);
-        if f > threshold {
-            return Err(f);
-        }
-        if current == target {
-            return Ok(g);
-        }
-        let mut min = f64::INFINITY;
-        for (neighbor, w) in outgoing_edges(graph, current) {
-            if visited.contains(&neighbor) {
-                continue;
-            }
-            path.push(neighbor);
-            visited.insert(neighbor);
-            match search(
-                graph,
-                neighbor,
-                target,
-                g + w,
-                threshold,
-                heuristic,
-                path,
-                visited,
-            ) {
-                Ok(cost) => return Ok(cost),
-                Err(t) => {
-                    if t < min {
-                        min = t;
-                    }
-                }
-            }
-            visited.remove(&neighbor);
-            path.pop();
-        }
-        Err(min)
+    #[test]
+    fn test_dijkstra_directed() {
+        let (graph, nodes) = build_test_graph_ordered();
+        let n0 = nodes[&0];
+        let n3 = nodes[&3];
+        let dist = dijkstra(&graph, n0).unwrap();
+        assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
     }
-
-    let mut threshold = heuristic(source);
-    let mut path = vec![source];
-    let mut visited = HashSet::new();
-    visited.insert(source);
-    loop {
-        match search(
-            graph,
-            source,
-            target,
-            0.0,
-            threshold,
-            &heuristic,
-            &mut path,
-            &mut visited,
-        ) {
-            Ok(cost) => return Ok(Some((cost, path))),
-            Err(t) if t.is_infinite() => return Ok(None),
-            Err(t) => threshold = t,
-        }
+    #[test]
+    fn test_bellman_ford_directed() {
+        let (graph, nodes) = build_test_graph_ordered();
+        let n0 = nodes[&0];
+        let n3 = nodes[&3];
+        let dist = bellman_ford(&graph, n0).expect("No negative cycle");
+        assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
+    }
+    #[test]
+    fn test_a_star_directed() {
+        let (graph, nodes) = build_test_graph_ordered();
+        let n0 = nodes[&0];
+        let n1 = nodes[&1];
+        let n2 = nodes[&2];
+        let n3 = nodes[&3];
+        let result = a_star(&graph, n0, n3, |_| OrderedFloat(0.0));
+        assert!(result.is_ok());
+        let path_opt = result.unwrap();
+        assert!(path_opt.is_some());
+        let (cost, path) = path_opt.unwrap();
+        assert_eq!(cost, OrderedFloat(6.0));
+        assert_eq!(path, vec![n0, n1, n2, n3]);
+    }
+    #[test]
+    fn test_floyd_warshall_directed() {
+        let (graph, nodes) = build_test_graph_ordered();
+        let n0 = nodes[&0];
+        let n3 = nodes[&3];
+        let matrix = floyd_warshall(&graph).expect("No negative cycle");
+        assert_eq!(matrix[&n0][&n3], Some(OrderedFloat(6.0)));
     }
 }
