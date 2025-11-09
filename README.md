@@ -43,7 +43,8 @@ The core library provides the basic data structures and algorithms for working w
 The extensions are modules outside the core library that contain more advanced algorithms for specific tasks like
 community detection, link prediction, and calculating node and edge centrality scores.
 
-The extensions are independent of each other. However, they depend on the core library for the basic graph operations.
+The extensions are independent of each other.
+However, they depend on the core library for the basic graph operations.
 
 #### Graphina Core
 
@@ -155,7 +156,7 @@ let er = erdos_renyi_graph::<Undirected>(100, 0.2, 42).unwrap();
 let ba = barabasi_albert_graph::<Undirected>(1000, 3, 42).unwrap();
 ```
 
-See the [examples](examples) and [tests](tests) directories for more usage examples.
+See the [examples](docs/examples) and [tests](tests) directories for more usage examples.
 
 ---
 
