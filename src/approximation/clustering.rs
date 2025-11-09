@@ -15,27 +15,26 @@ where
         .map(|(u, _)| (u, graph.neighbors(u).collect()))
         .collect();
     for (u, _) in graph.nodes() {
-        let neighbors = neighbor_cache.get(&u).unwrap();
-        let k = neighbors.len();
-        if k < 2 {
-            continue;
-        }
-        let mut links = 0;
-        let neighbor_vec: Vec<&NodeId> = neighbors.iter().collect();
-        for i in 0..neighbor_vec.len() {
-            for j in (i + 1)..neighbor_vec.len() {
-                if neighbor_cache
-                    .get(neighbor_vec[i])
-                    .unwrap()
-                    .contains(neighbor_vec[j])
-                {
-                    links += 1;
+        if let Some(neighbors) = neighbor_cache.get(&u) {
+            let k = neighbors.len();
+            if k < 2 {
+                continue;
+            }
+            let mut links = 0;
+            let neighbor_vec: Vec<&NodeId> = neighbors.iter().collect();
+            for i in 0..neighbor_vec.len() {
+                for j in (i + 1)..neighbor_vec.len() {
+                    if let Some(set_i) = neighbor_cache.get(neighbor_vec[i]) {
+                        if set_i.contains(neighbor_vec[j]) {
+                            links += 1;
+                        }
+                    }
                 }
             }
+            let possible = k * (k - 1) / 2;
+            total += links as f64 / possible as f64;
+            count += 1;
         }
-        let possible = k * (k - 1) / 2;
-        total += links as f64 / possible as f64;
-        count += 1;
     }
     if count > 0 { total / count as f64 } else { 0.0 }
 }

@@ -14,7 +14,7 @@ where
         .iter()
         .map(|&u| (u, graph.neighbors(u).collect()))
         .collect();
-    nodes.sort_by_key(|&u| neighbor_cache.get(&u).unwrap().len());
+    nodes.sort_by_key(|&u| neighbor_cache.get(&u).map(|hs| hs.len()).unwrap_or(0));
     let mut used = HashSet::new();
     for u in nodes {
         if !used.contains(&u) {

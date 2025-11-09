@@ -3,7 +3,6 @@ Parallel connected components detection
 */
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::sync::{Arc, Mutex};
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
@@ -49,58 +48,32 @@ where
     Ty: GraphConstructor<A, W> + EdgeType + Sync + Send,
 {
     let nodes: Vec<NodeId> = graph.node_ids().collect();
-    let component_map = Arc::new(Mutex::new(HashMap::new()));
-    let visited = Arc::new(Mutex::new(HashSet::new()));
-    let component_id = Arc::new(Mutex::new(0_usize));
+    let mut component_map: HashMap<NodeId, usize> = HashMap::with_capacity(nodes.len());
+    let mut visited: HashSet<NodeId> = HashSet::new();
+    let mut current_id: usize = 0;
 
     for node in nodes {
-        // Check if already visited
-        {
-            let visited_lock = visited.lock().unwrap();
-            if visited_lock.contains(&node) {
-                continue;
-            }
+        if visited.contains(&node) {
+            continue;
         }
 
-        // Get current component ID
-        let current_id = {
-            let mut id_lock = component_id.lock().unwrap();
-            let id = *id_lock;
-            *id_lock += 1;
-            id
-        };
-
-        // BFS to find all nodes in this component
         let mut queue = VecDeque::new();
         queue.push_back(node);
-
-        let mut local_visited = HashSet::new();
-        local_visited.insert(node);
+        visited.insert(node);
 
         while let Some(current) = queue.pop_front() {
+            component_map.insert(current, current_id);
             for neighbor in graph.neighbors(current) {
-                if local_visited.insert(neighbor) {
+                if visited.insert(neighbor) {
                     queue.push_back(neighbor);
                 }
             }
         }
 
-        // Update global structures
-        {
-            let mut component_lock = component_map.lock().unwrap();
-            let mut visited_lock = visited.lock().unwrap();
-
-            for n in &local_visited {
-                component_lock.insert(*n, current_id);
-                visited_lock.insert(*n);
-            }
-        }
+        current_id += 1;
     }
 
-    Arc::try_unwrap(component_map)
-        .unwrap()
-        .into_inner()
-        .unwrap()
+    component_map
 }
 
 #[cfg(test)]

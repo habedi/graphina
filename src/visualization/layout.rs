@@ -118,31 +118,20 @@ impl LayoutEngine {
 
             // Attractive forces for edges
             for (src, tgt, _) in graph.edges() {
-                let pos_src = positions.get(&src);
-                let pos_tgt = positions.get(&tgt);
-
-                // Skip edges where nodes don't have positions
-                if pos_src.is_none() || pos_tgt.is_none() {
-                    continue;
-                }
-
-                let pos_src = *pos_src.unwrap();
-                let pos_tgt = *pos_tgt.unwrap();
-
-                let delta_x = pos_tgt.x - pos_src.x;
-                let delta_y = pos_tgt.y - pos_src.y;
-                let distance = (delta_x * delta_x + delta_y * delta_y).sqrt().max(0.01);
-
-                let force = distance * distance / k;
-
-                if let Some((dx_src, dy_src)) = displacements.get_mut(&src) {
-                    *dx_src += (delta_x / distance) * force;
-                    *dy_src += (delta_y / distance) * force;
-                }
-
-                if let Some((dx_tgt, dy_tgt)) = displacements.get_mut(&tgt) {
-                    *dx_tgt -= (delta_x / distance) * force;
-                    *dy_tgt -= (delta_y / distance) * force;
+                if let (Some(&pos_src), Some(&pos_tgt)) = (positions.get(&src), positions.get(&tgt))
+                {
+                    let delta_x = pos_tgt.x - pos_src.x;
+                    let delta_y = pos_tgt.y - pos_src.y;
+                    let distance = (delta_x * delta_x + delta_y * delta_y).sqrt().max(0.01);
+                    let force = distance * distance / k;
+                    if let Some((dx_src, dy_src)) = displacements.get_mut(&src) {
+                        *dx_src += (delta_x / distance) * force;
+                        *dy_src += (delta_y / distance) * force;
+                    }
+                    if let Some((dx_tgt, dy_tgt)) = displacements.get_mut(&tgt) {
+                        *dx_tgt -= (delta_x / distance) * force;
+                        *dy_tgt -= (delta_y / distance) * force;
+                    }
                 }
             }
 
@@ -242,8 +231,8 @@ impl LayoutEngine {
                     if visited.insert(node) {
                         current_layer.push(node);
 
-                        // Add neighbors to queue
-                        for (_, neighbor, _) in graph.edges().filter(|(src, _, _)| *src == node) {
+                        // Add neighbors to queue using direct neighbor iteration
+                        for neighbor in graph.neighbors(node) {
                             if !visited.contains(&neighbor) {
                                 queue.push_back(neighbor);
                             }
