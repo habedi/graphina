@@ -4,7 +4,6 @@ Parallel PageRank computation
 
 use rayon::prelude::*;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
@@ -55,46 +54,64 @@ where
     let nodes: Vec<NodeId> = graph.node_ids().collect();
     let initial_rank = 1.0 / n as f64;
 
-    // Initialize ranks
+    // Precompute incoming edges list to avoid scanning all edges per node.
+    let mut incoming: HashMap<NodeId, Vec<NodeId>> = HashMap::with_capacity(n);
+    for &node in &nodes {
+        incoming.insert(node, Vec::new());
+    }
+    for (src, tgt, _) in graph.edges() {
+        if incoming.contains_key(&tgt) {
+            incoming
+                .get_mut(&tgt)
+                .expect("incoming map must contain target node")
+                .push(src);
+        }
+    }
+
     let mut ranks: HashMap<NodeId, f64> = nodes.iter().map(|&node| (node, initial_rank)).collect();
-    let ranks_mutex = Arc::new(Mutex::new(ranks.clone()));
 
     for _iteration in 0..max_iterations {
+        // Snapshot previous ranks for this iteration (immutable view for parallelism)
+        let prev = ranks.clone();
+
+        // Compute sum of ranks of dangling nodes (out-degree == 0) for redistribution
+        let dangling_sum: f64 = nodes
+            .par_iter()
+            .map(|&node| {
+                let out_deg = graph.out_degree(node).unwrap_or(0);
+                if out_deg == 0 { prev[&node] } else { 0.0 }
+            })
+            .sum();
+
+        let base = (1.0 - damping) / n as f64 + damping * dangling_sum / n as f64;
+
+        // Parallel computation of new ranks
         let new_ranks_vec: Vec<(NodeId, f64)> = nodes
             .par_iter()
             .map(|&node| {
-                let current_ranks = ranks_mutex.lock().unwrap();
-
-                // Sum contributions from incoming neighbors
-                let mut rank_sum = 0.0;
-                for (src, tgt, _) in graph.edges() {
-                    if tgt == node {
-                        let out_degree = graph.out_degree(src).unwrap_or(1);
-                        rank_sum += current_ranks[&src] / out_degree as f64;
-                    }
-                }
-
-                let new_rank = (1.0 - damping) / n as f64 + damping * rank_sum;
+                let rank_sum: f64 = incoming[&node]
+                    .iter()
+                    .map(|&src| {
+                        let out_degree = graph.out_degree(src).unwrap_or(0);
+                        let denom = if out_degree == 0 { 1 } else { out_degree }; // safeguard
+                        prev[&src] / denom as f64
+                    })
+                    .sum();
+                let new_rank = base + damping * rank_sum;
                 (node, new_rank)
             })
             .collect();
 
-        // Update ranks
-        let mut ranks_lock = ranks_mutex.lock().unwrap();
-        let mut max_diff: f64 = 0.0;
-
+        // Merge and check convergence
+        let mut max_diff = 0.0;
         for (node, new_rank) in new_ranks_vec {
-            let diff = (new_rank - ranks_lock[&node]).abs();
+            let diff = (new_rank - prev[&node]).abs();
             if diff > max_diff {
                 max_diff = diff;
             }
-            ranks_lock.insert(node, new_rank);
+            ranks.insert(node, new_rank);
         }
 
-        ranks = ranks_lock.clone();
-        drop(ranks_lock);
-
-        // Check convergence
         if max_diff < tolerance {
             break;
         }

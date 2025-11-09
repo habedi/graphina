@@ -1,5 +1,6 @@
 import pygraphina as pg
 
+
 def build_graph():
     g = pg.PyGraph()
     a, b, c, d = g.add_nodes_from([1, 2, 3, 4])

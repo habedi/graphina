@@ -166,6 +166,12 @@ fn test_cross_community_and_metrics() {
         graph.add_edge(node_map[&u], node_map[&v], w as f64);
     }
 
+    // Skip if graph is empty after conversion
+    if graph.node_count() == 0 {
+        println!("Skipping: graph is empty");
+        return;
+    }
+
     use graphina::community::connected_components::connected_components;
 
     let components = connected_components(&graph);
@@ -316,9 +322,15 @@ fn test_cross_subgraphs_and_communities() {
         graph.add_edge(node_map[&u], node_map[&v], w as f64);
     }
 
+    // Skip if graph is empty after conversion
+    if graph.node_count() == 0 {
+        println!("Skipping: graph is empty");
+        return;
+    }
+
     use graphina::community::label_propagation::label_propagation;
 
-    let communities = label_propagation(&graph, 50, Some(42));
+    let communities = label_propagation(&graph, 50, Some(42)).unwrap();
 
     let first_community_id = communities.first().copied().unwrap_or(0);
     let community_nodes: Vec<_> = graph

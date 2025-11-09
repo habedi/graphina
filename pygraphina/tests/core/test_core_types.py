@@ -1,5 +1,6 @@
-import pygraphina
 import pytest
+
+import pygraphina
 
 
 # Using the Arrange-Act-Assert pattern for testing

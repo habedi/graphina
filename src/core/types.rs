@@ -18,6 +18,8 @@ assert!(success);
 g.try_update_node(n1, 30).expect("Node update should succeed");
 ```
 */
+// Import the new unified error type
+use crate::core::error::{GraphinaError, Result};
 use petgraph::EdgeType;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::prelude::EdgeRef;
@@ -26,8 +28,6 @@ use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use sprs::{CsMat, TriMat};
 use std::collections::HashMap;
 use std::ops::{Index, IndexMut};
-// Import the new unified error type
-use crate::core::error::{GraphinaError, Result};
 /// Marker type for directed graphs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Directed;
@@ -477,11 +477,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         F: FnMut(NodeId, NodeId, &W) -> bool,
     {
         let to_remove: Vec<EdgeId> = self
-            .edges()
-            .filter_map(|(src, dst, w)| {
-                let edge_id = self.find_edge(src, dst)?;
+            .edges_with_ids()
+            .filter_map(|(eid, src, dst, w)| {
                 if !predicate(src, dst, w) {
-                    Some(edge_id)
+                    Some(eid)
                 } else {
                     None
                 }
@@ -655,20 +654,23 @@ where
         W: Clone,
         Ty: GraphConstructor<B, W>,
     {
+        // Use mapping HashMap to handle non-contiguous NodeIndex values.
         let mut new_graph = BaseGraph::<B, W, Ty> {
             inner: <Ty as GraphConstructor<B, W>>::new_graph(),
         };
-        let mut id_map = Vec::new();
-        for (_nid, a) in self.nodes() {
-            let nb = f(_nid, a);
-            id_map.push(new_graph.add_node(nb));
+        let mut id_map: HashMap<NodeId, NodeId> = HashMap::new();
+        for (nid, a) in self.nodes() {
+            let nb = f(nid, a);
+            let new_id = new_graph.add_node(nb);
+            id_map.insert(nid, new_id);
         }
         for (u, v, w) in self.edges() {
-            new_graph.add_edge(id_map[u.index()], id_map[v.index()], w.clone());
+            if let (Some(&nu), Some(&nv)) = (id_map.get(&u), id_map.get(&v)) {
+                new_graph.add_edge(nu, nv, w.clone());
+            }
         }
         new_graph
     }
-    /// Map edge weights to a new type, producing a new graph with cloned node attributes.
     pub fn map_edge_weights<U>(&self, mut f: impl FnMut(EdgeId, &W) -> U) -> BaseGraph<A, U, Ty>
     where
         A: Clone,
@@ -677,12 +679,15 @@ where
         let mut new_graph = BaseGraph::<A, U, Ty> {
             inner: <Ty as GraphConstructor<A, U>>::new_graph(),
         };
-        let mut id_map = Vec::new();
-        for (_nid, a) in self.nodes() {
-            id_map.push(new_graph.add_node(a.clone()));
+        let mut id_map: HashMap<NodeId, NodeId> = HashMap::new();
+        for (nid, a) in self.nodes() {
+            let new_id = new_graph.add_node(a.clone());
+            id_map.insert(nid, new_id);
         }
         for (eid, u, v, w) in self.edges_with_ids() {
-            new_graph.add_edge(id_map[u.index()], id_map[v.index()], f(eid, w));
+            if let (Some(&nu), Some(&nv)) = (id_map.get(&u), id_map.get(&v)) {
+                new_graph.add_edge(nu, nv, f(eid, w));
+            }
         }
         new_graph
     }
@@ -888,5 +893,41 @@ mod tests {
         let neighbors_n2: Vec<NodeId> = graph.neighbors(n2).collect();
         assert!(neighbors_n2.contains(&n1));
         assert!(neighbors_n2.contains(&n3));
+    }
+    #[test]
+    fn test_map_node_attrs_with_removed_node() {
+        let mut g = Graph::<i32, f32>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n3, 2.0);
+        g.remove_node(n2); // create a hole in indices
+        let mapped = g.map_node_attrs(|_id, a| a + 10);
+        // Collect mapped attributes to verify transformation without assuming preserved NodeIds
+        let mut attrs: Vec<i32> = mapped.nodes().map(|(_, a)| *a).collect();
+        attrs.sort_unstable();
+        assert_eq!(attrs, vec![11, 13]);
+        assert_eq!(mapped.node_count(), 2);
+    }
+    #[test]
+    fn test_map_edge_weights_with_removed_node() {
+        let mut g = Graph::<i32, f32>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+        let e1 = g.add_edge(n1, n2, 1.0);
+        let _e2 = g.add_edge(n2, n3, 2.0);
+        g.remove_node(n2);
+        let mapped = g.map_edge_weights(|eid, w| {
+            if eid.index() == e1.index() {
+                (w + 1.0) as f64
+            } else {
+                (*w) as f64
+            }
+        });
+        // After removal only edges between existing nodes remain (none in this case)
+        assert_eq!(mapped.edge_count(), 0);
+        assert_eq!(mapped.node_count(), 2);
     }
 }

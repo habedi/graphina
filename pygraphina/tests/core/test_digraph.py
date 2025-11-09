@@ -1,5 +1,6 @@
 import pygraphina as pg
 
+
 def test_digraph_basic_ops():
     g = pg.PyDiGraph()
     a = g.add_node(1)

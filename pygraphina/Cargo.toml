@@ -1,6 +1,6 @@
 [package]
 name = "pygraphina"
-version = "0.2.0-a2"
+version = "0.2.0-alpha.2"
 edition = "2024"
 publish = false
 
@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 doc = false
 
 [features]
-# Enable NetworkX interop by default; disable with `--no-default-features`
+
 default = ["networkx"]
 networkx = []
 

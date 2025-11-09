@@ -304,7 +304,7 @@ fn test_louvain_on_karate_club() {
         graph.add_edge(node_map[&u], node_map[&v], w as f64);
     }
 
-    let communities = louvain(&graph, Some(42));
+    let communities = louvain(&graph, Some(42)).unwrap();
 
     assert!(!communities.is_empty());
 
@@ -349,7 +349,7 @@ fn test_louvain_on_dolphins() {
         graph.add_edge(node_map[&u], node_map[&v], w as f64);
     }
 
-    let communities = louvain(&graph, Some(42));
+    let communities = louvain(&graph, Some(42)).unwrap();
 
     assert!(!communities.is_empty());
 

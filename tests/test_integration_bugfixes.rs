@@ -41,7 +41,7 @@ fn test_louvain_with_removed_nodes() {
 
     g.remove_node(n2);
 
-    let communities = louvain(&g, Some(42));
+    let communities = louvain(&g, Some(42)).unwrap();
     assert!(!communities.is_empty());
 }
 
