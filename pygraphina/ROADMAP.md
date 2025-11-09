@@ -66,11 +66,11 @@ It shows the features to be implemented and their current status.
     - [ ] An HTML embedding helper
 
 - **Packaging and Distribution**
-    - [x] pyproject.toml based build using maturin/pyo3
+    - [x] `pyproject.toml`-based build using maturin and pyo3
     - [x] Version alignment with core crate
     - [x] Basic README and examples
     - [ ] Type hints (`.pyi` or inline) for all public APIs
-    - [ ] Wheel builds for major platforms (Windows, macOS, and Linux)
+    - [ ] Wheel builds for Windows, macOS, and Linux
     - [ ] Optional lite build (exclude heavy features like `visualization` and `parallel`)
 
 - **Developer Experience**
@@ -78,26 +78,20 @@ It shows the features to be implemented and their current status.
     - [ ] More granular Python exception classes (for example, `GraphinaInvalidGraphError` and
       `GraphinaConvergenceError`)
     - [ ] Docstring generation from Rust doc comments
-    - [ ] MkDocs (Python-specific) user guide
     - [ ] Interactive Jupyter examples notebooks
 
-- **Testing and Quality**
+- **Tests and Code Quality**
     - [x] Pytest integration for existing functionality
     - [ ] Property-based tests (hypothesis) for round-trip conversions
     - [ ] Fuzzing harness (optional) for edge list parsing
     - [ ] Coverage reports for Python bindings
 
-- **Ecosystem Integration**
+- **Interoperability**
     - [ ] NetworkX interop utilities (read and export to `networkx.Graph`)
     - [ ] Pandas DataFrame import and export (edges and nodes)
     - [ ] Polars and Apache Arrow integration (optional feature)
 
-- **Performance Benchmarks**
+- **Benchmarks**
     - [ ] Benchmarks comparing PyGraphina with NetworkX (for centrality, etc.)
     - [ ] Memory allocation impact with and without pooling
     - [ ] Parallel scaling plots (threads vs throughput)
-
-- **Documentation Enhancements**
-    - [ ] Roadmap sync automation (derive from Rust core roadmap)
-    - [ ] FAQ and troubleshooting section
-    - [ ] Error catalogue (mapping Rust errors to Python exceptions)
