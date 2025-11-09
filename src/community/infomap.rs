@@ -2,6 +2,7 @@
 //!
 //! This module provides Infomap for community detection.
 
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor};
 use rand::prelude::*;
 use rand::{SeedableRng, rngs::StdRng};
@@ -28,16 +29,23 @@ fn create_rng(seed: Option<u64>) -> StdRng {
 ///
 /// # Returns
 /// A vector (length n) of module assignments (usize) for each node.
+/// Returns `GraphinaError::InvalidGraph` on empty graph or invalid parameters.
 pub fn infomap<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     max_iter: usize,
     seed: Option<u64>,
-) -> Vec<usize>
+) -> Result<Vec<usize>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
+    if n == 0 {
+        return Err(GraphinaError::invalid_graph("Infomap: empty graph"));
+    }
+    if max_iter == 0 {
+        return Err(GraphinaError::invalid_graph("Infomap: max_iter=0"));
+    }
     let mut modules: Vec<usize> = (0..n).collect();
     let mut rng = create_rng(seed);
     let mut iter = 0;
@@ -81,5 +89,5 @@ where
             break;
         }
     }
-    modules
+    Ok(modules)
 }

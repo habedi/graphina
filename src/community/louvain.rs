@@ -2,6 +2,7 @@
 //!
 //! This module provides the Louvain method for community detection.
 
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use rand::prelude::*;
 use rand::{SeedableRng, rngs::StdRng};
@@ -28,7 +29,8 @@ fn create_rng(seed: Option<u64>) -> StdRng {
 ///
 /// # Returns
 /// A vector of communities, where each community is a vector of `NodeId`s.
-pub fn louvain<A, Ty>(graph: &BaseGraph<A, f64, Ty>, seed: Option<u64>) -> Vec<Vec<NodeId>>
+/// Returns `GraphinaError::InvalidGraph` on empty input.
+pub fn louvain<A, Ty>(graph: &BaseGraph<A, f64, Ty>, seed: Option<u64>) -> Result<Vec<Vec<NodeId>>>
 where
     Ty: GraphConstructor<A, f64>,
 {
@@ -36,20 +38,20 @@ where
 
     // Handle empty graph
     if n == 0 {
-        return Vec::new();
+        return Err(GraphinaError::invalid_graph("Louvain: empty graph"));
     }
 
     // Handle single node
     if n == 1 {
         let node = graph.nodes().next().map(|(nid, _)| nid).unwrap();
-        return vec![vec![node]];
+        return Ok(vec![vec![node]]);
     }
 
     let m: f64 = graph.edges().map(|(_u, _v, &w)| w).sum();
 
     // Handle graph with no edges
     if m == 0.0 {
-        return graph.nodes().map(|(nid, _)| vec![nid]).collect();
+        return Ok(graph.nodes().map(|(nid, _)| vec![nid]).collect());
     }
 
     // BUGFIX: Map NodeId to contiguous indices to handle deleted nodes
@@ -165,7 +167,7 @@ where
     // Remove empty communities
     new_comms.retain(|comm| !comm.is_empty());
 
-    new_comms
+    Ok(new_comms)
 }
 
 #[cfg(test)]
@@ -185,15 +187,19 @@ mod tests {
         graph.add_edge(n1, n2, 1.0);
         graph.add_edge(n3, n4, 1.0);
 
-        let communities = louvain(&graph, Some(42));
+        let communities = louvain(&graph, Some(42)).unwrap();
         assert!(!communities.is_empty());
     }
 
     #[test]
     fn test_louvain_empty_graph() {
         let graph: Graph<i32, f64> = Graph::new();
-        let communities = louvain(&graph, Some(42));
-        assert_eq!(communities.len(), 0);
+        let communities = louvain(&graph, Some(42)).unwrap_err();
+        assert!(matches!(
+            communities,
+            crate::core::error::GraphinaError::InvalidGraph { .. }
+        ));
+        // empty graph now returns error
     }
 
     #[test]
@@ -201,7 +207,7 @@ mod tests {
         let mut graph = Graph::new();
         let n1 = graph.add_node(1);
 
-        let communities = louvain(&graph, Some(42));
+        let communities = louvain(&graph, Some(42)).unwrap();
         assert_eq!(communities.len(), 1);
         assert_eq!(communities[0].len(), 1);
         assert_eq!(communities[0][0], n1);
@@ -214,7 +220,7 @@ mod tests {
         let _n2 = graph.add_node(2);
         let _n3 = graph.add_node(3);
 
-        let communities = louvain(&graph, Some(42));
+        let communities = louvain(&graph, Some(42)).unwrap();
         assert_eq!(communities.len(), 3);
     }
 
@@ -236,7 +242,7 @@ mod tests {
         graph.remove_node(n2);
 
         // This should not panic or cause array out of bounds
-        let communities = louvain(&graph, Some(42));
+        let communities = louvain(&graph, Some(42)).unwrap();
 
         // Should have valid communities
         assert!(!communities.is_empty());
@@ -261,7 +267,7 @@ mod tests {
             }
         }
         let start = std::time::Instant::now();
-        let comms = louvain(&g, Some(123));
+        let comms = louvain(&g, Some(123)).unwrap();
         let dur = start.elapsed();
         assert!(!comms.is_empty());
         // very lenient bound to avoid flakiness in CI

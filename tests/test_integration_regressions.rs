@@ -32,7 +32,7 @@ fn test_girvan_newman_with_deleted_nodes() {
 
     g.remove_node(n2);
 
-    let communities = girvan_newman(&g, 2);
+    let communities = girvan_newman(&g, 2).unwrap();
 
     let mut seen = std::collections::HashSet::<NodeId>::new();
     for c in &communities {
@@ -64,7 +64,7 @@ fn test_spectral_clustering_multigraph_and_deletions() {
 
     g.remove_node(c);
 
-    let clusters = spectral_clustering(&g, 2, Some(42));
+    let clusters = spectral_clustering(&g, 2, Some(42)).unwrap();
 
     let mut seen = std::collections::HashSet::new();
     for cls in &clusters {
@@ -99,8 +99,7 @@ fn test_label_propagation_stability() {
     // Weak inter-community link
     g.add_edge(nodes[2], nodes[7], 0.1);
 
-    let communities = label_propagation(&g, 100, Some(42));
-
+    let communities = label_propagation(&g, 100, Some(42)).unwrap();
     assert!(!communities.is_empty());
     assert!(communities.len() <= 10);
 }
@@ -128,7 +127,7 @@ fn test_modularity_optimization_convergence() {
 
     g.add_edge(nodes[5], nodes[15], 0.5);
 
-    let communities = louvain(&g, Some(42));
+    let communities = louvain(&g, Some(42)).unwrap();
 
     assert!(!communities.is_empty());
     assert!(communities.len() >= 2);

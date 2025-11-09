@@ -2,6 +2,7 @@
 //!
 //! This module provides Girvan-Newman for community detection.
 
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -17,14 +18,20 @@ use std::collections::{HashMap, HashSet, VecDeque};
 ///
 /// # Note
 /// This algorithm is computationally expensive for very large graphs.
+/// Returns `GraphinaError::InvalidGraph` if `target_communities == 0` or no further splits possible.
 pub fn girvan_newman<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     target_communities: usize,
-) -> Vec<Vec<NodeId>>
+) -> Result<Vec<Vec<NodeId>>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
+    if target_communities == 0 {
+        return Err(GraphinaError::invalid_graph(
+            "Girvan-Newman: target_communities=0",
+        ));
+    }
     // Build explicit node index mapping to avoid relying on StableGraph raw indices
     let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
     let mut node_to_idx: HashMap<NodeId, usize> = HashMap::new();
@@ -61,10 +68,12 @@ where
             neighbors[v].remove(&u);
             active_edges.retain(|&(a, b)| !(a == u && b == v));
         } else {
-            break;
+            return Err(GraphinaError::invalid_graph(
+                "Girvan-Newman: no edges to split further",
+            ));
         }
     }
-    compute_components_from_neighbors(&neighbors, &node_list)
+    Ok(compute_components_from_neighbors(&neighbors, &node_list))
 }
 
 /// Helper: Compute connected components from an adjacency list and map back to NodeId.

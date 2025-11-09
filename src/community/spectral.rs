@@ -2,6 +2,7 @@
 //!
 //! This module provides spectral clustering for community detection.
 
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use nalgebra::DMatrix;
 use rand::prelude::*;
@@ -31,7 +32,8 @@ fn create_rng(seed: Option<u64>) -> StdRng {
 ///
 /// # Returns
 /// A vector of weight vectors, where each weight vector is the embedding for the nth node.
-pub fn spectral_embeddings<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, k: usize) -> Vec<Vec<f64>>
+/// Returns `GraphinaError::InvalidGraph` if k==0, k>n or graph empty.
+pub fn spectral_embeddings<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, k: usize) -> Result<Vec<Vec<f64>>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
@@ -39,6 +41,19 @@ where
     // Build explicit node index mapping to avoid relying on StableGraph raw indices
     let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
     let n = node_list.len();
+    if n == 0 {
+        return Err(GraphinaError::invalid_graph(
+            "SpectralEmbeddings: empty graph",
+        ));
+    }
+    if k == 0 {
+        return Err(GraphinaError::invalid_graph("SpectralEmbeddings: k=0"));
+    }
+    if k > n {
+        return Err(GraphinaError::invalid_graph(
+            "SpectralEmbeddings: k > node count",
+        ));
+    }
     let mut node_to_idx: HashMap<NodeId, usize> = HashMap::new();
     for (idx, &node) in node_list.iter().enumerate() {
         node_to_idx.insert(node, idx);
@@ -65,7 +80,7 @@ where
             *val = eig.eigenvectors[(i, j)];
         }
     }
-    embedding
+    Ok(embedding)
 }
 
 /// Production-level Spectral Clustering.
@@ -82,19 +97,20 @@ where
 ///
 /// # Returns
 /// A vector of communities, where each community is a vector of `NodeId`s.
+/// Returns `GraphinaError::InvalidGraph` if k==0, k>n or graph empty.
 pub fn spectral_clustering<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     k: usize,
     seed: Option<u64>,
-) -> Vec<Vec<NodeId>>
+) -> Result<Vec<Vec<NodeId>>>
 where
     W: Copy + PartialOrd + Into<f64> + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
     // Build mapping for safe NodeId reconstruction
     let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
-    let embedding = spectral_embeddings(graph, k);
-    k_means(&embedding, k, seed, &node_list)
+    let embedding = spectral_embeddings(graph, k)?;
+    Ok(k_means(&embedding, k, seed, &node_list))
 }
 
 /// A simple k-means routine on rows of a data matrix.

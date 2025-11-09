@@ -2,7 +2,7 @@
 //!
 //! This module provides connected components for community detection.
 
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use std::collections::{HashSet, VecDeque};
 
 /// Compute connected components of an undirected graph using BFS.
@@ -50,6 +50,24 @@ where
     }
 
     components
+}
+
+/// Compute connected components and return a NodeId -> component ID mapping.
+///
+/// Component IDs are assigned in the order components are discovered.
+pub fn connected_components_map<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> NodeMap<usize>
+where
+    W: Copy,
+    Ty: GraphConstructor<A, W>,
+{
+    let lists = connected_components(graph);
+    let mut map: NodeMap<usize> = NodeMap::new();
+    for (cid, comp) in lists.into_iter().enumerate() {
+        for node in comp {
+            map.insert(node, cid);
+        }
+    }
+    map
 }
 
 #[cfg(test)]
@@ -107,5 +125,26 @@ mod tests {
         let components = connected_components(&g);
         assert_eq!(components.len(), 1);
         assert_eq!(components[0].len(), 1);
+    }
+
+    #[test]
+    fn test_connected_components_map() {
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+        let n4 = g.add_node(4);
+
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n3, n4, 1.0);
+
+        let lists = connected_components(&g);
+        let map = connected_components_map(&g);
+
+        assert_eq!(lists.len(), 2);
+        assert_eq!(map.len(), 4);
+        assert_eq!(map[&n1], map[&n2]);
+        assert_eq!(map[&n3], map[&n4]);
+        assert_ne!(map[&n1], map[&n3]);
     }
 }

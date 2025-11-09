@@ -76,6 +76,26 @@ where
     component_map
 }
 
+/// Convert the component map produced by `connected_components_parallel` into a list of components.
+pub fn connected_components_parallel_list<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<Vec<NodeId>>
+where
+    A: Sync + Send,
+    W: Sync + Send,
+    Ty: GraphConstructor<A, W> + EdgeType + Sync + Send,
+{
+    let map = connected_components_parallel(graph);
+    let mut by_component: HashMap<usize, Vec<NodeId>> = HashMap::new();
+    for (node, cid) in map.into_iter() {
+        by_component.entry(cid).or_default().push(node);
+    }
+    // Return components ordered by component id
+    let mut keys: Vec<usize> = by_component.keys().copied().collect();
+    keys.sort_unstable();
+    keys.into_iter()
+        .map(|k| by_component.remove(&k).unwrap())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -102,5 +122,21 @@ mod tests {
 
         // But different from n1/n2
         assert_ne!(components[&n1], components[&n3]);
+    }
+
+    #[test]
+    fn test_connected_components_parallel_list() {
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+        let n4 = g.add_node(4);
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n3, n4, 1.0);
+        let list = connected_components_parallel_list(&g);
+        assert_eq!(list.len(), 2);
+        // Each component should be at least size 2 except singletons when disconnected
+        assert!(list.iter().any(|c| c.contains(&n1) && c.contains(&n2)));
+        assert!(list.iter().any(|c| c.contains(&n3) && c.contains(&n4)));
     }
 }

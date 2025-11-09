@@ -461,7 +461,7 @@ fn test_integration_community_detection() {
 
     // Test label propagation
     use graphina::community::label_propagation::label_propagation;
-    let lp_communities = label_propagation(&graph, 100, Some(42));
+    let lp_communities = label_propagation(&graph, 100, Some(42)).unwrap();
     assert_eq!(lp_communities.len(), graph.node_count());
     let num_communities: std::collections::HashSet<_> = lp_communities.iter().collect();
     println!(
@@ -471,7 +471,7 @@ fn test_integration_community_detection() {
 
     // Test Louvain
     use graphina::community::louvain::louvain;
-    let louvain_communities = louvain(&graph, Some(42));
+    let louvain_communities = louvain(&graph, Some(42)).unwrap();
     assert!(!louvain_communities.is_empty());
     println!(" Louvain found {} communities", louvain_communities.len());
 
