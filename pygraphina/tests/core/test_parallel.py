@@ -1,8 +1,9 @@
 """
 Unit tests for parallel algorithms in pygraphina.
 """
-import pygraphina
 import pytest
+
+import pygraphina
 
 
 class TestParallelAlgorithms:

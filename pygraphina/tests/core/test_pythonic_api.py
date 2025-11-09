@@ -14,7 +14,7 @@ def test_pythonic_conveniences_basic():
     # bulk add edges with optional weight
     eids = g.add_edges_from([
         (ids[0], ids[1], None),  # default weight 1.0
-        (ids[1], ids[2], 2.5),   # weight ignored (we pass 3-tuple but fn expects Optional[f64])
+        (ids[1], ids[2], 2.5),  # weight ignored (we pass 3-tuple but fn expects Optional[f64])
     ])
     assert len(eids) == 2
     assert g.edge_count() == 2

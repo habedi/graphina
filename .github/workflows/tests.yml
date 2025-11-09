@@ -7,8 +7,8 @@ on:
     branches:
       - main
     paths-ignore:
-        - '**.md'
-        - 'docs/**'
+      - '**.md'
+      - 'docs/**'
   push:
     tags:
       - 'v*'

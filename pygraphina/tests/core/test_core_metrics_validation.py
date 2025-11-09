@@ -1,9 +1,9 @@
 # filepath: /home/hassan/Workspace/RustRoverProjects/graphina/pygraphina/tests/test_core_metrics_validation.py
 import math
-
 import networkx as nx
-import pygraphina
 import pytest
+
+import pygraphina
 
 
 def build_triangle_pg():

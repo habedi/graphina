@@ -8,9 +8,10 @@ This module tests the critical bugs that were identified and fixed:
 4. Node ID mapping consistency
 """
 
-import pytest
-import pygraphina
 import math
+import pytest
+
+import pygraphina
 
 
 class TestTypeConsistencyFix:
@@ -141,7 +142,7 @@ class TestWeightValidation:
         # These should all succeed
         g.add_edge(n0, n1, 1.0)
         g.add_edge(n0, n2, -5.0)  # Negative weight
-        g.add_edge(n1, n2, 0.0)   # Zero weight
+        g.add_edge(n1, n2, 0.0)  # Zero weight
 
         assert g.edge_count() == 3
 

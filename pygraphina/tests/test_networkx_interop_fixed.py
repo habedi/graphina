@@ -7,6 +7,7 @@ Critical Bug Fixed:
 """
 
 import pytest
+
 import pygraphina as pg
 
 try:

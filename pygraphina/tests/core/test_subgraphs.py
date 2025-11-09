@@ -1,8 +1,9 @@
 """
 Unit tests for subgraph operations in pygraphina.
 """
-import pygraphina
 import pytest
+
+import pygraphina
 
 
 def create_test_graph():

@@ -11,10 +11,11 @@ This test suite validates:
 7. In/out degree and neighbor queries
 """
 
-import pytest
-import pygraphina as pg
-import tempfile
 import os
+import pytest
+import tempfile
+
+import pygraphina as pg
 
 
 class TestDigraphInOutDegrees:

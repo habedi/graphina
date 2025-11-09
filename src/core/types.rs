@@ -18,6 +18,8 @@ assert!(success);
 g.try_update_node(n1, 30).expect("Node update should succeed");
 ```
 */
+// Import the new unified error type
+use crate::core::error::{GraphinaError, Result};
 use petgraph::EdgeType;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::prelude::EdgeRef;
@@ -26,8 +28,6 @@ use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use sprs::{CsMat, TriMat};
 use std::collections::HashMap;
 use std::ops::{Index, IndexMut};
-// Import the new unified error type
-use crate::core::error::{GraphinaError, Result};
 /// Marker type for directed graphs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Directed;
