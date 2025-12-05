@@ -1,22 +1,11 @@
-// End-to-End and Integration Tests for Graphina
-//
-// This comprehensive test suite validates the graphina library using real-world datasets.
-// Tests cover: core operations, algorithms, serialization, and cross-module integration.
-//
-// Datasets should be located in tests/testdata/graphina-graphs/
-// To download: huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir tests/testdata/graphina-graphs
+//! End-to-end tests for Graphina.
 
 use graphina::core::io::read_edge_list;
 use graphina::core::types::{Digraph, Graph};
-#[cfg(feature = "subgraphs")]
 use graphina::subgraphs::SubgraphOps;
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
 use std::path::Path;
-
-// ============================================================================
-// Test Infrastructure
-// ============================================================================
 
 #[derive(Debug, Clone)]
 struct DatasetInfo {
@@ -79,7 +68,7 @@ fn datasets_available() -> bool {
 macro_rules! skip_if_no_datasets {
     () => {
         if !datasets_available() {
-            eprintln!("️  Skipping test: datasets not found");
+            eprintln!("Skipping test: datasets not found");
             eprintln!("   Run: huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir tests/testdata/graphina-graphs");
             return;
         }
@@ -100,26 +89,18 @@ fn load_directed_graph(filename: &str) -> Result<Digraph<i32, f32>, std::io::Err
     Ok(graph)
 }
 
-// ============================================================================
-// E2E Test: Complete Graph Analysis Pipeline
-// ============================================================================
-
 #[test]
 fn test_e2e_complete_graph_analysis_pipeline() {
     skip_if_no_datasets!();
 
     println!("\n Running Complete Graph Analysis Pipeline...\n");
-
-    // Load a medium-sized graph
     let graph = match load_undirected_graph("wikipedia_chameleon.txt") {
         Ok(g) => g,
         Err(e) => {
-            eprintln!("️  Dataset not found: {}", e);
+            eprintln!("Dataset not found: {}", e);
             return;
         }
     };
-
-    // Skip if graph is empty (dataset not loaded properly)
     if graph.node_count() == 0 || graph.edge_count() == 0 {
         println!(" Skipping: graph is empty");
         return;
@@ -130,22 +111,16 @@ fn test_e2e_complete_graph_analysis_pipeline() {
         graph.node_count(),
         graph.edge_count()
     );
-
-    // Step 1: Validate graph structure
     assert!(graph.node_count() > 0, "Graph should have nodes");
     assert!(graph.edge_count() > 0, "Graph should have edges");
     assert!(!graph.is_empty());
     println!(" Graph structure validated");
-
-    // Step 2: Compute basic metrics
     let density = graph.density();
     assert!(
         density > 0.0 && density <= 1.0,
         "Density should be in (0, 1]"
     );
     println!(" Density: {:.6}", density);
-
-    // Step 3: Test serialization roundtrip
     let temp_json = "test_e2e_graph.json";
     let temp_bin = "test_e2e_graph.bin";
 
@@ -159,12 +134,8 @@ fn test_e2e_complete_graph_analysis_pipeline() {
     assert_eq!(loaded_json.node_count(), graph.node_count());
     assert_eq!(loaded_bin.node_count(), graph.node_count());
     println!(" Deserialization verified");
-
-    // Cleanup
     std::fs::remove_file(temp_json).ok();
     std::fs::remove_file(temp_bin).ok();
-
-    // Step 4: Traversal algorithms
     use graphina::traversal::{bfs, dfs};
 
     if let Some((start, _)) = graph.nodes().next() {
@@ -176,12 +147,9 @@ fn test_e2e_complete_graph_analysis_pipeline() {
         println!(" BFS visited {} nodes", bfs_visited.len());
         println!(" DFS visited {} nodes", dfs_visited.len());
     }
-
-    // Step 5: Path algorithms
     use graphina::core::paths::dijkstra;
 
     if let Some((start, _)) = graph.nodes().next() {
-        // Convert to OrderedFloat for path algorithms
         let mut weighted_graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
         let mut node_map = HashMap::new();
 
@@ -202,10 +170,6 @@ fn test_e2e_complete_graph_analysis_pipeline() {
     println!("\n Complete pipeline test passed!\n");
 }
 
-// ============================================================================
-// E2E Test: Directed Graph Analysis Pipeline
-// ============================================================================
-
 #[test]
 fn test_e2e_directed_graph_analysis() {
     skip_if_no_datasets!();
@@ -215,7 +179,7 @@ fn test_e2e_directed_graph_analysis() {
     let graph = match load_directed_graph("stanford_web_graph.txt") {
         Ok(g) => g,
         Err(e) => {
-            eprintln!("️  Large dataset not available: {}", e);
+            eprintln!("Large dataset not available: {}", e);
             return;
         }
     };
@@ -228,8 +192,6 @@ fn test_e2e_directed_graph_analysis() {
 
     assert!(graph.is_directed());
     println!(" Confirmed directed property");
-
-    // Test in/out degree using graph methods
     if let Some((node, _)) = graph.nodes().next() {
         let in_deg = graph.in_degree(node).unwrap_or(0);
         let out_deg = graph.out_degree(node).unwrap_or(0);
@@ -241,10 +203,6 @@ fn test_e2e_directed_graph_analysis() {
 
     println!("\n Directed graph test passed!\n");
 }
-
-// ============================================================================
-// Integration Test: All Datasets Basic Properties
-// ============================================================================
 
 #[test]
 fn test_integration_all_datasets_load_and_validate() {
@@ -262,7 +220,7 @@ fn test_integration_all_datasets_load_and_validate() {
         match result {
             Ok((nodes, edges)) => {
                 if nodes == 0 || edges == 0 {
-                    eprintln!("️  Skipping {}: empty graph", dataset.name);
+                    eprintln!("Skipping {}: empty graph", dataset.name);
                     continue;
                 }
                 assert!(
@@ -283,17 +241,13 @@ fn test_integration_all_datasets_load_and_validate() {
                 println!(" {}: {} nodes, {} edges", dataset.name, nodes, edges);
             }
             Err(e) => {
-                eprintln!("️  Skipping {}: {}", dataset.name, e);
+                eprintln!("Skipping {}: {}", dataset.name, e);
             }
         }
     }
 
     println!("\n Dataset validation complete!\n");
 }
-
-// ============================================================================
-// Integration Test: Graph Metrics Consistency
-// ============================================================================
 
 #[test]
 fn test_integration_metrics_consistency() {
@@ -306,13 +260,11 @@ fn test_integration_metrics_consistency() {
         Err(_) => return,
     };
 
-    // Skip if graph is empty
     if graph.node_count() == 0 || graph.edge_count() == 0 {
         println!(" Skipping: graph is empty");
         return;
     }
 
-    // Test degree distribution using graph method
     let mut total_degree = 0;
     let mut node_count = 0;
 
@@ -327,7 +279,6 @@ fn test_integration_metrics_consistency() {
     println!(" Average degree: {:.2}", calculated_avg);
     println!(" Degree metrics consistent");
 
-    // Test density calculation
     let density = graph.density();
     let max_edges = (node_count * (node_count - 1)) / 2;
     let expected_density = graph.edge_count() as f64 / max_edges as f64;
@@ -341,10 +292,6 @@ fn test_integration_metrics_consistency() {
 
     println!("\n Metrics consistency verified!\n");
 }
-
-// ============================================================================
-// Integration Test: Centrality Algorithms
-// ============================================================================
 
 #[cfg(feature = "centrality")]
 #[test]
@@ -363,7 +310,6 @@ fn test_integration_centrality_algorithms() {
         return;
     }
 
-    // Convert to OrderedFloat<f64> for centrality algorithms
     let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
     let mut node_map = HashMap::new();
 
@@ -376,7 +322,6 @@ fn test_integration_centrality_algorithms() {
         graph.add_edge(node_map[&u], node_map[&v], OrderedFloat(w as f64));
     }
 
-    // Test degree centrality
     use graphina::centrality::degree::degree_centrality;
     let deg_centrality = degree_centrality(&graph).unwrap();
     assert_eq!(deg_centrality.len(), graph.node_count());
@@ -385,7 +330,6 @@ fn test_integration_centrality_algorithms() {
         deg_centrality.len()
     );
 
-    // Test closeness centrality
     use graphina::centrality::closeness::closeness_centrality;
     let close_centrality = closeness_centrality(&graph).expect("Closeness should work");
     assert_eq!(close_centrality.len(), graph.node_count());
@@ -394,7 +338,6 @@ fn test_integration_centrality_algorithms() {
         close_centrality.len()
     );
 
-    // Test betweenness centrality (sample of nodes for performance)
     use graphina::centrality::betweenness::betweenness_centrality;
     let between_centrality = betweenness_centrality(&graph, true).expect("Betweenness should work");
     assert_eq!(between_centrality.len(), graph.node_count());
@@ -403,7 +346,6 @@ fn test_integration_centrality_algorithms() {
         between_centrality.len()
     );
 
-    // Verify all values are non-negative
     for &val in deg_centrality.values() {
         assert!(val >= 0.0, "Degree centrality should be non-negative");
     }
@@ -418,10 +360,6 @@ fn test_integration_centrality_algorithms() {
 
     println!("\n Centrality algorithms validated!\n");
 }
-
-// ============================================================================
-// Integration Test: Community Detection
-// ============================================================================
 
 #[cfg(feature = "community")]
 #[test]
@@ -439,8 +377,6 @@ fn test_integration_community_detection() {
         println!(" Skipping: graph is empty");
         return;
     }
-
-    // Convert to f64
     let mut graph: Graph<i32, f64> = Graph::new();
     let mut node_map = HashMap::new();
 
@@ -452,14 +388,10 @@ fn test_integration_community_detection() {
     for (u, v, &w) in graph_f32.edges() {
         graph.add_edge(node_map[&u], node_map[&v], w as f64);
     }
-
-    // Test connected components
     use graphina::community::connected_components::connected_components;
     let components = connected_components(&graph);
     assert!(!components.is_empty(), "Should find at least one component");
     println!(" Found {} connected component(s)", components.len());
-
-    // Test label propagation
     use graphina::community::label_propagation::label_propagation;
     let lp_communities = label_propagation(&graph, 100, Some(42)).unwrap();
     assert_eq!(lp_communities.len(), graph.node_count());
@@ -469,7 +401,6 @@ fn test_integration_community_detection() {
         num_communities.len()
     );
 
-    // Test Louvain
     use graphina::community::louvain::louvain;
     let louvain_communities = louvain(&graph, Some(42)).unwrap();
     assert!(!louvain_communities.is_empty());
@@ -477,10 +408,6 @@ fn test_integration_community_detection() {
 
     println!("\n Community detection validated!\n");
 }
-
-// ============================================================================
-// Integration Test: Traversal Algorithms Consistency
-// ============================================================================
 
 #[test]
 fn test_integration_traversal_consistency() {
@@ -531,10 +458,6 @@ fn test_integration_traversal_consistency() {
     println!("\n Traversal consistency verified!\n");
 }
 
-// ============================================================================
-// Integration Test: Serialization Format Compatibility
-// ============================================================================
-
 #[test]
 fn test_integration_serialization_formats() {
     skip_if_no_datasets!();
@@ -559,7 +482,6 @@ fn test_integration_serialization_formats() {
         .expect("Should save GraphML");
     println!(" Saved in all formats");
 
-    // Load and verify
     let from_json = Graph::<i32, f32>::load_json(&json_path).expect("Should load JSON");
     let from_bin = Graph::<i32, f32>::load_binary(&bin_path).expect("Should load binary");
 
@@ -570,14 +492,12 @@ fn test_integration_serialization_formats() {
     println!(" JSON roundtrip verified");
     println!(" Binary roundtrip verified");
 
-    // Verify GraphML file structure
     let graphml_content = std::fs::read_to_string(&graphml_path).expect("Should read GraphML");
     assert!(graphml_content.contains("<?xml"));
     assert!(graphml_content.contains("<graphml"));
     assert!(graphml_content.contains("edgedefault=\"undirected\""));
     println!(" GraphML format verified");
 
-    // Cleanup
     std::fs::remove_file(&json_path).ok();
     std::fs::remove_file(&bin_path).ok();
     std::fs::remove_file(&graphml_path).ok();
@@ -585,22 +505,16 @@ fn test_integration_serialization_formats() {
     println!("\n Serialization compatibility verified!\n");
 }
 
-// ============================================================================
-// Integration Test: Path Algorithms
-// ============================================================================
-
 #[test]
 fn test_integration_path_algorithms() {
     skip_if_no_datasets!();
 
-    println!("\n️  Testing Path Algorithms...\n");
+    println!("\nTesting Path Algorithms...\n");
 
     let graph_f32 = match load_undirected_graph("wikipedia_chameleon.txt") {
         Ok(g) => g,
         Err(_) => return,
     };
-
-    // Convert to OrderedFloat<f64>
     let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
     let mut node_map = HashMap::new();
 
@@ -616,21 +530,18 @@ fn test_integration_path_algorithms() {
     use graphina::core::paths::{bellman_ford, dijkstra};
 
     if let Some((start, _)) = graph.nodes().next() {
-        // Test Dijkstra
         let dijkstra_distances = dijkstra(&graph, start).expect("Dijkstra should work");
         assert_eq!(dijkstra_distances[&start], Some(OrderedFloat(0.0)));
 
         let reachable_dijkstra = dijkstra_distances.values().filter(|d| d.is_some()).count();
         println!(" Dijkstra: {} reachable nodes", reachable_dijkstra);
 
-        // Test Bellman-Ford
         let bf_distances = bellman_ford(&graph, start).expect("Bellman-Ford should work");
         assert_eq!(bf_distances[&start], Some(OrderedFloat(0.0)));
 
         let reachable_bf = bf_distances.values().filter(|d| d.is_some()).count();
         println!(" Bellman-Ford: {} reachable nodes", reachable_bf);
 
-        // Verify consistency between algorithms
         assert_eq!(
             reachable_dijkstra, reachable_bf,
             "Dijkstra and Bellman-Ford should find same reachable nodes"
@@ -640,10 +551,6 @@ fn test_integration_path_algorithms() {
 
     println!("\n Path algorithms validated!\n");
 }
-
-// ============================================================================
-// Integration Test: Graph Generators and Real Data Comparison
-// ============================================================================
 
 #[test]
 fn test_integration_generators_vs_real_data() {
@@ -663,8 +570,6 @@ fn test_integration_generators_vs_real_data() {
 
     use graphina::core::generators::{complete_graph, erdos_renyi_graph};
     use graphina::core::types::GraphMarker;
-
-    // Create synthetic graphs with similar size
     let n = 100.min(real_graph.node_count()); // Use smaller size for performance
     let complete = complete_graph::<GraphMarker>(n).expect("Should create complete graph");
     let random = erdos_renyi_graph::<GraphMarker>(n, 0.05, 42).expect("Should create random graph");
@@ -685,23 +590,17 @@ fn test_integration_generators_vs_real_data() {
         random.density()
     );
 
-    // Complete graph should have density close to 1.0
     assert!(
         complete.density() > 0.99,
         "Complete graph should be nearly dense"
     );
 
-    // Random graph should have moderate density
     assert!(random.density() > 0.0 && random.density() < 1.0);
 
     println!(" Generator properties verified");
 
     println!("\n Generator comparison complete!\n");
 }
-
-// ============================================================================
-// Integration Test: Subgraph Operations
-// ============================================================================
 
 #[test]
 fn test_integration_subgraph_operations() {
@@ -714,7 +613,6 @@ fn test_integration_subgraph_operations() {
         Err(_) => return,
     };
 
-    // Create a subgraph from first 100 nodes
     let nodes: Vec<_> = graph.nodes().take(100).map(|(n, _)| n).collect();
     let subgraph = graph.subgraph(&nodes).expect("Should create subgraph");
 
@@ -726,19 +624,14 @@ fn test_integration_subgraph_operations() {
         subgraph.edge_count()
     );
 
-    // Subgraph density might be different
     println!("  Original density: {:.6}", graph.density());
     println!("  Subgraph density: {:.6}", subgraph.density());
 
     println!("\n Subgraph operations validated!\n");
 }
 
-// ============================================================================
-// Stress Test: Large Graph Operations
-// ============================================================================
-
 #[test]
-#[ignore] // Run with --ignored flag for stress testing
+#[ignore]
 fn test_stress_large_graph_operations() {
     skip_if_no_datasets!();
 
@@ -747,7 +640,7 @@ fn test_stress_large_graph_operations() {
     let graph = match load_undirected_graph("dblp_citation_network.txt") {
         Ok(g) => g,
         Err(e) => {
-            eprintln!("️  Large dataset not available: {}", e);
+            eprintln!("Large dataset not available: {}", e);
             return;
         }
     };
@@ -760,7 +653,6 @@ fn test_stress_large_graph_operations() {
 
     let start_time = std::time::Instant::now();
 
-    // Test basic operations
     let density = graph.density();
     println!(
         " Density computed: {:.8} ({:?})",
@@ -768,7 +660,6 @@ fn test_stress_large_graph_operations() {
         start_time.elapsed()
     );
 
-    // Test traversal on sample nodes
     use graphina::traversal::bfs;
     if let Some((node, _)) = graph.nodes().next() {
         let start_bfs = std::time::Instant::now();

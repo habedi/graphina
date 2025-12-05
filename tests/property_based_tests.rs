@@ -1,10 +1,4 @@
-/*!
-# Property-Based Tests for Graphina
-
-This module contains property-based tests using proptest to verify
-graph algorithms and data structures behave correctly across a wide
-range of inputs.
-*/
+//! Property-based tests using proptest for graph algorithms and data structures.
 
 use graphina::core::generators::{
     barabasi_albert_graph, complete_graph, cycle_graph, erdos_renyi_graph,
@@ -13,31 +7,20 @@ use graphina::core::types::{Directed, Graph, Undirected};
 use graphina::traversal::{bfs, bidis, dfs};
 use proptest::prelude::*;
 
-// ============================================================================
-// Graph Property Generators
-// ============================================================================
-
-/// Strategy for generating valid graph sizes (nodes)
 fn graph_size() -> impl Strategy<Value = usize> {
     5usize..50usize
 }
 
-/// Strategy for generating valid probabilities [0.0, 1.0]
 fn probability() -> impl Strategy<Value = f64> {
     0.0..=1.0
 }
 
-/// Strategy for generating random seeds
 fn seed() -> impl Strategy<Value = u64> {
     any::<u64>()
 }
 
-// ============================================================================
-// Property Tests for Graph Generators
-// ============================================================================
-
 proptest! {
-    /// Property: Erdős-Rényi graphs should have exactly n nodes
+    /// Erdos-Renyi graphs should have exactly n nodes
     #[test]
     fn prop_erdos_renyi_node_count(
         n in graph_size(),
@@ -67,7 +50,7 @@ proptest! {
         prop_assert_eq!(graph.edge_count(), expected_edges);
     }
 
-    /// Property: Cycle graphs should have exactly n edges
+    /// Cycle graphs should have exactly n edges
     #[test]
     fn prop_cycle_graph_properties(n in 3usize..50usize) {
         let graph = cycle_graph::<Undirected>(n)
@@ -76,7 +59,7 @@ proptest! {
         prop_assert_eq!(graph.edge_count(), n);
     }
 
-    /// Property: Barabási-Albert graphs should have correct node count
+    /// Barabasi-Albert graphs should have correct node count
     #[test]
     fn prop_barabasi_albert_node_count(
         n in 5usize..50usize,
@@ -89,7 +72,7 @@ proptest! {
         prop_assert_eq!(graph.node_count(), n);
     }
 
-    /// Property: Barabási-Albert graphs should have at least (n-m)*m edges
+    /// Barabasi-Albert graphs should have at least (n-m)*m edges
     #[test]
     fn prop_barabasi_albert_min_edges(
         n in 5usize..50usize,
@@ -100,9 +83,8 @@ proptest! {
         let graph = barabasi_albert_graph::<Undirected>(n, m, seed)
             .expect("Should generate BA graph");
         let min_expected_edges = (m * (m - 1) / 2) + (n - m) * m;
-        // Allow small variance due to fallback mechanism, but check safely
         let actual_edges = graph.edge_count();
-        let tolerance = 10.min(min_expected_edges); // Don't subtract more than we have
+        let tolerance = 10.min(min_expected_edges);
         prop_assert!(
             actual_edges >= min_expected_edges.saturating_sub(tolerance),
             "Expected at least {} edges (with tolerance {}), got {}",
@@ -112,7 +94,7 @@ proptest! {
         );
     }
 
-    /// Property: Graph density should be in [0, 1]
+    /// Graph density should be in [0, 1]
     #[test]
     fn prop_graph_density_bounded(
         n in graph_size(),
@@ -125,10 +107,6 @@ proptest! {
         prop_assert!((0.0..=1.0).contains(&density));
     }
 }
-
-// ============================================================================
-// Property Tests for Graph Traversal
-// ============================================================================
 
 proptest! {
     /// Property: BFS should visit all nodes in a complete graph
@@ -143,7 +121,7 @@ proptest! {
         }
     }
 
-    /// Property: DFS should visit all nodes in a complete graph
+    /// DFS should visit all nodes in a complete graph
     #[test]
     fn prop_dfs_visits_all_nodes_complete(n in graph_size()) {
         let graph = complete_graph::<Undirected>(n)
@@ -155,7 +133,7 @@ proptest! {
         }
     }
 
-    /// Property: BFS and DFS should visit the same number of nodes
+    /// BFS and DFS should visit the same number of nodes
     #[test]
     fn prop_bfs_dfs_same_count(
         n in graph_size(),
@@ -182,14 +160,13 @@ proptest! {
             let path = bidis(&graph, nodes[0], nodes[nodes.len() - 1]);
             prop_assert!(path.is_some());
             if let Some(p) = path {
-                // Path should start and end at correct nodes
                 prop_assert_eq!(p[0], nodes[0]);
                 prop_assert_eq!(p[p.len() - 1], nodes[nodes.len() - 1]);
             }
         }
     }
 
-    /// Property: Bidirectional search path length in complete graph is 2
+    /// Bidirectional search path length in complete graph is 2
     #[test]
     fn prop_bidis_shortest_path_complete(n in 5usize..30usize) {
         let graph = complete_graph::<Undirected>(n)
@@ -199,19 +176,14 @@ proptest! {
             let path = bidis(&graph, nodes[0], nodes[1]);
             prop_assert!(path.is_some());
             if let Some(p) = path {
-                // In complete graph, shortest path is direct edge
                 prop_assert_eq!(p.len(), 2);
             }
         }
     }
 }
 
-// ============================================================================
-// Property Tests for Graph Operations
-// ============================================================================
-
 proptest! {
-    /// Property: Adding and removing nodes should work correctly
+    /// Adding and removing nodes should work correctly
     #[test]
     fn prop_add_remove_node_identity(values in prop::collection::vec(any::<i32>(), 1..20)) {
         let mut graph = Graph::<i32, f32>::new();
@@ -288,10 +260,6 @@ proptest! {
     }
 }
 
-// ============================================================================
-// Property Tests for Invariants
-// ============================================================================
-
 proptest! {
     /// Property: No self-loops should exist in generated graphs (except if explicitly added)
     #[test]
@@ -355,10 +323,6 @@ proptest! {
         prop_assert_eq!(graph1.edge_count(), graph2.edge_count());
     }
 }
-
-// ============================================================================
-// Property Tests for Algorithm Correctness
-// ============================================================================
 
 proptest! {
     /// Property: BFS should visit start node first

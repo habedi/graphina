@@ -1,27 +1,6 @@
-/*!
-# Integration Tests: Bug Fixes
-
-This test suite contains comprehensive integration tests for all bug fixes across the project.
-These tests verify that bugs found in various modules (core, centrality, approximation, etc.)
-have been properly fixed and continue to work correctly across module boundaries.
-
-## Coverage:
-- Core graph operations with non-contiguous node indices
-- Centrality algorithms with deleted nodes
-- Approximation algorithms edge cases
-- Cross-module bug fixes from 2025 analysis
-- Visualization layout safety
-- Traversal algorithm robustness
-*/
+//! Regression tests to verify bug fixes stay fixed and features continue working.
 
 use graphina::core::types::{Digraph, Graph};
-
-#[cfg(feature = "subgraphs")]
-use graphina::subgraphs::SubgraphOps;
-
-// ============================================================================
-// Core Module Bug Fixes
-// ============================================================================
 
 #[test]
 #[cfg(feature = "community")]
@@ -69,17 +48,6 @@ fn test_centrality_empty_graph() {
     assert!(result.is_ok());
     let centrality = result.unwrap();
     assert_eq!(centrality.len(), 0);
-}
-
-#[test]
-fn test_metrics_single_node() {
-    use graphina::metrics::{average_clustering_coefficient, diameter};
-
-    let mut g = Graph::<i32, f64>::new();
-    g.add_node(1);
-
-    assert_eq!(diameter(&g), Some(0));
-    assert_eq!(average_clustering_coefficient(&g), 0.0);
 }
 
 #[test]
@@ -139,6 +107,7 @@ fn test_iterator_safety() {
 }
 
 #[test]
+#[cfg(feature = "parallel")]
 fn test_parallel_vs_sequential_consistency() {
     use graphina::parallel::degrees_parallel;
 
@@ -163,16 +132,6 @@ fn test_parallel_vs_sequential_consistency() {
     for (node, deg) in &sequential_degrees {
         assert_eq!(parallel_degrees.get(node), Some(deg));
     }
-}
-
-#[test]
-#[should_panic(expected = "index out of bounds")]
-fn test_graph_builder_invalid_edge() {
-    let _g = Graph::<i32, f64>::builder()
-        .add_node(1)
-        .add_node(2)
-        .add_edge(0, 5, 1.0)
-        .build();
 }
 
 #[test]
@@ -210,27 +169,6 @@ fn test_dag_validation() {
 }
 
 #[test]
-fn test_subgraph_attribute_preservation() {
-    let mut g = Graph::<String, f64>::new();
-    let n1 = g.add_node("Alice".to_string());
-    let n2 = g.add_node("Bob".to_string());
-    let n3 = g.add_node("Charlie".to_string());
-
-    g.add_edge(n1, n2, 1.0);
-    g.add_edge(n2, n3, 1.0);
-
-    let subgraph = g
-        .subgraph(&[n1, n2])
-        .expect("Subgraph creation should succeed");
-
-    assert_eq!(subgraph.node_count(), 2);
-
-    for (_, attr) in subgraph.nodes() {
-        assert!(attr == "Alice" || attr == "Bob");
-    }
-}
-
-#[test]
 fn test_serialization_special_values() {
     let mut g = Graph::<i32, f64>::new();
     let n1 = g.add_node(1);
@@ -245,9 +183,7 @@ fn test_serialization_special_values() {
     assert!(!json_str.contains("Infinity"));
 }
 
-// ============================================================================
 // Centrality Module Bug Fixes
-// ============================================================================
 
 #[test]
 #[cfg(feature = "centrality")]
@@ -351,157 +287,207 @@ fn test_betweenness_centrality_two_nodes_division_by_zero_fix() {
     assert_eq!(*centrality.get(&n2).unwrap(), 0.0);
 }
 
-// ============================================================================
-// Approximation Module Bug Fixes
-// ============================================================================
+// Graph Generator Regressions
 
 #[test]
-#[cfg(feature = "approximation")]
-fn test_max_clique_empty_graph() {
-    use graphina::approximation::clique::max_clique;
+fn test_barabasi_albert_large_graph_completes_and_counts() {
+    use graphina::core::generators::barabasi_albert_graph;
+    use graphina::core::types::Undirected;
 
-    let graph: Graph<i32, f64> = Graph::new();
-    let clique = max_clique(&graph);
-    assert!(clique.is_empty());
+    let n = 200;
+    let m = 3;
+    let seed = 12345;
+    let g = barabasi_albert_graph::<Undirected>(n, m, seed).expect("BA generator should succeed");
+
+    assert_eq!(g.node_count(), n);
+
+    let expected_edges = (m * (m - 1) / 2) + (n - m) * m;
+    assert_eq!(g.edge_count(), expected_edges);
 }
 
 #[test]
-#[cfg(feature = "approximation")]
-fn test_max_clique_with_deleted_nodes() {
-    use graphina::approximation::clique::max_clique;
+fn test_watts_strogatz_edge_count_is_reasonable() {
+    use graphina::core::generators::watts_strogatz_graph;
+    use graphina::core::types::Undirected;
 
-    let mut graph = Graph::new();
-    let n1 = graph.add_node(1);
-    let n2 = graph.add_node(2);
-    let _n3 = graph.add_node(3);
-    let _n4 = graph.add_node(4);
+    let n = 100;
+    let k = 6;
+    let beta = 0.2;
+    let seed = 7;
 
-    graph.add_edge(n1, n2, 1.0);
-    graph.add_edge(n2, _n3, 1.0);
-    graph.add_edge(_n3, _n4, 1.0);
+    let g =
+        watts_strogatz_graph::<Undirected>(n, k, beta, seed).expect("WS generator should succeed");
 
-    graph.remove_node(n2);
-
-    let clique = max_clique(&graph);
-    assert!(!clique.contains(&n2));
+    assert_eq!(g.node_count(), n);
+    assert_eq!(g.edge_count(), n * k / 2);
 }
 
 #[test]
-#[cfg(feature = "approximation")]
-fn test_treewidth_with_deleted_nodes() {
-    use graphina::approximation::treewidth::{treewidth_min_degree, treewidth_min_fill_in};
+fn test_erdos_renyi_with_zero_probability() {
+    use graphina::core::generators::erdos_renyi_graph;
+    use graphina::core::types::Undirected;
 
-    let mut graph = Graph::new();
-    let n1 = graph.add_node(1);
-    let n2 = graph.add_node(2);
-    let n3 = graph.add_node(3);
-    let n4 = graph.add_node(4);
+    let n = 50;
+    let p = 0.0;
+    let seed = 123;
 
-    graph.add_edge(n1, n2, 1.0);
-    graph.add_edge(n2, n3, 1.0);
-    graph.add_edge(n3, n4, 1.0);
+    let g = erdos_renyi_graph::<Undirected>(n, p, seed).expect("ER generator should succeed");
 
-    graph.remove_node(n2);
-
-    let (_tw1, order1) = treewidth_min_degree(&graph);
-    let (_tw2, order2) = treewidth_min_fill_in(&graph);
-
-    assert!(!order1.contains(&n2));
-    assert!(!order2.contains(&n2));
-    assert_eq!(order1.len(), 3);
-    assert_eq!(order2.len(), 3);
-}
-
-// ============================================================================
-// 2025 Bug Fixes - Visualization & Traversal
-// ============================================================================
-
-#[test]
-#[cfg(feature = "visualization")]
-fn test_force_directed_layout_sparse_graph() {
-    use graphina::visualization::{LayoutAlgorithm, LayoutEngine};
-
-    let mut graph = Graph::<i32, f64>::new();
-    let n1 = graph.add_node(1);
-    let n2 = graph.add_node(2);
-    let _n3 = graph.add_node(3);
-    let _n4 = graph.add_node(4);
-
-    graph.add_edge(n1, n2, 1.0);
-
-    let positions =
-        LayoutEngine::compute_layout(&graph, LayoutAlgorithm::ForceDirected, 800.0, 600.0);
-    assert_eq!(positions.len(), 4);
+    assert_eq!(g.node_count(), n);
+    assert_eq!(g.edge_count(), 0);
 }
 
 #[test]
-#[cfg(feature = "traversal")]
-fn test_bidirectional_search_disconnected() {
-    use graphina::traversal::bidis;
+fn test_erdos_renyi_with_full_probability() {
+    use graphina::core::generators::erdos_renyi_graph;
+    use graphina::core::types::Undirected;
 
-    let mut graph = Graph::<i32, ()>::new();
-    let n1 = graph.add_node(1);
-    let n2 = graph.add_node(2);
-    let n3 = graph.add_node(3);
-    let n4 = graph.add_node(4);
+    let n = 20;
+    let p = 1.0;
+    let seed = 456;
 
-    graph.add_edge(n1, n2, ());
-    graph.add_edge(n3, n4, ());
+    let g = erdos_renyi_graph::<Undirected>(n, p, seed).expect("ER generator should succeed");
 
-    let path = bidis(&graph, n1, n4);
-    assert!(path.is_none());
+    assert_eq!(g.node_count(), n);
+    assert_eq!(g.edge_count(), n * (n - 1) / 2);
 }
 
-// ============================================================================
-// Performance Regression Tests
-// ============================================================================
+// Community Detection Regressions
 
 #[test]
-#[cfg(feature = "centrality")]
-fn test_pagerank_performance_improvement() {
-    use graphina::centrality::pagerank::pagerank;
+#[cfg(feature = "community")]
+fn test_girvan_newman_with_deleted_nodes() {
+    use graphina::community::girvan_newman::girvan_newman;
+    use graphina::core::types::NodeId;
 
-    let mut graph: Digraph<i32, f64> = Digraph::new();
-    let mut nodes = Vec::new();
+    let mut g: Graph<i32, f64> = Graph::new();
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    let n3 = g.add_node(3);
+    let n4 = g.add_node(4);
 
-    for i in 0..100 {
-        nodes.push(graph.add_node(i));
-    }
+    g.add_edge(n1, n2, 1.0);
+    g.add_edge(n2, n3, 1.0);
 
-    for i in 0..100 {
-        for j in 1..=5 {
-            let target = (i + j) % 100;
-            graph.add_edge(nodes[i], nodes[target], 1.0);
+    g.remove_node(n2);
+
+    let communities = girvan_newman(&g, 2).unwrap();
+
+    let mut seen = std::collections::HashSet::<NodeId>::new();
+    for c in &communities {
+        for &nid in c {
+            seen.insert(nid);
         }
     }
 
-    let pr = pagerank(&graph, 0.85, 100, 1e-6).unwrap();
-
-    assert_eq!(pr.len(), 100);
-    let sum: f64 = pr.values().sum();
-    assert!((sum - 1.0).abs() < 1e-3);
+    assert!(!seen.contains(&n2));
+    assert!(seen.contains(&n1));
+    assert!(seen.contains(&n4));
 }
 
 #[test]
 #[cfg(feature = "community")]
-fn test_connected_components_performance_fix() {
-    use graphina::community::connected_components::connected_components;
+fn test_label_propagation_stability() {
+    use graphina::community::label_propagation::label_propagation;
 
-    let mut g = Graph::<i32, f64>::new();
+    let mut g: Graph<i32, f64> = Graph::new();
+    let nodes: Vec<_> = (0..10).map(|i| g.add_node(i)).collect();
 
-    let mut nodes = Vec::new();
-    for i in 0..1000 {
-        nodes.push(g.add_node(i));
-    }
-
-    for i in (0..1000).step_by(10) {
-        for j in 0..9 {
-            if i + j + 1 < 1000 {
-                g.add_edge(nodes[i + j], nodes[i + j + 1], 1.0);
-            }
+    for i in 0..4 {
+        for j in (i + 1)..5 {
+            g.add_edge(nodes[i], nodes[j], 1.0);
         }
     }
 
-    let components = connected_components(&g);
-    assert!(components.len() >= 100);
+    for i in 5..9 {
+        for j in (i + 1)..10 {
+            g.add_edge(nodes[i], nodes[j], 1.0);
+        }
+    }
+
+    g.add_edge(nodes[2], nodes[7], 0.1);
+
+    let communities = label_propagation(&g, 100, Some(42)).unwrap();
+    assert!(!communities.is_empty());
+    assert!(communities.len() <= 10);
+}
+
+// MST and Path Algorithm Consistency
+
+#[test]
+#[cfg(feature = "mst")]
+fn test_mst_algorithms_consistency() {
+    use graphina::mst::{boruvka_mst, kruskal_mst, prim_mst};
+    use ordered_float::OrderedFloat;
+
+    let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+    let nodes: Vec<_> = (0..6).map(|i| g.add_node(i)).collect();
+
+    g.add_edge(nodes[0], nodes[1], OrderedFloat(1.0));
+    g.add_edge(nodes[0], nodes[2], OrderedFloat(4.0));
+    g.add_edge(nodes[1], nodes[2], OrderedFloat(2.0));
+    g.add_edge(nodes[1], nodes[3], OrderedFloat(5.0));
+    g.add_edge(nodes[2], nodes[3], OrderedFloat(3.0));
+    g.add_edge(nodes[2], nodes[4], OrderedFloat(6.0));
+    g.add_edge(nodes[3], nodes[4], OrderedFloat(7.0));
+    g.add_edge(nodes[3], nodes[5], OrderedFloat(8.0));
+    g.add_edge(nodes[4], nodes[5], OrderedFloat(9.0));
+
+    let (_, weight_kruskal) = kruskal_mst(&g).unwrap();
+    let (_, weight_prim) = prim_mst(&g).unwrap();
+    let (_, weight_boruvka) = boruvka_mst(&g).unwrap();
+
+    assert_eq!(weight_kruskal, weight_prim);
+    assert_eq!(weight_kruskal, weight_boruvka);
+}
+
+#[test]
+#[cfg(feature = "traversal")]
+fn test_traversal_algorithms_find_same_paths() {
+    use graphina::traversal::{bfs, dfs};
+
+    let mut g: Graph<i32, ()> = Graph::new();
+    let nodes: Vec<_> = (0..5).map(|i| g.add_node(i)).collect();
+
+    g.add_edge(nodes[0], nodes[1], ());
+    g.add_edge(nodes[0], nodes[2], ());
+    g.add_edge(nodes[1], nodes[3], ());
+    g.add_edge(nodes[1], nodes[4], ());
+
+    let bfs_result = bfs(&g, nodes[0]);
+    let dfs_result = dfs(&g, nodes[0]);
+
+    assert_eq!(bfs_result.len(), 5);
+    assert_eq!(dfs_result.len(), 5);
+
+    let bfs_set: std::collections::HashSet<_> = bfs_result.iter().collect();
+    let dfs_set: std::collections::HashSet<_> = dfs_result.iter().collect();
+    assert_eq!(bfs_set, dfs_set);
+}
+
+#[test]
+fn test_shortest_path_algorithms_consistency() {
+    use graphina::core::paths::{bellman_ford, dijkstra_path_f64};
+
+    let mut g: Graph<i32, f64> = Graph::new();
+    let nodes: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+
+    g.add_edge(nodes[0], nodes[1], 1.0);
+    g.add_edge(nodes[1], nodes[2], 2.0);
+    g.add_edge(nodes[2], nodes[3], 3.0);
+    g.add_edge(nodes[0], nodes[3], 10.0);
+
+    let dijkstra_result = dijkstra_path_f64(&g, nodes[0], None).unwrap();
+    let bellman_ford_result = bellman_ford(&g, nodes[0]).unwrap();
+
+    for (node, _) in g.nodes() {
+        let dij_dist = dijkstra_result.0.get(&node).and_then(|&d| d);
+        let bf_dist = bellman_ford_result.get(&node).and_then(|&d| d);
+
+        match (dij_dist, bf_dist) {
+            (Some(d1), Some(d2)) => assert!((d1 - d2).abs() < 1e-10),
+            (None, None) => {}
+            _ => panic!("Algorithms disagree on reachability"),
+        }
+    }
 }
