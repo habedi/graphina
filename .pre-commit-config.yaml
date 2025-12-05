@@ -37,6 +37,12 @@ repos:
 
       - id: test
         name: Run Tests
-        entry: make nexttest
+        entry: make nextest
+        language: system
+        pass_filenames: false
+
+      - id: test-py
+        name: Run PyGraphina Tests
+        entry: make test-py
         language: system
         pass_filenames: false

@@ -35,23 +35,66 @@ plugins:
             show_source: true
 nav:
   - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Basic Concepts: getting-started/concepts.md
   - API Reference:
-      - LLM Providers:
-          - api/model/base.md
-          - api/model/openai.md
-          - api/model/ollama.md
-      - Strategies:
-          - api/strategies/auto_cot.md
-          - api/strategies/cdw_cot.md
-          - api/strategies/graph_of_thoughts.md
-          - api/strategies/least_to_most.md
-          - api/strategies/sc_cot.md
-          - api/strategies/tree_of_thoughts.md
-      - Schemas: api/schemas.md
-      - Embedding: api/embedding.md
-      - Clustering: api/clustering.md
-      - Utilities: api/utils.md
-  - Benchmarking: benchmarking.md
+      - Graph: api/graph.md
+      - Directed Graph: api/digraph.md
+      - Core Operations:
+          - Building Graphs: api/core/builders.md
+          - Graph I/O: api/core/io.md
+          - Graph Generators: api/core/generators.md
+          - Paths: api/core/paths.md
+      - Centrality:
+          - Overview: api/centrality/index.md
+          - Degree: api/centrality/degree.md
+          - Betweenness: api/centrality/betweenness.md
+          - Closeness: api/centrality/closeness.md
+          - Eigenvector: api/centrality/eigenvector.md
+          - PageRank: api/centrality/pagerank.md
+          - Katz: api/centrality/katz.md
+          - Harmonic: api/centrality/harmonic.md
+          - Reaching: api/centrality/reaching.md
+      - Community Detection:
+          - Overview: api/community/index.md
+          - Label Propagation: api/community/label_propagation.md
+          - Louvain: api/community/louvain.md
+          - Girvan-Newman: api/community/girvan_newman.md
+          - Spectral Clustering: api/community/spectral.md
+          - Connected Components: api/community/connected_components.md
+      - Link Prediction:
+          - Overview: api/links/index.md
+          - Similarity Metrics: api/links/similarity.md
+          - Resource Allocation: api/links/allocation.md
+          - Preferential Attachment: api/links/attachment.md
+          - Centrality-based: api/links/centrality.md
+      - Approximation Algorithms:
+          - Overview: api/approximation/index.md
+          - Clique: api/approximation/clique.md
+          - Clustering: api/approximation/clustering.md
+          - Connectivity: api/approximation/connectivity.md
+          - Diameter: api/approximation/diameter.md
+          - Independent Set: api/approximation/independent_set.md
+          - Vertex Cover: api/approximation/vertex_cover.md
+          - TSP: api/approximation/tsp.md
+          - Treewidth: api/approximation/treewidth.md
+      - Metrics:
+          - Graph Metrics: api/metrics/graph.md
+          - Node Metrics: api/metrics/node.md
+      - MST: api/mst/index.md
+      - Traversal:
+          - Overview: api/traversal/index.md
+          - BFS & DFS: api/traversal/basic.md
+      - Subgraphs: api/subgraphs/index.md
+      - Parallel: api/parallel/index.md
+  - Examples:
+      - Basic Usage: examples/basic.md
+      - Centrality Analysis: examples/centrality.md
+      - Community Detection: examples/community.md
+      - Link Prediction: examples/links.md
+      - Graph Algorithms: examples/algorithms.md
   - Contributing: contributing.md
 
 markdown_extensions:
@@ -61,5 +104,6 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - admonition
+  - attr_list
   - toc:
       permalink: true
