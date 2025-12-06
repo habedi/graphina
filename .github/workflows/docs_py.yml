@@ -10,18 +10,9 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   deploy-docs:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -52,4 +43,4 @@ jobs:
           publish_branch: gh-pages
           user_name: ${{ github.actor }}
           user_email: ${{ github.actor }}@users.noreply.github.com
-          commit_message: "docs: Deploy documentation from ${{ github.sha }} by ${{ github.actor }}"
+          commit_message: "Deploy documentation from ${{ github.sha }} by ${{ github.actor }}"
