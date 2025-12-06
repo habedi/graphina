@@ -11,10 +11,12 @@ pub fn local_node_connectivity(
     target: usize,
 ) -> PyResult<usize> {
     let source_id = *py_graph
+        .mapper
         .py_to_internal
         .get(&source)
         .ok_or_else(|| PyValueError::new_err("Invalid source node"))?;
     let target_id = *py_graph
+        .mapper
         .py_to_internal
         .get(&target)
         .ok_or_else(|| PyValueError::new_err("Invalid target node"))?;

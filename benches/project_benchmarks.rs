@@ -51,7 +51,7 @@ fn bench_complete_analysis_pipeline(c: &mut Criterion) {
                 let communities = louvain(&graph_f64, Some(42));
 
                 // Run centrality analysis
-                let pr = pagerank(&graph_f64, 0.85, 50, 1e-4).unwrap();
+                let pr = pagerank(&graph_f64, 0.85, 50, 1e-4, None).unwrap();
 
                 black_box((communities, pr))
             });

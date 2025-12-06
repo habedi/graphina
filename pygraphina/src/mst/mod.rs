@@ -47,10 +47,12 @@ fn map_edges_to_py(
             .get(&e.v)
             .ok_or_else(|| PyValueError::new_err("missing mapping back to original node v"))?;
         let pu = py_graph
+            .mapper
             .internal_to_py
             .get(ou)
             .ok_or_else(|| PyValueError::new_err("missing node mapping for u"))?;
         let pv = py_graph
+            .mapper
             .internal_to_py
             .get(ov)
             .ok_or_else(|| PyValueError::new_err("missing node mapping for v"))?;

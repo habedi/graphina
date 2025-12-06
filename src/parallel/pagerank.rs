@@ -17,6 +17,7 @@ use petgraph::EdgeType;
 /// * `damping` - Damping factor (typically 0.85)
 /// * `max_iterations` - Maximum number of iterations
 /// * `tolerance` - Convergence threshold
+/// * `nstart` - Optional starting value for each node
 ///
 /// # Example
 ///
@@ -32,7 +33,7 @@ use petgraph::EdgeType;
 /// g.add_edge(n2, n3, 1.0);
 /// g.add_edge(n3, n1, 1.0);
 ///
-/// let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6);
+/// let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
 /// assert!(ranks[&n1] > 0.0);
 /// ```
 pub fn pagerank_parallel<A, W, Ty>(
@@ -40,6 +41,7 @@ pub fn pagerank_parallel<A, W, Ty>(
     damping: f64,
     max_iterations: usize,
     tolerance: f64,
+    nstart: Option<&HashMap<NodeId, f64>>,
 ) -> HashMap<NodeId, f64>
 where
     A: Sync,
@@ -52,23 +54,53 @@ where
     }
 
     let nodes: Vec<NodeId> = graph.node_ids().collect();
-    let initial_rank = 1.0 / n as f64;
+
+    // Initialize ranks
+    let mut ranks: HashMap<NodeId, f64> = if let Some(start_map) = nstart {
+        let mut sum = 0.0;
+        let mut temp_ranks = HashMap::with_capacity(n);
+
+        // Collect values and calculate sum
+        for &node in &nodes {
+            let val = start_map.get(&node).copied().unwrap_or(0.0);
+            temp_ranks.insert(node, val);
+            sum += val;
+        }
+
+        // Normalize
+        if sum.abs() > 1e-9 {
+            for val in temp_ranks.values_mut() {
+                *val /= sum;
+            }
+            temp_ranks
+        } else {
+            // Fallback to uniform if sum is zero (or could return empty/panic)
+            // Sticking to uniform fallback to avoid error handling change in parallelism for now
+            // or we just allow it to fail silently/produce 0s?
+            // Better to respect nstart logic: if 0 sum, maybe fallback to uniform is safest for stability
+            nodes.iter().map(|&node| (node, 1.0 / n as f64)).collect()
+        }
+    } else {
+        nodes.iter().map(|&node| (node, 1.0 / n as f64)).collect()
+    };
 
     // Precompute incoming edges list to avoid scanning all edges per node.
     let mut incoming: HashMap<NodeId, Vec<NodeId>> = HashMap::with_capacity(n);
     for &node in &nodes {
         incoming.insert(node, Vec::new());
     }
+
+    let is_directed = graph.is_directed();
     for (src, tgt, _) in graph.edges() {
-        if incoming.contains_key(&tgt) {
-            incoming
-                .get_mut(&tgt)
-                .expect("incoming map must contain target node")
-                .push(src);
+        if let Some(list) = incoming.get_mut(&tgt) {
+            list.push(src);
+        }
+        if !is_directed {
+            if let Some(list) = incoming.get_mut(&src) {
+                list.push(tgt);
+            }
         }
     }
-
-    let mut ranks: HashMap<NodeId, f64> = nodes.iter().map(|&node| (node, initial_rank)).collect();
 
     for _iteration in 0..max_iterations {
         // Snapshot previous ranks for this iteration (immutable view for parallelism)
@@ -135,7 +167,7 @@ mod tests {
         g.add_edge(n2, n3, 1.0);
         g.add_edge(n3, n1, 1.0);
 
-        let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6);
+        let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
 
         // Verify all nodes have positive rank
         assert!(ranks[&n1] > 0.0);

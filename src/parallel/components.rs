@@ -92,7 +92,7 @@ where
     let mut keys: Vec<usize> = by_component.keys().copied().collect();
     keys.sort_unstable();
     keys.into_iter()
-        .map(|k| by_component.remove(&k).unwrap())
+        .filter_map(|k| by_component.remove(&k))
         .collect()
 }
 

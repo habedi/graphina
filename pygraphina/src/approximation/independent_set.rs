@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 pub fn maximum_independent_set(py_graph: &PyGraph) -> Vec<usize> {
     let mis = maximum_independent_set_core(&py_graph.graph);
     mis.into_iter()
-        .filter_map(|node_id| py_graph.internal_to_py.get(&node_id).copied())
+        .filter_map(|node_id| py_graph.mapper.internal_to_py.get(&node_id).copied())
         .collect()
 }
 

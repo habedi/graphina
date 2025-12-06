@@ -1,5 +1,5 @@
 """
-Test Pythonic class aliases (Graph, DiGraph) to ensure more intuitive API.
+Test Pythonic class aliases (Graph and DiGraph) to get a more intuitive API.
 """
 import pygraphina as pg
 

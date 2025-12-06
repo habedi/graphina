@@ -64,6 +64,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     ///
     /// let mut g = Graph::<i32, f64>::new();
     /// let n1 = g.add_node(1);
@@ -120,6 +121,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     /// use std::collections::HashSet;
     ///
     /// let mut g = Graph::<i32, f64>::new();
@@ -147,6 +149,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     ///
     /// let mut g = Graph::<i32, f64>::new();
     /// let n1 = g.add_node(1);
@@ -203,6 +206,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     ///
     /// let mut g = Graph::<i32, f64>::new();
     /// let n1 = g.add_node(1);
@@ -239,6 +243,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     ///
     /// let mut g = Graph::<i32, f64>::new();
     /// let n1 = g.add_node(1);
@@ -285,6 +290,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     ///
     /// let mut g = Graph::<i32, f64>::new();
     /// let n1 = g.add_node(1);
@@ -337,6 +343,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     ///
     /// let mut g = Graph::<i32, f64>::new();
     /// let n1 = g.add_node(1);
@@ -378,6 +385,7 @@ where
     ///
     /// ```rust
     /// use graphina::core::types::Graph;
+    /// use graphina::subgraphs::SubgraphOps;
     ///
     /// let mut g = Graph::<i32, f64>::new();
     /// let n1 = g.add_node(1);

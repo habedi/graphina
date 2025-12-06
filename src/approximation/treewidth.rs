@@ -49,7 +49,8 @@ where
                     } else {
                         // If no remaining nodes, we're done - this shouldn't happen
                         // because the while condition checks !remaining.is_empty()
-                        unreachable!("remaining set should not be empty while in loop");
+                        // Defensive programming: return current partial result if unreachable state occurs
+                        return (treewidth, order);
                     }
                 }
             }
@@ -105,8 +106,8 @@ where
                 }
                 fill_in
             })
-            .copied() // Safe: we know remaining is not empty
-            .expect("remaining set should not be empty in this context");
+            .copied()
+            .unwrap_or_else(|| *remaining.iter().next().unwrap()); // Safe fallback- logic guarantees non-empty
 
         let deg = graph.neighbors(u).filter(|v| remaining.contains(v)).count();
         if deg > treewidth {

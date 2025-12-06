@@ -99,7 +99,7 @@ where
 
         // Extract the corresponding eigenvector (column max_idx)
         let mut x = evecs.column(max_idx).into_owned();
-        // Ensure non-negative entries (orientation of eigenvectors is arbitrary)
+        // Make sure non-negative entries (orientation of eigenvectors is arbitrary)
         for val in x.iter_mut() {
             *val = val.abs();
         }

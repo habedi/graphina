@@ -9,6 +9,7 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - 'pygraphina/**'
   push:
     tags:
       - 'v*'

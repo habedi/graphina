@@ -112,7 +112,7 @@ class TestGenerators:
     def test_star_graph_degrees(self):
         """Test that star graph has correct degree distribution."""
         g = pygraphina.star_graph(10)
-        nodes = g.nodes()
+        nodes = g.nodes
         degrees = [g.degree(node) for node in nodes]
 
         assert 9 in degrees
@@ -136,7 +136,7 @@ class TestGenerators:
     def test_cycle_graph_all_degree_2(self):
         """Test that all nodes in cycle have degree 2."""
         g = pygraphina.cycle_graph(8)
-        nodes = g.nodes()
+        nodes = g.nodes
 
         for node in nodes:
             assert g.degree(node) == 2
@@ -148,7 +148,7 @@ class TestGenerators:
         assert g.node_count() == 3
         assert g.edge_count() == 3
         # All nodes should have degree 2
-        nodes = g.nodes()
+        nodes = g.nodes
         for node in nodes:
             assert g.degree(node) == 2
 
@@ -256,7 +256,7 @@ class TestGeneratorProperties:
     def test_complete_graph_all_connected(self):
         """Test that complete graph is fully connected."""
         g = pygraphina.complete_graph(8)
-        nodes = g.nodes()
+        nodes = g.nodes
         for node in nodes:
             # Every node should be connected to all others
             assert g.degree(node) == 7

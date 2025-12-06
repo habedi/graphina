@@ -14,16 +14,16 @@ impl PyGraph {
         start: usize,
         cutoff: Option<f64>,
     ) -> PyResult<HashMap<usize, Option<f64>>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let (costs, _trace) = dijkstra_path_f64(&self.graph, start_id, cutoff)
             .map_err(|e| PyValueError::new_err(format!("Dijkstra error: {}", e)))?;
         let mut out: HashMap<usize, Option<f64>> = HashMap::new();
         for (node_id, dist_opt) in costs.into_iter() {
-            if let Some(py_id) = self.internal_to_py.get(&node_id) {
-                out.insert(*py_id, dist_opt);
+            if let Some(py_id) = self.mapper.get_py(node_id) {
+                out.insert(py_id, dist_opt);
             }
         }
         Ok(out)
@@ -35,13 +35,13 @@ impl PyGraph {
         start: usize,
         target: usize,
     ) -> PyResult<Option<(f64, Vec<usize>)>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
-        let target_id = *self
-            .py_to_internal
-            .get(&target)
+        let target_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
         let (costs, prev) = dijkstra_path_f64(&self.graph, start_id, None)
             .map_err(|e| PyValueError::new_err(format!("Dijkstra error: {}", e)))?;
@@ -61,13 +61,17 @@ impl PyGraph {
                         break;
                     }
                 }
-                if *path_ids.last().unwrap() != start_id {
+                if let Some(&last) = path_ids.last() {
+                    if last != start_id {
+                        return Ok(None);
+                    }
+                } else {
                     return Ok(None);
                 }
                 path_ids.reverse();
                 let py_path: Vec<usize> = path_ids
                     .into_iter()
-                    .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+                    .filter_map(|nid| self.mapper.get_py(nid))
                     .collect();
                 Ok(Some((total, py_path)))
             }
@@ -77,16 +81,16 @@ impl PyGraph {
 
     /// Bellman-Ford single-source shortest paths. Returns None if negative cycle is detected.
     pub fn bellman_ford_impl(&self, start: usize) -> PyResult<Option<HashMap<usize, Option<f64>>>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let res = bellman_ford(&self.graph, start_id);
         Ok(res.map(|nm| {
             let mut out = HashMap::new();
             for (nid, dist_opt) in nm.into_iter() {
-                if let Some(py) = self.internal_to_py.get(&nid) {
-                    out.insert(*py, dist_opt);
+                if let Some(py) = self.mapper.get_py(nid) {
+                    out.insert(py, dist_opt);
                 }
             }
             out
@@ -98,14 +102,14 @@ impl PyGraph {
         floyd_warshall(&self.graph).map(|outer| {
             let mut out_outer: HashMap<usize, HashMap<usize, Option<f64>>> = HashMap::new();
             for (u, inner) in outer.into_iter() {
-                if let Some(py_u) = self.internal_to_py.get(&u) {
+                if let Some(py_u) = self.mapper.get_py(u) {
                     let mut out_inner = HashMap::new();
                     for (v, dopt) in inner.into_iter() {
-                        if let Some(py_v) = self.internal_to_py.get(&v) {
-                            out_inner.insert(*py_v, dopt);
+                        if let Some(py_v) = self.mapper.get_py(v) {
+                            out_inner.insert(py_v, dopt);
                         }
                     }
-                    out_outer.insert(*py_u, out_inner);
+                    out_outer.insert(py_u, out_inner);
                 }
             }
             out_outer
@@ -120,16 +124,16 @@ impl PyDiGraph {
         start: usize,
         cutoff: Option<f64>,
     ) -> PyResult<HashMap<usize, Option<f64>>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let (costs, _trace) = dijkstra_path_f64(&self.graph, start_id, cutoff)
             .map_err(|e| PyValueError::new_err(format!("Dijkstra error: {}", e)))?;
         let mut out: HashMap<usize, Option<f64>> = HashMap::new();
         for (node_id, dist_opt) in costs.into_iter() {
-            if let Some(py_id) = self.internal_to_py.get(&node_id) {
-                out.insert(*py_id, dist_opt);
+            if let Some(py_id) = self.mapper.get_py(node_id) {
+                out.insert(py_id, dist_opt);
             }
         }
         Ok(out)
@@ -141,13 +145,13 @@ impl PyDiGraph {
         start: usize,
         target: usize,
     ) -> PyResult<Option<(f64, Vec<usize>)>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
-        let target_id = *self
-            .py_to_internal
-            .get(&target)
+        let target_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
         let (costs, prev) = dijkstra_path_f64(&self.graph, start_id, None)
             .map_err(|e| PyValueError::new_err(format!("Dijkstra error: {}", e)))?;
@@ -167,13 +171,17 @@ impl PyDiGraph {
                         break;
                     }
                 }
-                if *path_ids.last().unwrap() != start_id {
+                if let Some(&last) = path_ids.last() {
+                    if last != start_id {
+                        return Ok(None);
+                    }
+                } else {
                     return Ok(None);
                 }
                 path_ids.reverse();
                 let py_path: Vec<usize> = path_ids
                     .into_iter()
-                    .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+                    .filter_map(|nid| self.mapper.get_py(nid))
                     .collect();
                 Ok(Some((total, py_path)))
             }
@@ -183,16 +191,16 @@ impl PyDiGraph {
 
     /// Bellman-Ford single-source shortest paths. Returns None if negative cycle is detected.
     pub fn bellman_ford_impl(&self, start: usize) -> PyResult<Option<HashMap<usize, Option<f64>>>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let res = bellman_ford(&self.graph, start_id);
         Ok(res.map(|nm| {
             let mut out = HashMap::new();
             for (nid, dist_opt) in nm.into_iter() {
-                if let Some(py) = self.internal_to_py.get(&nid) {
-                    out.insert(*py, dist_opt);
+                if let Some(py) = self.mapper.get_py(nid) {
+                    out.insert(py, dist_opt);
                 }
             }
             out
@@ -204,14 +212,14 @@ impl PyDiGraph {
         floyd_warshall(&self.graph).map(|outer| {
             let mut out_outer: HashMap<usize, HashMap<usize, Option<f64>>> = HashMap::new();
             for (u, inner) in outer.into_iter() {
-                if let Some(py_u) = self.internal_to_py.get(&u) {
+                if let Some(py_u) = self.mapper.get_py(u) {
                     let mut out_inner = HashMap::new();
                     for (v, dopt) in inner.into_iter() {
-                        if let Some(py_v) = self.internal_to_py.get(&v) {
-                            out_inner.insert(*py_v, dopt);
+                        if let Some(py_v) = self.mapper.get_py(v) {
+                            out_inner.insert(py_v, dopt);
                         }
                     }
-                    out_outer.insert(*py_u, out_inner);
+                    out_outer.insert(py_u, out_inner);
                 }
             }
             out_outer

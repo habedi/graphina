@@ -5,7 +5,7 @@
 //! Convention: functions in this module return `Result<_, crate::core::error::GraphinaError>`
 //! for better observability and error propagation.
 
-use crate::core::error::Result;
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 
 /// PageRank: a link analysis algorithm that assigns a numerical weighting to each element
@@ -17,6 +17,7 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 /// * `damping`: damping factor (usually 0.85).
 /// * `max_iter`: maximum number of iterations.
 /// * `tolerance`: convergence tolerance.
+/// * `nstart`: optional starting value for each node.
 ///
 /// # Returns
 ///
@@ -27,6 +28,7 @@ pub fn pagerank<A, W, Ty>(
     damping: f64,
     max_iter: usize,
     tolerance: f64,
+    nstart: Option<&NodeMap<f64>>,
 ) -> Result<NodeMap<f64>>
 where
     W: Copy + PartialOrd + Into<f64>,
@@ -48,15 +50,43 @@ where
     let mut out_degrees = vec![0.0; n];
     let mut out_edges: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
 
+    let is_directed = graph.is_directed();
     for (u, v, w) in graph.edges() {
         let ui = node_to_idx[&u];
         let vi = node_to_idx[&v];
         let weight: f64 = (*w).into();
         out_degrees[ui] += weight;
         out_edges[ui].push((vi, weight));
+
+        if !is_directed {
+            out_degrees[vi] += weight;
+            out_edges[vi].push((ui, weight));
+        }
     }
 
-    let mut pr = vec![1.0 / n as f64; n];
+    let mut pr = if let Some(start_map) = nstart {
+        let mut p = vec![0.0; n];
+        let mut sum = 0.0;
+        for (idx, &node) in node_list.iter().enumerate() {
+            if let Some(&val) = start_map.get(&node) {
+                p[idx] = val;
+                sum += val;
+            }
+        }
+        if sum.abs() < 1e-9 {
+            // If sum is zero, fallback to uniform or error? NetworkX raises error.
+            // But to be safe let's raise error if nstart was provided but useless.
+            return Err(GraphinaError::invalid_argument("nstart sum is zero"));
+        }
+        // Normalize
+        for x in p.iter_mut() {
+            *x /= sum;
+        }
+        p
+    } else {
+        vec![1.0 / n as f64; n]
+    };
+
     let mut pr_new = vec![0.0; n];
 
     for _ in 0..max_iter {
@@ -121,7 +151,7 @@ mod tests {
         graph.add_edge(n2, n3, 1.0);
         graph.add_edge(n3, n1, 1.0);
 
-        let pr = pagerank(&graph, 0.85, 100, 1e-6).unwrap();
+        let pr = pagerank(&graph, 0.85, 100, 1e-6, None).unwrap();
 
         // In a cycle, all nodes should have equal PageRank
         let pr1 = pr[&n1];
@@ -147,7 +177,7 @@ mod tests {
         graph.add_edge(n1, n3, 1.0);
         // n2 and n3 are dangling nodes
 
-        let pr = pagerank(&graph, 0.85, 100, 1e-6).unwrap();
+        let pr = pagerank(&graph, 0.85, 100, 1e-6, None).unwrap();
 
         // n1 should have lower rank than dangling nodes
         assert!(pr[&n1] < pr[&n2]);
@@ -157,7 +187,7 @@ mod tests {
     #[test]
     fn test_pagerank_empty_graph() {
         let graph: Graph<i32, f64> = Graph::new();
-        let pr = pagerank(&graph, 0.85, 100, 1e-6).unwrap();
+        let pr = pagerank(&graph, 0.85, 100, 1e-6, None).unwrap();
         assert!(pr.is_empty());
     }
 
@@ -166,7 +196,37 @@ mod tests {
         let mut graph: Graph<i32, f64> = Graph::new();
         let n1 = graph.add_node(1);
 
-        let pr = pagerank(&graph, 0.85, 100, 1e-6).unwrap();
+        let pr = pagerank(&graph, 0.85, 100, 1e-6, None).unwrap();
         assert!((pr[&n1] - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_pagerank_with_nstart() {
+        let mut graph: Digraph<i32, f64> = Digraph::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n1, 1.0);
+
+        // Bias start towards node 1
+        let mut nstart = NodeMap::new();
+        nstart.insert(n1, 0.8);
+        nstart.insert(n2, 0.2);
+
+        // With sufficient iterations, it should still converge to 0.5/0.5 for symmetric graph
+        let pr = pagerank(&graph, 0.85, 100, 1e-6, Some(&nstart)).unwrap();
+        assert!((pr[&n1] - 0.5).abs() < 1e-3);
+        assert!((pr[&n2] - 0.5).abs() < 1e-3);
+
+        // With 0 iterations using small max_iter (if we could control validation better),
+        // effectively we check it doesn't crash and converges normally.
+        // Let's verify it accepts partial nstart (rest zero assumption)
+        let mut partial_start = NodeMap::new();
+        partial_start.insert(n1, 1.0);
+        // n2 missing -> assumed 0.0
+
+        let pr_partial = pagerank(&graph, 0.85, 100, 1e-6, Some(&partial_start)).unwrap();
+        assert!((pr_partial[&n1] - 0.5).abs() < 1e-3);
     }
 }

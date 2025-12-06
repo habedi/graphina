@@ -25,7 +25,7 @@ impl PyGraph {
     pub(crate) fn subgraph_impl(&self, nodes: Vec<usize>) -> PyResult<PyGraph> {
         let internal_nodes: Vec<_> = nodes
             .iter()
-            .filter_map(|&py_id| self.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| self.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_nodes.len() != nodes.len() {
@@ -60,7 +60,7 @@ impl PyGraph {
     pub(crate) fn induced_subgraph_impl(&self, nodes: Vec<usize>) -> PyResult<PyGraph> {
         let internal_nodes: HashSet<_> = nodes
             .iter()
-            .filter_map(|&py_id| self.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| self.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_nodes.len() != nodes.len() {
@@ -97,6 +97,7 @@ impl PyGraph {
     ///     >>> ego = g.ego_graph(n0, 1)
     pub(crate) fn ego_graph_impl(&self, center: usize, radius: usize) -> PyResult<PyGraph> {
         let center_id = *self
+            .mapper
             .py_to_internal
             .get(&center)
             .ok_or_else(|| PyValueError::new_err("Invalid center node id"))?;
@@ -129,6 +130,7 @@ impl PyGraph {
     ///     >>> neighbors = g.k_hop_neighbors(n0, 1)
     pub(crate) fn k_hop_neighbors_impl(&self, start: usize, k: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
@@ -137,7 +139,7 @@ impl PyGraph {
 
         Ok(neighbors
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -157,6 +159,7 @@ impl PyGraph {
     ///     >>> component = g.connected_component(n0)
     pub(crate) fn connected_component_impl(&self, start: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
@@ -165,7 +168,7 @@ impl PyGraph {
 
         Ok(component
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -185,6 +188,7 @@ impl PyGraph {
     ///     >>> comp_graph = g.component_subgraph(n0)
     pub(crate) fn component_subgraph_impl(&self, start: usize) -> PyResult<PyGraph> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
@@ -207,7 +211,7 @@ impl PyGraph {
     ) -> PyResult<PyGraph> {
         let filtered = self.graph.filter_nodes(|nid, attr| {
             // Map NodeId to Python id for the predicate
-            if let Some(py_id) = self.internal_to_py.get(&nid).copied() {
+            if let Some(py_id) = self.mapper.internal_to_py.get(&nid).copied() {
                 if let Ok(result) = predicate.call1((py_id, *attr)) {
                     if let Ok(py_bool) = result.cast::<pyo3::types::PyBool>() {
                         return py_bool.is_true();
@@ -230,8 +234,8 @@ impl PyGraph {
         use pyo3::types::PyBool;
 
         let filtered = self.graph.filter_edges(|u, v, w| {
-            let py_u = self.internal_to_py.get(&u).copied();
-            let py_v = self.internal_to_py.get(&v).copied();
+            let py_u = self.mapper.internal_to_py.get(&u).copied();
+            let py_v = self.mapper.internal_to_py.get(&v).copied();
             match (py_u, py_v) {
                 (Some(pu), Some(pv)) => {
                     if let Ok(result) = predicate.call1((pu, pv, *w)) {
@@ -271,7 +275,7 @@ impl PyDiGraph {
     pub(crate) fn subgraph_impl(&self, nodes: Vec<usize>) -> PyResult<PyDiGraph> {
         let internal_nodes: Vec<_> = nodes
             .iter()
-            .filter_map(|&py_id| self.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| self.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_nodes.len() != nodes.len() {
@@ -305,7 +309,7 @@ impl PyDiGraph {
     pub(crate) fn induced_subgraph_impl(&self, nodes: Vec<usize>) -> PyResult<PyDiGraph> {
         let internal_nodes: HashSet<_> = nodes
             .iter()
-            .filter_map(|&py_id| self.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| self.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_nodes.len() != nodes.len() {
@@ -341,6 +345,7 @@ impl PyDiGraph {
     ///     >>> ego = g.ego_graph(n0, 1)
     pub(crate) fn ego_graph_impl(&self, center: usize, radius: usize) -> PyResult<PyDiGraph> {
         let center_id = *self
+            .mapper
             .py_to_internal
             .get(&center)
             .ok_or_else(|| PyValueError::new_err("Invalid center node id"))?;
@@ -372,6 +377,7 @@ impl PyDiGraph {
     ///     >>> neighbors = g.k_hop_neighbors(n0, 1)
     pub(crate) fn k_hop_neighbors_impl(&self, start: usize, k: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
@@ -380,7 +386,7 @@ impl PyDiGraph {
 
         Ok(neighbors
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -400,6 +406,7 @@ impl PyDiGraph {
     ///     >>> component = g.connected_component(n0)
     pub(crate) fn connected_component_impl(&self, start: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
@@ -408,7 +415,7 @@ impl PyDiGraph {
 
         Ok(component
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -428,6 +435,7 @@ impl PyDiGraph {
     ///     >>> comp_graph = g.component_subgraph(n0)
     pub(crate) fn component_subgraph_impl(&self, start: usize) -> PyResult<PyDiGraph> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
@@ -449,7 +457,7 @@ impl PyDiGraph {
     ) -> PyResult<PyDiGraph> {
         let filtered = self.graph.filter_nodes(|nid, attr| {
             // Map NodeId to Python id for the predicate
-            if let Some(py_id) = self.internal_to_py.get(&nid).copied() {
+            if let Some(py_id) = self.mapper.internal_to_py.get(&nid).copied() {
                 if let Ok(result) = predicate.call1((py_id, *attr)) {
                     if let Ok(py_bool) = result.cast::<pyo3::types::PyBool>() {
                         return py_bool.is_true();
@@ -472,8 +480,8 @@ impl PyDiGraph {
         use pyo3::types::PyBool;
 
         let filtered = self.graph.filter_edges(|u, v, w| {
-            let py_u = self.internal_to_py.get(&u).copied();
-            let py_v = self.internal_to_py.get(&v).copied();
+            let py_u = self.mapper.internal_to_py.get(&u).copied();
+            let py_v = self.mapper.internal_to_py.get(&v).copied();
             match (py_u, py_v) {
                 (Some(pu), Some(pv)) => {
                     if let Ok(result) = predicate.call1((pu, pv, *w)) {

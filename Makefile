@@ -200,6 +200,16 @@ test-py: develop-py ## Run Python tests
 	@echo "Running Python tests..."
 	@$(PY_DEP_MNGR) run pytest
 
+.PHONY: docs-py
+docs-py: develop-py ## Generate MKDocs documentation
+	@echo "Generating MKDocs documentation..."
+	@$(PY_DEP_MNGR) run mkdocs build --config-file pygraphina/mkdocs.yml
+
+.PHONY: docs-serve-py
+docs-serve-py: develop-py ## Serve MKDocs documentation locally
+	@echo "Serving MKDocs documentation locally..."
+	@$(PY_DEP_MNGR) run mkdocs serve --config-file pygraphina/mkdocs.yml
+
 .PHONY: publish-py
 publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PYPI_TOKEN to be set)
 	@echo "Publishing PyGraphina to PyPI..."
