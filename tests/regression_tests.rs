@@ -243,6 +243,40 @@ fn test_eigenvector_with_deleted_nodes() {
 
 #[test]
 #[cfg(feature = "centrality")]
+fn test_eigenvector_issue_21_regression() {
+    // Regression test for Issue #21: "Using Vec to return centrality might cause error for graph with removed node"
+    // Ensures that creating a "gap" in NodeIds by removing an intermediate node doesn't cause out-of-bounds access.
+    use graphina::centrality::eigenvector::eigenvector_centrality;
+
+    let mut g = Graph::<i32, f64>::new();
+
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(4);
+    let n3 = g.add_node(9);
+
+    g.add_edge(n0, n3, 1.0);
+    g.add_edge(n1, n2, 1.0);
+    g.add_edge(n3, n1, 1.0);
+
+    // Remove an intermediate node (n1) to create a gap if IDs were treated as dense indices
+    g.remove_node(n1);
+
+    // This should not panic
+    let result = eigenvector_centrality(&g, 1000, 1e-6);
+    assert!(result.is_ok());
+
+    let centrality = result.unwrap();
+    // n1 should not be in the result
+    assert!(!centrality.contains_key(&n1));
+    // Remaining nodes should be present
+    assert!(centrality.contains_key(&n0));
+    assert!(centrality.contains_key(&n2));
+    assert!(centrality.contains_key(&n3));
+}
+
+#[test]
+#[cfg(feature = "centrality")]
 fn test_katz_with_deleted_nodes() {
     use graphina::centrality::katz::katz_centrality;
 
