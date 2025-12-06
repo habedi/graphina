@@ -68,7 +68,7 @@ Create an induced subgraph from a set of nodes.
 
 Induced subgraph containing specified nodes and all edges between them from the original graph.
 
-**Note:** This is typically the same as `subgraph()` but explicitly ensures all edges between the selected nodes are included.
+**Note:** This is typically the same as `subgraph()` but explicitly guarantee all edges between the selected nodes are included.
 
 **Example:**
 

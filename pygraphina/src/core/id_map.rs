@@ -30,7 +30,7 @@ impl IdMapper {
 
     /// Adds a mapping with a specific requested Python ID (if available).
     /// Used when preserving IDs during conversion or filtering.
-    /// Note: This does NOT automatically check for conflicts, caller must ensure safety or use with caution.
+    /// Note: This does NOT automatically check for conflicts, caller must guarantee safety or use with caution.
     /// It updates `next_id` to be max(next_id, py_id + 1).
     pub fn add_with_id(&mut self, internal_id: NodeId, py_id: usize) {
         self.py_to_internal.insert(py_id, internal_id);

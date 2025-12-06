@@ -12,7 +12,7 @@ def test_digraph_basic_ops():
     assert isinstance(eid, int)
     assert g.edge_count() == 1
     assert g.contains_edge(a, b)
-    # Ensure directionality
+    # Guarantee directionality
     assert not g.contains_edge(b, a)
 
     # dijkstra distances

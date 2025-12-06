@@ -407,7 +407,7 @@ mod tests {
 
     #[test]
     fn test_validate_no_nodes_with_edge() {
-        // Ensure that validate() does not panic when edges reference missing nodes and node list is empty.
+        // Make sure that validate() does not panic when edges reference missing nodes and node list is empty.
         let result = AdvancedGraphBuilder::<i32, f64, Directed>::directed()
             .add_edge(0, 0, 1.0)
             .build();

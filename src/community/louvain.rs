@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn test_louvain_performance_smoke() {
-        // Generate a moderately sized graph and ensure louvain completes quickly
+        // Generate a moderately sized graph and guarantee louvain completes quickly
         let mut g = Graph::<u32, f64>::new();
         let n = 200;
         let nodes: Vec<_> = (0..n).map(|i| g.add_node(i as u32)).collect();
