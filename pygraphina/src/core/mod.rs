@@ -8,7 +8,9 @@ pub mod digraph_ops;
 pub mod exceptions;
 pub mod graph;
 pub mod graph_ops;
+pub mod id_map;
+pub mod views;
 
 pub use digraph::PyDiGraph;
-pub use exceptions::*;
+
 pub use graph::PyGraph;

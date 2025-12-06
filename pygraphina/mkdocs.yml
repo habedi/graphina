@@ -43,6 +43,7 @@ nav:
       - Graph: api/graph.md
       - Directed Graph: api/digraph.md
       - Core Operations:
+          - Graph Views: api/core/views.md
           - Building Graphs: api/core/builders.md
           - Graph I/O: api/core/io.md
           - Interoperability: api/core/interop.md
@@ -90,6 +91,8 @@ nav:
           - BFS & DFS: api/traversal/basic.md
       - Subgraphs: api/subgraphs/index.md
       - Parallel: api/parallel/index.md
+      - Visualization: api/visualization/index.md
+
   - Examples:
       - Basic Usage: examples/basic.md
       - Centrality Analysis: examples/centrality.md

@@ -92,18 +92,12 @@ where
 
     let is_directed = graph.is_directed();
     for (src, tgt, _) in graph.edges() {
-        if incoming.contains_key(&tgt) {
-            incoming
-                .get_mut(&tgt)
-                .expect("incoming map must contain target node")
-                .push(src);
+        if let Some(list) = incoming.get_mut(&tgt) {
+            list.push(src);
         }
         if !is_directed {
-            if incoming.contains_key(&src) {
-                incoming
-                    .get_mut(&src)
-                    .expect("incoming map must contain source node")
-                    .push(tgt);
+            if let Some(list) = incoming.get_mut(&src) {
+                list.push(tgt);
             }
         }
     }

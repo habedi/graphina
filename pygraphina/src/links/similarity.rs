@@ -16,10 +16,12 @@ pub(super) fn map_ebunch(
     let mut pairs = Vec::with_capacity(ebunch.len());
     for &(pu, pv) in ebunch {
         let iu = py_graph
+            .mapper
             .py_to_internal
             .get(&pu)
             .ok_or_else(|| PyValueError::new_err("Invalid source node id in ebunch"))?;
         let iv = py_graph
+            .mapper
             .py_to_internal
             .get(&pv)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id in ebunch"))?;
@@ -35,10 +37,12 @@ pub(super) fn map_pair_map_to_py(
     let mut out = HashMap::with_capacity(pairs.len());
     for ((u, v), score) in pairs.into_iter() {
         let pu = *py_graph
+            .mapper
             .internal_to_py
             .get(&u)
             .ok_or_else(|| PyValueError::new_err("Missing node mapping for u"))?;
         let pv = *py_graph
+            .mapper
             .internal_to_py
             .get(&v)
             .ok_or_else(|| PyValueError::new_err("Missing node mapping for v"))?;
@@ -82,10 +86,12 @@ pub fn adamic_adar_index(
 #[pyfunction]
 pub fn common_neighbors(py_graph: &PyGraph, u: usize, v: usize) -> PyResult<usize> {
     let iu = *py_graph
+        .mapper
         .py_to_internal
         .get(&u)
         .ok_or_else(|| PyValueError::new_err("Invalid source node id"))?;
     let iv = *py_graph
+        .mapper
         .py_to_internal
         .get(&v)
         .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;

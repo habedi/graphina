@@ -10,7 +10,7 @@ pub fn max_clique(py_graph: &PyGraph) -> Vec<usize> {
     let clique = max_clique_core(&py_graph.graph);
     clique
         .into_iter()
-        .filter_map(|node_id| py_graph.internal_to_py.get(&node_id).copied())
+        .filter_map(|node_id| py_graph.mapper.internal_to_py.get(&node_id).copied())
         .collect()
 }
 
@@ -22,7 +22,7 @@ pub fn clique_removal(py_graph: &PyGraph) -> Vec<Vec<usize>> {
         .map(|clique| {
             clique
                 .into_iter()
-                .filter_map(|node_id| py_graph.internal_to_py.get(&node_id).copied())
+                .filter_map(|node_id| py_graph.mapper.internal_to_py.get(&node_id).copied())
                 .collect()
         })
         .collect()

@@ -35,7 +35,7 @@ class TestTypeConsistencyFix:
         """Test that generated graphs maintain correct edge weights."""
         g = pg.erdos_renyi(10, 0.5, 42)
 
-        edges = g.edges_with_weights()
+        edges = g.edges.data("weight")
 
         for u, v, w in edges:
             assert isinstance(w, float)
@@ -71,7 +71,7 @@ class TestTypeConsistencyFix:
         g.add_edge(n1, n2, 2.0)
 
         sub = g.subgraph([n0, n1])
-        edges = sub.edges_with_weights()
+        edges = list(sub.edges.data("weight"))
 
         assert len(edges) == 1
         u, v, w = edges[0]
@@ -92,7 +92,7 @@ class TestTypeConsistencyFix:
         attrs = [induced.get_node_attr(n) for n in nodes]
         assert set(attrs) == {-100, -200}
 
-        edges = induced.edges_with_weights()
+        edges = list(induced.edges.data("weight"))
         assert len(edges) == 1
         _, _, w = edges[0]
         assert abs(w - 3.14159) < 1e-9
@@ -263,7 +263,7 @@ class TestFilterOperations:
         assert filtered.node_count() == 3
         assert filtered.edge_count() == 1
 
-        edges = filtered.edges_with_weights()
+        edges = list(filtered.edges.data("weight"))
         assert len(edges) == 1
         _, _, w = edges[0]
         assert abs(w - 2.5) < 1e-9
@@ -314,7 +314,7 @@ class TestComponentOperations:
         attrs = [comp.get_node_attr(n) for n in nodes]
         assert set(attrs) == {10, 20}
 
-        edges = comp.edges_with_weights()
+        edges = list(comp.edges.data("weight"))
         assert len(edges) == 1
         _, _, w = edges[0]
         assert abs(w - 1.5) < 1e-9

@@ -203,7 +203,7 @@ fn test_pagerank_with_deleted_nodes() {
 
     graph.remove_node(n2);
 
-    let pr = pagerank(&graph, 0.85, 100, 1e-6).unwrap();
+    let pr = pagerank(&graph, 0.85, 100, 1e-6, None).unwrap();
 
     assert!(!pr.contains_key(&n2));
     assert!(pr.contains_key(&n1));

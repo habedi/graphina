@@ -4,9 +4,9 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-use crate::views::degree::DegreeView;
-use crate::views::edge::EdgeView;
-use crate::views::node::NodeView;
+use crate::core::views::degree::DegreeView;
+use crate::core::views::edge::EdgeView;
+use crate::core::views::node::NodeView;
 use graphina::core::types::{Digraph, NodeId};
 
 /// A Python-accessible DiGraph class wrapping Graphina's core directed graph.
@@ -17,9 +17,7 @@ use graphina::core::types::{Digraph, NodeId};
 #[pyclass]
 pub struct PyDiGraph {
     pub(crate) graph: Digraph<i64, f64>,
-    pub(crate) py_to_internal: HashMap<usize, NodeId>,
-    pub(crate) internal_to_py: HashMap<NodeId, usize>,
-    pub(crate) next_id: usize,
+    pub(crate) mapper: crate::core::id_map::IdMapper,
 }
 
 #[pymethods]
@@ -29,20 +27,14 @@ impl PyDiGraph {
     pub fn new() -> Self {
         PyDiGraph {
             graph: Digraph::new(),
-            py_to_internal: HashMap::new(),
-            internal_to_py: HashMap::new(),
-            next_id: 0,
+            mapper: crate::core::id_map::IdMapper::new(),
         }
     }
 
     // Basic node operations
     pub fn add_node(&mut self, attr: i64) -> usize {
         let nid = self.graph.add_node(attr);
-        let py_id = self.next_id;
-        self.py_to_internal.insert(py_id, nid);
-        self.internal_to_py.insert(nid, py_id);
-        self.next_id += 1;
-        py_id
+        self.mapper.add(nid)
     }
     pub fn update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<bool> {
         self.update_node_impl(py_node, new_attr)
@@ -76,13 +68,13 @@ impl PyDiGraph {
             )));
         }
 
-        let src = *self
-            .py_to_internal
-            .get(&source)
+        let src = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let dst = *self
-            .py_to_internal
-            .get(&target)
+        let dst = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
         Ok(self.graph.add_edge(src, dst, weight).index())
     }
@@ -118,13 +110,13 @@ impl PyDiGraph {
     }
 
     pub fn contains_edge(&self, source: usize, target: usize) -> PyResult<bool> {
-        let src = *self
-            .py_to_internal
-            .get(&source)
+        let src = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let dst = *self
-            .py_to_internal
-            .get(&target)
+        let dst = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
         Ok(self.graph.contains_edge(src, dst))
     }
@@ -137,14 +129,14 @@ impl PyDiGraph {
     }
 
     pub fn neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
-        let nid = *self
-            .py_to_internal
-            .get(&py_node)
+        let nid = self
+            .mapper
+            .get_internal(py_node)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid node id: {}", py_node)))?;
         Ok(self
             .graph
             .neighbors(nid)
-            .filter_map(|n| self.internal_to_py.get(&n).copied())
+            .filter_map(|n| self.mapper.get_py(n))
             .collect())
     }
 
@@ -161,6 +153,11 @@ impl PyDiGraph {
 
     pub fn in_neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
         self.in_neighbors_impl(py_node)
+    }
+
+    #[pyo3(name = "_degree")]
+    pub fn _degree(&self, py_node: usize) -> Option<usize> {
+        self.degree_impl(py_node) // Helper that sums in/out
     }
 
     #[getter]
@@ -332,17 +329,17 @@ impl PyDiGraph {
         start: usize,
         cutoff: Option<f64>,
     ) -> PyResult<std::collections::HashMap<usize, Option<f64>>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
-            .ok_or_else(|| PyValueError::new_err(format!("Invalid start node id: {}", start)))?;
+        let start_id =
+            *self.mapper.py_to_internal.get(&start).ok_or_else(|| {
+                PyValueError::new_err(format!("Invalid start node id: {}", start))
+            })?;
         let (costs, _trace) =
             graphina::core::paths::dijkstra_path_f64(&self.graph, start_id, cutoff)
                 .map_err(|e| PyValueError::new_err(format!("Dijkstra error: {}", e)))?;
         let mut out = std::collections::HashMap::new();
         for (nid, dist) in costs.into_iter() {
-            if let Some(pyid) = self.internal_to_py.get(&nid) {
-                out.insert(*pyid, dist);
+            if let Some(pyid) = self.mapper.get_py(nid) {
+                out.insert(pyid, dist);
             }
         }
         Ok(out)
@@ -352,13 +349,13 @@ impl PyDiGraph {
         start: usize,
         target: usize,
     ) -> PyResult<Option<(f64, Vec<usize>)>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid start node id: {}", start)))?;
-        let target_id = *self
-            .py_to_internal
-            .get(&target)
+        let target_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
         let (costs, prev) = graphina::core::paths::dijkstra_path_f64(&self.graph, start_id, None)
             .map_err(|e| PyValueError::new_err(format!("Dijkstra error: {}", e)))?;
@@ -382,7 +379,7 @@ impl PyDiGraph {
                 path.reverse();
                 let py_path: Vec<usize> = path
                     .into_iter()
-                    .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+                    .filter_map(|nid| self.mapper.get_py(nid))
                     .collect();
                 Ok(Some((total, py_path)))
             }
@@ -391,14 +388,14 @@ impl PyDiGraph {
     }
 
     pub fn bellman_ford(&self, start: usize) -> PyResult<Option<HashMap<usize, Option<f64>>>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid start node id: {}", start)))?;
         let costs = graphina::core::paths::bellman_ford(&self.graph, start_id);
         Ok(costs.map(|map| {
             map.into_iter()
-                .filter_map(|(nid, d)| self.internal_to_py.get(&nid).copied().map(|py| (py, d)))
+                .filter_map(|(nid, d)| self.mapper.get_py(nid).map(|py| (py, d)))
                 .collect()
         }))
     }
@@ -408,12 +405,10 @@ impl PyDiGraph {
         all_pairs.map(|m| {
             m.into_iter()
                 .filter_map(|(u, inner)| {
-                    self.internal_to_py.get(&u).copied().map(|pu| {
+                    self.mapper.get_py(u).map(|pu| {
                         let inner_map: HashMap<usize, Option<f64>> = inner
                             .into_iter()
-                            .filter_map(|(v, d)| {
-                                self.internal_to_py.get(&v).copied().map(|pv| (pv, d))
-                            })
+                            .filter_map(|(v, d)| self.mapper.get_py(v).map(|pv| (pv, d)))
                             .collect();
                         (pu, inner_map)
                     })
@@ -427,10 +422,7 @@ impl PyDiGraph {
         let mut ids = Vec::with_capacity(attrs.len());
         for a in attrs.into_iter() {
             let nid = self.graph.add_node(a);
-            let py_id = self.next_id;
-            self.py_to_internal.insert(py_id, nid);
-            self.internal_to_py.insert(nid, py_id);
-            self.next_id += 1;
+            let py_id = self.mapper.add(nid);
             ids.push(py_id);
         }
         ids
@@ -449,13 +441,13 @@ impl PyDiGraph {
                     w
                 )));
             }
-            let src = *self
-                .py_to_internal
-                .get(&u)
+            let src = self
+                .mapper
+                .get_internal(u)
                 .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", u)))?;
-            let dst = *self
-                .py_to_internal
-                .get(&v)
+            let dst = self
+                .mapper
+                .get_internal(v)
                 .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", v)))?;
             ids.push(self.graph.add_edge(src, dst, w).index());
         }
@@ -467,7 +459,7 @@ impl PyDiGraph {
         self.graph.node_count()
     }
     fn __contains__(&self, py_node: usize) -> bool {
-        self.py_to_internal.get(&py_node).is_some()
+        self.mapper.contains_py(py_node)
     }
     fn __repr__(&self) -> String {
         format!(
@@ -481,13 +473,27 @@ impl PyDiGraph {
         let nodes: Vec<usize> = slf
             .graph
             .nodes()
-            .filter_map(|(nid, _)| slf.internal_to_py.get(&nid).copied())
+            .filter_map(|(nid, _)| slf.mapper.get_py(nid))
             .collect();
         let py = slf.py();
         let py_list = pyo3::types::PyList::new(py, &nodes)?;
         let builtins = pyo3::types::PyModule::import(py, "builtins")?;
         let iter_obj = builtins.getattr("iter")?.call1((py_list,))?;
         Ok(iter_obj.into_pyobject(py)?.unbind())
+    }
+    #[pyo3(name = "_edges_with_weights")]
+    pub fn edges_with_weights(&self) -> Vec<(usize, usize, f64)> {
+        self.graph
+            .edges()
+            .filter_map(|(u, v, &w)| {
+                let pu = self.mapper.get_py(u);
+                let pv = self.mapper.get_py(v);
+                match (pu, pv) {
+                    (Some(a), Some(b)) => Some((a, b, w)),
+                    _ => None,
+                }
+            })
+            .collect()
     }
 }
 
@@ -503,10 +509,7 @@ impl PyDiGraph {
         // Add all nodes
         for (nid, &attr) in graph.nodes() {
             let new_id = self.graph.add_node(attr);
-            let py_id = self.next_id;
-            self.py_to_internal.insert(py_id, new_id);
-            self.internal_to_py.insert(new_id, py_id);
-            self.next_id += 1;
+            let _ = self.mapper.add(new_id);
             node_map.insert(nid, new_id);
         }
 

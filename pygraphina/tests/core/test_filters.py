@@ -40,5 +40,5 @@ def test_filter_edges_predicate():
 
     assert g2.edge_count() == 2
     # Check by edge weights instead of node IDs since filter creates new graph
-    edge_weights = {w for _, _, w in g2.edges_with_weights()}
+    edge_weights = {w for _, _, w in g2.edges.data("weight")}
     assert edge_weights == {3.0, 4.0}, "Should have edges with weights 3.0 and 4.0"

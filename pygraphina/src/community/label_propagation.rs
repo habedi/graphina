@@ -35,7 +35,7 @@ pub fn label_propagation(
     match label_propagation_core(&py_graph.graph, max_iter, seed) {
         Ok(labels) => {
             let mut result = HashMap::new();
-            for (py_id, internal_id) in &py_graph.py_to_internal {
+            for (py_id, internal_id) in &py_graph.mapper.py_to_internal {
                 let idx = internal_id.index();
                 if idx < labels.len() {
                     result.insert(*py_id, labels[idx]);

@@ -41,7 +41,7 @@ pub fn harmonic(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, f64>> {
                     let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing mapping back to original node")
                     })?;
-                    let pyid = py_graph.internal_to_py.get(old_nid).ok_or_else(|| {
+                    let pyid = py_graph.mapper.internal_to_py.get(old_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("Internal node id missing mapping")
                     })?;
                     out.insert(*pyid, val);
@@ -68,7 +68,7 @@ pub fn harmonic(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, f64>> {
                     let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing mapping back to original node")
                     })?;
-                    let pyid = py_graph.internal_to_py.get(old_nid).ok_or_else(|| {
+                    let pyid = py_graph.mapper.internal_to_py.get(old_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("Internal node id missing mapping")
                     })?;
                     out.insert(*pyid, val);

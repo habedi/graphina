@@ -80,7 +80,7 @@ fn bench_centrality_algorithms(c: &mut Criterion) {
             BenchmarkId::new("pagerank", size),
             &graph_ordered,
             |b, g| {
-                b.iter(|| black_box(pagerank(g, 0.85, 100, 1e-6).unwrap()));
+                b.iter(|| black_box(pagerank(g, 0.85, 100, 1e-6, None).unwrap()));
             },
         );
 

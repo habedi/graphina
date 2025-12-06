@@ -4,9 +4,9 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-use crate::views::degree::DegreeView;
-use crate::views::edge::EdgeView;
-use crate::views::node::NodeView;
+use crate::core::views::degree::DegreeView;
+use crate::core::views::edge::EdgeView;
+use crate::core::views::node::NodeView;
 use graphina::core::types::{BaseGraph, NodeId, Undirected};
 
 /// A Python-accessible Graph class wrapping Graphina's core undirected graph.
@@ -17,9 +17,7 @@ use graphina::core::types::{BaseGraph, NodeId, Undirected};
 #[pyclass]
 pub struct PyGraph {
     pub(crate) graph: BaseGraph<i64, f64, Undirected>,
-    pub(crate) py_to_internal: HashMap<usize, NodeId>,
-    pub(crate) internal_to_py: HashMap<NodeId, usize>,
-    pub(crate) next_id: usize,
+    pub(crate) mapper: crate::core::id_map::IdMapper,
 }
 
 #[pymethods]
@@ -29,9 +27,7 @@ impl PyGraph {
     pub fn new() -> Self {
         PyGraph {
             graph: BaseGraph::new(),
-            py_to_internal: HashMap::new(),
-            internal_to_py: HashMap::new(),
-            next_id: 0,
+            mapper: crate::core::id_map::IdMapper::new(),
         }
     }
 
@@ -80,6 +76,11 @@ impl PyGraph {
 
     pub fn neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
         self.neighbors_impl(py_node)
+    }
+
+    #[pyo3(name = "_degree")]
+    pub fn _degree(&self, py_node: usize) -> Option<usize> {
+        self.degree_impl(py_node)
     }
 
     #[getter]
@@ -242,17 +243,17 @@ impl PyGraph {
         start: usize,
         cutoff: Option<f64>,
     ) -> PyResult<std::collections::HashMap<usize, Option<f64>>> {
-        let start_id = *self
-            .py_to_internal
-            .get(&start)
+        let start_id = self
+            .mapper
+            .get_internal(start)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid start node id: {}", start)))?;
         let (costs, _trace) =
             graphina::core::paths::dijkstra_path_f64(&self.graph, start_id, cutoff)
                 .map_err(|e| PyValueError::new_err(format!("Dijkstra error: {}", e)))?;
         let mut out = std::collections::HashMap::new();
         for (nid, dist) in costs.into_iter() {
-            if let Some(pyid) = self.internal_to_py.get(&nid) {
-                out.insert(*pyid, dist);
+            if let Some(pyid) = self.mapper.get_py(nid) {
+                out.insert(pyid, dist);
             }
         }
         Ok(out)
@@ -272,12 +273,10 @@ impl PyGraph {
         all_pairs.map(|m| {
             m.into_iter()
                 .filter_map(|(u, inner)| {
-                    self.internal_to_py.get(&u).copied().map(|pu| {
+                    self.mapper.get_py(u).map(|pu| {
                         let inner_map: HashMap<usize, Option<f64>> = inner
                             .into_iter()
-                            .filter_map(|(v, d)| {
-                                self.internal_to_py.get(&v).copied().map(|pv| (pv, d))
-                            })
+                            .filter_map(|(v, d)| self.mapper.get_py(v).map(|pv| (pv, d)))
                             .collect();
                         (pu, inner_map)
                     })
@@ -311,10 +310,7 @@ impl PyGraph {
         let mut ids = Vec::with_capacity(attrs.len());
         for a in attrs.into_iter() {
             let nid = self.graph.add_node(a);
-            let py_id = self.next_id;
-            self.py_to_internal.insert(py_id, nid);
-            self.internal_to_py.insert(nid, py_id);
-            self.next_id += 1;
+            let py_id = self.mapper.add(nid);
             ids.push(py_id);
         }
         ids
@@ -332,13 +328,13 @@ impl PyGraph {
                     w
                 )));
             }
-            let src = *self
-                .py_to_internal
-                .get(&u)
+            let src = self
+                .mapper
+                .get_internal(u)
                 .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", u)))?;
-            let dst = *self
-                .py_to_internal
-                .get(&v)
+            let dst = self
+                .mapper
+                .get_internal(v)
                 .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", v)))?;
             ids.push(self.graph.add_edge(src, dst, w).index());
         }
@@ -353,12 +349,13 @@ impl PyGraph {
         Ok(EdgeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
 
+    #[pyo3(name = "_edges_with_weights")]
     pub fn edges_with_weights(&self) -> Vec<(usize, usize, f64)> {
         self.graph
             .edges()
             .filter_map(|(u, v, &w)| {
-                let pu = self.internal_to_py.get(&u).copied();
-                let pv = self.internal_to_py.get(&v).copied();
+                let pu = self.mapper.get_py(u);
+                let pv = self.mapper.get_py(v);
                 match (pu, pv) {
                     (Some(a), Some(b)) => Some((a, b, w)),
                     _ => None,
@@ -370,7 +367,7 @@ impl PyGraph {
     pub fn nodes_with_attrs(&self) -> Vec<(usize, i64)> {
         self.graph
             .nodes()
-            .filter_map(|(nid, &attr)| self.internal_to_py.get(&nid).copied().map(|py| (py, attr)))
+            .filter_map(|(nid, &attr)| self.mapper.get_py(nid).map(|py| (py, attr)))
             .collect()
     }
 
@@ -379,7 +376,7 @@ impl PyGraph {
         self.graph.node_count()
     }
     fn __contains__(&self, py_node: usize) -> bool {
-        self.py_to_internal.get(&py_node).is_some()
+        self.mapper.contains_py(py_node)
     }
     fn __repr__(&self) -> String {
         format!(
@@ -407,10 +404,7 @@ impl PyGraph {
         // Nodes
         for (nid, &attr) in graph.nodes() {
             let new_id = self.graph.add_node(attr);
-            let py_id = self.next_id;
-            self.py_to_internal.insert(py_id, new_id);
-            self.internal_to_py.insert(new_id, py_id);
-            self.next_id += 1;
+            let _ = self.mapper.add(new_id);
             node_map.insert(nid, new_id);
         }
         // Edges

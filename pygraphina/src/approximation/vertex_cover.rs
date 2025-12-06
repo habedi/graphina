@@ -12,6 +12,7 @@ pub fn min_weighted_vertex_cover(py_graph: &PyGraph) -> PyResult<Vec<usize>> {
     let mut out: Vec<usize> = Vec::with_capacity(cover.len());
     for nid in cover.into_iter() {
         let pyid = py_graph
+            .mapper
             .internal_to_py
             .get(&nid)
             .ok_or_else(|| PyValueError::new_err("Internal node id missing mapping"))?;

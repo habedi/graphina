@@ -29,7 +29,7 @@ def test_pythonic_conveniences_basic():
     es = set(g.edges)
     assert (ids[0], ids[1]) in es or (ids[1], ids[0]) in es
 
-    esw = {(u, v): w for (u, v, w) in g.edges_with_weights()}
+    esw = {(u, v): w for (u, v, w) in g.edges.data("weight")}
     # both directions may appear depending on internal representation; check weight presence
     assert any(abs(w - 1.0) < 1e-9 for w in esw.values())
 

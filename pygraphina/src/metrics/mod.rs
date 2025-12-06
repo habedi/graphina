@@ -27,6 +27,7 @@ impl PyGraph {
     /// Local clustering coefficient for a given node id.
     pub fn clustering_of_impl(&self, py_node: usize) -> PyResult<f64> {
         let nid = *self
+            .mapper
             .py_to_internal
             .get(&py_node)
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
@@ -41,6 +42,7 @@ impl PyGraph {
     /// Number of triangles containing the given node.
     pub fn triangles_of_impl(&self, py_node: usize) -> PyResult<usize> {
         let nid = *self
+            .mapper
             .py_to_internal
             .get(&py_node)
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
@@ -77,6 +79,7 @@ impl PyDiGraph {
     /// Local clustering coefficient for a given node id.
     pub fn clustering_of_impl(&self, py_node: usize) -> PyResult<f64> {
         let nid = *self
+            .mapper
             .py_to_internal
             .get(&py_node)
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
@@ -91,6 +94,7 @@ impl PyDiGraph {
     /// Number of triangles containing the given node.
     pub fn triangles_of_impl(&self, py_node: usize) -> PyResult<usize> {
         let nid = *self
+            .mapper
             .py_to_internal
             .get(&py_node)
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;

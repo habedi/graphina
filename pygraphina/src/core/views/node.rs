@@ -1,5 +1,3 @@
-use crate::PyDiGraph;
-use crate::PyGraph;
 use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -20,24 +18,14 @@ impl NodeView {
 impl NodeView {
     fn __len__(&self, py: Python<'_>) -> PyResult<usize> {
         let obj = self.graph.bind(py);
-        if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            Ok(g.node_count())
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            Ok(g.node_count())
-        } else {
-            Err(PyTypeError::new_err("Unknown graph type"))
-        }
+        // Delegate to graph.__len__ which is mapped to node_count
+        obj.len()
     }
 
     fn __contains__(&self, py: Python<'_>, node: usize) -> PyResult<bool> {
         let obj = self.graph.bind(py);
-        if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            Ok(g.contains_node(node))
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            Ok(g.contains_node(node))
-        } else {
-            Err(PyTypeError::new_err("Unknown graph type"))
-        }
+        // Delegate to graph.__contains__
+        obj.contains(node)
     }
 
     fn __iter__(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
@@ -48,30 +36,41 @@ impl NodeView {
 
     fn __getitem__(&self, py: Python<'_>, node: usize) -> PyResult<Py<PyDict>> {
         let obj = self.graph.bind(py);
-        let attr = if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            g.get_node_attr(node)
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            g.get_node_attr(node)
-        } else {
-            return Err(PyTypeError::new_err("Unknown graph type"));
-        };
+        // Call get_node_attr dynamically.
+        // Takes usize, returns Option<i64>
+        let attr_obj = obj.call_method1("get_node_attr", (node,))?;
 
-        if let Some(val) = attr {
+        if attr_obj.is_none() {
+            // We need to check if the node actually exists to distinguish "attr is None" from "node missing"
+            // But get_node_attr impl returns None if node missing OR if attr is None?
+            // Wait, Rust PyGraph::get_node_attr returns Option<i64>.
+            // Actually, in `core/graph.rs`: `get_node_attr` returns `Option<i64>`.
+            // `core/basic_ops.rs` logic: `self.mapper.py_to_internal.get(&py_node)?` returns None if missing.
+            // If present, `node_attr` returns `Option<&T>`.
+
+            // So if it returns None, either node is missing or valid node has no attr (unlikely in this design where attr is i64).
+            // But wait, the previous code handled it as "None" -> Key Error.
+            // Let's verify if node exists first.
+            if obj.contains(node)? {
+                // Node exists, but attribute is None (impl detail: i64 is always Copy, so Option<i64> is None only if graph says so)
+                // In our simplified graph, nodes always have an attr (user provided or default).
+                // Actually PyGraph::add_node takes `attr: i64`. So it should always return Some(i64) if node exists.
+                // So if get_node_attr returns None, it means Node doesn't exist.
+                Err(PyKeyError::new_err(format!("Node {} not found", node)))
+            } else {
+                Err(PyKeyError::new_err(format!("Node {} not found", node)))
+            }
+        } else {
+            let val: i64 = attr_obj.extract()?;
             let dict = PyDict::new(py);
             dict.set_item("attr", val)?;
             Ok(dict.into())
-        } else {
-            Err(PyKeyError::new_err(format!("Node {} not found", node)))
         }
     }
 
     fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
         let obj = self.graph.bind(py);
-        // Simulate "NodeView((n1, n2, ...))"
-        let nodes_list = obj.call_method0("nodes")?; // assumes nodes() returns list, waiting... nodes() is being replaced by this property.
-        // This is circular if I replace nodes() with this.
-        // I should use internal methods or just __iter__.
-        // Safest is to iterate
+        // Use standard iterator to collect representation
         let iter = obj.try_iter()?;
         let mut elements = Vec::new();
         for item in iter {
@@ -85,8 +84,8 @@ impl NodeView {
     fn data(
         &self,
         py: Python<'_>,
-        data: Option<PyObject>,
-        default: Option<PyObject>,
+        data: Option<Py<PyAny>>,
+        default: Option<Py<PyAny>>,
     ) -> PyResult<NodeDataView> {
         Ok(NodeDataView {
             graph: self.graph.clone_ref(py),
@@ -99,8 +98,8 @@ impl NodeView {
 #[pyclass]
 pub struct NodeDataView {
     graph: Py<PyAny>,
-    data_param: Option<PyObject>,
-    default_val: Option<PyObject>,
+    data_param: Option<Py<PyAny>>,
+    default_val: Option<Py<PyAny>>,
 }
 
 #[pymethods]
@@ -125,11 +124,10 @@ impl NodeDataView {
 
     fn __len__(&self, py: Python<'_>) -> PyResult<usize> {
         let obj = self.graph.bind(py);
-        obj.call_method0("__len__")?.extract()
+        obj.len()
     }
 
     fn __repr__(&self, _py: Python<'_>) -> PyResult<String> {
-        // Simplified repr
         Ok("NodeDataView(...)".to_string())
     }
 }
@@ -137,8 +135,8 @@ impl NodeDataView {
 #[pyclass]
 pub struct NodeDataIterator {
     graph: Py<PyAny>,
-    data_param: Option<PyObject>,
-    default_val: Option<PyObject>,
+    data_param: Option<Py<PyAny>>,
+    default_val: Option<Py<PyAny>>,
     nodes: Vec<usize>,
     idx: usize,
 }
@@ -149,7 +147,7 @@ impl NodeDataIterator {
         slf
     }
 
-    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<PyObject>> {
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<Py<PyAny>>> {
         if slf.idx >= slf.nodes.len() {
             return Ok(None);
         }
@@ -159,25 +157,23 @@ impl NodeDataIterator {
         let py = slf.py();
         let graph_bound = slf.graph.bind(py);
 
-        // Get attribute
-        let attr_val = if let Ok(g) = graph_bound.extract::<PyRef<PyGraph>>() {
-            g.get_node_attr(node_id)
-        } else if let Ok(g) = graph_bound.extract::<PyRef<PyDiGraph>>() {
-            g.get_node_attr(node_id)
+        // Get attribute via duck typing
+        let attr_obj = graph_bound.call_method1("get_node_attr", (node_id,))?;
+        // Convert Option<i64> to Option<Bound<PyAny>> logic
+        // If None, it implies node missing (unlikely here since we are iterating known nodes)
+        // or just pass through.
+        let attr_val: Option<Bound<PyAny>> = if attr_obj.is_none() {
+            None
         } else {
-            return Err(PyTypeError::new_err("Unknown graph type"));
+            Some(attr_obj)
         };
 
         // Logic based on data_param
-        // if data_param is string 'attr', return (n, val)
-        // if data_param is True or None, return (n, {'attr': val})
-        // else return (n, default)
-
         let val_obj = if let Some(ref d) = slf.data_param {
             if let Ok(s) = d.extract::<String>(py) {
                 if s == "attr" {
                     match attr_val {
-                        Some(v) => v.into_pyobject(py)?.into_any().unbind(),
+                        Some(v) => v.unbind(),
                         None => slf
                             .default_val
                             .as_ref()
@@ -195,15 +191,17 @@ impl NodeDataIterator {
                     // return dict
                     let dict = PyDict::new(py);
                     if let Some(v) = attr_val {
-                        dict.set_item("attr", v)?;
+                        // Extract i64 from wrapper
+                        let val: i64 = v.extract()?;
+                        dict.set_item("attr", val)?;
                     }
                     dict.into_any().unbind()
                 } else {
-                    // data=False -> just node names? NX behavior is strict.
-                    // usually data=False loops over nodes. But NodeDataView implies data.
-                    // G.nodes(data=False) returns NodeView (the iterable one).
-                    // But we are in NodeDataView.
-                    // We will treat bool True as dict.
+                    // data=False -> return plain node id?
+                    // Wait, generic behavior for G.nodes(data=False) is just the iterator over keys.
+                    // But NodeDataView is usually created via G.nodes(data=True) or G.nodes.data().
+                    // If user manually called G.nodes.data(data=False), it might be weird.
+                    // Returning None to mimic "no data" but usually this case isn't hit in standard usage loops.
                     py.None()
                 }
             } else {
@@ -213,7 +211,8 @@ impl NodeDataIterator {
             // Default (None) -> dict
             let dict = PyDict::new(py);
             if let Some(v) = attr_val {
-                dict.set_item("attr", v)?;
+                let val: i64 = v.extract()?;
+                dict.set_item("attr", val)?;
             }
             dict.into_any().unbind()
         };

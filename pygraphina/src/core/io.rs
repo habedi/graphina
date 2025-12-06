@@ -26,15 +26,16 @@ impl PyGraph {
         let mut tmp_to_internal: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, &attr) in tmp.nodes() {
             let new_internal = self.graph.add_node(attr as i64);
-            let py_id = self.next_id;
-            self.py_to_internal.insert(py_id, new_internal);
-            self.internal_to_py.insert(new_internal, py_id);
-            self.next_id += 1;
+            let _ = self.mapper.add(new_internal);
             tmp_to_internal.insert(nid, new_internal);
         }
         for (u, v, &w) in tmp.edges() {
-            let iu = *tmp_to_internal.get(&u).unwrap();
-            let iv = *tmp_to_internal.get(&v).unwrap();
+            let iu = *tmp_to_internal
+                .get(&u)
+                .ok_or_else(|| PyValueError::new_err("Internal node ID not found during import"))?;
+            let iv = *tmp_to_internal
+                .get(&v)
+                .ok_or_else(|| PyValueError::new_err("Internal node ID not found during import"))?;
             self.graph.add_edge(iu, iv, w);
         }
 
@@ -55,8 +56,12 @@ impl PyGraph {
             map.insert(nid, new_id);
         }
         for (u, v, &w) in self.graph.edges() {
-            let iu = *map.get(&u).unwrap();
-            let iv = *map.get(&v).unwrap();
+            let iu = *map
+                .get(&u)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during export"))?;
+            let iv = *map
+                .get(&v)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during export"))?;
             let cast_w: f32 = w as f32;
             tmp.add_edge(iu, iv, cast_w);
         }
@@ -80,15 +85,16 @@ impl PyGraph {
         let mut map: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, &attr) in loaded.nodes() {
             let new_id = self.graph.add_node(attr);
-            let py_id = self.next_id;
-            self.next_id += 1;
-            self.py_to_internal.insert(py_id, new_id);
-            self.internal_to_py.insert(new_id, py_id);
+            let _ = self.mapper.add(new_id);
             map.insert(nid, new_id);
         }
         for (u, v, &w) in loaded.edges() {
-            let iu = map[&u];
-            let iv = map[&v];
+            let iu = *map
+                .get(&u)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during JSON load"))?;
+            let iv = *map
+                .get(&v)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during JSON load"))?;
             self.graph.add_edge(iu, iv, w);
         }
         Ok(())
@@ -109,15 +115,16 @@ impl PyGraph {
         let mut map: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, &attr) in loaded.nodes() {
             let new_id = self.graph.add_node(attr);
-            let py_id = self.next_id;
-            self.next_id += 1;
-            self.py_to_internal.insert(py_id, new_id);
-            self.internal_to_py.insert(new_id, py_id);
+            let _ = self.mapper.add(new_id);
             map.insert(nid, new_id);
         }
         for (u, v, &w) in loaded.edges() {
-            let iu = map[&u];
-            let iv = map[&v];
+            let iu = *map.get(&u).ok_or_else(|| {
+                PyValueError::new_err("Node ID mapping failed during binary load")
+            })?;
+            let iv = *map.get(&v).ok_or_else(|| {
+                PyValueError::new_err("Node ID mapping failed during binary load")
+            })?;
             self.graph.add_edge(iu, iv, w);
         }
         Ok(())
@@ -151,15 +158,16 @@ impl PyDiGraph {
         let mut tmp_to_internal: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, &attr) in tmp.nodes() {
             let new_internal = self.graph.add_node(attr as i64);
-            let py_id = self.next_id;
-            self.py_to_internal.insert(py_id, new_internal);
-            self.internal_to_py.insert(new_internal, py_id);
-            self.next_id += 1;
+            let _ = self.mapper.add(new_internal);
             tmp_to_internal.insert(nid, new_internal);
         }
         for (u, v, &w) in tmp.edges() {
-            let iu = *tmp_to_internal.get(&u).unwrap();
-            let iv = *tmp_to_internal.get(&v).unwrap();
+            let iu = *tmp_to_internal
+                .get(&u)
+                .ok_or_else(|| PyValueError::new_err("Internal node ID not found during import"))?;
+            let iv = *tmp_to_internal
+                .get(&v)
+                .ok_or_else(|| PyValueError::new_err("Internal node ID not found during import"))?;
             self.graph.add_edge(iu, iv, w);
         }
 
@@ -181,8 +189,12 @@ impl PyDiGraph {
             map.insert(nid, new_id);
         }
         for (u, v, &w) in self.graph.edges() {
-            let iu = *map.get(&u).unwrap();
-            let iv = *map.get(&v).unwrap();
+            let iu = *map
+                .get(&u)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during export"))?;
+            let iv = *map
+                .get(&v)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during export"))?;
             let cast_w: f32 = w as f32;
             tmp.add_edge(iu, iv, cast_w);
         }
@@ -206,15 +218,16 @@ impl PyDiGraph {
         let mut map: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, &attr) in loaded.nodes() {
             let new_id = self.graph.add_node(attr);
-            let py_id = self.next_id;
-            self.next_id += 1;
-            self.py_to_internal.insert(py_id, new_id);
-            self.internal_to_py.insert(new_id, py_id);
+            let _ = self.mapper.add(new_id);
             map.insert(nid, new_id);
         }
         for (u, v, &w) in loaded.edges() {
-            let iu = map[&u];
-            let iv = map[&v];
+            let iu = *map
+                .get(&u)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during JSON load"))?;
+            let iv = *map
+                .get(&v)
+                .ok_or_else(|| PyValueError::new_err("Node ID mapping failed during JSON load"))?;
             self.graph.add_edge(iu, iv, w);
         }
         Ok(())
@@ -235,15 +248,16 @@ impl PyDiGraph {
         let mut map: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, &attr) in loaded.nodes() {
             let new_id = self.graph.add_node(attr);
-            let py_id = self.next_id;
-            self.next_id += 1;
-            self.py_to_internal.insert(py_id, new_id);
-            self.internal_to_py.insert(new_id, py_id);
+            let _ = self.mapper.add(new_id);
             map.insert(nid, new_id);
         }
         for (u, v, &w) in loaded.edges() {
-            let iu = map[&u];
-            let iv = map[&v];
+            let iu = *map.get(&u).ok_or_else(|| {
+                PyValueError::new_err("Node ID mapping failed during binary load")
+            })?;
+            let iv = *map.get(&v).ok_or_else(|| {
+                PyValueError::new_err("Node ID mapping failed during binary load")
+            })?;
             self.graph.add_edge(iu, iv, w);
         }
         Ok(())

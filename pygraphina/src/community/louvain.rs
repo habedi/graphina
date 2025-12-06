@@ -31,7 +31,7 @@ pub fn louvain(py_graph: &PyGraph, seed: Option<u64>) -> PyResult<Vec<Vec<usize>
             .map(|community| {
                 community
                     .into_iter()
-                    .filter_map(|node_id| py_graph.internal_to_py.get(&node_id).copied())
+                    .filter_map(|node_id| py_graph.mapper.internal_to_py.get(&node_id).copied())
                     .collect()
             })
             .collect()),

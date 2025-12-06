@@ -5,8 +5,6 @@ use crate::{PyDiGraph, PyGraph};
 use graphina::centrality::pagerank::pagerank as pagerank_core;
 use graphina::centrality::personalized::personalized_pagerank as personalized_pagerank_core;
 
-use graphina::core::types::NodeId;
-
 /// Compute the PageRank of nodes in the graph.
 ///
 /// Parameters
@@ -46,7 +44,7 @@ pub fn pagerank(
         let nstart_map = if let Some(ns) = nstart {
             let mut map = HashMap::new();
             for (py_id, val) in ns {
-                if let Some(&internal_id) = g.py_to_internal.get(&py_id) {
+                if let Some(&internal_id) = g.mapper.py_to_internal.get(&py_id) {
                     map.insert(internal_id, val);
                 }
             }
@@ -59,10 +57,10 @@ pub fn pagerank(
             .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
         let mut out = HashMap::new();
         for (nid, val) in res.into_iter() {
-            let pyid = g
-                .internal_to_py
-                .get(&nid)
-                .ok_or_else(|| crate::GraphinaError::new_err("Internal node id missing mapping"))?;
+            let pyid =
+                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
+                    crate::GraphinaError::new_err("Internal node id missing mapping")
+                })?;
             out.insert(*pyid, val);
         }
         Ok(out)
@@ -70,7 +68,7 @@ pub fn pagerank(
         let nstart_map = if let Some(ns) = nstart {
             let mut map = HashMap::new();
             for (py_id, val) in ns {
-                if let Some(&internal_id) = g.py_to_internal.get(&py_id) {
+                if let Some(&internal_id) = g.mapper.py_to_internal.get(&py_id) {
                     map.insert(internal_id, val);
                 }
             }
@@ -83,10 +81,10 @@ pub fn pagerank(
             .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
         let mut out = HashMap::new();
         for (nid, val) in res.into_iter() {
-            let pyid = g
-                .internal_to_py
-                .get(&nid)
-                .ok_or_else(|| crate::GraphinaError::new_err("Internal node id missing mapping"))?;
+            let pyid =
+                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
+                    crate::GraphinaError::new_err("Internal node id missing mapping")
+                })?;
             out.insert(*pyid, val);
         }
         Ok(out)
@@ -136,6 +134,7 @@ pub fn personalized_pagerank(
     max_iter: usize,
     nstart: Option<HashMap<usize, f64>>,
 ) -> PyResult<HashMap<usize, f64>> {
+    let _ = nstart; // Silence unused warning
     // Note: personalized_pagerank_core does NOT support nstart yet in graphina core.
     // The user task required implementing nstart for iterative algorithms.
     // I should check custom implementation or skip nstart for personalized if core doesn't support it.
@@ -160,10 +159,10 @@ pub fn personalized_pagerank(
 
         let mut out = HashMap::new();
         for (nid, val) in res.into_iter() {
-            let pyid = g
-                .internal_to_py
-                .get(&nid)
-                .ok_or_else(|| crate::GraphinaError::new_err("Internal node id missing mapping"))?;
+            let pyid =
+                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
+                    crate::GraphinaError::new_err("Internal node id missing mapping")
+                })?;
             out.insert(*pyid, val);
         }
         Ok(out)
@@ -174,10 +173,10 @@ pub fn personalized_pagerank(
 
         let mut out = HashMap::new();
         for (nid, val) in res.into_iter() {
-            let pyid = g
-                .internal_to_py
-                .get(&nid)
-                .ok_or_else(|| crate::GraphinaError::new_err("Internal node id missing mapping"))?;
+            let pyid =
+                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
+                    crate::GraphinaError::new_err("Internal node id missing mapping")
+                })?;
             out.insert(*pyid, val);
         }
         Ok(out)

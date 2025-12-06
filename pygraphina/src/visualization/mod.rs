@@ -57,7 +57,7 @@ pub fn compute_layout(
 
         let mut out = HashMap::new();
         for (nid, pos) in positions.into_iter() {
-            if let Some(&pyid) = py_graph.internal_to_py.get(&nid) {
+            if let Some(&pyid) = py_graph.mapper.internal_to_py.get(&nid) {
                 out.insert(pyid, (pos.x, pos.y));
             }
         }
@@ -68,7 +68,7 @@ pub fn compute_layout(
 
         let mut out = HashMap::new();
         for (nid, pos) in positions.into_iter() {
-            if let Some(&pyid) = py_graph.internal_to_py.get(&nid) {
+            if let Some(&pyid) = py_graph.mapper.internal_to_py.get(&nid) {
                 out.insert(pyid, (pos.x, pos.y));
             }
         }

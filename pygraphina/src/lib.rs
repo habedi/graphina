@@ -24,22 +24,74 @@ mod mst;
 mod parallel;
 mod subgraphs;
 mod traversal;
-mod views;
+
 mod visualization;
 
-/// Top-level convenience wrappers for common functions
+/// Compute the diameter of the graph.
+///
+/// The diameter is the maximum eccentricity, or the length of the longest shortest path.
+///
+/// Parameters
+/// ----------
+/// graph : PyGraph
+///     The input graph.
+///
+/// Returns
+/// -------
+/// int or None
+///     The diameter of the graph, or None if the graph is not connected.
 #[pyfunction]
 fn diameter(graph: &PyGraph) -> Option<usize> {
     graph.diameter()
 }
+
+/// Compute the radius of the graph.
+///
+/// The radius is the minimum eccentricity.
+///
+/// Parameters
+/// ----------
+/// graph : PyGraph
+///     The input graph.
+///
+/// Returns
+/// -------
+/// int or None
+///     The radius of the graph, or None if the graph is not connected.
 #[pyfunction]
 fn radius(graph: &PyGraph) -> Option<usize> {
     graph.radius()
 }
+
+/// Compute the transitivity of the graph.
+///
+/// Transitivity is the fraction of all possible triangles which are in fact triangles.
+///
+/// Parameters
+/// ----------
+/// graph : PyGraph
+///     The input graph.
+///
+/// Returns
+/// -------
+/// float
+///     The transitivity of the graph.
 #[pyfunction]
 fn transitivity(graph: &PyGraph) -> f64 {
     graph.transitivity()
 }
+
+/// Compute the average clustering coefficient of the graph.
+///
+/// Parameters
+/// ----------
+/// graph : PyGraph
+///     The input graph.
+///
+/// Returns
+/// -------
+/// float
+///     The average clustering coefficient.
 #[pyfunction]
 fn average_clustering(graph: &PyGraph) -> f64 {
     graph.average_clustering()
@@ -158,12 +210,30 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
     }
 
     // Register views
-    views::register_views(m)?;
+    core::views::register_views(m)?;
 
     Ok(())
 }
 
 #[cfg(feature = "networkx")]
+/// Convert a PyGraph or PyDiGraph to a NetworkX graph.
+///
+/// Parameters
+/// ----------
+/// obj : PyGraph as PyDiGraph
+///     The input graph.
+///
+/// Returns
+/// -------
+/// networkx.Graph or networkx.DiGraph
+///     A NetworkX graph object with the same nodes, edges, and attributes.
+///
+/// Raises
+/// ------
+/// ImportError
+///     If NetworkX is not installed.
+/// ValueError
+///     If the input object is not a valid graph.
 #[pyfunction]
 fn to_networkx(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
     let nx = PyModule::import(py, "networkx")?;
@@ -173,7 +243,7 @@ fn to_networkx(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAn
         let g = nx.getattr("Graph")?.call0()?;
         // Add nodes with 'attr'
         for (nid, &attr) in graph.graph.nodes() {
-            if let Some(&py_id) = graph.internal_to_py.get(&nid) {
+            if let Some(py_id) = graph.mapper.get_py(nid) {
                 g.call_method("add_node", (py_id,), None)?;
                 let nodes_view = g.getattr("nodes")?;
                 let node_entry = nodes_view.call_method1("__getitem__", (py_id,))?;
@@ -182,8 +252,14 @@ fn to_networkx(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAn
         }
         // Add edges with 'weight' (set after creation to avoid kwargs complexity)
         for (u, v, &w) in graph.graph.edges() {
-            let pu = graph.internal_to_py.get(&u).copied().unwrap();
-            let pv = graph.internal_to_py.get(&v).copied().unwrap();
+            let pu = graph
+                .mapper
+                .get_py(u)
+                .ok_or_else(|| PyValueError::new_err("Source node ID not found"))?;
+            let pv = graph
+                .mapper
+                .get_py(v)
+                .ok_or_else(|| PyValueError::new_err("Target node ID not found"))?;
             g.call_method("add_edge", (pu, pv), None)?;
             let adj = g.getattr("adj")?;
             let u_adj = adj.call_method1("__getitem__", (pu,))?;
@@ -197,7 +273,7 @@ fn to_networkx(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAn
     if let Ok(digraph) = obj.extract::<PyRef<PyDiGraph>>() {
         let g = nx.getattr("DiGraph")?.call0()?;
         for (nid, &attr) in digraph.graph.nodes() {
-            if let Some(&py_id) = digraph.internal_to_py.get(&nid) {
+            if let Some(py_id) = digraph.mapper.get_py(nid) {
                 g.call_method("add_node", (py_id,), None)?;
                 let nodes_view = g.getattr("nodes")?;
                 let node_entry = nodes_view.call_method1("__getitem__", (py_id,))?;
@@ -205,8 +281,14 @@ fn to_networkx(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAn
             }
         }
         for (u, v, &w) in digraph.graph.edges() {
-            let pu = digraph.internal_to_py.get(&u).copied().unwrap();
-            let pv = digraph.internal_to_py.get(&v).copied().unwrap();
+            let pu = digraph
+                .mapper
+                .get_py(u)
+                .ok_or_else(|| PyValueError::new_err("Source node ID not found"))?;
+            let pv = digraph
+                .mapper
+                .get_py(v)
+                .ok_or_else(|| PyValueError::new_err("Target node ID not found"))?;
             g.call_method("add_edge", (pu, pv), None)?;
             let adj = g.getattr("adj")?;
             let u_adj = adj.call_method1("__getitem__", (pu,))?;
@@ -222,6 +304,22 @@ fn to_networkx(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAn
 }
 
 #[cfg(feature = "networkx")]
+/// Create a PyGraph or PyDiGraph from a NetworkX graph.
+///
+/// Parameters
+/// ----------
+/// nx_graph : networkx.Graph or networkx.DiGraph
+///     The input NetworkX graph.
+///
+/// Returns
+/// -------
+/// PyGraph or PyDiGraph
+///     The converted Graphina graph.
+///
+/// Raises
+/// ------
+/// ValueError
+///     If the input object is not a valid NetworkX graph.
 #[pyfunction]
 fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
     // Determine directedness via method is_directed()
@@ -253,22 +351,11 @@ fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<
                 // If node_key is an integer that fits in usize, use it directly
                 // but we still need to assign internal id ourselves
                 let nid = dg.graph.add_node(attr);
-                let assigned = dg.next_id;
-                dg.py_to_internal.insert(assigned, nid);
-                dg.internal_to_py.insert(nid, assigned);
-                dg.next_id = dg.next_id.max(int_id + 1);
-                // remap: use int_id as py id if possible
-                dg.py_to_internal.remove(&assigned);
-                dg.py_to_internal.insert(int_id, nid);
-                dg.internal_to_py.insert(nid, int_id);
+                dg.mapper.add_with_id(nid, int_id);
                 int_id
             } else {
                 let nid = dg.graph.add_node(attr);
-                let py_id = dg.next_id;
-                dg.py_to_internal.insert(py_id, nid);
-                dg.internal_to_py.insert(nid, py_id);
-                dg.next_id += 1;
-                py_id
+                dg.mapper.add(nid)
             };
             map.insert(node_key, py_id);
         }
@@ -287,8 +374,12 @@ fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<
                 .ok()
                 .and_then(|v| v.extract().ok())
                 .unwrap_or(1.0);
-            let pu = *map.get(&uk).unwrap();
-            let pv = *map.get(&vk).unwrap();
+            let pu = *map
+                .get(&uk)
+                .ok_or_else(|| PyValueError::new_err("Source node not found in map"))?;
+            let pv = *map
+                .get(&vk)
+                .ok_or_else(|| PyValueError::new_err("Target node not found in map"))?;
             let g = &mut dg;
             g.add_edge(pu, pv, weight)?;
         }
@@ -314,21 +405,11 @@ fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<
                 .unwrap_or(0);
             let py_id = if let Ok(int_id) = node_obj.extract::<usize>() {
                 let nid = g.graph.add_node(attr);
-                let assigned = g.next_id;
-                g.py_to_internal.insert(assigned, nid);
-                g.internal_to_py.insert(nid, assigned);
-                g.next_id = g.next_id.max(int_id + 1);
-                g.py_to_internal.remove(&assigned);
-                g.py_to_internal.insert(int_id, nid);
-                g.internal_to_py.insert(nid, int_id);
+                g.mapper.add_with_id(nid, int_id);
                 int_id
             } else {
                 let nid = g.graph.add_node(attr);
-                let py_id = g.next_id;
-                g.py_to_internal.insert(py_id, nid);
-                g.internal_to_py.insert(nid, py_id);
-                g.next_id += 1;
-                py_id
+                g.mapper.add(nid)
             };
             map.insert(node_key, py_id);
         }
@@ -346,8 +427,12 @@ fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<
                 .ok()
                 .and_then(|v| v.extract().ok())
                 .unwrap_or(1.0);
-            let pu = *map.get(&uk).unwrap();
-            let pv = *map.get(&vk).unwrap();
+            let pu = *map
+                .get(&uk)
+                .ok_or_else(|| PyValueError::new_err("Source node not found in map"))?;
+            let pv = *map
+                .get(&vk)
+                .ok_or_else(|| PyValueError::new_err("Target node not found in map"))?;
             g.add_edge(pu, pv, weight)?;
         }
         drop(g);
@@ -357,7 +442,22 @@ fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<
 
 /// Convert a PyGraph or PyDiGraph nodes to a pandas DataFrame.
 ///
-/// Returns a DataFrame with columns: 'node_id' (int) and 'attr' (int).
+/// Parameters
+/// ----------
+/// obj : PyGraph or PyDiGraph
+///     The input graph.
+///
+/// Returns
+/// -------
+/// pandas.DataFrame
+///     A DataFrame with columns 'node_id' (int) and 'attr' (int).
+///
+/// Raises
+/// ------
+/// ImportError
+///     If pandas is not installed.
+/// ValueError
+///     If the input object is not a valid graph.
 #[cfg(feature = "networkx")]
 #[pyfunction]
 fn to_node_dataframe(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
@@ -382,13 +482,7 @@ fn to_node_dataframe(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<P
         let nodes_with_attrs: Vec<(usize, i64)> = digraph
             .graph
             .nodes()
-            .filter_map(|(nid, &attr)| {
-                digraph
-                    .internal_to_py
-                    .get(&nid)
-                    .copied()
-                    .map(|py| (py, attr))
-            })
+            .filter_map(|(nid, &attr)| digraph.mapper.get_py(nid).map(|py| (py, attr)))
             .collect();
         let node_ids: Vec<usize> = nodes_with_attrs.iter().map(|(id, _)| *id).collect();
         let attrs: Vec<i64> = nodes_with_attrs.iter().map(|(_, attr)| *attr).collect();
@@ -408,7 +502,22 @@ fn to_node_dataframe(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<P
 
 /// Convert a PyGraph or PyDiGraph edges to a pandas DataFrame.
 ///
-/// Returns a DataFrame with columns: 'source' (int), 'target' (int), and 'weight' (float).
+/// Parameters
+/// ----------
+/// obj : PyGraph or PyDiGraph
+///     The input graph.
+///
+/// Returns
+/// -------
+/// pandas.DataFrame
+///     A DataFrame with columns 'source' (int), 'target' (int), and 'weight' (float).
+///
+/// Raises
+/// ------
+/// ImportError
+///     If pandas is not installed.
+/// ValueError
+///     If the input object is not a valid graph.
 #[cfg(feature = "networkx")]
 #[pyfunction]
 fn to_edge_dataframe(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
@@ -436,8 +545,8 @@ fn to_edge_dataframe(py: pyo3::Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<P
             .graph
             .edges()
             .filter_map(|(u, v, &w)| {
-                let pu = digraph.internal_to_py.get(&u).copied();
-                let pv = digraph.internal_to_py.get(&v).copied();
+                let pu = digraph.mapper.get_py(u);
+                let pv = digraph.mapper.get_py(v);
                 match (pu, pv) {
                     (Some(a), Some(b)) => Some((a, b, w)),
                     _ => None,

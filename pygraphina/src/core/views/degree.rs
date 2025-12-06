@@ -1,6 +1,4 @@
-use crate::PyDiGraph;
-use crate::PyGraph;
-use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
 use pyo3::types::PyAnyMethods;
 
@@ -21,16 +19,12 @@ impl DegreeView {
         let py = slf.py();
         let obj = slf.graph.bind(py);
 
-        let nodes = if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            g.nodes_impl()
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            g.graph
-                .nodes()
-                .filter_map(|(nid, _)| g.internal_to_py.get(&nid).copied())
-                .collect()
-        } else {
-            return Err(PyTypeError::new_err("Unknown graph type"));
-        };
+        // Get all nodes via iterator
+        let nodes: Vec<usize> = obj
+            .call_method0("__iter__")?
+            .try_iter()?
+            .map(|i| i.and_then(|x| x.extract::<usize>()))
+            .collect::<PyResult<Vec<usize>>>()?;
 
         let iter = DegreeIterator {
             graph: slf.graph.clone_ref(py),
@@ -47,13 +41,8 @@ impl DegreeView {
 
     fn __getitem__(&self, py: Python<'_>, node: usize) -> PyResult<usize> {
         let obj = self.graph.bind(py);
-        let deg = if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            g.degree_impl(node)
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            g.degree_impl(node)
-        } else {
-            return Err(PyTypeError::new_err("Unknown graph type"));
-        };
+        // Call internal _degree helper
+        let deg: Option<usize> = obj.call_method1("_degree", (node,))?.extract()?;
 
         if let Some(d) = deg {
             Ok(d)
@@ -66,17 +55,10 @@ impl DegreeView {
     fn __call__(
         &self,
         py: Python<'_>,
-        nbunch: Option<PyObject>,
+        nbunch: Option<Py<PyAny>>,
         weight: Option<String>,
-    ) -> PyResult<PyObject> {
-        // If nbunch is None, return self (the View).
-        // If nbunch is not None, return a DegreeView of those nodes? Or list of (n, d)?
-        // NetworkX returns a DiDegreeView if nbunch is provided? Or just iterator?
-        // Actually G.degree([1,2]) returns a DegreeView over 1,2.
-        // For simplicity, let's just return a list of (n, d) if nbunch is provided,
-        // to mimic iterator behavior, or return self if None.
-        // Wait, G.degree() (called with no args) returns self (the view).
-
+    ) -> PyResult<Py<PyAny>> {
+        let _ = weight; // Silence unused warning
         if nbunch.is_none() {
             // Return a new View (equivalent to self)
             return Ok(DegreeView {
@@ -87,20 +69,7 @@ impl DegreeView {
             .unbind());
         }
 
-        // If nbunch is provided, we should filter.
-        // Implementing restricted view is complex.
-        // Let's just return a list of (node, degree) for now?
-        // NX 2 returns a DegreeView.
-        // If I return list, it might break code expecting view methods.
-        // I will return a restricted iterator (DegreeIterator with subsets).
-
         let nbunch = nbunch.unwrap();
-        // Extract nodes from nbunch (iterator or single node?)
-        // If single node, return degree? No, G.degree(n) returns degree int in NX 1.x but NX 2.x?
-        // NX 2: G.degree[n] returns int. G.degree(n) ?
-        // "G.degree(nbunch) returns a DegreeView... if nbunch is a single node, returns degree?"
-        // checking docs... "G.degree[n]" is the preferred way.
-        // G.degree(n) returns the degree of node n (int).
 
         if let Ok(node) = nbunch.extract::<usize>(py) {
             return self
@@ -145,13 +114,12 @@ impl DegreeIterator {
 
             let py = slf.py();
             let obj = slf.graph.bind(py);
-            let d = if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-                g.degree_impl(node).unwrap_or(0) // Handle missing node? shouldn't happen if filtered correctly
-            } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-                g.degree_impl(node).unwrap_or(0)
-            } else {
-                0
-            };
+            // Duck typing _degree
+            let d: usize = obj
+                .call_method1("_degree", (node,))?
+                .extract::<Option<usize>>()?
+                .unwrap_or(0);
+
             Ok(Some((node, d)))
         } else {
             Ok(None)
@@ -159,7 +127,7 @@ impl DegreeIterator {
     }
 
     // For repr support or dict conversion
-    fn __repr__(slf: PyRef<'_, Self>) -> String {
+    fn __repr__(_slf: PyRef<'_, Self>) -> String {
         "DegreeIterator(...)".to_string()
     }
 }

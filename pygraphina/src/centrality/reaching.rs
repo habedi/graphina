@@ -44,6 +44,7 @@ pub fn local_reaching_centrality(
             .into_iter()
             .filter_map(|(node_id, score)| {
                 py_graph
+                    .mapper
                     .internal_to_py
                     .get(&node_id)
                     .map(|&py_id| (py_id, score))
@@ -61,6 +62,7 @@ pub fn local_reaching_centrality(
             .into_iter()
             .filter_map(|(node_id, score)| {
                 py_graph
+                    .mapper
                     .internal_to_py
                     .get(&node_id)
                     .map(|&py_id| (py_id, score))
@@ -120,6 +122,7 @@ pub fn global_reaching_centrality(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<
             .into_iter()
             .filter_map(|(node_id, score)| {
                 py_graph
+                    .mapper
                     .internal_to_py
                     .get(&node_id)
                     .map(|&py_id| (py_id, score))
@@ -136,6 +139,7 @@ pub fn global_reaching_centrality(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<
             .into_iter()
             .filter_map(|(node_id, score)| {
                 py_graph
+                    .mapper
                     .internal_to_py
                     .get(&node_id)
                     .map(|&py_id| (py_id, score))

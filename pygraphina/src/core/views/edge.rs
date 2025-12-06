@@ -1,8 +1,6 @@
-use crate::PyDiGraph;
-use crate::PyGraph;
 use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyTuple};
+use pyo3::types::PyDict;
 
 /// a View on the edges of the graph.
 #[pyclass]
@@ -20,55 +18,24 @@ impl EdgeView {
 impl EdgeView {
     fn __len__(&self, py: Python<'_>) -> PyResult<usize> {
         let obj = self.graph.bind(py);
-        if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            Ok(g.edge_count())
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            Ok(g.edge_count())
-        } else {
-            Err(PyTypeError::new_err("Unknown graph type"))
-        }
+        obj.call_method0("edge_count")?.extract()
     }
 
     fn __contains__(&self, py: Python<'_>, edge: (usize, usize)) -> PyResult<bool> {
         let obj = self.graph.bind(py);
-        if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            g.contains_edge(edge.0, edge.1)
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            g.contains_edge(edge.0, edge.1)
-        } else {
-            Err(PyTypeError::new_err("Unknown graph type"))
-        }
+        // Delegate to contains_edge(u, v)
+        obj.call_method1("contains_edge", (edge.0, edge.1))?
+            .extract()
     }
 
     fn __iter__(&self, py: Python<'_>) -> PyResult<Py<EdgeIterator>> {
         let obj = self.graph.bind(py);
-        let edges = if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            g.graph
-                .edges()
-                .filter_map(|(u, v, _w)| {
-                    let pu = g.internal_to_py.get(&u).copied();
-                    let pv = g.internal_to_py.get(&v).copied();
-                    match (pu, pv) {
-                        (Some(a), Some(b)) => Some((a, b)),
-                        _ => None,
-                    }
-                })
-                .collect()
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            g.graph
-                .edges()
-                .filter_map(|(u, v, _w)| {
-                    let pu = g.internal_to_py.get(&u).copied();
-                    let pv = g.internal_to_py.get(&v).copied();
-                    match (pu, pv) {
-                        (Some(a), Some(b)) => Some((a, b)),
-                        _ => None,
-                    }
-                })
-                .collect()
-        } else {
-            return Err(PyTypeError::new_err("Unknown graph type"));
-        };
+        // Get all edges with weights using the internal helper we exposed
+        let edges_w: Vec<(usize, usize, f64)> =
+            obj.call_method0("_edges_with_weights")?.extract()?;
+
+        // EdgeView iterator yields (u, v) tuples
+        let edges: Vec<(usize, usize)> = edges_w.into_iter().map(|(u, v, _)| (u, v)).collect();
 
         let iter = EdgeIterator { edges, idx: 0 };
         Py::new(py, iter)
@@ -76,13 +43,9 @@ impl EdgeView {
 
     fn __getitem__(&self, py: Python<'_>, edge: (usize, usize)) -> PyResult<Py<PyDict>> {
         let obj = self.graph.bind(py);
-        let weight = if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            g.get_edge_weight(edge.0, edge.1)?
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            g.get_edge_weight(edge.0, edge.1)?
-        } else {
-            return Err(PyTypeError::new_err("Unknown graph type"));
-        };
+        let weight: Option<f64> = obj
+            .call_method1("get_edge_weight", (edge.0, edge.1))?
+            .extract()?;
 
         if let Some(w) = weight {
             let dict = PyDict::new(py);
@@ -97,8 +60,8 @@ impl EdgeView {
     fn data(
         &self,
         py: Python<'_>,
-        data: Option<PyObject>,
-        default: Option<PyObject>,
+        data: Option<Py<PyAny>>,
+        default: Option<Py<PyAny>>,
     ) -> PyResult<EdgeDataView> {
         Ok(EdgeDataView {
             graph: self.graph.clone_ref(py),
@@ -133,8 +96,8 @@ impl EdgeIterator {
 #[pyclass]
 pub struct EdgeDataView {
     graph: Py<PyAny>,
-    data_param: Option<PyObject>,
-    default_val: Option<PyObject>,
+    data_param: Option<Py<PyAny>>,
+    default_val: Option<Py<PyAny>>,
 }
 
 #[pymethods]
@@ -143,21 +106,9 @@ impl EdgeDataView {
         let py = slf.py();
         let obj = slf.graph.bind(py);
 
-        let edges_w = if let Ok(g) = obj.extract::<PyRef<PyGraph>>() {
-            g.edges_with_weights()
-        } else if let Ok(g) = obj.extract::<PyRef<PyDiGraph>>() {
-            // Reimplement edges_with_weights logic for PyDiGraph if it doesn't exist
-            g.graph
-                .edges()
-                .map(|(u, v, w)| {
-                    let pu = g.internal_to_py[&u];
-                    let pv = g.internal_to_py[&v];
-                    (pu, pv, *w)
-                })
-                .collect()
-        } else {
-            return Err(PyTypeError::new_err("Unknown graph type"));
-        };
+        // Use _edges_with_weights
+        let edges_w: Vec<(usize, usize, f64)> =
+            obj.call_method0("_edges_with_weights")?.extract()?;
 
         let iter = EdgeDataIterator {
             edges: edges_w,
@@ -177,8 +128,8 @@ impl EdgeDataView {
 #[pyclass]
 pub struct EdgeDataIterator {
     edges: Vec<(usize, usize, f64)>,
-    data_param: Option<PyObject>,
-    default_val: Option<PyObject>,
+    data_param: Option<Py<PyAny>>,
+    default_val: Option<Py<PyAny>>,
     idx: usize,
 }
 
@@ -188,7 +139,7 @@ impl EdgeDataIterator {
         slf
     }
 
-    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<PyObject>> {
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<Py<PyAny>>> {
         if slf.idx >= slf.edges.len() {
             return Ok(None);
         }

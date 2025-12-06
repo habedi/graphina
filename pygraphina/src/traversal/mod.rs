@@ -11,26 +11,28 @@ impl PyGraph {
     /// Breadth‑first search order starting from `start` (Python node id).
     pub fn bfs_impl(&self, start: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let visited = bfs(&self.graph, start_id);
         Ok(visited
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
     /// Depth‑first search order starting from `start` (Python node id).
     pub fn dfs_impl(&self, start: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let visited = dfs(&self.graph, start_id);
         Ok(visited
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -42,17 +44,19 @@ impl PyGraph {
         max_depth: usize,
     ) -> PyResult<Option<Vec<usize>>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
         let path_opt = iddfs(&self.graph, start_id, target_id, max_depth);
         Ok(path_opt.map(|path| {
             path.into_iter()
-                .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
                 .collect()
         }))
     }
@@ -65,10 +69,12 @@ impl PyGraph {
         max_depth: usize,
     ) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
@@ -76,7 +82,7 @@ impl PyGraph {
             .map_err(|e| PyValueError::new_err(format!("{}", e)))?;
         Ok(path
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -87,17 +93,19 @@ impl PyGraph {
         target: usize,
     ) -> PyResult<Option<Vec<usize>>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
         let path_opt = bidis(&self.graph, start_id, target_id);
         Ok(path_opt.map(|path| {
             path.into_iter()
-                .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
                 .collect()
         }))
     }
@@ -109,10 +117,12 @@ impl PyGraph {
         target: usize,
     ) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
@@ -120,7 +130,7 @@ impl PyGraph {
             .map_err(|e| PyValueError::new_err(format!("{}", e)))?;
         Ok(path
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 }
@@ -129,26 +139,28 @@ impl PyDiGraph {
     /// Breadth‑first search order starting from `start` (Python node id).
     pub fn bfs_impl(&self, start: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let visited = bfs(&self.graph, start_id);
         Ok(visited
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
     /// Depth‑first search order starting from `start` (Python node id).
     pub fn dfs_impl(&self, start: usize) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let visited = dfs(&self.graph, start_id);
         Ok(visited
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -160,17 +172,19 @@ impl PyDiGraph {
         max_depth: usize,
     ) -> PyResult<Option<Vec<usize>>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
         let path_opt = iddfs(&self.graph, start_id, target_id, max_depth);
         Ok(path_opt.map(|path| {
             path.into_iter()
-                .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
                 .collect()
         }))
     }
@@ -183,10 +197,12 @@ impl PyDiGraph {
         max_depth: usize,
     ) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
@@ -194,7 +210,7 @@ impl PyDiGraph {
             .map_err(|e| PyValueError::new_err(format!("{}", e)))?;
         Ok(path
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 
@@ -205,17 +221,19 @@ impl PyDiGraph {
         target: usize,
     ) -> PyResult<Option<Vec<usize>>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
         let path_opt = bidis(&self.graph, start_id, target_id);
         Ok(path_opt.map(|path| {
             path.into_iter()
-                .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
                 .collect()
         }))
     }
@@ -227,10 +245,12 @@ impl PyDiGraph {
         target: usize,
     ) -> PyResult<Vec<usize>> {
         let start_id = *self
+            .mapper
             .py_to_internal
             .get(&start)
             .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
         let target_id = *self
+            .mapper
             .py_to_internal
             .get(&target)
             .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
@@ -238,7 +258,7 @@ impl PyDiGraph {
             .map_err(|e| PyValueError::new_err(format!("{}", e)))?;
         Ok(path
             .into_iter()
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
             .collect())
     }
 }

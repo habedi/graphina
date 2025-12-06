@@ -7,16 +7,12 @@ impl PyGraph {
     /// Add a node with the given attribute and return its Python ID.
     pub fn add_node_impl(&mut self, attr: i64) -> usize {
         let internal_id = self.graph.add_node(attr);
-        let py_id = self.next_id;
-        self.py_to_internal.insert(py_id, internal_id);
-        self.internal_to_py.insert(internal_id, py_id);
-        self.next_id += 1;
-        py_id
+        self.mapper.add(internal_id)
     }
 
     /// Update a node's attribute. Returns true if updated, false if node doesn't exist.
     pub fn update_node_impl(&mut self, py_node: usize, new_attr: i64) -> PyResult<bool> {
-        if let Some(&internal_id) = self.py_to_internal.get(&py_node) {
+        if let Some(internal_id) = self.mapper.get_internal(py_node) {
             Ok(self.graph.update_node(internal_id, new_attr))
         } else {
             Ok(false)
@@ -25,9 +21,9 @@ impl PyGraph {
 
     /// Try to update a node's attribute. Raises ValueError if node doesn't exist.
     pub fn try_update_node_impl(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
-        let internal_id = *self
-            .py_to_internal
-            .get(&py_node)
+        let internal_id = self
+            .mapper
+            .get_internal(py_node)
             .ok_or_else(|| PyValueError::new_err("Invalid node id"))?;
         self.graph
             .try_update_node(internal_id, new_attr)
@@ -45,13 +41,13 @@ impl PyGraph {
             )));
         }
 
-        let src_id = *self
-            .py_to_internal
-            .get(&source)
+        let src_id = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = *self
-            .py_to_internal
-            .get(&target)
+        let tgt_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
         let edge_id = self.graph.add_edge(src_id, tgt_id, weight);
         Ok(edge_id.index())
@@ -59,11 +55,10 @@ impl PyGraph {
 
     /// Remove a node and return its attribute if it exists.
     pub fn remove_node_impl(&mut self, py_node: usize) -> PyResult<Option<i64>> {
-        if let Some(&internal_id) = self.py_to_internal.get(&py_node) {
+        if let Some(internal_id) = self.mapper.get_internal(py_node) {
             let attr = self.graph.remove_node(internal_id);
             if attr.is_some() {
-                self.py_to_internal.remove(&py_node);
-                self.internal_to_py.remove(&internal_id);
+                self.mapper.remove_by_py_id(py_node);
             }
             Ok(attr)
         } else {
@@ -73,22 +68,21 @@ impl PyGraph {
 
     /// Try to remove a node. Raises ValueError if node doesn't exist.
     pub fn try_remove_node_impl(&mut self, py_node: usize) -> PyResult<i64> {
-        let internal_id = *self
-            .py_to_internal
-            .get(&py_node)
+        let internal_id = self
+            .mapper
+            .get_internal(py_node)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid node id: {}", py_node)))?;
         let attr = self
             .graph
             .try_remove_node(internal_id)
             .map_err(|e| PyValueError::new_err(format!("{}", e)))?;
-        self.py_to_internal.remove(&py_node);
-        self.internal_to_py.remove(&internal_id);
+        self.mapper.remove_by_py_id(py_node);
         Ok(attr)
     }
 
     /// Check if a node exists.
     pub fn contains_node_impl(&self, py_node: usize) -> bool {
-        if let Some(&internal_id) = self.py_to_internal.get(&py_node) {
+        if let Some(internal_id) = self.mapper.get_internal(py_node) {
             self.graph.contains_node(internal_id)
         } else {
             false
@@ -97,13 +91,13 @@ impl PyGraph {
 
     /// Check if an edge exists between two nodes.
     pub fn contains_edge_impl(&self, source: usize, target: usize) -> PyResult<bool> {
-        let src_id = *self
-            .py_to_internal
-            .get(&source)
+        let src_id = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = *self
-            .py_to_internal
-            .get(&target)
+        let tgt_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
         Ok(self.graph.contains_edge(src_id, tgt_id))
     }
@@ -112,51 +106,49 @@ impl PyGraph {
     pub fn nodes_impl(&self) -> Vec<usize> {
         self.graph
             .nodes()
-            .filter_map(|(nid, _)| self.internal_to_py.get(&nid).copied())
+            .filter_map(|(nid, _)| self.mapper.get_py(nid))
             .collect()
     }
 
     /// Get the neighbors of a node.
     pub fn neighbors_impl(&self, py_node: usize) -> PyResult<Vec<usize>> {
-        let internal_id = *self
-            .py_to_internal
-            .get(&py_node)
+        let internal_id = self
+            .mapper
+            .get_internal(py_node)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid node id: {}", py_node)))?;
         let neighbors = self.graph.neighbors(internal_id);
         Ok(neighbors
-            .filter_map(|nid| self.internal_to_py.get(&nid).copied())
+            .filter_map(|nid| self.mapper.get_py(nid))
             .collect())
     }
 
     /// Get the degree of a node.
     pub fn degree_impl(&self, py_node: usize) -> Option<usize> {
-        let internal_id = *self.py_to_internal.get(&py_node)?;
+        let internal_id = self.mapper.get_internal(py_node)?;
         self.graph.degree(internal_id)
     }
 
     /// Get a node's attribute.
     pub fn get_node_attr_impl(&self, py_node: usize) -> Option<i64> {
-        let internal_id = *self.py_to_internal.get(&py_node)?;
+        let internal_id = self.mapper.get_internal(py_node)?;
         self.graph.node_attr(internal_id).copied()
     }
 
     /// Clear the graph.
     pub fn clear_impl(&mut self) {
         self.graph.clear();
-        self.py_to_internal.clear();
-        self.internal_to_py.clear();
-        self.next_id = 0;
+        self.mapper.clear();
     }
 
     /// Remove an edge between two nodes. Returns true if edge was removed, false if not found.
     pub fn remove_edge_impl(&mut self, source: usize, target: usize) -> PyResult<bool> {
-        let src_id = *self
-            .py_to_internal
-            .get(&source)
+        let src_id = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = *self
-            .py_to_internal
-            .get(&target)
+        let tgt_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
 
         // Find the edge first
@@ -170,13 +162,13 @@ impl PyGraph {
 
     /// Try to remove an edge. Raises ValueError if edge doesn't exist.
     pub fn try_remove_edge_impl(&mut self, source: usize, target: usize) -> PyResult<()> {
-        let src_id = *self
-            .py_to_internal
-            .get(&source)
+        let src_id = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = *self
-            .py_to_internal
-            .get(&target)
+        let tgt_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
 
         // Find the edge first
@@ -192,13 +184,13 @@ impl PyGraph {
 
     /// Get the weight of an edge between two nodes.
     pub fn get_edge_weight_impl(&self, source: usize, target: usize) -> PyResult<Option<f64>> {
-        let src_id = *self
-            .py_to_internal
-            .get(&source)
+        let src_id = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = *self
-            .py_to_internal
-            .get(&target)
+        let tgt_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
 
         // Find the edge first
@@ -224,13 +216,13 @@ impl PyGraph {
             )));
         }
 
-        let src_id = *self
-            .py_to_internal
-            .get(&source)
+        let src_id = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = *self
-            .py_to_internal
-            .get(&target)
+        let tgt_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
 
         // Find the edge first
@@ -261,13 +253,13 @@ impl PyGraph {
             )));
         }
 
-        let src_id = *self
-            .py_to_internal
-            .get(&source)
+        let src_id = self
+            .mapper
+            .get_internal(source)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = *self
-            .py_to_internal
-            .get(&target)
+        let tgt_id = self
+            .mapper
+            .get_internal(target)
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
 
         // Find the edge first

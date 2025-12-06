@@ -37,7 +37,7 @@ pub fn bfs_parallel(graph: &Bound<'_, PyAny>, starts: Vec<usize>) -> PyResult<Ve
     if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
         let internal_starts: Vec<_> = starts
             .iter()
-            .filter_map(|&py_id| py_graph.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| py_graph.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_starts.len() != starts.len() {
@@ -51,14 +51,14 @@ pub fn bfs_parallel(graph: &Bound<'_, PyAny>, starts: Vec<usize>) -> PyResult<Ve
             .map(|visited| {
                 visited
                     .into_iter()
-                    .filter_map(|nid| py_graph.internal_to_py.get(&nid).copied())
+                    .filter_map(|nid| py_graph.mapper.internal_to_py.get(&nid).copied())
                     .collect()
             })
             .collect())
     } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
         let internal_starts: Vec<_> = starts
             .iter()
-            .filter_map(|&py_id| py_graph.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| py_graph.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_starts.len() != starts.len() {
@@ -72,7 +72,7 @@ pub fn bfs_parallel(graph: &Bound<'_, PyAny>, starts: Vec<usize>) -> PyResult<Ve
             .map(|visited| {
                 visited
                     .into_iter()
-                    .filter_map(|nid| py_graph.internal_to_py.get(&nid).copied())
+                    .filter_map(|nid| py_graph.mapper.internal_to_py.get(&nid).copied())
                     .collect()
             })
             .collect())
@@ -107,7 +107,7 @@ pub fn degrees_parallel(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, usi
         let py_degrees: HashMap<usize, usize> = internal_degrees
             .into_iter()
             .filter_map(|(nid, deg)| {
-                let py_id = py_graph.internal_to_py.get(&nid).copied()?;
+                let py_id = py_graph.mapper.internal_to_py.get(&nid).copied()?;
                 Some((py_id, deg))
             })
             .collect();
@@ -119,7 +119,7 @@ pub fn degrees_parallel(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, usi
         let py_degrees: HashMap<usize, usize> = internal_degrees
             .into_iter()
             .filter_map(|(nid, deg)| {
-                let py_id = py_graph.internal_to_py.get(&nid).copied()?;
+                let py_id = py_graph.mapper.internal_to_py.get(&nid).copied()?;
                 Some((py_id, deg))
             })
             .collect();
@@ -155,15 +155,13 @@ pub fn connected_components_parallel(graph: &PyGraph) -> PyResult<HashMap<usize,
     let py_component_map: HashMap<usize, usize> = component_map
         .into_iter()
         .filter_map(|(nid, comp_id)| {
-            let py_id = graph.internal_to_py.get(&nid).copied()?;
+            let py_id = graph.mapper.internal_to_py.get(&nid).copied()?;
             Some((py_id, comp_id))
         })
         .collect();
 
     Ok(py_component_map)
 }
-
-use graphina::core::types::NodeId;
 
 /// Compute PageRank scores in parallel.
 ///
@@ -204,7 +202,7 @@ pub fn pagerank_parallel(
         let nstart_map = if let Some(ns) = nstart {
             let mut map = HashMap::new();
             for (py_id, val) in ns {
-                if let Some(&internal_id) = py_graph.py_to_internal.get(&py_id) {
+                if let Some(&internal_id) = py_graph.mapper.py_to_internal.get(&py_id) {
                     map.insert(internal_id, val);
                 }
             }
@@ -223,7 +221,7 @@ pub fn pagerank_parallel(
         let py_ranks: HashMap<usize, f64> = ranks
             .into_iter()
             .filter_map(|(nid, rank)| {
-                let py_id = py_graph.internal_to_py.get(&nid)?;
+                let py_id = py_graph.mapper.internal_to_py.get(&nid)?;
                 Some((*py_id, rank))
             })
             .collect();
@@ -232,7 +230,7 @@ pub fn pagerank_parallel(
         let nstart_map = if let Some(ns) = nstart {
             let mut map = HashMap::new();
             for (py_id, val) in ns {
-                if let Some(&internal_id) = py_graph.py_to_internal.get(&py_id) {
+                if let Some(&internal_id) = py_graph.mapper.py_to_internal.get(&py_id) {
                     map.insert(internal_id, val);
                 }
             }
@@ -251,7 +249,7 @@ pub fn pagerank_parallel(
         let py_ranks: HashMap<usize, f64> = ranks
             .into_iter()
             .filter_map(|(nid, rank)| {
-                let py_id = py_graph.internal_to_py.get(&nid)?;
+                let py_id = py_graph.mapper.internal_to_py.get(&nid)?;
                 Some((*py_id, rank))
             })
             .collect();
@@ -286,7 +284,7 @@ pub fn triangles_parallel(graph: &PyGraph) -> PyResult<HashMap<usize, usize>> {
     let py_triangles: HashMap<usize, usize> = triangles
         .into_iter()
         .filter_map(|(nid, count)| {
-            let py_id = graph.internal_to_py.get(&nid).copied()?;
+            let py_id = graph.mapper.internal_to_py.get(&nid).copied()?;
             Some((py_id, count))
         })
         .collect();
@@ -317,7 +315,7 @@ pub fn clustering_coefficients_parallel(graph: &PyGraph) -> PyResult<HashMap<usi
     let py_coeffs: HashMap<usize, f64> = coeffs
         .into_iter()
         .filter_map(|(nid, coeff)| {
-            let py_id = graph.internal_to_py.get(&nid).copied()?;
+            let py_id = graph.mapper.internal_to_py.get(&nid).copied()?;
             Some((py_id, coeff))
         })
         .collect();
@@ -355,7 +353,7 @@ pub fn shortest_paths_parallel(
     if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
         let internal_sources: Vec<_> = sources
             .iter()
-            .filter_map(|&py_id| py_graph.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| py_graph.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_sources.len() != sources.len() {
@@ -370,7 +368,7 @@ pub fn shortest_paths_parallel(
                 dists
                     .into_iter()
                     .filter_map(|(tgt_nid, dist)| {
-                        let py_tgt = py_graph.internal_to_py.get(&tgt_nid).copied()?;
+                        let py_tgt = py_graph.mapper.internal_to_py.get(&tgt_nid).copied()?;
                         Some((py_tgt, dist))
                     })
                     .collect()
@@ -379,7 +377,7 @@ pub fn shortest_paths_parallel(
     } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
         let internal_sources: Vec<_> = sources
             .iter()
-            .filter_map(|&py_id| py_graph.py_to_internal.get(&py_id).copied())
+            .filter_map(|&py_id| py_graph.mapper.py_to_internal.get(&py_id).copied())
             .collect();
 
         if internal_sources.len() != sources.len() {
@@ -394,7 +392,7 @@ pub fn shortest_paths_parallel(
                 dists
                     .into_iter()
                     .filter_map(|(tgt_nid, dist)| {
-                        let py_tgt = py_graph.internal_to_py.get(&tgt_nid).copied()?;
+                        let py_tgt = py_graph.mapper.internal_to_py.get(&tgt_nid).copied()?;
                         Some((py_tgt, dist))
                     })
                     .collect()

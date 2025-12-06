@@ -5,22 +5,44 @@ use graphina::approximation::treewidth::{
 };
 use pyo3::prelude::*;
 
+/// Compute treewidth using the min-degree heuristic.
+///
+/// Parameters
+/// ----------
+/// py_graph : PyGraph
+///     The input undirected graph.
+///
+/// Returns
+/// -------
+/// tuple
+///     A tuple containing (treewidth_upper_bound, elimination_ordering).
 #[pyfunction]
 pub fn treewidth_min_degree(py_graph: &PyGraph) -> (usize, Vec<usize>) {
     let (width, elimination_order) = treewidth_min_degree_core(&py_graph.graph);
     let py_order = elimination_order
         .into_iter()
-        .filter_map(|node_id| py_graph.internal_to_py.get(&node_id).copied())
+        .filter_map(|node_id| py_graph.mapper.internal_to_py.get(&node_id).copied())
         .collect();
     (width, py_order)
 }
 
+/// Compute treewidth using the min-fill-in heuristic.
+///
+/// Parameters
+/// ----------
+/// py_graph : PyGraph
+///     The input undirected graph.
+///
+/// Returns
+/// -------
+/// tuple
+///     A tuple containing (treewidth_upper_bound, elimination_ordering).
 #[pyfunction]
 pub fn treewidth_min_fill_in(py_graph: &PyGraph) -> (usize, Vec<usize>) {
     let (width, elimination_order) = treewidth_min_fill_in_core(&py_graph.graph);
     let py_order = elimination_order
         .into_iter()
-        .filter_map(|node_id| py_graph.internal_to_py.get(&node_id).copied())
+        .filter_map(|node_id| py_graph.mapper.internal_to_py.get(&node_id).copied())
         .collect();
     (width, py_order)
 }

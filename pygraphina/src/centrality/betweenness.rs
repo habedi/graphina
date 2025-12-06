@@ -47,7 +47,7 @@ pub fn betweenness(graph: &Bound<'_, PyAny>, normalized: bool) -> PyResult<HashM
                     let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing mapping back to original node")
                     })?;
-                    let pyid = py_graph.internal_to_py.get(old_nid).ok_or_else(|| {
+                    let pyid = py_graph.mapper.internal_to_py.get(old_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("Internal node id missing mapping")
                     })?;
                     out.insert(*pyid, val);
@@ -74,7 +74,7 @@ pub fn betweenness(graph: &Bound<'_, PyAny>, normalized: bool) -> PyResult<HashM
                     let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing mapping back to original node")
                     })?;
-                    let pyid = py_graph.internal_to_py.get(old_nid).ok_or_else(|| {
+                    let pyid = py_graph.mapper.internal_to_py.get(old_nid).ok_or_else(|| {
                         crate::GraphinaError::new_err("Internal node id missing mapping")
                     })?;
                     out.insert(*pyid, val);
@@ -137,10 +137,10 @@ pub fn edge_betweenness(
                     let ov = new_to_old.get(&nv).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing mapping back to original node v")
                     })?;
-                    let pu = py_graph.internal_to_py.get(ou).ok_or_else(|| {
+                    let pu = py_graph.mapper.internal_to_py.get(ou).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing node mapping for u")
                     })?;
-                    let pv = py_graph.internal_to_py.get(ov).ok_or_else(|| {
+                    let pv = py_graph.mapper.internal_to_py.get(ov).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing node mapping for v")
                     })?;
                     out.insert((*pu, *pv), val);
@@ -170,10 +170,10 @@ pub fn edge_betweenness(
                     let ov = new_to_old.get(&nv).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing mapping back to original node v")
                     })?;
-                    let pu = py_graph.internal_to_py.get(ou).ok_or_else(|| {
+                    let pu = py_graph.mapper.internal_to_py.get(ou).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing node mapping for u")
                     })?;
-                    let pv = py_graph.internal_to_py.get(ov).ok_or_else(|| {
+                    let pv = py_graph.mapper.internal_to_py.get(ov).ok_or_else(|| {
                         crate::GraphinaError::new_err("missing node mapping for v")
                     })?;
                     out.insert((*pu, *pv), val);
