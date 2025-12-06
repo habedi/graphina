@@ -39,16 +39,17 @@ jobs:
           python-version: "3.12"
 
       - name: Install Dependencies
-        run: uv sync --all-extras --dev
+        run: uv sync --extra dev
 
       - name: Build Documentation
         run: uv run mkdocs build --config-file pygraphina/mkdocs.yml
 
-      - name: Upload Documentation as Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: 'pygraphina/site'
-
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./pygraphina/site
+          publish_branch: gh-pages
+          user_name: ${{ github.actor }}
+          user_email: ${{ github.actor }}@users.noreply.github.com
+          commit_message: "docs: Deploy documentation from ${{ github.sha }} by ${{ github.actor }}"
