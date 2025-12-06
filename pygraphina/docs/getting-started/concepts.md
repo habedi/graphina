@@ -321,10 +321,10 @@ Parallel implementations for large graphs:
 
 ```python
 # Parallel PageRank
-pagerank = pg.parallel.parallel_pagerank(g, 0.85, 100, 1e-6)
+pagerank = pg.parallel.pagerank_parallel(g, 0.85, 100, 1e-6)
 
 # Parallel BFS
-bfs_order = pg.parallel.parallel_bfs(g, start_node)
+bfs_order = pg.parallel.bfs_parallel(g, [start_node])
 ```
 
 ## Performance Considerations
@@ -351,7 +351,7 @@ Many algorithms have parallel implementations in `pg.parallel` that can leverage
 result = pg.centrality.pagerank(large_graph, 0.85, 100, 1e-6)
 
 # Parallel version (faster for large graphs)
-result = pg.parallel.parallel_pagerank(large_graph, 0.85, 100, 1e-6)
+result = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 ```
 
 ## Data Types

@@ -209,7 +209,7 @@ PageRank handles disconnected graphs gracefully due to the random jump mechanism
 
 For large graphs, consider:
 
-1. **Parallel implementation**: Use `pg.parallel.parallel_pagerank()`
+1. **Parallel implementation**: Use `pg.parallel.pagerank_parallel()`
 2. **Early stopping**: Use larger `tol` for faster (approximate) results
 3. **Fewer iterations**: Reduce `max_iters` if exact convergence isn't critical
 
@@ -221,7 +221,7 @@ import pygraphina as pg
 scores = pg.centrality.pagerank(large_graph, 0.85, 100, 1e-6)
 
 # Parallel (faster for large graphs)
-scores = pg.parallel.parallel_pagerank(large_graph, 0.85, 100, 1e-6)
+scores = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 ```
 
 ## Applications

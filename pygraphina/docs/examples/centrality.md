@@ -317,7 +317,7 @@ time_seq = time.time() - start
 
 # Parallel PageRank
 start = time.time()
-pr_par = pg.parallel.parallel_pagerank(large_graph, 0.85, 100, 1e-6)
+pr_par = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 time_par = time.time() - start
 
 print(f"\nSequential: {time_seq:.3f}s")
