@@ -90,7 +90,7 @@ class TestSubgraphs:
     def test_induced_subgraph_complete(self):
         """Test induced subgraph on complete graph."""
         g = pygraphina.complete_graph(10)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         # Extract induced subgraph of 5 nodes
         induced = g.induced_subgraph(nodes[:5])
@@ -129,7 +129,7 @@ class TestSubgraphProperties:
     def test_subgraph_independence(self):
         """Test that modifying subgraph doesn't affect original."""
         g = pygraphina.complete_graph(5)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         sub = g.subgraph(nodes[:3])
         original_count = g.node_count()
@@ -145,7 +145,7 @@ class TestSubgraphProperties:
         g, nodes = create_test_graph()
 
         sub = g.subgraph([nodes[0], nodes[1]])
-        sub_nodes = sub.nodes()
+        sub_nodes = sub.nodes
 
         # Subgraph should have its own node IDs
         assert len(sub_nodes) == 2
@@ -153,7 +153,7 @@ class TestSubgraphProperties:
     def test_multiple_subgraphs(self):
         """Test extracting multiple subgraphs from same graph."""
         g = pygraphina.complete_graph(10)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         sub1 = g.subgraph(nodes[:5])
         sub2 = g.subgraph(nodes[5:])
@@ -166,7 +166,7 @@ class TestSubgraphProperties:
     def test_subgraph_of_generated_graph(self):
         """Test subgraph extraction from generated graph."""
         g = pygraphina.erdos_renyi(50, 0.3, 42)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         if len(nodes) >= 10:
             sub = g.subgraph(nodes[:10])
@@ -247,7 +247,7 @@ class TestGenerators:
     def test_star_graph_degrees(self):
         """Test that star graph has correct degree distribution."""
         g = pygraphina.star_graph(10)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
         degrees = [g.degree(node) for node in nodes]
 
         # One node (center) should have degree 9, others degree 1
@@ -265,7 +265,7 @@ class TestGenerators:
     def test_cycle_graph_all_degree_2(self):
         """Test that all nodes in cycle have degree 2."""
         g = pygraphina.cycle_graph(8)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         for node in nodes:
             assert g.degree(node) == 2

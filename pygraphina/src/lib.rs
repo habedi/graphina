@@ -7,27 +7,25 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::collections::HashMap;
 
-// Graph type modules
-mod digraph;
-mod digraph_ops;
-mod graph;
+// Core module must be declared first
+mod core;
+// Export types from core
+pub use core::PyDiGraph;
+pub use core::PyGraph;
+pub use core::exceptions::*;
 
 // Algorithm and utility modules
 mod approximation;
 mod centrality;
 mod community;
-mod core;
 mod links;
 mod metrics;
 mod mst;
 mod parallel;
 mod subgraphs;
 mod traversal;
+mod views;
 mod visualization;
-
-// Re-export graph types for use in other modules
-pub use digraph::PyDiGraph;
-pub use graph::PyGraph;
 
 /// Top-level convenience wrappers for common functions
 #[pyfunction]
@@ -57,6 +55,11 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // This allows users to write: pg.Graph() instead of pg.PyGraph()
     m.add("Graph", m.getattr("PyGraph")?)?;
     m.add("DiGraph", m.getattr("PyDiGraph")?)?;
+
+    // Register custom exceptions
+    m.add("GraphinaError", m.py().get_type::<GraphinaError>())?;
+    m.add("ConvergenceError", m.py().get_type::<ConvergenceError>())?;
+    m.add("NodeNotFoundError", m.py().get_type::<NodeNotFoundError>())?;
 
     // Register core generators at top-level for backward compatibility
     core::generators::register_generators(m)?;
@@ -153,6 +156,9 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_function(wrap_pyfunction!(to_node_dataframe, m)?)?;
         m.add_function(wrap_pyfunction!(to_edge_dataframe, m)?)?;
     }
+
+    // Register views
+    views::register_views(m)?;
 
     Ok(())
 }

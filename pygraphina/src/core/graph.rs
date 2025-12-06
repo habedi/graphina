@@ -4,6 +4,9 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
+use crate::views::degree::DegreeView;
+use crate::views::edge::EdgeView;
+use crate::views::node::NodeView;
 use graphina::core::types::{BaseGraph, NodeId, Undirected};
 
 /// A Python-accessible Graph class wrapping Graphina's core undirected graph.
@@ -69,14 +72,20 @@ impl PyGraph {
     pub fn contains_edge(&self, source: usize, target: usize) -> PyResult<bool> {
         self.contains_edge_impl(source, target)
     }
-    pub fn nodes(&self) -> Vec<usize> {
-        self.nodes_impl()
+    #[getter]
+    pub fn nodes(slf: PyRef<'_, Self>) -> PyResult<NodeView> {
+        let py = slf.py();
+        Ok(NodeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
+
     pub fn neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
         self.neighbors_impl(py_node)
     }
-    pub fn degree(&self, py_node: usize) -> Option<usize> {
-        self.degree_impl(py_node)
+
+    #[getter]
+    pub fn degree(slf: PyRef<'_, Self>) -> PyResult<DegreeView> {
+        let py = slf.py();
+        Ok(DegreeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
     pub fn get_node_attr(&self, py_node: usize) -> Option<i64> {
         self.get_node_attr_impl(py_node)
@@ -337,18 +346,11 @@ impl PyGraph {
     }
 
     // Edges/nodes view helpers expected by tests
-    pub fn edges(&self) -> Vec<(usize, usize)> {
-        self.graph
-            .edges()
-            .filter_map(|(u, v, _w)| {
-                let pu = self.internal_to_py.get(&u).copied();
-                let pv = self.internal_to_py.get(&v).copied();
-                match (pu, pv) {
-                    (Some(a), Some(b)) => Some((a, b)),
-                    _ => None,
-                }
-            })
-            .collect()
+    // Edges/nodes view helpers expected by tests
+    #[getter]
+    pub fn edges(slf: PyRef<'_, Self>) -> PyResult<EdgeView> {
+        let py = slf.py();
+        Ok(EdgeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
 
     pub fn edges_with_weights(&self) -> Vec<(usize, usize, f64)> {

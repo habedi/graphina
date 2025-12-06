@@ -2,6 +2,26 @@ use crate::PyGraph;
 use graphina::community::girvan_newman::girvan_newman as girvan_newman_core;
 use pyo3::prelude::*;
 
+/// Find communities using the Girvan-Newman algorithm.
+///
+/// Parameters
+/// ----------
+/// graph : PyGraph
+///     The input graph.
+/// target_communities : int
+///     Number of communities to stop at.
+///
+/// Returns
+/// -------
+/// list of list of int
+///     List of communities.
+///
+/// Raises
+/// ------
+/// GraphinaError
+///     If the algorithm fails.
+/// TypeError
+///     If graph is not PyGraph.
 #[pyfunction]
 pub fn girvan_newman(py_graph: &PyGraph, target_communities: usize) -> PyResult<Vec<Vec<usize>>> {
     match girvan_newman_core(&py_graph.graph, target_communities) {
@@ -14,7 +34,7 @@ pub fn girvan_newman(py_graph: &PyGraph, target_communities: usize) -> PyResult<
                     .collect()
             })
             .collect()),
-        Err(e) => Err(pyo3::exceptions::PyValueError::new_err(e.to_string())),
+        Err(e) => Err(crate::GraphinaError::new_err(e.to_string())),
     }
 }
 

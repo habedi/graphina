@@ -36,7 +36,7 @@ class TestComputeLayout:
         positions = pygraphina.visualization.compute_layout(g, "circular", 800, 600)
 
         assert len(positions) == 5
-        for node in g.nodes():
+        for node in g.nodes:
             assert node in positions
             x, y = positions[node]
             assert isinstance(x, float)
@@ -72,7 +72,7 @@ class TestComputeLayout:
         g = pygraphina.PyGraph()
         g.add_node(0)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(pygraphina.GraphinaError):
             pygraphina.visualization.compute_layout(g, "invalid_algorithm", 800, 600)
 
     def test_compute_layout_empty_graph(self):

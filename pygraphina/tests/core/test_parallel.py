@@ -48,7 +48,7 @@ class TestParallelAlgorithms:
     def test_bfs_parallel_multiple_starts(self):
         """Test parallel BFS with multiple starting nodes."""
         g = pygraphina.complete_graph(10)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         # Run from 3 different nodes
         results = pygraphina.bfs_parallel(g, nodes[:3])
@@ -90,7 +90,7 @@ class TestParallelAlgorithms:
         """Test parallel degrees on complete graph."""
         n = 10
         g = pygraphina.complete_graph(n)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         degrees = pygraphina.degrees_parallel(g)
 
@@ -102,7 +102,7 @@ class TestParallelAlgorithms:
     def test_degrees_parallel_star_graph(self):
         """Test parallel degrees on star graph."""
         g = pygraphina.star_graph(10)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         degrees = pygraphina.degrees_parallel(g)
 
@@ -204,14 +204,14 @@ class TestParallelAlgorithms:
         """Test that parallel BFS raises error for invalid node."""
         g, nodes = self.create_test_graph()
 
-        with pytest.raises(ValueError):
+        with pytest.raises(pygraphina.GraphinaError):
             pygraphina.bfs_parallel(g, [999])
 
     def test_bfs_parallel_mixed_valid_invalid(self):
         """Test parallel BFS with mix of valid and invalid nodes."""
         g, nodes = self.create_test_graph()
 
-        with pytest.raises(ValueError):
+        with pytest.raises(pygraphina.GraphinaError):
             pygraphina.bfs_parallel(g, [nodes[0], 999])
 
 
@@ -221,7 +221,7 @@ class TestParallelPerformance:
     def test_parallel_on_large_graph(self):
         """Test parallel algorithms on larger generated graph."""
         g = pygraphina.erdos_renyi(100, 0.1, 42)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         # Test parallel BFS
         results = pygraphina.bfs_parallel(g, nodes[:5])
@@ -238,7 +238,7 @@ class TestParallelPerformance:
     def test_parallel_consistency(self):
         """Test that parallel and sequential BFS give same results."""
         g = pygraphina.erdos_renyi(30, 0.3, 42)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         if len(nodes) > 0:
             start = nodes[0]
@@ -300,6 +300,20 @@ class TestPagerankParallel:
         assert len(scores) == 1
         assert n0 in scores
 
+    def test_pagerank_parallel_with_nstart(self):
+        """Test parallel PageRank with nstart."""
+        g = pygraphina.PyGraph()
+        n0 = g.add_node(0)
+        n1 = g.add_node(1)
+        g.add_edge(n0, n1, 1.0)
+        g.add_edge(n1, n0, 1.0)
+
+        nstart = {n0: 5.0, n1: 1.0}
+
+        scores = pygraphina.parallel.pagerank_parallel(g, 0.85, 100, 1e-6, nstart=nstart)
+        assert abs(scores[n0] - 0.5) < 1e-3
+        assert abs(scores[n1] - 0.5) < 1e-3
+
 
 class TestTrianglesParallel:
     """Tests for parallel triangle counting."""
@@ -327,7 +341,7 @@ class TestTrianglesParallel:
         triangles = pygraphina.parallel.triangles_parallel(g)
 
         # In K5, each node is part of C(4,2) = 6 triangles
-        for node in g.nodes():
+        for node in list(g.nodes):
             assert triangles[node] == 6
 
     def test_triangles_parallel_no_triangles(self):
@@ -340,7 +354,7 @@ class TestTrianglesParallel:
 
         triangles = pygraphina.parallel.triangles_parallel(g)
 
-        for node in g.nodes():
+        for node in list(g.nodes):
             assert triangles[node] == 0
 
     def test_triangles_parallel_empty_graph(self):
@@ -358,7 +372,7 @@ class TestClusteringCoefficientsParallel:
         g = pygraphina.complete_graph(5)
         coeffs = pygraphina.parallel.clustering_coefficients_parallel(g)
 
-        for node in g.nodes():
+        for node in list(g.nodes):
             assert abs(coeffs[node] - 1.0) < 1e-6
 
     def test_clustering_parallel_star_graph(self):
@@ -407,7 +421,7 @@ class TestShortestPathsParallel:
     def test_shortest_paths_parallel_complete_graph(self):
         """Test shortest paths on complete graph (all distances should be 1)."""
         g = pygraphina.complete_graph(5)
-        nodes = g.nodes()
+        nodes = list(g.nodes)
 
         paths = pygraphina.parallel.shortest_paths_parallel(g, [nodes[0]])
 
@@ -422,7 +436,7 @@ class TestShortestPathsParallel:
         g = pygraphina.PyGraph()
         g.add_node(0)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(pygraphina.GraphinaError):
             pygraphina.parallel.shortest_paths_parallel(g, [999])
 
     def test_shortest_paths_parallel_empty_sources(self):

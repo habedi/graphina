@@ -3,6 +3,28 @@ use graphina::community::label_propagation::label_propagation as label_propagati
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
+/// Detect communities using Label Propagation Algorithm.
+///
+/// Parameters
+/// ----------
+/// graph : PyGraph
+///     The input graph.
+/// max_iter : int
+///     Maximum number of iterations.
+/// seed : int, optional
+///     Random seed.
+///
+/// Returns
+/// -------
+/// dict
+///     Dictionary mapping node IDs to community label IDs.
+///
+/// Raises
+/// ------
+/// GraphinaError
+///     If the algorithm fails.
+/// TypeError
+///     If graph is not PyGraph.
 #[pyfunction]
 #[pyo3(signature = (py_graph, max_iter, seed=None))]
 pub fn label_propagation(
@@ -21,7 +43,7 @@ pub fn label_propagation(
             }
             Ok(result)
         }
-        Err(e) => Err(pyo3::exceptions::PyValueError::new_err(e.to_string())),
+        Err(e) => Err(crate::GraphinaError::new_err(e.to_string())),
     }
 }
 

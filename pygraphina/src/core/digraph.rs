@@ -4,6 +4,9 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
+use crate::views::degree::DegreeView;
+use crate::views::edge::EdgeView;
+use crate::views::node::NodeView;
 use graphina::core::types::{Digraph, NodeId};
 
 /// A Python-accessible DiGraph class wrapping Graphina's core directed graph.
@@ -127,11 +130,10 @@ impl PyDiGraph {
     }
 
     // Node queries
-    pub fn nodes(&self) -> Vec<usize> {
-        self.graph
-            .nodes()
-            .filter_map(|(nid, _)| self.internal_to_py.get(&nid).copied())
-            .collect()
+    #[getter]
+    pub fn nodes(slf: PyRef<'_, Self>) -> PyResult<NodeView> {
+        let py = slf.py();
+        Ok(NodeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
 
     pub fn neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
@@ -146,6 +148,13 @@ impl PyDiGraph {
             .collect())
     }
 
+    // Edges view
+    #[getter]
+    pub fn edges(slf: PyRef<'_, Self>) -> PyResult<EdgeView> {
+        let py = slf.py();
+        Ok(EdgeView::new(slf.into_pyobject(py)?.into_any().unbind()))
+    }
+
     pub fn out_neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
         self.out_neighbors_impl(py_node)
     }
@@ -154,8 +163,10 @@ impl PyDiGraph {
         self.in_neighbors_impl(py_node)
     }
 
-    pub fn degree(&self, py_node: usize) -> Option<usize> {
-        self.degree_impl(py_node)
+    #[getter]
+    pub fn degree(slf: PyRef<'_, Self>) -> PyResult<DegreeView> {
+        let py = slf.py();
+        Ok(DegreeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
 
     pub fn in_degree(&self, py_node: usize) -> Option<usize> {

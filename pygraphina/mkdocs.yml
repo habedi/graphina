@@ -45,6 +45,7 @@ nav:
       - Core Operations:
           - Building Graphs: api/core/builders.md
           - Graph I/O: api/core/io.md
+          - Interoperability: api/core/interop.md
           - Graph Generators: api/core/generators.md
           - Paths: api/core/paths.md
       - Centrality:

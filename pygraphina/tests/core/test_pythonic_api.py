@@ -26,7 +26,7 @@ def test_pythonic_conveniences_basic():
     assert nodes_attrs[ids[2]] == 30
 
     # edges helpers
-    es = set(g.edges())
+    es = set(g.edges)
     assert (ids[0], ids[1]) in es or (ids[1], ids[0]) in es
 
     esw = {(u, v): w for (u, v, w) in g.edges_with_weights()}

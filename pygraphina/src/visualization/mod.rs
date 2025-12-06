@@ -1,33 +1,38 @@
-use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-use crate::PyGraph;
+use crate::{PyDiGraph, PyGraph};
 use graphina::visualization::layout::{LayoutAlgorithm, LayoutEngine};
 
 /// Compute node positions for graph visualization.
 ///
-/// Args:
-///     graph: Input graph
-///     algorithm: Layout algorithm name. Options: "force_directed", "circular",
-///                "hierarchical", "grid", "random"
-///     width: Canvas width (default 800)
-///     height: Canvas height (default 600)
+/// Parameters
+/// ----------
+/// graph : PyGraph or PyDiGraph
+///     The input graph.
+/// algorithm : str, optional
+///     Layout algorithm name. Options: "force_directed", "circular",
+///     "hierarchical", "grid", "random". Default "force_directed".
+/// width : float, optional
+///     Canvas width (default 800).
+/// height : float, optional
+///     Canvas height (default 600).
 ///
-/// Returns:
-///     dict: Mapping of node ID to (x, y) position tuple
+/// Returns
+/// -------
+/// dict
+///     Mapping of node ID to (x, y) position tuple.
 ///
-/// Example:
-///     >>> g = pygraphina.PyGraph()
-///     >>> n0 = g.add_node(0)
-///     >>> n1 = g.add_node(1)
-///     >>> g.add_edge(n0, n1, 1.0)
-///     >>> positions = pygraphina.visualization.compute_layout(g, "circular", 800, 600)
-///     >>> print(positions[n0])  # (x, y) tuple
+/// Raises
+/// ------
+/// GraphinaError
+///     If algorithm is unknown.
+/// TypeError
+///     If graph is not PyGraph or PyDiGraph.
 #[pyfunction]
 #[pyo3(signature = (graph, algorithm="force_directed", width=800.0, height=600.0))]
 pub fn compute_layout(
-    graph: &PyGraph,
+    graph: &Bound<'_, PyAny>,
     algorithm: &str,
     width: f64,
     height: f64,
@@ -39,89 +44,137 @@ pub fn compute_layout(
         "grid" => LayoutAlgorithm::Grid,
         "random" => LayoutAlgorithm::Random,
         _ => {
-            return Err(PyValueError::new_err(format!(
+            return Err(crate::GraphinaError::new_err(format!(
                 "Unknown layout algorithm: '{}'. Valid options: force_directed, circular, hierarchical, grid, random",
                 algorithm
             )));
         }
     };
 
-    let positions = LayoutEngine::compute_layout(&graph.graph, layout_algo, width, height);
+    if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
+        let positions =
+            LayoutEngine::compute_layout(&py_graph.graph, layout_algo.clone(), width, height);
 
-    let mut out = HashMap::new();
-    for (nid, pos) in positions.into_iter() {
-        if let Some(&pyid) = graph.internal_to_py.get(&nid) {
-            out.insert(pyid, (pos.x, pos.y));
+        let mut out = HashMap::new();
+        for (nid, pos) in positions.into_iter() {
+            if let Some(&pyid) = py_graph.internal_to_py.get(&nid) {
+                out.insert(pyid, (pos.x, pos.y));
+            }
         }
+        Ok(out)
+    } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
+        let positions =
+            LayoutEngine::compute_layout(&py_graph.graph, layout_algo.clone(), width, height);
+
+        let mut out = HashMap::new();
+        for (nid, pos) in positions.into_iter() {
+            if let Some(&pyid) = py_graph.internal_to_py.get(&nid) {
+                out.insert(pyid, (pos.x, pos.y));
+            }
+        }
+        Ok(out)
+    } else {
+        Err(pyo3::exceptions::PyTypeError::new_err(
+            "Expected PyGraph or PyDiGraph",
+        ))
     }
-    Ok(out)
 }
 
 /// Export graph to D3.js-compatible JSON format.
 ///
-/// Args:
-///     graph: Input graph
+/// Parameters
+/// ----------
+/// graph : PyGraph or PyDiGraph
+///     The input graph.
 ///
-/// Returns:
-///     str: JSON string compatible with D3.js force-directed graphs
+/// Returns
+/// -------
+/// str
+///     JSON string compatible with D3.js force-directed graphs.
 ///
-/// Example:
-///     >>> g = pygraphina.PyGraph()
-///     >>> n0 = g.add_node(0)
-///     >>> n1 = g.add_node(1)
-///     >>> g.add_edge(n0, n1, 1.0)
-///     >>> json_str = pygraphina.visualization.to_d3_json(g)
+/// Raises
+/// ------
+/// TypeError
+///     If graph is not PyGraph or PyDiGraph.
 #[pyfunction]
-pub fn to_d3_json(graph: &PyGraph) -> PyResult<String> {
-    graph
-        .graph
-        .to_d3_json()
-        .map_err(|e| PyValueError::new_err(e.to_string()))
+pub fn to_d3_json(graph: &Bound<'_, PyAny>) -> PyResult<String> {
+    if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
+        py_graph
+            .graph
+            .to_d3_json()
+            .map_err(|e| crate::GraphinaError::new_err(e.to_string()))
+    } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
+        py_graph
+            .graph
+            .to_d3_json()
+            .map_err(|e| crate::GraphinaError::new_err(e.to_string()))
+    } else {
+        Err(pyo3::exceptions::PyTypeError::new_err(
+            "Expected PyGraph or PyDiGraph",
+        ))
+    }
 }
 
 /// Generate ASCII art representation of the graph.
 ///
 /// Useful for quick debugging and terminal visualization.
 ///
-/// Args:
-///     graph: Input graph
+/// Parameters
+/// ----------
+/// graph : PyGraph or PyDiGraph
+///     The input graph.
 ///
-/// Returns:
-///     str: ASCII art showing nodes, edges, and adjacency matrix (for small graphs)
+/// Returns
+/// -------
+/// str
+///     ASCII art showing nodes, edges, and adjacency matrix (for small graphs).
 ///
-/// Example:
-///     >>> g = pygraphina.PyGraph()
-///     >>> n0 = g.add_node(0)
-///     >>> n1 = g.add_node(1)
-///     >>> g.add_edge(n0, n1, 1.0)
-///     >>> print(pygraphina.visualization.to_ascii_art(g))
+/// Raises
+/// ------
+/// TypeError
+///     If graph is not PyGraph or PyDiGraph.
 #[pyfunction]
-pub fn to_ascii_art(graph: &PyGraph) -> String {
-    graph.graph.to_ascii_art()
+pub fn to_ascii_art(graph: &Bound<'_, PyAny>) -> PyResult<String> {
+    if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
+        Ok(py_graph.graph.to_ascii_art())
+    } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
+        Ok(py_graph.graph.to_ascii_art())
+    } else {
+        Err(pyo3::exceptions::PyTypeError::new_err(
+            "Expected PyGraph or PyDiGraph",
+        ))
+    }
 }
 
 /// Save graph as interactive HTML file with D3.js visualization.
 ///
 /// Creates a standalone HTML file with zoomable, draggable nodes.
 ///
-/// Args:
-///     graph: Input graph
-///     path: Output file path
-///     layout: Layout algorithm (default "force_directed")
-///     width: Canvas width (default 800)
-///     height: Canvas height (default 600)
-///     show_labels: Whether to show node labels (default True)
+/// Parameters
+/// ----------
+/// graph : PyGraph or PyDiGraph
+///     The input graph.
+/// path : str
+///     Output file path.
+/// layout : str, optional
+///     Layout algorithm (default "force_directed").
+/// width : int, optional
+///     Canvas width (default 800).
+/// height : int, optional
+///     Canvas height (default 600).
+/// show_labels : bool, optional
+///     Whether to show node labels (default True).
 ///
-/// Example:
-///     >>> g = pygraphina.PyGraph()
-///     >>> n0 = g.add_node(0)
-///     >>> n1 = g.add_node(1)
-///     >>> g.add_edge(n0, n1, 1.0)
-///     >>> pygraphina.visualization.save_as_html(g, "graph.html")
+/// Raises
+/// ------
+/// GraphinaError
+///     If saving fails.
+/// TypeError
+///     If graph is not PyGraph or PyDiGraph.
 #[pyfunction]
 #[pyo3(signature = (graph, path, layout="force_directed", width=800, height=600, show_labels=true))]
 pub fn save_as_html(
-    graph: &PyGraph,
+    graph: &Bound<'_, PyAny>,
     path: &str,
     layout: &str,
     width: u32,
@@ -147,10 +200,21 @@ pub fn save_as_html(
         ..Default::default()
     };
 
-    graph
-        .graph
-        .save_as_html(path, &config)
-        .map_err(|e| PyValueError::new_err(e.to_string()))
+    if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
+        py_graph
+            .graph
+            .save_as_html(path, &config)
+            .map_err(|e| crate::GraphinaError::new_err(e.to_string()))
+    } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
+        py_graph
+            .graph
+            .save_as_html(path, &config)
+            .map_err(|e| crate::GraphinaError::new_err(e.to_string()))
+    } else {
+        Err(pyo3::exceptions::PyTypeError::new_err(
+            "Expected PyGraph or PyDiGraph",
+        ))
+    }
 }
 
 pub fn register_visualization(m: &Bound<'_, PyModule>) -> PyResult<()> {

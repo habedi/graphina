@@ -129,7 +129,7 @@ def test_edge_list_roundtrip(tmp_path: "pytest.TempPathFactory"):
     # Compare degree sequences
     def degseq(pg: pygraphina.PyGraph):
         ds = []
-        for nid in pg.nodes():
+        for nid in pg.nodes:
             ds.append(pg.degree(nid) or 0)
         return sorted(ds)
 

@@ -24,7 +24,7 @@ class TestTypeConsistencyFix:
         """Test that generated graphs maintain correct node attributes."""
         g = pg.complete_graph(5)
 
-        nodes = g.nodes()
+        nodes = g.nodes
         attrs = [g.get_node_attr(n) for n in nodes]
 
         assert len(attrs) == 5
@@ -53,7 +53,7 @@ class TestTypeConsistencyFix:
 
         sub = g.subgraph([n0, n1])
 
-        nodes = sub.nodes()
+        nodes = sub.nodes
         assert len(nodes) == 2
         attrs = [sub.get_node_attr(n) for n in nodes]
 
@@ -86,7 +86,7 @@ class TestTypeConsistencyFix:
         g.add_edge(n0, n1, 3.14159)
 
         induced = g.induced_subgraph([n0, n1])
-        nodes = induced.nodes()
+        nodes = induced.nodes
 
         assert len(nodes) == 2
         attrs = [induced.get_node_attr(n) for n in nodes]
@@ -245,7 +245,7 @@ class TestFilterOperations:
         filtered = g.filter_nodes(lambda nid, attr: attr >= 20)
 
         assert filtered.node_count() == 2
-        nodes = filtered.nodes()
+        nodes = filtered.nodes
         attrs = [filtered.get_node_attr(n) for n in nodes]
         assert set(attrs) == {20, 30}
 
@@ -287,7 +287,7 @@ class TestEgoGraphOperations:
         ego = g.ego_graph(n0, 2)
 
         assert ego.node_count() == 3
-        nodes = ego.nodes()
+        nodes = ego.nodes
         attrs = [ego.get_node_attr(n) for n in nodes]
         assert set(attrs) == {0, 1, 2}
 
@@ -310,7 +310,7 @@ class TestComponentOperations:
         comp = g.component_subgraph(n0)
 
         assert comp.node_count() == 2
-        nodes = comp.nodes()
+        nodes = comp.nodes
         attrs = [comp.get_node_attr(n) for n in nodes]
         assert set(attrs) == {10, 20}
 
