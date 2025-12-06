@@ -23,6 +23,7 @@ mod mst;
 mod parallel;
 mod subgraphs;
 mod traversal;
+mod visualization;
 
 // Re-export graph types for use in other modules
 pub use digraph::PyDiGraph;
@@ -140,6 +141,10 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let links_mod = PyModule::new(m.py(), "links")?;
     links::register_links(&links_mod)?;
     m.add_submodule(&links_mod)?;
+
+    let visualization_mod = PyModule::new(m.py(), "visualization")?;
+    visualization::register_visualization(&visualization_mod)?;
+    m.add_submodule(&visualization_mod)?;
 
     #[cfg(feature = "networkx")]
     {
