@@ -70,11 +70,11 @@ Compute node positions for graph visualization.
 
 - `graph`: Input graph.
 - `algorithm`: Layout algorithm name.
-  - `"force_directed"`: Physics-based force simulation (default).
-  - `"circular"`: Nodes arranged in a circle.
-  - `"hierarchical"`: Tree-like layout (Sugiyama).
-  - `"grid"`: Regular grid arrangement.
-  - `"random"`: Random placement.
+    - `"force_directed"`: Physics-based force simulation (default).
+    - `"circular"`: Nodes arranged in a circle.
+    - `"hierarchical"`: Tree-like layout (Sugiyama).
+    - `"grid"`: Regular grid arrangement.
+    - `"random"`: Random placement.
 - `width`: Canvas width.
 - `height`: Canvas height.
 

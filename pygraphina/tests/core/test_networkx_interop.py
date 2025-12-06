@@ -1,6 +1,5 @@
-import pytest
-
 import pygraphina as pg
+import pytest
 
 try:
     import networkx as nx

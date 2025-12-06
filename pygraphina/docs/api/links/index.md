@@ -5,6 +5,7 @@ Link prediction estimates the likelihood of future connections between nodes bas
 ## Overview
 
 Link prediction is used for:
+
 - Recommender systems (suggest new connections)
 - Knowledge graph completion (fill missing relationships)
 - Network evolution analysis (predict growth)
@@ -12,14 +13,14 @@ Link prediction is used for:
 
 ## Available Algorithms
 
-| Algorithm | Time | Space | Best For |
-|-----------|------|-------|----------|
-| Jaccard | O(V²·d) | O(V²) | General similarity |
-| Adamic-Adar | O(V²·d) | O(V²) | Social networks |
-| Resource Allocation | O(V²·d) | O(V²) | Information networks |
-| Preferential Attachment | O(V²) | O(V²) | Scale-free networks |
-| Common Neighbors | O(V²·d) | O(V²) | Quick baseline |
-| Centrality-Based | O(V·E) | O(V) | Influence networks |
+| Algorithm               | Time    | Space | Best For             |
+|-------------------------|---------|-------|----------------------|
+| Jaccard                 | O(V²·d) | O(V²) | General similarity   |
+| Adamic-Adar             | O(V²·d) | O(V²) | Social networks      |
+| Resource Allocation     | O(V²·d) | O(V²) | Information networks |
+| Preferential Attachment | O(V²)   | O(V²) | Scale-free networks  |
+| Common Neighbors        | O(V²·d) | O(V²) | Quick baseline       |
+| Centrality-Based        | O(V·E)  | O(V)  | Influence networks   |
 
 Where d is average degree.
 
@@ -84,15 +85,19 @@ print(f"Precision: {hits / len(predictions):.3f}")
 ## Choosing an Algorithm
 
 ### For Balanced Performance
+
 Use Jaccard or Adamic-Adar
 
 ### For Speed
+
 Use Common Neighbors or Preferential Attachment
 
 ### For Quality
+
 Use Resource Allocation or Centrality-Based
 
 ### For Scale-Free Networks
+
 Use Preferential Attachment
 
 ## Metrics

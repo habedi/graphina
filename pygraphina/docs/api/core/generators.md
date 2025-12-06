@@ -11,6 +11,7 @@ pg.core.erdos_renyi_graph(n, p, seed=None)
 ```
 
 Random graph where each edge exists with probability p.
+
 - Properties: Uniform random
 - Uses: Null model, baseline comparisons
 - Time: O(V²)
@@ -22,6 +23,7 @@ pg.core.barabasi_albert_graph(n, m, seed=None)
 ```
 
 Preferential attachment model - new nodes attach to existing high-degree nodes.
+
 - Properties: Scale-free, power-law degree distribution
 - Uses: Social networks, web graphs
 - Time: O(V·m)
@@ -33,6 +35,7 @@ pg.core.watts_strogatz_graph(n, k, p, seed=None)
 ```
 
 Small-world model - regular lattice with random rewiring.
+
 - Properties: High clustering, low diameter
 - Uses: Social networks, biological networks
 - Time: O(V)
@@ -46,6 +49,7 @@ pg.core.complete_graph(n)
 ```
 
 All possible edges present (K_n).
+
 - Edges: n(n-1)/2
 - Density: 1.0
 - Diameter: 1
@@ -57,6 +61,7 @@ pg.core.cycle_graph(n)
 ```
 
 Nodes arranged in a circle.
+
 - Edges: n
 - Diameter: n/2
 - Uses: Ring networks
@@ -68,6 +73,7 @@ pg.core.path_graph(n)
 ```
 
 Linear chain of nodes.
+
 - Edges: n-1
 - Diameter: n-1
 - Uses: Sequential structures
@@ -103,12 +109,12 @@ for graph in [er, ba, ws]:
 
 ## Properties Comparison
 
-| Property | ER | BA | WS |
-|----------|----|----|-----|
-| Clustering | Low | Low-Medium | High |
-| Diameter | Small | Small-Medium | Small |
-| Degree Distribution | Binomial | Power-law | Regular |
-| Realism | Low | High | Medium |
+| Property            | ER       | BA           | WS      |
+|---------------------|----------|--------------|---------|
+| Clustering          | Low      | Low-Medium   | High    |
+| Diameter            | Small    | Small-Medium | Small   |
+| Degree Distribution | Binomial | Power-law    | Regular |
+| Realism             | Low      | High         | Medium  |
 
 ## Seeding
 

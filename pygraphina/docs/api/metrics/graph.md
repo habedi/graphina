@@ -83,10 +83,10 @@ print(f"Assortativity: {g.assortativity():.4f}")
 
 ## Time Complexity
 
-| Metric | Complexity |
-|--------|-----------|
-| Basic | O(1) to O(V) |
-| Diameter | O(V·E) |
-| Clustering | O(V·d²) |
-| Path Length | O(V·E) |
-| Assortativity | O(E) |
+| Metric        | Complexity   |
+|---------------|--------------|
+| Basic         | O(1) to O(V) |
+| Diameter      | O(V·E)       |
+| Clustering    | O(V·d²)      |
+| Path Length   | O(V·E)       |
+| Assortativity | O(E)         |

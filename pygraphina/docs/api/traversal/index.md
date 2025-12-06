@@ -4,12 +4,12 @@ Graph traversal algorithms systematically visit all nodes in a graph, exploring 
 
 ## Available Algorithms
 
-| Algorithm | Time | Space | Usage |
-|-----------|------|-------|-------|
-| BFS | O(V+E) | O(V) | Level-order exploration |
-| DFS | O(V+E) | O(V) | Deep exploration |
-| IDDFS | O(V+E) | O(d) | Limited memory |
-| Bidirectional | O(V+E) | O(V) | Point-to-point paths |
+| Algorithm     | Time   | Space | Usage                   |
+|---------------|--------|-------|-------------------------|
+| BFS           | O(V+E) | O(V)  | Level-order exploration |
+| DFS           | O(V+E) | O(V)  | Deep exploration        |
+| IDDFS         | O(V+E) | O(d)  | Limited memory          |
+| Bidirectional | O(V+E) | O(V)  | Point-to-point paths    |
 
 ## Common Usage Pattern
 

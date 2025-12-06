@@ -1,6 +1,7 @@
 # Label Propagation
 
-Label propagation is a fast, iterative community detection algorithm that assigns nodes to communities based on their neighbors.
+Label propagation is a fast, iterative community detection algorithm that assigns nodes to communities based on their
+neighbors.
 
 ## Function Signature
 
@@ -90,9 +91,9 @@ for comm_id, count in Counter(communities.values()).items():
 
 ## Comparison with Other Methods
 
-| Algorithm | Speed | Quality | Parameters |
-|-----------|-------|---------|-----------|
-| Label Propagation | Very Fast | Good | Minimal |
-| Louvain | Fast | Excellent | Resolution |
-| Girvan-Newman | Slow | Good | None |
-| Spectral | Medium | Good | k |
+| Algorithm         | Speed     | Quality   | Parameters |
+|-------------------|-----------|-----------|------------|
+| Label Propagation | Very Fast | Good      | Minimal    |
+| Louvain           | Fast      | Excellent | Resolution |
+| Girvan-Newman     | Slow      | Good      | None       |
+| Spectral          | Medium    | Good      | k          |

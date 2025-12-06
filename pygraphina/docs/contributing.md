@@ -53,6 +53,7 @@ git checkout -b fix/bug-description
 ```
 
 Use descriptive branch names:
+
 - `feature/add-clustering-algorithm`
 - `fix/pagerank-convergence-bug`
 - `docs/improve-quickstart-guide`
@@ -86,6 +87,7 @@ git commit -m "Add: Support for weighted Katz centrality"
 ```
 
 Commit message format:
+
 - `Add: New feature or functionality`
 - `Fix: Bug fix`
 - `Docs: Documentation changes`
@@ -106,6 +108,7 @@ Then go to GitHub and create a pull request.
 ### Python Code
 
 PyGraphina uses:
+
 - **Ruff** for linting and formatting
 - **mypy** for type checking
 
@@ -123,6 +126,7 @@ mypy pygraphina/
 ```
 
 Python style guidelines:
+
 - Follow PEP 8
 - Use type hints
 - Write docstrings (Google style)
@@ -161,6 +165,7 @@ def calculate_centrality(
 ### Rust Code
 
 For Rust code in PyGraphina:
+
 - Follow Rust conventions
 - Use `clippy` for linting: `cargo clippy`
 - Format with `rustfmt`: `cargo fmt`
@@ -237,6 +242,7 @@ def test_pagerank_damping_factor(damping):
 ### Test Coverage
 
 Aim for high test coverage:
+
 - Unit tests for individual functions
 - Integration tests for algorithm combinations
 - Edge cases (empty graphs, single nodes, etc.)
@@ -361,6 +367,7 @@ If you need help:
 ## Recognition
 
 Contributors are recognized in:
+
 - GitHub contributors page
 - Release notes
 - Documentation acknowledgments

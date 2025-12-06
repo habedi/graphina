@@ -21,6 +21,7 @@ pg.links.centrality_based(graph: Union[PyGraph, PyDiGraph]) -> Dict[Tuple[int, i
 ## Combinations Used
 
 Common combinations:
+
 - **PageRank Product**: PR(u) * PR(v)
 - **Betweenness Sum**: BC(u) + BC(v)
 - **Closeness Product**: C(u) * C(v)

@@ -41,8 +41,8 @@ O(k·(V + E)) where k is number of iterations
 ## Parameters
 
 - **alpha**: Smaller values = less weight on longer paths
-  - Typical range: 0.01 to 0.3
-  - Default 0.1 works well
+    - Typical range: 0.01 to 0.3
+    - Default 0.1 works well
 - **max_iters**: Usually converges in 10-50 iterations
 
 ## Example
@@ -88,9 +88,9 @@ for node, score in sorted(katz.items()):
 
 ## Comparison
 
-| Centrality | Basis | Best For |
-|-----------|-------|----------|
-| Katz | All paths (weighted) | Influence via all routes |
-| Betweenness | Shortest paths | Bridges/bottlenecks |
-| Eigenvector | Important neighbors | Influence via connections |
-| PageRank | Random walk | Web ranking |
+| Centrality  | Basis                | Best For                  |
+|-------------|----------------------|---------------------------|
+| Katz        | All paths (weighted) | Influence via all routes  |
+| Betweenness | Shortest paths       | Bridges/bottlenecks       |
+| Eigenvector | Important neighbors  | Influence via connections |
+| PageRank    | Random walk          | Web ranking               |

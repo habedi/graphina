@@ -9,10 +9,10 @@ use std::collections::HashMap;
 
 // Core module must be declared first
 mod core;
+pub use core::exceptions::*;
 // Export types from core
 pub use core::PyDiGraph;
 pub use core::PyGraph;
-pub use core::exceptions::*;
 
 // Algorithm and utility modules
 mod approximation;

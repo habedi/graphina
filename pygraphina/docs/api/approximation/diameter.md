@@ -1,10 +1,12 @@
 # Diameter Approximation
 
-The diameter is the longest shortest path in a graph. Computing exact diameter requires O(V·E) time, so approximation is often used.
+The diameter is the longest shortest path in a graph. Computing exact diameter requires O(V·E) time, so approximation is
+often used.
 
 ## Overview
 
-Graph diameter measures the maximum distance between any two nodes. It characterizes network communication latency and overall network scale.
+Graph diameter measures the maximum distance between any two nodes. It characterizes network communication latency and
+overall network scale.
 
 ## Time Complexity
 

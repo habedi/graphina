@@ -72,11 +72,11 @@ print(f"Common neighbors (0,3): {common.get(key, 'N/A')}")
 
 ## Comparison
 
-| Metric | Complexity | Range | Sensitivity |
-|--------|-----------|-------|-------------|
-| Common Neighbors | O(d²) | [0, ∞) | Depends on degree |
-| Jaccard | O(d²) | [0, 1] | Normalized |
-| Adamic-Adar | O(d² log V) | [0, ∞) | Low-degree aware |
+| Metric           | Complexity  | Range  | Sensitivity       |
+|------------------|-------------|--------|-------------------|
+| Common Neighbors | O(d²)       | [0, ∞) | Depends on degree |
+| Jaccard          | O(d²)       | [0, 1] | Normalized        |
+| Adamic-Adar      | O(d² log V) | [0, ∞) | Low-degree aware  |
 
 ## Use Cases
 

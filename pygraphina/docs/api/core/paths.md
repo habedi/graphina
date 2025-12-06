@@ -4,14 +4,14 @@ Path algorithms find optimal or near-optimal routes through graphs.
 
 ## Available Algorithms
 
-| Algorithm | Type | Time | Negatives | Use Case |
-|-----------|------|------|-----------|----------|
-| Dijkstra | Single-source | O(E log V) | No | Shortest paths |
-| Bellman-Ford | Single-source | O(V·E) | Yes | General paths |
-| Floyd-Warshall | All-pairs | O(V³) | Yes | Complete distance matrix |
-| BFS | Unweighted | O(V+E) | N/A | Unweighted shortest paths |
-| A* | Point-to-point | O(E) | No | Heuristic-guided |
-| Dijkstra (One-to-One) | Point-to-point | O(E log V) | No | Single path |
+| Algorithm             | Type           | Time       | Negatives | Use Case                  |
+|-----------------------|----------------|------------|-----------|---------------------------|
+| Dijkstra              | Single-source  | O(E log V) | No        | Shortest paths            |
+| Bellman-Ford          | Single-source  | O(V·E)     | Yes       | General paths             |
+| Floyd-Warshall        | All-pairs      | O(V³)      | Yes       | Complete distance matrix  |
+| BFS                   | Unweighted     | O(V+E)     | N/A       | Unweighted shortest paths |
+| A*                    | Point-to-point | O(E)       | No        | Heuristic-guided          |
+| Dijkstra (One-to-One) | Point-to-point | O(E log V) | No        | Single path               |
 
 ## Common Usage
 
@@ -81,10 +81,12 @@ print(f"Distance 0->4: {all_distances[0][4]}")
 ## Complexity Comparison
 
 For single-source shortest paths:
+
 - Dijkstra: O(E log V) [best with binary heap]
 - Bellman-Ford: O(V·E) [general but slower]
 - BFS: O(V+E) [unweighted only]
 
 For all-pairs:
+
 - Floyd-Warshall: O(V³) [small graphs]
 - Repeated Dijkstra: O(V·E log V) [sparse graphs]

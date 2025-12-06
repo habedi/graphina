@@ -4,9 +4,8 @@ Tests for visualization module in pygraphina.
 import os
 import tempfile
 
-import pytest
-
 import pygraphina
+import pytest
 
 
 class TestComputeLayout:

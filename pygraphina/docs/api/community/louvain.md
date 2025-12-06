@@ -15,9 +15,9 @@ pg.community.louvain(
 
 - **graph**: Undirected graph to analyze
 - **resolution**: Resolution parameter for community size
-  - < 1.0: Larger communities
-  - = 1.0: Default (default)
-  - > 1.0: Smaller communities
+    - < 1.0: Larger communities
+    - = 1.0: Default (default)
+    - > 1.0: Smaller communities
 
 ## Returns
 
@@ -91,6 +91,7 @@ The resolution parameter controls community size:
 - **2.0**: Smaller, finer communities
 
 Choose resolution based on application:
+
 - Network analysis: 1.0 (default)
 - Finding major groups: 0.5
 - Finding micro-communities: 2.0
@@ -105,15 +106,16 @@ Choose resolution based on application:
 ## Reproducibility
 
 For reproducible results with the same graph:
+
 - Results are deterministic with same seed (if available)
 - Try multiple resolutions
 - Average results if needed
 
 ## Comparison
 
-| Algorithm | Speed | Quality | Scalability |
-|-----------|-------|---------|-------------|
-| Louvain | Very Fast | Good-Excellent | Excellent |
-| Girvan-Newman | Slow | Excellent | Poor |
-| Label Propagation | Fast | Good | Excellent |
-| Spectral | Medium | Good | Medium |
+| Algorithm         | Speed     | Quality        | Scalability |
+|-------------------|-----------|----------------|-------------|
+| Louvain           | Very Fast | Good-Excellent | Excellent   |
+| Girvan-Newman     | Slow      | Excellent      | Poor        |
+| Label Propagation | Fast      | Good           | Excellent   |
+| Spectral          | Medium    | Good           | Medium      |

@@ -4,12 +4,12 @@ PyGraphina supports multiple formats for saving and loading graphs.
 
 ## Supported Formats
 
-| Format | Read | Write | Best For |
-|--------|------|-------|----------|
-| Edge List | Yes | Yes | Simple, human-readable |
-| JSON | Yes | Yes | Data interchange |
-| Binary | Yes | Yes | Speed, compact storage |
-| GraphML | No | Yes | Standard graph format |
+| Format    | Read | Write | Best For               |
+|-----------|------|-------|------------------------|
+| Edge List | Yes  | Yes   | Simple, human-readable |
+| JSON      | Yes  | Yes   | Data interchange       |
+| Binary    | Yes  | Yes   | Speed, compact storage |
+| GraphML   | No   | Yes   | Standard graph format  |
 
 ## Edge List Format
 
@@ -25,6 +25,7 @@ num_nodes, num_edges = g.load_edge_list("graph.txt", sep=" ")
 ```
 
 File format:
+
 ```
 source target weight
 0 1 1.0
@@ -100,6 +101,7 @@ assert g2.edge_count() == g.edge_count()
 ## Separator Options for Edge Lists
 
 Common separators:
+
 - `" "` (space) - default, human-readable
 - `","` (comma) - CSV format
 - `"\t"` (tab) - tab-separated
@@ -116,12 +118,12 @@ g3.load_edge_list("graph.tsv", sep="\t")
 
 ## Format Comparison
 
-| Property | Edge List | JSON | Binary |
-|----------|-----------|------|--------|
-| Human-Readable | Yes | Yes | No |
-| Compact | Moderate | No | Yes |
-| Fast | Moderate | Slow | Fast |
-| Standard | Yes | Yes | No |
+| Property       | Edge List | JSON | Binary |
+|----------------|-----------|------|--------|
+| Human-Readable | Yes       | Yes  | No     |
+| Compact        | Moderate  | No   | Yes    |
+| Fast           | Moderate  | Slow | Fast   |
+| Standard       | Yes       | Yes  | No     |
 
 ## Tips
 

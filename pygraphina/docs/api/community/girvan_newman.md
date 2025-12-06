@@ -1,6 +1,7 @@
 # Girvan-Newman Algorithm
 
-Girvan-Newman is a divisive algorithm that detects communities by iteratively removing edges with high betweenness centrality.
+Girvan-Newman is a divisive algorithm that detects communities by iteratively removing edges with high betweenness
+centrality.
 
 ## Function Signature
 
@@ -103,9 +104,9 @@ print(f"Communities: {dict(groups)}")
 
 ## Comparison
 
-| Algorithm | Speed | Quality | Parameters |
-|-----------|-------|---------|-----------|
-| Girvan-Newman | Slow | Excellent | k (num communities) |
-| Label Propagation | Very Fast | Good | max_iters |
-| Louvain | Fast | Excellent | resolution |
-| Spectral | Medium | Good | k (num communities) |
+| Algorithm         | Speed     | Quality   | Parameters          |
+|-------------------|-----------|-----------|---------------------|
+| Girvan-Newman     | Slow      | Excellent | k (num communities) |
+| Label Propagation | Very Fast | Good      | max_iters           |
+| Louvain           | Fast      | Excellent | resolution          |
+| Spectral          | Medium    | Good      | k (num communities) |

@@ -73,12 +73,12 @@ for node in nodes:
 
 ## Time Complexity
 
-| Metric | Complexity |
-|--------|-----------|
-| Degree | O(1) |
-| Neighbors | O(degree) |
+| Metric     | Complexity |
+|------------|------------|
+| Degree     | O(1)       |
+| Neighbors  | O(degree)  |
 | Clustering | O(degree²) |
-| Triangles | O(degree²) |
+| Triangles  | O(degree²) |
 
 ## Use Cases
 

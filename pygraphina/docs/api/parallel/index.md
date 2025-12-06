@@ -4,19 +4,22 @@ Parallel algorithms use multi-threading to speed up computations on large graphs
 
 ## Overview
 
-PyGraphina provides parallel implementations of common graph algorithms that leverage multiple CPU cores. These algorithms are useful when working with large graphs where the overhead of parallelization is offset by the performance gain.
+PyGraphina provides parallel implementations of common graph algorithms that leverage multiple CPU cores. These
+algorithms are useful when working with large graphs where the overhead of parallelization is offset by the performance
+gain.
 
 All parallel functions are available under the `pg.parallel` module.
 
 ## Available Functions
 
-| Function | Sequential Equivalent | Time Complexity | Best For |
-|----------|----------------------|----------------|----------|
-| `bfs_parallel()` | Multiple BFS calls | O(V + E) per start | Multiple traversals |
-| `degrees_parallel()` | `degree()` for each node | O(V + E) | Computing all degrees |
-| `connected_components_parallel()` | `connected_components()` | O(V + E) | Large graphs |
+| Function                          | Sequential Equivalent    | Time Complexity    | Best For              |
+|-----------------------------------|--------------------------|--------------------|-----------------------|
+| `bfs_parallel()`                  | Multiple BFS calls       | O(V + E) per start | Multiple traversals   |
+| `degrees_parallel()`              | `degree()` for each node | O(V + E)           | Computing all degrees |
+| `connected_components_parallel()` | `connected_components()` | O(V + E)           | Large graphs          |
 
 Where:
+
 - V = number of nodes
 - E = number of edges
 

@@ -1,6 +1,7 @@
 # Clustering Coefficient Approximation
 
-Clustering coefficient measures the density of triangles around each node. For large graphs, sampling-based approximation is used.
+Clustering coefficient measures the density of triangles around each node. For large graphs, sampling-based
+approximation is used.
 
 ## Function Signature
 
@@ -24,7 +25,8 @@ Approximate average clustering coefficient (0 to 1).
 
 The clustering coefficient for a node is the fraction of possible triangles through that node that actually exist.
 
-Exact computation requires checking all triangles (O(V³) worst case). The approximation samples nodes and computes exact clustering for those.
+Exact computation requires checking all triangles (O(V³) worst case). The approximation samples nodes and computes exact
+clustering for those.
 
 ## Time Complexity
 

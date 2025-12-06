@@ -24,7 +24,8 @@ Harmonic centrality is computed as:
 H(u) = Σ(1 / d(u, v)) for all v ≠ u
 ```
 
-Where d(u, v) is the shortest distance between nodes u and v. If a node is unreachable, the distance is treated as infinity, contributing 0 to the sum.
+Where d(u, v) is the shortest distance between nodes u and v. If a node is unreachable, the distance is treated as
+infinity, contributing 0 to the sum.
 
 ## Time Complexity
 
@@ -60,12 +61,12 @@ for node in sorted(harmonic.keys()):
 
 ## Comparison with Other Centrality Measures
 
-| Measure | Handles Disconnected | Computational Cost |
-|---------|-------------------|------------------|
-| Harmonic | Yes | O(V·E) |
-| Closeness | No (undefined for disconnected) | O(V·E) |
-| Betweenness | Yes | O(V·E) |
-| Degree | N/A (local) | O(1) per node |
+| Measure     | Handles Disconnected            | Computational Cost |
+|-------------|---------------------------------|--------------------|
+| Harmonic    | Yes                             | O(V·E)             |
+| Closeness   | No (undefined for disconnected) | O(V·E)             |
+| Betweenness | Yes                             | O(V·E)             |
+| Degree      | N/A (local)                     | O(1) per node      |
 
 ## References
 

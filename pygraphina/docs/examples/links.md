@@ -4,7 +4,8 @@ This page demonstrates how to predict missing links in graphs using PyGraphina.
 
 ## Overview
 
-Link prediction algorithms estimate the likelihood of future connections between nodes based on existing graph structure. These are useful for:
+Link prediction algorithms estimate the likelihood of future connections between nodes based on existing graph
+structure. These are useful for:
 
 - Recommender systems
 - Social network friend suggestions
@@ -380,13 +381,13 @@ print(f"  Hits: {hits}/{top_k}")
 
 ## Use Cases Summary
 
-| Algorithm | Best For | Complexity |
-|-----------|----------|------------|
-| Jaccard Coefficient | General purpose, balanced | O(V²·d) |
-| Adamic-Adar | Social networks | O(V²·d) |
-| Resource Allocation | Information networks | O(V²·d) |
-| Preferential Attachment | Scale-free networks | O(V²) |
-| Common Neighbors | Quick baseline | O(V²·d) |
-| Centrality-based | Influence networks | O(V²) + centrality cost |
+| Algorithm               | Best For                  | Complexity              |
+|-------------------------|---------------------------|-------------------------|
+| Jaccard Coefficient     | General purpose, balanced | O(V²·d)                 |
+| Adamic-Adar             | Social networks           | O(V²·d)                 |
+| Resource Allocation     | Information networks      | O(V²·d)                 |
+| Preferential Attachment | Scale-free networks       | O(V²)                   |
+| Common Neighbors        | Quick baseline            | O(V²·d)                 |
+| Centrality-based        | Influence networks        | O(V²) + centrality cost |
 
 Where d is average degree.

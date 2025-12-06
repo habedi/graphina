@@ -4,7 +4,8 @@ Treewidth is a measure of how similar a graph is to a tree. It has many algorith
 
 ## Overview
 
-Treewidth measures how close a graph is to being a tree. Computing exact treewidth is NP-hard, but approximation algorithms exist.
+Treewidth measures how close a graph is to being a tree. Computing exact treewidth is NP-hard, but approximation
+algorithms exist.
 
 ## Time Complexity
 
@@ -42,6 +43,7 @@ print("Treewidth measures tree-likeness of graph")
 ## Significance
 
 Low treewidth enables:
+
 - Efficient exact algorithms for NP-hard problems
 - Decomposition into tree-structured subproblems
 - Polynomial algorithms for many hard problems

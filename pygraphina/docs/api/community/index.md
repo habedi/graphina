@@ -4,17 +4,18 @@ Community detection algorithms identify groups of densely connected nodes within
 
 ## Overview
 
-Community detection is used to partition a graph into communities (also called clusters or modules). Communities are subsets of nodes where connections within the community are more frequent than connections between communities.
+Community detection is used to partition a graph into communities (also called clusters or modules). Communities are
+subsets of nodes where connections within the community are more frequent than connections between communities.
 
 ## Available Algorithms
 
-| Algorithm | Time Complexity | Parameters | Best For |
-|-----------|-----------------|-----------|----------|
-| Label Propagation | O(k·(V+E)) | max_iters | Fast, simple detection |
-| Louvain | O(V log V) to O(V²) | resolution | Quality and speed balance |
-| Girvan-Newman | O(V·E²) | None | Small graphs, understanding |
-| Spectral Clustering | O(V³) | k (num communities) | Well-separated communities |
-| Connected Components | O(V+E) | None | Disconnected components |
+| Algorithm            | Time Complexity     | Parameters          | Best For                    |
+|----------------------|---------------------|---------------------|-----------------------------|
+| Label Propagation    | O(k·(V+E))          | max_iters           | Fast, simple detection      |
+| Louvain              | O(V log V) to O(V²) | resolution          | Quality and speed balance   |
+| Girvan-Newman        | O(V·E²)             | None                | Small graphs, understanding |
+| Spectral Clustering  | O(V³)               | k (num communities) | Well-separated communities  |
+| Connected Components | O(V+E)              | None                | Disconnected components     |
 
 ## Common Usage
 
@@ -38,15 +39,19 @@ print(f"Louvain found {len(set(louvain.values()))} communities")
 ## Choosing an Algorithm
 
 ### For Speed
+
 Use Label Propagation or Connected Components
 
 ### For Quality
+
 Use Louvain or Spectral Clustering
 
 ### For Understanding
+
 Use Girvan-Newman (slower but interpretable)
 
 ### For Disconnected Graphs
+
 Use Connected Components or Label Propagation
 
 ## Metrics

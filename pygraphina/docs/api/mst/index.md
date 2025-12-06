@@ -1,6 +1,7 @@
 # Minimum Spanning Tree Algorithms
 
-Minimum Spanning Tree (MST) algorithms find a subset of edges that connect all nodes in a graph with minimum total weight.
+Minimum Spanning Tree (MST) algorithms find a subset of edges that connect all nodes in a graph with minimum total
+weight.
 
 ## Overview
 
@@ -14,13 +15,14 @@ All MST functions are available under the `pg.mst` module.
 
 ## Available Functions
 
-| Function | Time Complexity | Space Complexity | Best For |
-|----------|----------------|------------------|----------|
-| `prim_mst()` | O(E log V) | O(V) | Dense graphs |
-| `kruskal_mst()` | O(E log E) | O(V) | Sparse graphs |
-| `boruvka_mst()` | O(E log V) | O(V) | Parallel execution |
+| Function        | Time Complexity | Space Complexity | Best For           |
+|-----------------|-----------------|------------------|--------------------|
+| `prim_mst()`    | O(E log V)      | O(V)             | Dense graphs       |
+| `kruskal_mst()` | O(E log E)      | O(V)             | Sparse graphs      |
+| `boruvka_mst()` | O(E log V)      | O(V)             | Parallel execution |
 
 Where:
+
 - V = number of nodes
 - E = number of edges
 
@@ -76,7 +78,8 @@ pg.mst.prim_mst(graph: PyGraph) -> Tuple[float, List[Tuple[int, int, float]]]
 
 Compute the MST using Prim's algorithm.
 
-**Algorithm:** Starts from an arbitrary node and grows the MST by repeatedly adding the minimum-weight edge that connects a node in the MST to a node outside it.
+**Algorithm:** Starts from an arbitrary node and grows the MST by repeatedly adding the minimum-weight edge that
+connects a node in the MST to a node outside it.
 
 **Best for:** Dense graphs where E is close to V².
 
@@ -94,7 +97,8 @@ pg.mst.kruskal_mst(graph: PyGraph) -> Tuple[float, List[Tuple[int, int, float]]]
 
 Compute the MST using Kruskal's algorithm.
 
-**Algorithm:** Sorts all edges by weight and adds them to the MST if they don't create a cycle (using union-find data structure).
+**Algorithm:** Sorts all edges by weight and adds them to the MST if they don't create a cycle (using union-find data
+structure).
 
 **Best for:** Sparse graphs where E is much smaller than V².
 

@@ -16,7 +16,8 @@ pip install --pre pygraphina
 ```
 
 !!! note "Pre-release Version"
-    The `--pre` flag is currently required because PyGraphina is in early development and hasn't reached a stable 1.0 release yet.
+The `--pre` flag is currently required because PyGraphina is in early development and hasn't reached a stable 1.0
+release yet.
 
 ## Installing from Source
 

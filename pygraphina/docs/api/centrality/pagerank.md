@@ -170,12 +170,12 @@ precise = pg.centrality.pagerank(g, max_iters=200, tol=1e-9)
 
 PageRank and eigenvector centrality are similar but have key differences:
 
-| Feature | PageRank | Eigenvector |
-|---------|----------|-------------|
-| Damping | Yes (random jumps) | No |
-| Disconnected graphs | Handles well | May fail |
-| Convergence | Always converges | May not converge |
-| Use case | Web ranking | Social influence |
+| Feature             | PageRank           | Eigenvector      |
+|---------------------|--------------------|------------------|
+| Damping             | Yes (random jumps) | No               |
+| Disconnected graphs | Handles well       | May fail         |
+| Convergence         | Always converges   | May not converge |
+| Use case            | Web ranking        | Social influence |
 
 ```python
 # Compare the two
@@ -235,10 +235,11 @@ scores = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 
 ## Personalized PageRank { #personalized }
 
-Personalized PageRank (PPR) allows you to bias the random jumps toward specific nodes, making the results more relevant to a particular starting point.
+Personalized PageRank (PPR) allows you to bias the random jumps toward specific nodes, making the results more relevant
+to a particular starting point.
 
 !!! note "Current Implementation"
-    PyGraphina currently provides standard PageRank. For personalized results, you can use the following workaround.
+PyGraphina currently provides standard PageRank. For personalized results, you can use the following workaround.
 
 ### Workaround for Personalized PageRank
 

@@ -4,7 +4,8 @@ This guide explains the fundamental concepts and design principles of PyGraphina
 
 ## Graph Model
 
-PyGraphina represents graphs using an adjacency list data structure, which provides efficient storage and fast neighbor lookups for sparse graphs (common in real-world networks).
+PyGraphina represents graphs using an adjacency list data structure, which provides efficient storage and fast neighbor
+lookups for sparse graphs (common in real-world networks).
 
 ### Undirected vs. Directed Graphs
 
@@ -65,7 +66,7 @@ assert node_2 == 2
 ```
 
 !!! warning "Node IDs After Deletion"
-    When you remove a node, its ID is not reused. The next added node gets the next sequential ID.
+When you remove a node, its ID is not reused. The next added node gets the next sequential ID.
 
 ### Node Attributes
 
@@ -85,7 +86,7 @@ assert g.get_node_attr(node_id) == 100
 ```
 
 !!! tip "Use Cases for Node Attributes"
-    Node attributes can represent various properties:
+Node attributes can represent various properties:
 
     - User IDs in a social network
     - Station codes in a transportation network
@@ -200,6 +201,7 @@ assert g.node_count() == 0
 PyGraphina organizes algorithms into logical modules:
 
 ### `pg.centrality`
+
 Measures of node importance and influence:
 
 ```python
@@ -214,6 +216,7 @@ degree = pg.centrality.degree(g)
 ```
 
 ### `pg.community`
+
 Community detection and clustering:
 
 ```python
@@ -228,6 +231,7 @@ components = pg.community.connected_components(g)
 ```
 
 ### `pg.links`
+
 Link prediction algorithms:
 
 ```python
@@ -242,6 +246,7 @@ resource_alloc = pg.links.resource_allocation_index(g)
 ```
 
 ### `pg.approximation`
+
 Approximation algorithms for hard problems:
 
 ```python
@@ -256,6 +261,7 @@ diameter = pg.approximation.approximate_diameter(g)
 ```
 
 ### `pg.core`
+
 Core graph operations and algorithms:
 
 ```python
@@ -270,6 +276,7 @@ path = pg.core.astar(g, source, target, heuristic_fn)
 ```
 
 ### `pg.metrics`
+
 Graph and node metrics:
 
 ```python
@@ -284,6 +291,7 @@ triangles = pg.metrics.triangles(g, node)
 ```
 
 ### `pg.mst`
+
 Minimum spanning tree algorithms:
 
 ```python
@@ -295,6 +303,7 @@ mst = pg.mst.prim(g, start_node)
 ```
 
 ### `pg.traversal`
+
 Graph traversal algorithms:
 
 ```python
@@ -306,6 +315,7 @@ dfs_order = pg.traversal.dfs(g, start_node)
 ```
 
 ### `pg.subgraphs`
+
 Subgraph extraction:
 
 ```python
@@ -317,6 +327,7 @@ ego = pg.subgraphs.ego_graph(g, center_node, radius=2)
 ```
 
 ### `pg.parallel`
+
 Parallel implementations for large graphs:
 
 ```python
@@ -332,6 +343,7 @@ bfs_order = pg.parallel.bfs_parallel(g, [start_node])
 ### Graph Size
 
 PyGraphina is designed for graphs with:
+
 - Millions of nodes
 - Tens of millions of edges
 - Sparse connectivity (typical of real-world networks)
@@ -387,6 +399,7 @@ print(bfs)  # [0, 1, 2, 3, 4]
 ### 1. Use Appropriate Graph Type
 
 Choose the right graph type for your use case:
+
 - Use `PyGraph` for symmetric relationships
 - Use `PyDiGraph` for asymmetric relationships
 
@@ -397,6 +410,7 @@ When building large graphs, add all nodes and edges in loops rather than one at 
 ### 3. Choose the Right Algorithm
 
 For large graphs:
+
 - Use parallel implementations when available
 - Use approximation algorithms when exact solutions are too slow
 - Consider the time complexity of algorithms

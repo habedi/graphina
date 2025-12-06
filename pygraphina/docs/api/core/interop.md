@@ -1,6 +1,7 @@
 # Interoperability
 
-PyGraphina provides seamless interoperability with NetworkX and pandas for easy data exchange and integration with existing Python data science workflows.
+PyGraphina provides seamless interoperability with NetworkX and pandas for easy data exchange and integration with
+existing Python data science workflows.
 
 ## NetworkX Conversion
 
@@ -27,14 +28,14 @@ print(nx_graph[n1][n2]['weight'])  # 1.5
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `graph` | `PyGraph` or `PyDiGraph` | The pygraphina graph to convert |
+| Parameter | Type                     | Description                     |
+|-----------|--------------------------|---------------------------------|
+| `graph`   | `PyGraph` or `PyDiGraph` | The pygraphina graph to convert |
 
 **Returns:**
 
-| Type | Description |
-|------|-------------|
+| Type                                   | Description                                                      |
+|----------------------------------------|------------------------------------------------------------------|
 | `networkx.Graph` or `networkx.DiGraph` | A NetworkX graph with preserved node attributes and edge weights |
 
 **Notes:**
@@ -68,14 +69,14 @@ print(g.get_node_attr(0))  # 100
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter  | Type                                   | Description                   |
+|------------|----------------------------------------|-------------------------------|
 | `nx_graph` | `networkx.Graph` or `networkx.DiGraph` | The NetworkX graph to convert |
 
 **Returns:**
 
-| Type | Description |
-|------|-------------|
+| Type                     | Description                                          |
+|--------------------------|------------------------------------------------------|
 | `PyGraph` or `PyDiGraph` | A pygraphina graph (type matches input directedness) |
 
 **Notes:**
@@ -110,14 +111,14 @@ print(df)
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `graph` | `PyGraph` or `PyDiGraph` | The graph to export |
+| Parameter | Type                     | Description         |
+|-----------|--------------------------|---------------------|
+| `graph`   | `PyGraph` or `PyDiGraph` | The graph to export |
 
 **Returns:**
 
-| Type | Description |
-|------|-------------|
+| Type               | Description                                             |
+|--------------------|---------------------------------------------------------|
 | `pandas.DataFrame` | DataFrame with columns `node_id` (int) and `attr` (int) |
 
 **Notes:**
@@ -150,14 +151,14 @@ print(df)
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `graph` | `PyGraph` or `PyDiGraph` | The graph to export |
+| Parameter | Type                     | Description         |
+|-----------|--------------------------|---------------------|
+| `graph`   | `PyGraph` or `PyDiGraph` | The graph to export |
 
 **Returns:**
 
-| Type | Description |
-|------|-------------|
+| Type               | Description                                                           |
+|--------------------|-----------------------------------------------------------------------|
 | `pandas.DataFrame` | DataFrame with columns `source`, `target` (int), and `weight` (float) |
 
 **Notes:**

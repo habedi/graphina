@@ -18,7 +18,8 @@ Dictionary mapping node IDs to component IDs.
 
 ## Description
 
-A connected component is a maximal connected subgraph. For undirected graphs, every node belongs to exactly one connected component. Nodes in the same component can reach each other by following edges.
+A connected component is a maximal connected subgraph. For undirected graphs, every node belongs to exactly one
+connected component. Nodes in the same component can reach each other by following edges.
 
 ## Time Complexity
 
@@ -75,9 +76,9 @@ for comp_id, members in sorted(comp_groups.items()):
 
 ## Comparison
 
-| Metric | Connected Components |
-|--------|---------------------|
-| Time | O(V + E) |
-| Space | O(V) |
-| Parameters | None |
-| Deterministic | Yes |
+| Metric        | Connected Components |
+|---------------|----------------------|
+| Time          | O(V + E)             |
+| Space         | O(V)                 |
+| Parameters    | None                 |
+| Deterministic | Yes                  |

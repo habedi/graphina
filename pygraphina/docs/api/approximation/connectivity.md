@@ -5,6 +5,7 @@ Connectivity measures how robust a graph is to node or edge removal.
 ## Overview
 
 Connectivity concepts include:
+
 - Node connectivity: minimum nodes to remove to disconnect graph
 - Edge connectivity: minimum edges to remove to disconnect graph
 - Component connectivity: connections between components
