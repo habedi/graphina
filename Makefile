@@ -210,6 +210,17 @@ docs-serve-py: develop-py ## Serve MKDocs documentation locally
 	@echo "Serving MKDocs documentation locally..."
 	@$(PY_DEP_MNGR) run mkdocs serve --config-file pygraphina/mkdocs.yml
 
+# Graphina (Rust) Docs via MkDocs
+.PHONY: docs-serve
+docs-serve: ## Serve Graphina MkDocs locally
+	@echo "Serving Graphina MkDocs..."
+	@uv run mkdocs serve
+
+.PHONY: docs-build
+docs-build: ## Build Graphina MkDocs
+	@echo "Building Graphina MkDocs..."
+	@uv run mkdocs build
+
 .PHONY: publish-py
 publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PYPI_TOKEN to be set)
 	@echo "Publishing PyGraphina to PyPI..."

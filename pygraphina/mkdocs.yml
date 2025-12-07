@@ -2,6 +2,7 @@ site_name: PyGraphina Documentation
 site_description: Documentation for the PyGraphina library.
 repo_url: https://github.com/habedi/graphina
 repo_name: habedi/graphina
+site_url: https://habedi.github.io/graphina/python/
 
 theme:
   name: material

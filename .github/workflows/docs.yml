@@ -32,8 +32,16 @@ jobs:
       - name: Install Dependencies
         run: uv sync --extra dev
 
-      - name: Build Documentation
+      - name: Build Graphina Docs
+        run: uv run mkdocs build
+
+      - name: Build PyGraphina Docs
         run: uv run mkdocs build --config-file pygraphina/mkdocs.yml
+
+      - name: Merge Documentation Sites
+        run: |
+             mkdir -p site/python
+             cp -r pygraphina/site/* site/python/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
