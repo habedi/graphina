@@ -57,10 +57,16 @@ nav:
       - Core Concepts: getting-started/concepts.md
   - User Guide:
       - Graph Types: guide/graphs.md
+      - Traversal: guide/traversal.md
+      - Subgraphs & Views: guide/subgraphs.md
       - Algorithms:
           - Centrality: guide/centrality.md
           - Community Detection: guide/community.md
           - Path Finding: guide/paths.md
+          - Minimum Spanning Tree: guide/mst.md
+          - Link Prediction: guide/links.md
+          - Approximation: guide/approximation.md
+      - Graph Metrics: guide/metrics.md
       - Parallel Processing: guide/parallel.md
       - Visualization: guide/visualization.md
   - Examples:
