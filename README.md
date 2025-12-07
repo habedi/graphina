@@ -100,7 +100,9 @@ graphina = { version = "0.3.0-alpha.4", features = ["centrality", "community", "
 
 See [docs](https://habedi.github.io/graphina) and [docs.rs/graphina](https://docs.rs/graphina) for information, examples, and API references.
 
-#### Simple Example
+#### API Examples
+
+##### Simple Example
 
 ```rust
 use graphina::core::types::Graph;
@@ -125,7 +127,7 @@ fn main() {
 }
 ```
 
-#### Graph Builder API
+##### Graph Builder API
 
 ```rust
 use graphina::core::builders::UndirectedGraphBuilder;
@@ -142,7 +144,7 @@ let g = UndirectedGraphBuilder::<i32, f64>::undirected()
 .unwrap();
 ```
 
-#### Seeded Generators
+##### Seeded Generators
 
 ```rust
 use graphina::core::generators::{erdos_renyi_graph, barabasi_albert_graph};
