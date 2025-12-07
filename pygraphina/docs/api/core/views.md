@@ -11,6 +11,7 @@ It behaves like a list of nodes or a dict of node attributes.
 
 ```python
 import pygraphina as pg
+
 g = pg.PyGraph()
 g.add_node(1, attr=100)
 
