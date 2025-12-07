@@ -27,8 +27,9 @@ g = pg.PyGraph()
 a, b = g.add_node(1), g.add_node(2)
 g.add_edge(a, b, 1.0)
 
-print(f"Graph has {g.node_count()} nodes and {g.edge_count()} edges")
-# Output: Graph has 2 nodes and 1 edges
+edges = g.edge_count()
+print(f"Graph has {g.node_count()} nodes and {edges} edge{'s' if edges != 1 else ''}")
+# Output: Graph has 2 nodes and 1 edge
 ```
 
 If you see the output without errors, congratulations! PyGraphina is installed correctly.

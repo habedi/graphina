@@ -9,7 +9,8 @@ pg.centrality.pagerank(
     graph: Union[PyGraph, PyDiGraph],
     damping: float = 0.85,
     max_iter: int = 100,
-    tolerance: float = 1e-6
+    tolerance: float = 1e-6,
+    nstart: Optional[Dict[int, float]] = None
 ) -> Dict[int, float]
 ```
 
@@ -19,6 +20,11 @@ pg.centrality.pagerank(
 - **damping**: Damping factor (probability of following a link vs random jump). Default: 0.85
 - **max_iter**: Maximum number of iterations. Default: 100
 - **tolerance**: Convergence tolerance. Default: 1e-6
+- **nstart** (optional): Starting values for PageRank iteration
+  - Type: `Dict[int, float]` - Maps node IDs to initial values
+  - Default: `None` (uniform distribution)
+  - Use case: Provide custom initial values or continue from previous computation
+  - Example: `nstart={0: 0.5, 1: 0.3, 2: 0.2}`
 
 ## Returns
 
@@ -164,6 +170,33 @@ fast = pg.centrality.pagerank(g, max_iter=10, tolerance=1e-3)
 
 # High precision (more iterations, tighter tolerance)
 precise = pg.centrality.pagerank(g, max_iter=200, tolerance=1e-9)
+```
+
+### Warm Start with nstart
+
+Use `nstart` to continue iterations from a previous state or provide custom initial values:
+
+```python
+import pygraphina as pg
+
+g = pg.PyDiGraph()
+nodes = [g.add_node(i) for i in range(5)]
+for i in range(4):
+    g.add_edge(nodes[i], nodes[i+1], 1.0)
+
+# First computation
+pr1 = pg.centrality.pagerank(g, max_iter=50, tolerance=1e-6)
+print(f"Initial PageRank: {pr1}")
+
+# Continue from previous result (warm start)
+pr2 = pg.centrality.pagerank(g, max_iter=50, tolerance=1e-6, nstart=pr1)
+print(f"After warm start: {pr2}")
+
+# Custom initialization (prefer certain nodes)
+custom_start = {0: 0.5, 1: 0.3, 2: 0.1, 3: 0.05, 4: 0.05}
+pr3 = pg.centrality.pagerank(g, nstart=custom_start)
+print(f"Custom init: {pr3}")
+print(f"Node 0 has highest score: {pr3[0]:.4f}")
 ```
 
 ## Comparison with Eigenvector Centrality

@@ -26,6 +26,7 @@ All centrality functions are available under the `pg.centrality` module.
 | `closeness()`       | O(V·E)          | Finding central nodes      |
 | `eigenvector()`     | O(V·E·k)        | Influence-based importance |
 | `pagerank()`        | O(V·E·k)        | Web ranking, influence     |
+| `personalized_pagerank()` | O(V·E·k)   | Topic-biased ranking       |
 | `katz()`            | O(V·E·k)        | Weighted influence         |
 | `harmonic()`        | O(V·E)          | Alternative to closeness   |
 | `local_reaching()`  | O(V·E)          | Local reachability         |

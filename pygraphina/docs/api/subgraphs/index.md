@@ -4,6 +4,17 @@ Subgraph operations extract portions of a graph based on node sets or connectivi
 
 ## Overview
 
+!!! note "API Location"
+    All subgraph operations are available as **instance methods** on graph objects:
+    ```python
+    # Instance methods (recommended)
+    sub = g.subgraph(nodes)
+    induced = g.induced_subgraph(nodes)
+    ego = g.ego_graph(center_node, radius)
+    component = g.component_subgraph(node)
+    neighbors = g.k_hop_neighbors(node, k)
+    ```
+
 PyGraphina provides several methods to extract subgraphs:
 
 - **Subgraph**: Extract nodes and edges between them
@@ -325,19 +336,17 @@ print(f"Filtered: {filtered.edge_count()} edges")
 import pygraphina as pg
 
 # Social network
-g = pg.core.karate_club_graph()
+g = pg.core.barabasi_albert(100, 3, 42)
 
 # Detect communities
-communities = pg.community.louvain(g)
+communities = pg.community.louvain(g, seed=42)
 
 # Extract each community as a subgraph
 community_graphs = {}
-from collections import defaultdict
 
-comm_nodes = defaultdict(list)
-
-for node, comm in communities.items():
-    comm_nodes[comm].append(node)
+for comm_id, members in enumerate(communities):
+    if len(members) > 0:
+        community_graphs[comm_id] = g.subgraph(members)
 
 for comm_id, nodes in comm_nodes.items():
     community_graphs[comm_id] = g.subgraph(nodes)

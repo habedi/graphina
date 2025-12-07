@@ -74,7 +74,7 @@ most_influential = max(name_to_pagerank, key=name_to_pagerank.get)
 print(f"Most influential person: {most_influential}")
 
 # Find communities
-communities = pg.community.label_propagation(friends, 100)
+communities = pg.community.label_propagation(friends, max_iter=100)
 print(f"\nCommunities detected: {len(set(communities.values()))}")
 for name, node_id in people.items():
     print(f"  {name}: Community {communities[node_id]}")
@@ -259,13 +259,13 @@ print(f"  Density: {g.density():.3f}")
 
 # Graph-level metrics
 try:
-    diameter = pg.metrics.diameter(g)
+    diameter = g.diameter()
     print(f"  Diameter: {diameter}")
 except:
     print("  Diameter: Could not calculate (disconnected?)")
 
 try:
-    avg_clustering = pg.metrics.average_clustering_coefficient(g)
+    avg_clustering = g.average_clustering()
     print(f"  Average clustering: {avg_clustering:.3f}")
 except:
     print("  Average clustering: Could not calculate")

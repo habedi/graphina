@@ -4,10 +4,9 @@ Fundamental concepts and design principles of PyGraphina.
 
 ## Graph Model
 
-PyGraphina represents graphs using an adjacency list data structure, which provides efficient storage and fast neighbor
-    While PyGraphina allows modifying the graph structure, it's generally more efficient to build the graph first and then
-    analyze it. Frequent modifications (especially removals) can be slower than bulk building.
-lookups for sparse graphs (common in real-world networks).
+PyGraphina represents graphs using an adjacency list data structure, which provides efficient storage and fast neighbor lookups for sparse graphs (common in real-world networks).
+
+While PyGraphina allows modifying the graph structure, it's generally more efficient to build the graph first and then analyze it. Frequent modifications (especially removals) can be slower than bulk building.
 
 ### Undirected vs. Directed Graphs
 
@@ -72,11 +71,11 @@ assert node_2 == 2
 
 ### Node Attributes
 
-Each node has an integer attribute associated with it:
+Each node has a **single integer attribute** associated with it (stored as `i64` internally):
 
 ```python
 g = pg.PyGraph()
-node_id = g.add_node(42)  # 42 is the node attribute
+node_id = g.add_node(42)  # 42 is the node attribute (must be an integer)
 
 # Retrieve the attribute
 attr = g.get_node_attr(node_id)
@@ -87,6 +86,14 @@ g.update_node(node_id, 100)
 assert g.get_node_attr(node_id) == 100
 ```
 
+!!! warning "Integer-Only Attributes"
+    Node attributes **must be integers**. The valid range is `-2^63` to `2^63-1` (64-bit signed integer).
+
+    - ✅ Integers: `g.add_node(42)`, `g.add_node(-100)`
+    - ❌ Floats: `g.add_node(3.14)` → TypeError
+    - ❌ Strings: `g.add_node("Alice")` → TypeError
+    - ❌ Objects: `g.add_node({"name": "Bob"})` → TypeError
+
 !!! tip "Use Cases for Node Attributes"
     Node attributes can represent various properties:
 
@@ -94,9 +101,42 @@ assert g.get_node_attr(node_id) == 100
     - Station codes in a transportation network
     - Molecule types in a chemical structure
     - Entity IDs for mapping to external data
+    - Array indices for external data structures
 
-    Nodes are mapped to integer `NodeId`s internally. While you can use these IDs directly, the mappings (e.g., node 'A' -> ID 0)
-    are managed by your application if you need to map back to original data.
+### Storing Rich Node Attributes
+
+If you need to store complex attributes (strings, objects, etc.), use an **external dictionary**:
+
+```python
+import pygraphina as pg
+
+# Create graph and external data store
+g = pg.PyGraph()
+node_data = {}
+
+# Add nodes with rich attributes stored externally
+people = [
+    {"name": "Alice", "age": 30, "city": "NYC"},
+    {"name": "Bob", "age": 25, "city": "LA"},
+]
+
+for i, person in enumerate(people):
+    node_id = g.add_node(i)  # Store simple index in graph
+    node_data[node_id] = person  # Store rich data externally
+
+# Add edges
+g.add_edge(0, 1, 1.0)
+
+# Use algorithms as normal
+pagerank = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
+
+# Access rich data when needed
+for node_id, score in pagerank.items():
+    person = node_data[node_id]
+    print(f"{person['name']}: {score:.4f}")
+```
+
+This pattern is common in high-performance graph libraries and allows PyGraphina to maintain its speed advantages while giving you flexibility for complex data.
 
 ## Edges
 
@@ -259,10 +299,10 @@ Approximation algorithms for hard problems:
 clique_size = pg.approximation.large_clique_size(g)
 
 # Approximate clustering coefficient
-clustering = pg.approximation.approximate_clustering_coefficient(g, num_samples=1000)
+clustering = pg.approximation.average_clustering_approx(g)
 
 # Approximate diameter
-diameter = pg.approximation.approximate_diameter(g)
+diameter = pg.approximation.diameter(g)
 ```
 
 ### `pg.core`
@@ -281,19 +321,24 @@ distances = g.dijkstra(source)  # Returns dict of distances
 result = g.shortest_path(source, target)  # Returns (distance, path) or None
 ```
 
-### `pg.metrics`
+### Graph Metrics
 
-Graph and node metrics:
+Graph metrics are available as **instance methods** on graph objects:
 
 ```python
-# Graph-level metrics
-diameter = pg.metrics.diameter(g)
-radius = pg.metrics.radius(g)
-avg_clustering = pg.metrics.average_clustering_coefficient(g)
+# Graph-level metrics (instance methods)
+diameter = g.diameter()
+radius = g.radius()
+avg_clustering = g.average_clustering()
+transitivity = g.transitivity()
 
-# Node-level metrics
-clustering = pg.metrics.clustering_coefficient(g, node)
-triangles = pg.metrics.triangles(g, node)
+# Or use top-level convenience functions
+diameter = pg.diameter(g)
+radius = pg.radius(g)
+
+# Node-level metrics (instance methods)
+clustering = g.clustering_of(node)
+triangles = g.triangles_of(node)
 ```
 
 ### `pg.mst`

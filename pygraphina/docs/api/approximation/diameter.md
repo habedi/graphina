@@ -35,7 +35,7 @@ diameter = g.diameter()
 print(f"Exact diameter: {diameter}")
 
 # Approximate diameter
-approx_diameter = pg.approximation.approximate_diameter(g)
+approx_diameter = pg.approximation.diameter(g)
 print(f"Approximate diameter: {approx_diameter}")
 ```
 

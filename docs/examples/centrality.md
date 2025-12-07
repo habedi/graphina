@@ -52,7 +52,7 @@ fn page_rank_example() {
     }
 
     // Compute PageRank (damping: 0.85, iter: 1000, tol: 1e-6)
-    let scores = pagerank(&graph, 0.85, 1000, 1e-6_f64).unwrap();
+    let scores = pagerank(&graph, 0.85, 1000, 1e-6_f64, None).unwrap();
 
     for n in nodes {
         println!("Node {:?}: {:.4}", n, scores[&n]);

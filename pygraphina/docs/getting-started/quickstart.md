@@ -62,9 +62,10 @@ if g.contains_edge(node_a, node_b):
 ### Get Node Information
 
 ```python
-# Get node degree
-degree = g.degree(node_a)
-print(f"Node A has degree {degree}")
+# Get node degree (access the degree view and index by node)
+degree_view = g.degree
+degree_a = degree_view[node_a]
+print(f"Node A has degree {degree_a}")
 
 # Get node neighbors
 neighbors = g.neighbors(node_a)
@@ -78,8 +79,9 @@ print(f"Node A's attribute: {attr}")
 ### Get All Nodes
 
 ```python
+# Get all nodes from the nodes view
 all_nodes = g.nodes
-print(f"All nodes: {all_nodes}")
+print(f"All nodes: {list(all_nodes)}")
 ```
 
 ## Running Algorithms
@@ -104,7 +106,9 @@ Find the shortest path between two nodes:
 # Find specific path
 result = g.shortest_path(node_a, node_d)
 if result:
-    print(f"Shortest path from A to D: {result}")
+    distance, path = result
+    print(f"Shortest path from A to D: {path}")
+    print(f"Total distance: {distance}")
 else:
     print("No path found")
 ```
@@ -115,7 +119,7 @@ Detect communities in the graph:
 
 ```python
 # Label propagation algorithm
-communities = pg.community.label_propagation(g, 100)
+communities = pg.community.label_propagation(g, max_iter=100)
 print(f"Communities: {communities}")
 ```
 
