@@ -35,23 +35,23 @@ It shows the features to be implemented and their current status.
     - [ ] Uniform return type policy (dict vs list) documented and consolidated
 
 - **Paths and Traversal**
-    - [ ] Expose Dijkstra single-source distances (dict) and predecessors
-    - [ ] Expose Bellman–Ford distances and negative cycle indicator
-    - [ ] Expose BFS and DFS traversal order APIs (list[int])
+    - [x] Expose Dijkstra single-source distances (dict) and predecessors
+    - [x] Expose Bellman–Ford distances and negative cycle indicator
+    - [x] Expose BFS and DFS traversal order APIs (list[int])
     - [ ] A* and IDA* wrappers (with optional heuristic callbacks from Python)
     - [ ] Floyd–Warshall and Johnson’s (dense and sparse APSP) with memory-conscious streaming option
 
 - **Subgraphs and Link Prediction**
-    - [ ] Subgraph (induced) extraction returning a new PyGraph
-    - [ ] Ego graph and k-hop extraction
-    - [ ] Link prediction scores (RA, Jaccard, Adamic–Adar, CN, SH variants, WIC, and CNC)
+    - [x] Subgraph (induced) extraction returning a new PyGraph
+    - [x] Ego graph and k-hop extraction
+    - [x] Link prediction scores (RA, Jaccard, Adamic–Adar, CN, SH variants, WIC, and CNC)
     - [ ] Batched link scoring API (like list[(u,v)] -> scores) for performance
 
 - **Approximation and Heuristics**
-    - [ ] Greedy max clique, MIS, vertex cover, matching wrappers
+    - [x] Greedy max clique, MIS, vertex cover, matching wrappers
     - [ ] Densest subgraph approximate routine
-    - [ ] Treewidth heuristics (min-degree, min fill-in)
-    - [ ] TSP approximation suite bindings (with path and length return)
+    - [x] Treewidth heuristics (min-degree, min fill-in)
+    - [x] TSP approximation suite bindings (with path and length return)
 
 - **Parallelism and Performance Tuning**
     - [x] Basic use of Rust parallel algorithms (using rayon internally)
@@ -60,9 +60,9 @@ It shows the features to be implemented and their current status.
     - [ ] Optional memory pooling enabling (if `pool` feature compiled) with explicit opt-in
 
 - **Visualization**
-    - [ ] Layout algorithms (force-directed and circular) returning coordinates
-    - [ ] Export helpers (for SVG and PNG) directly callable from Python
-    - [ ] `D3.js` JSON export wrapper
+    - [x] Layout algorithms (force-directed and circular) returning coordinates
+    - [x] Export helpers (for SVG and PNG) directly callable from Python
+    - [x] `D3.js` JSON export wrapper
     - [ ] An HTML embedding helper
 
 - **Packaging and Distribution**
@@ -75,7 +75,7 @@ It shows the features to be implemented and their current status.
 
 - **Developer Experience**
     - [x] Consistent error conversion to Python exceptions
-    - [ ] More granular Python exception classes (for example, `GraphinaInvalidGraphError` and
+    - [ ] More granular Python exception classes (like `GraphinaInvalidGraphError` and
       `GraphinaConvergenceError`)
     - [ ] Docstring generation from Rust doc comments
     - [ ] Interactive Jupyter examples notebooks
@@ -88,7 +88,7 @@ It shows the features to be implemented and their current status.
 
 - **Interoperability**
     - [ ] NetworkX interop utilities (read and export to `networkx.Graph`)
-    - [ ] Pandas DataFrame import and export (edges and nodes)
+    - [x] Pandas DataFrame export (edges and nodes)
     - [ ] Polars and Apache Arrow integration (optional feature)
 
 - **Benchmarks**
