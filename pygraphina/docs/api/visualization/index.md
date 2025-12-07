@@ -33,7 +33,7 @@ Save graph as interactive HTML file with D3.js visualization.
 ```python
 import pygraphina as pg
 
-g = pg.core.erdos_renyi_graph(50, 0.1)
+g = pg.core.erdos_renyi(50, 0.1)
 pg.visualization.save_as_html(g, "graph.html", layout="circular")
 ```
 

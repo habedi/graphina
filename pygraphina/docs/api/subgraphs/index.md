@@ -350,7 +350,7 @@ for comm_id, nodes in comm_nodes.items():
 import pygraphina as pg
 
 # Large network
-g = pg.core.barabasi_albert_graph(1000, 3, seed=42)
+g = pg.core.barabasi_albert(1000, 3, seed=42)
 
 # Find high-degree node
 degrees = {n: g.degree(n) for n in g.nodes()}

@@ -145,7 +145,7 @@ Preferential attachment favors high-degree nodes.
 import pygraphina as pg
 
 # Create a social network following power-law degree distribution
-g = pg.core.barabasi_albert_graph(20, 2, seed=42)
+g = pg.core.barabasi_albert(20, 2, seed=42)
 
 # Calculate preferential attachment scores
 predictions = pg.links.preferential_attachment(g)
@@ -206,7 +206,7 @@ for (u, v), count in sorted(predictions.items(),
 import pygraphina as pg
 
 # Create a test network
-g = pg.core.erdos_renyi_graph(30, 0.15, seed=42)
+g = pg.core.erdos_renyi(30, 0.15, seed=42)
 
 # Apply multiple algorithms
 algorithms = {
@@ -304,7 +304,7 @@ Use centrality measures to predict links.
 import pygraphina as pg
 
 # Create a network
-g = pg.core.watts_strogatz_graph(30, 4, 0.1, seed=42)
+g = pg.core.watts_strogatz(30, 4, beta=0.1, seed=42)
 
 # Calculate centrality-based predictions
 predictions = pg.links.centrality_based(g)
@@ -335,7 +335,7 @@ import pygraphina as pg
 import random
 
 # Create a test graph
-g_full = pg.core.barabasi_albert_graph(50, 3, seed=42)
+g_full = pg.core.barabasi_albert(50, 3, seed=42)
 
 # Split edges: 80% training, 20% test
 all_edges = list(g_full.edges())

@@ -205,7 +205,7 @@ import pygraphina as pg
 import time
 
 # Create a test graph
-g = pg.core.barabasi_albert_graph(100, 3, seed=42)
+g = pg.core.barabasi_albert(100, 3, seed=42)
 
 # Test different algorithms
 algorithms = [
@@ -289,7 +289,7 @@ for major_id, members in major_groups.items():
 import pygraphina as pg
 
 # Create a graph
-g = pg.core.erdos_renyi_graph(50, 0.1, seed=42)
+g = pg.core.erdos_renyi(50, 0.1, seed=42)
 
 # Detect communities
 communities = pg.community.louvain(g, 1.0)

@@ -133,7 +133,7 @@ import pygraphina as pg
 import time
 
 # Create a large random graph
-g = pg.core.erdos_renyi_graph(100, 0.3, seed=42)
+g = pg.core.erdos_renyi(100, 0.3, seed=42)
 
 # Add random weights
 for u, v in g.edges():

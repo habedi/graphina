@@ -51,7 +51,7 @@ g.is_bipartite()  # Can be 2-colored
 import pygraphina as pg
 
 # Create a test graph
-g = pg.core.barabasi_albert_graph(100, 3, seed=42)
+g = pg.core.barabasi_albert(100, 3, seed=42)
 
 # Basic metrics
 print(f"Nodes: {g.node_count()}")

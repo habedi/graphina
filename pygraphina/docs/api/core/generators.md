@@ -7,7 +7,7 @@ Graph generators create synthetic graphs with specific properties for testing an
 ### Erdos-Renyi (ER)
 
 ```python
-pg.core.erdos_renyi_graph(n, p, seed=None)
+pg.core.erdos_renyi(n, p, seed=None)
 ```
 
 Random graph where each edge exists with probability p.
@@ -19,7 +19,7 @@ Random graph where each edge exists with probability p.
 ### Barabasi-Albert (BA)
 
 ```python
-pg.core.barabasi_albert_graph(n, m, seed=None)
+pg.core.barabasi_albert(n, m, seed=None)
 ```
 
 Preferential attachment model - new nodes attach to existing high-degree nodes.
@@ -31,7 +31,7 @@ Preferential attachment model - new nodes attach to existing high-degree nodes.
 ### Watts-Strogatz (WS)
 
 ```python
-pg.core.watts_strogatz_graph(n, k, p, seed=None)
+pg.core.watts_strogatz(n, k, beta, seed)
 ```
 
 Small-world model - regular lattice with random rewiring.
@@ -84,9 +84,9 @@ Linear chain of nodes.
 import pygraphina as pg
 
 # Generate different types of graphs
-er = pg.core.erdos_renyi_graph(100, 0.1, seed=42)
-ba = pg.core.barabasi_albert_graph(100, 3, seed=42)
-ws = pg.core.watts_strogatz_graph(100, 4, 0.1, seed=42)
+er = pg.core.erdos_renyi(100, 0.1, seed=42)
+ba = pg.core.barabasi_albert(100, 3, seed=42)
+ws = pg.core.watts_strogatz(100, 4, beta=0.1, seed=42)
 
 # Analyze properties
 print(f"ER density: {er.density():.3f}")
@@ -122,7 +122,7 @@ All generators support optional seed parameter for reproducibility:
 
 ```python
 # Same seed produces identical graphs
-g1 = pg.core.erdos_renyi_graph(100, 0.1, seed=42)
-g2 = pg.core.erdos_renyi_graph(100, 0.1, seed=42)
+g1 = pg.core.erdos_renyi(100, 0.1, seed=42)
+g2 = pg.core.erdos_renyi(100, 0.1, seed=42)
 # g1 and g2 are identical
 ```
