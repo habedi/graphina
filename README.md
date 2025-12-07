@@ -7,13 +7,13 @@
 
 ## Graphina
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&color=4caf50&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
 [![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&labelColor=282c34&logo=codecov)](https://codecov.io/gh/habedi/graphina)
 [![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=flat&label=quality&labelColor=282c34&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
-[![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=f46623&logo=rust)](https://crates.io/crates/graphina)
-[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
-[![Docs](https://img.shields.io/badge/docs-read-3776ab?style=flat&labelColor=282c34&logo=readthedocs)](https://habedi.github.io/graphina)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
+[![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=e65100&logo=rust)](https://crates.io/crates/graphina)
+[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-5c6bc0?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
+[![Docs](https://img.shields.io/badge/docs-read-00acc1?style=flat&labelColor=282c34&logo=readthedocs)](https://habedi.github.io/graphina)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-0288d1?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
 Graphina is a graph data science library for Rust.
 It provides common data structures and algorithms for analyzing real-world networks, such as social, transportation, and biological networks.
