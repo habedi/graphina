@@ -75,6 +75,8 @@ nav:
           - Visualization: guide/visualization.md
   - Examples:
       - Basic: examples/basic.md
+      - Generators: examples/generators.md
+      - I/O: examples/io.md
       - Centrality: examples/centrality.md
       - Community Detection: examples/community.md
       - Link Prediction: examples/links.md

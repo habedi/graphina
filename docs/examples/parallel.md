@@ -2,8 +2,8 @@
 
 Leverage multi-core CPUs for large graph analysis using Rayon.
 
-> [!IMPORTANT]
-> Ensure the `parallel` feature is enabled in your `Cargo.toml`.
+!!! important "Parallel Feature"
+    Make sure the `parallel` feature is enabled in your `Cargo.toml`.
 
 ## Parallel PageRank
 
