@@ -24,7 +24,7 @@ Graphina aims to be as feature-rich as [NetworkX](https://networkx.org/) but wit
 Rust.
 
 Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
-Check out [pygraphina](pygraphina/README.md) directory or [PyGraphina documentation](https://habedi.github.io/graphina/python) for more details.
+Check out [pygraphina](pygraphina/README.md) directory for more details.
 
 See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 
