@@ -90,6 +90,11 @@ nav:
       - Rust Docs (docs.rs): https://docs.rs/graphina
       - Crate (crates.io): https://crates.io/crates/graphina
 
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -97,6 +102,8 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
   - admonition
   - attr_list
   - toc:

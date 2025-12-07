@@ -46,7 +46,7 @@ Graphina offers two styles of interaction:
 Use the `try_` variants or `Option/Result` returning methods for robustness:
 
 *   `graph.add_node(...)` -> matches `NetworkX` behavior (panics or updates).
-*   `graph.try_add_node(...)` -> Returns `Result`.<_, GraphinaError>`. Recommended for production applications where you need to handle missing nodes or invalid operations gracefully.
+*   `graph.try_add_node(...)` -> Returns `Result.<_, GraphinaError>`. Recommended for production applications where you need to handle missing nodes or invalid operations gracefully.
 
 ## Performance
 
