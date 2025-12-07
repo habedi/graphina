@@ -98,7 +98,8 @@ graphina = { version = "0.3.0-alpha.4", features = ["centrality", "community", "
 
 ### Documentation
 
-See [docs](https://habedi.github.io/graphina) and [docs.rs/graphina](https://docs.rs/graphina) for information, examples, and API references.
+See [docs](https://habedi.github.io/graphina) and [docs.rs/graphina](https://docs.rs/graphina) for more information for the detailed documentation
+including examples and API references.
 
 #### API Examples
 
