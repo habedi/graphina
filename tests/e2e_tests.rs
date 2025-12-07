@@ -1,93 +1,15 @@
 //! End-to-end tests for Graphina.
 
-use graphina::core::io::read_edge_list;
-use graphina::core::types::{Digraph, Graph};
+mod common;
+
+use common::{
+    DATASETS, load_directed_graph_f32 as load_directed_graph,
+    load_undirected_graph_f32 as load_undirected_graph, skip_if_no_datasets,
+};
+use graphina::core::types::Graph;
 use graphina::subgraphs::SubgraphOps;
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
-use std::path::Path;
-
-#[derive(Debug, Clone)]
-struct DatasetInfo {
-    name: &'static str,
-    file: &'static str,
-    is_directed: bool,
-    min_nodes: usize,
-    min_edges: usize,
-}
-
-const DATASETS: &[DatasetInfo] = &[
-    DatasetInfo {
-        name: "Wikipedia Chameleon",
-        file: "wikipedia_chameleon.txt",
-        is_directed: false,
-        min_nodes: 2000,
-        min_edges: 30000,
-    },
-    DatasetInfo {
-        name: "Wikipedia Squirrel",
-        file: "wikipedia_squirrel.txt",
-        is_directed: false,
-        min_nodes: 5000,
-        min_edges: 190000,
-    },
-    DatasetInfo {
-        name: "Wikipedia Crocodile",
-        file: "wikipedia_crocodile.txt",
-        is_directed: false,
-        min_nodes: 11000,
-        min_edges: 170000,
-    },
-    DatasetInfo {
-        name: "Facebook Page-Page",
-        file: "facebook_page_page.txt",
-        is_directed: false,
-        min_nodes: 22000,
-        min_edges: 170000,
-    },
-    DatasetInfo {
-        name: "Stanford Web Graph",
-        file: "stanford_web_graph.txt",
-        is_directed: true,
-        min_nodes: 280000,
-        min_edges: 2300000,
-    },
-    DatasetInfo {
-        name: "DBLP Citation Network",
-        file: "dblp_citation_network.txt",
-        is_directed: false,
-        min_nodes: 317000,
-        min_edges: 1049000,
-    },
-];
-
-fn datasets_available() -> bool {
-    Path::new("tests/testdata/graphina-graphs").exists()
-}
-
-macro_rules! skip_if_no_datasets {
-    () => {
-        if !datasets_available() {
-            eprintln!("Skipping test: datasets not found");
-            eprintln!("   Run: huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir tests/testdata/graphina-graphs");
-            return;
-        }
-    };
-}
-
-fn load_undirected_graph(filename: &str) -> Result<Graph<i32, f32>, std::io::Error> {
-    let path = format!("tests/testdata/graphina-graphs/{}", filename);
-    let mut graph = Graph::new();
-    read_edge_list(&path, &mut graph, ' ')?;
-    Ok(graph)
-}
-
-fn load_directed_graph(filename: &str) -> Result<Digraph<i32, f32>, std::io::Error> {
-    let path = format!("tests/testdata/graphina-graphs/{}", filename);
-    let mut graph = Digraph::new();
-    read_edge_list(&path, &mut graph, ' ')?;
-    Ok(graph)
-}
 
 #[test]
 fn test_e2e_complete_graph_analysis_pipeline() {

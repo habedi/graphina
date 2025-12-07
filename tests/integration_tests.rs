@@ -1,54 +1,18 @@
 //! Integration and cross-module tests for Graphina.
 
+mod common;
+
+use common::{
+    load_undirected_graph_f32 as load_graph_dataset, load_undirected_graph_f64 as load_graph_f64,
+    skip_if_no_datasets,
+};
 use graphina::core::io::read_edge_list;
 use graphina::core::types::{Digraph, Graph, NodeId};
 use graphina::core::validation::{
     count_components, has_negative_weights, is_bipartite, is_connected, is_dag, is_empty,
     validate_is_dag, validate_node_exists, validate_non_empty, validate_non_negative_weights,
 };
-use ordered_float::OrderedFloat;
 use std::collections::HashMap;
-use std::path::Path;
-
-fn datasets_available() -> bool {
-    Path::new("tests/testdata/graphina-graphs").exists()
-}
-
-macro_rules! skip_if_no_datasets {
-    () => {
-        if !datasets_available() {
-            eprintln!("Skipping test: datasets not found in tests/testdata/graphina-graphs/");
-            return;
-        }
-    };
-}
-
-fn load_graph_f64(filename: &str) -> Result<Graph<i32, OrderedFloat<f64>>, std::io::Error> {
-    let path = format!("tests/testdata/graphina-graphs/{}", filename);
-    let mut graph_f32: Graph<i32, f32> = Graph::new();
-    read_edge_list(&path, &mut graph_f32, ' ')?;
-
-    let mut graph = Graph::new();
-    let mut node_map = HashMap::new();
-
-    for (node, attr) in graph_f32.nodes() {
-        let new_node = graph.add_node(*attr);
-        node_map.insert(node, new_node);
-    }
-
-    for (u, v, &w) in graph_f32.edges() {
-        graph.add_edge(node_map[&u], node_map[&v], OrderedFloat(w as f64));
-    }
-
-    Ok(graph)
-}
-
-fn load_graph_dataset(filename: &str) -> Result<Graph<i32, f32>, std::io::Error> {
-    let path = format!("tests/testdata/graphina-graphs/{}", filename);
-    let mut graph = Graph::new();
-    read_edge_list(&path, &mut graph, ' ')?;
-    Ok(graph)
-}
 
 #[test]
 fn test_validation_utilities_empty_graph() {
