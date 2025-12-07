@@ -78,7 +78,7 @@ print(f"Node A's attribute: {attr}")
 ### Get All Nodes
 
 ```python
-all_nodes = g.nodes()
+all_nodes = g.nodes
 print(f"All nodes: {all_nodes}")
 ```
 
@@ -101,10 +101,10 @@ print(f"PageRank scores: {pagerank_scores}")
 Find the shortest path between two nodes:
 
 ```python
-# Dijkstra's algorithm
-path = pg.core.dijkstra(g, node_a, node_d)
-if path:
-    print(f"Shortest path from A to D: {path}")
+# Find specific path
+result = g.shortest_path(node_a, node_d)
+if result:
+    print(f"Shortest path from A to D: {result}")
 else:
     print("No path found")
 ```
@@ -115,7 +115,7 @@ Detect communities in the graph:
 
 ```python
 # Label propagation algorithm
-communities = pg.community.label_propagation(g, max_iterations=100)
+communities = pg.community.label_propagation(g, 100)
 print(f"Communities: {communities}")
 ```
 

@@ -40,7 +40,7 @@ O(V²)
 import pygraphina as pg
 
 # Create a graph following preferential attachment
-g = pg.core.barabasi_albert_graph(50, 3, seed=42)
+g = pg.core.barabasi_albert(50, 3, seed=42)
 
 # Calculate preferential attachment
 pa = pg.links.preferential_attachment(g)

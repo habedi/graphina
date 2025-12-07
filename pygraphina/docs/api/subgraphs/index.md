@@ -328,7 +328,7 @@ import pygraphina as pg
 g = pg.core.karate_club_graph()
 
 # Detect communities
-communities = pg.community.louvain(g, 1.0)
+communities = pg.community.louvain(g)
 
 # Extract each community as a subgraph
 community_graphs = {}
@@ -350,10 +350,10 @@ for comm_id, nodes in comm_nodes.items():
 import pygraphina as pg
 
 # Large network
-g = pg.core.barabasi_albert_graph(1000, 3, seed=42)
+g = pg.core.barabasi_albert(1000, 3, seed=42)
 
 # Find high-degree node
-degrees = {n: g.degree(n) for n in g.nodes()}
+degrees = {n: g.degree(n) for n in g.nodes}
 hub = max(degrees, key=degrees.get)
 
 # Analyze hub's local network

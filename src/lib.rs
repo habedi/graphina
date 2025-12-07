@@ -2,7 +2,7 @@
 /*!
 # Graphina Crate
 
-High-level graph data science library. Provides graph types, algorithms, and analytics.
+A graph data science library that provides common graph types, algorithms, and data structures.
 
 ## Module Overview
 

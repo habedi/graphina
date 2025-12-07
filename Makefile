@@ -40,13 +40,18 @@ format: ## Format Rust files
 	@cargo fmt
 
 .PHONY: test
-test: format ## Run the tests
+test: format doctest ## Run the tests
 	@echo "Running tests..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --features all --all-targets \
 	--workspace -- --nocapture
 
+.PHONY: doctest
+doctest: ## Run documentation tests (Rust code examples in doc comments)
+	@echo "Running documentation tests..."
+	@cargo test --doc --features all
+
 .PHONY: coverage
-coverage: format ## Generate test coverage report
+coverage: format doctest ## Generate test coverage report
 	@echo "Generating test coverage report..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --features all --out Xml --out Html
 
@@ -209,6 +214,26 @@ docs-py: develop-py ## Generate PyGraphina MkDocs documentation
 docs-serve-py: develop-py ## Serve PyGraphina MkDocs documentation locally
 	@echo "Serving MkDocs documentation locally..."
 	@$(PY_DEP_MNGR) run mkdocs serve --config-file pygraphina/mkdocs.yml
+
+.PHONY: rundocs
+rundocs: develop-py ## Test all code examples in PyGraphina documentation using rundoc
+	@echo "Testing documentation code examples..."
+	@failed=0; \
+	for f in $(PYGRAPHINA_DIR)/docs/examples/*.md; do \
+		echo "=== Testing $$(basename $$f) ==="; \
+		if echo | rundoc run "$$f" 2>&1 | grep -q "Failed"; then \
+			echo "FAILED: $$f"; \
+			failed=$$((failed + 1)); \
+		else \
+			echo "PASSED: $$f"; \
+		fi; \
+	done; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$$failed file(s) had failures"; \
+		exit 1; \
+	else \
+		echo "All documentation examples passed!"; \
+	fi
 
 .PHONY: docs-serve
 docs-serve: ## Serve Graphina MkDocs locally

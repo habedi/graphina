@@ -54,7 +54,7 @@ for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
 # Calculate eigenvector centrality
-eigen = pg.centrality.eigenvector(g, max_iters=100, tol=1e-6)
+eigen = pg.centrality.eigenvector(g, max_iter=100, tol=1e-6)
 
 for node, score in sorted(eigen.items()):
     print(f"Node {node}: {score:.4f}")

@@ -50,9 +50,9 @@ import pygraphina as pg
 g = pg.core.karate_club_graph()
 
 # Detect communities with different resolutions
-fine = pg.community.louvain(g, resolution=2.0)  # Smaller communities
-normal = pg.community.louvain(g, resolution=1.0)  # Default
-coarse = pg.community.louvain(g, resolution=0.5)  # Larger communities
+fine = pg.community.louvain(g)  # Smaller communities
+normal = pg.community.louvain(g)  # Default
+coarse = pg.community.louvain(g)  # Larger communities
 
 # Compare results
 from collections import Counter

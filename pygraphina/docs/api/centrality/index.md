@@ -47,7 +47,7 @@ g = pg.PyGraph()
 # ... add nodes and edges ...
 
 # Calculate centrality
-scores = pg.centrality.pagerank(g, damping=0.85, max_iters=100, tol=1e-6)
+scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
 
 # Find the most important node
 most_important = max(scores, key=scores.get)
@@ -73,7 +73,7 @@ Simple count of connections. Fast but doesn't consider graph structure.
 ### Betweenness Centrality
 
 ```python
-scores = pg.centrality.betweenness(g)
+scores = pg.centrality.betweenness(g, True)
 ```
 
 Measures how often a node appears on shortest paths. Good for finding bridges.
@@ -89,7 +89,7 @@ Based on average distance to all other nodes. Good for finding central hubs.
 ### Eigenvector Centrality
 
 ```python
-scores = pg.centrality.eigenvector(g, max_iters=100, tol=1e-6)
+scores = pg.centrality.eigenvector(g, max_iter=100, tol=1e-6)
 ```
 
 Connections to important nodes matter more. Similar to PageRank.
@@ -97,7 +97,7 @@ Connections to important nodes matter more. Similar to PageRank.
 ### PageRank
 
 ```python
-scores = pg.centrality.pagerank(g, damping=0.85, max_iters=100, tol=1e-6)
+scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
 ```
 
 The algorithm behind Google Search. Models random surfing behavior.
@@ -105,7 +105,7 @@ The algorithm behind Google Search. Models random surfing behavior.
 ### Katz Centrality
 
 ```python
-scores = pg.centrality.katz(g, alpha=0.1, beta=1.0, max_iters=100, tol=1e-6)
+scores = pg.centrality.katz(g, alpha=0.1, beta=1.0, max_iter=100, tol=1e-6)
 ```
 
 Weighted sum of all paths, with exponential decay for longer paths.
@@ -175,7 +175,7 @@ g.add_edge(nodes[3], nodes[4], 1.0)
 
 # Calculate different centrality measures
 degree = pg.centrality.degree(g)
-betweenness = pg.centrality.betweenness(g)
+betweenness = pg.centrality.betweenness(g, True)
 pagerank = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
 
 print("Centrality Comparison:")

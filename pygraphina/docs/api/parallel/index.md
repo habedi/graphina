@@ -204,11 +204,11 @@ import pygraphina as pg
 import time
 
 # Create a large graph
-g = pg.core.barabasi_albert_graph(10000, 5, seed=42)
+g = pg.core.barabasi_albert(10000, 5, seed=42)
 
 # Sequential degree computation
 start = time.time()
-seq_degrees = {node: g.degree(node) for node in g.nodes()}
+seq_degrees = {node: g.degree(node) for node in g.nodes}
 seq_time = time.time() - start
 
 # Parallel degree computation
@@ -227,7 +227,7 @@ print(f"Speedup: {seq_time / par_time:.2f}x")
 import pygraphina as pg
 
 # Large social network
-g = pg.core.erdos_renyi_graph(5000, 0.01, seed=42)
+g = pg.core.erdos_renyi(5000, 0.01, seed=42)
 
 # Parallel operations
 degrees = pg.parallel.degrees_parallel(g)
@@ -238,7 +238,7 @@ from collections import defaultdict
 
 comp_degrees = defaultdict(list)
 
-for node in g.nodes():
+for node in g.nodes:
     comp_id = components[node]
     degree = degrees[node]
     comp_degrees[comp_id].append(degree)

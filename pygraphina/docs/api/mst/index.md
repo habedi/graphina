@@ -133,10 +133,10 @@ import pygraphina as pg
 import time
 
 # Create a large random graph
-g = pg.core.erdos_renyi_graph(100, 0.3, seed=42)
+g = pg.core.erdos_renyi(100, 0.3, seed=42)
 
 # Add random weights
-for u, v in g.edges():
+for u, v in g.edges:
     g.update_edge_weight(u, v, hash((u, v)) % 100 + 1.0)
 
 # Compare algorithms
@@ -190,7 +190,7 @@ edges_to_keep = sorted_edges[k - 1:]
 
 # Build cluster graph
 cluster_graph = pg.PyGraph()
-for node in g.nodes():
+for node in g.nodes:
     cluster_graph.add_node(node)
 for u, v, w in edges_to_keep:
     cluster_graph.add_edge(u, v, w)

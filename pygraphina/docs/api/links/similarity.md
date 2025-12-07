@@ -33,7 +33,7 @@ Fast but less sophisticated than other metrics.
 Weights common neighbors by their degree (low-degree neighbors count more):
 
 ```python
-pg.links.adamic_adar(graph) -> Dict[Tuple, float]
+pg.links.adamic_adar_index(graph) -> Dict[Tuple, float]
 ```
 
 Formula: A(u, v) = Σ(1 / log(degree(w))) for common neighbors w
@@ -60,7 +60,7 @@ for u, v in edges:
 
 # Compare metrics
 jaccard = pg.links.jaccard_coefficient(g)
-adamic = pg.links.adamic_adar(g)
+adamic = pg.links.adamic_adar_index(g)
 common = pg.links.common_neighbors(g)
 
 # Example: nodes 0 and 3

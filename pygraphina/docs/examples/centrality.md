@@ -32,14 +32,14 @@ g.add_edge(3, 4, 1.0)
 # Calculate different centrality measures
 degree = pg.centrality.degree(g)
 pagerank = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
-betweenness = pg.centrality.betweenness(g)
+betweenness = pg.centrality.betweenness(g, True)
 closeness = pg.centrality.closeness(g)
 
 # Print comparison
 print("Node  Degree  PageRank  Betweenness  Closeness")
 print("-" * 50)
 for node in range(5):  # First 5 nodes
-    print(f"{node:4d}  {degree[node]:6d}  "
+    print(f"{node:4d}  {degree[node]:6}  "
           f"{pagerank[node]:8.4f}  "
           f"{betweenness[node]:11.4f}  "
           f"{closeness[node]:9.4f}")
@@ -100,7 +100,7 @@ for rank, (name, score) in enumerate(ranked, 1):
     print(f"{rank}. {name:8s}: {score:.4f} ({followers} followers)")
 
 # Find connectors (high betweenness)
-betweenness = pg.centrality.betweenness(social)
+betweenness = pg.centrality.betweenness(social, True)
 connector = max(users.items(), key=lambda x: betweenness[x[1]])
 print(f"\nKey Connector: {connector[0]}")
 ```
@@ -139,7 +139,7 @@ network.add_edge(8, bridge2, 1.0)
 network.add_edge(bridge2, 11, 1.0)
 
 # Calculate betweenness centrality
-betweenness = pg.centrality.betweenness(network)
+betweenness = pg.centrality.betweenness(network, True)
 
 print("Top 5 Bridge Nodes (Betweenness):")
 for node, score in sorted(
@@ -290,7 +290,7 @@ for a, b in edges:
 # Compare different alpha values (attenuation factor)
 print("Comparing Katz Centrality with different alpha:")
 for alpha in [0.05, 0.1, 0.2]:
-    katz = pg.centrality.katz(g, alpha=alpha, beta=1.0, max_iters=100, tol=1e-6)
+    katz = pg.centrality.katz(g, alpha, 100, 1e-6)
     top_node = max(katz, key=katz.get)
     print(f"\nAlpha = {alpha:.2f}:")
     print(f"  Top node: {top_node} (score: {katz[top_node]:.4f})")
@@ -349,11 +349,23 @@ for (n1, s1), (n2, s2) in zip(top_5_seq, top_5_par):
 For iterative algorithms (PageRank, Eigenvector, Katz):
 
 ```python
+import pygraphina as pg
+
+# Create a test graph
+g = pg.PyGraph()
+for i in range(10):
+    g.add_node(i)
+for i in range(9):
+    g.add_edge(i, i + 1, 1.0)
+
 # Quick approximation
-quick = pg.centrality.pagerank(g, 0.85, max_iters=10, tol=1e-3)
+quick = pg.centrality.pagerank(g, 0.85, 10, 1e-3)
 
 # High precision
-precise = pg.centrality.pagerank(g, 0.85, max_iters=200, tol=1e-9)
+precise = pg.centrality.pagerank(g, 0.85, 200, 1e-9)
+
+print(f"Quick top node: {max(quick, key=quick.get)}")
+print(f"Precise top node: {max(precise, key=precise.get)}")
 ```
 
 ### 3. Handle Disconnected Graphs
@@ -361,13 +373,25 @@ precise = pg.centrality.pagerank(g, 0.85, max_iters=200, tol=1e-9)
 Some centrality measures require connected graphs. Use harmonic centrality as an alternative to closeness:
 
 ```python
+import pygraphina as pg
+
+# Create a potentially disconnected graph
+g = pg.PyGraph()
+for i in range(8):
+    g.add_node(i)
+g.add_edge(0, 1, 1.0)
+g.add_edge(1, 2, 1.0)
+g.add_edge(4, 5, 1.0)  # Disconnected component
+
 # Closeness may fail on disconnected graphs
 try:
     closeness = pg.centrality.closeness(g)
+    print(f"Closeness computed: {len(closeness)} nodes")
 except Exception as e:
     print(f"Closeness failed: {e}")
-    # Use harmonic instead
+    # Use harmonic instead - handles disconnected graphs
     harmonic = pg.centrality.harmonic(g)
+    print(f"Harmonic computed: {len(harmonic)} nodes")
 ```
 
 ### 4. Normalize When Comparing
@@ -375,6 +399,17 @@ except Exception as e:
 When comparing centrality scores across different graphs, consider normalization:
 
 ```python
+import pygraphina as pg
+
+# Create a graph and compute PageRank
+g = pg.PyGraph()
+for i in range(10):
+    g.add_node(i)
+for i in range(9):
+    g.add_edge(i, i + 1, 1.0)
+
+pagerank = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
+
 def normalize_scores(scores):
     min_s = min(scores.values())
     max_s = max(scores.values())
@@ -385,6 +420,8 @@ def normalize_scores(scores):
     }
 
 normalized = normalize_scores(pagerank)
+print(f"Original range: {min(pagerank.values()):.4f} - {max(pagerank.values()):.4f}")
+print(f"Normalized range: {min(normalized.values()):.2f} - {max(normalized.values()):.2f}")
 ```
 
 ## See Also

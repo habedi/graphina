@@ -49,7 +49,7 @@ for i in range(1, 7):
     g.add_edge(nodes[0], nodes[i], 1.0)
 
 # Node 0 has high betweenness (appears on all paths between other nodes)
-betweenness = pg.centrality.betweenness(g)
+betweenness = pg.centrality.betweenness(g, True)
 for node, score in sorted(betweenness.items()):
     print(f"Node {node}: {score:.4f}")
 ```

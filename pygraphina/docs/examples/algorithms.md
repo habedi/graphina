@@ -246,7 +246,7 @@ for name, algo in algorithms:
 import pygraphina as pg
 
 # Create a test graph
-g = pg.core.erdos_renyi_graph(50, 0.15, seed=42)
+g = pg.core.erdos_renyi(50, 0.15, seed=42)
 
 # Compute various metrics
 print("Graph Metrics:")
@@ -379,7 +379,7 @@ print(f"Covered {covered_edges}/{len(edges)} edges")
 import pygraphina as pg
 
 # Create a large graph
-g = pg.core.barabasi_albert_graph(1000, 3, seed=42)
+g = pg.core.barabasi_albert(1000, 3, seed=42)
 
 # Select multiple start nodes
 start_nodes = [0, 100, 200, 300, 400]
@@ -400,11 +400,11 @@ import pygraphina as pg
 import time
 
 # Create a large graph
-g = pg.core.erdos_renyi_graph(5000, 0.01, seed=42)
+g = pg.core.erdos_renyi(5000, 0.01, seed=42)
 
 # Sequential degree computation
 start = time.time()
-seq_degrees = {node: g.degree(node) for node in g.nodes()}
+seq_degrees = {node: g.degree(node) for node in g.nodes}
 seq_time = time.time() - start
 
 # Parallel degree computation
@@ -429,15 +429,15 @@ assert seq_degrees == par_degrees
 import pygraphina as pg
 
 # Erdos-Renyi random graph
-er_graph = pg.core.erdos_renyi_graph(n=100, p=0.1, seed=42)
+er_graph = pg.core.erdos_renyi(n=100, p=0.1, seed=42)
 print(f"Erdos-Renyi: {er_graph.node_count()} nodes, {er_graph.edge_count()} edges")
 
 # Barabasi-Albert scale-free graph
-ba_graph = pg.core.barabasi_albert_graph(n=100, m=3, seed=42)
+ba_graph = pg.core.barabasi_albert(n=100, m=3, seed=42)
 print(f"Barabasi-Albert: {ba_graph.node_count()} nodes, {ba_graph.edge_count()} edges")
 
 # Watts-Strogatz small-world graph
-ws_graph = pg.core.watts_strogatz_graph(n=100, k=4, p=0.1, seed=42)
+ws_graph = pg.core.watts_strogatz(n=100, k=4, beta=0.1, seed=42)
 print(f"Watts-Strogatz: {ws_graph.node_count()} nodes, {ws_graph.edge_count()} edges")
 
 # Complete graph
@@ -448,9 +448,9 @@ print(f"Complete K10: {complete.node_count()} nodes, {complete.edge_count()} edg
 cycle = pg.core.cycle_graph(n=20)
 print(f"Cycle: {cycle.node_count()} nodes, {cycle.edge_count()} edges")
 
-# Path graph
-path = pg.core.path_graph(n=15)
-print(f"Path: {path.node_count()} nodes, {path.edge_count()} edges")
+# Star graph
+star = pg.core.star_graph(n=15)
+print(f"Star: {star.node_count()} nodes, {star.edge_count()} edges")
 ```
 
 ## I/O Operations

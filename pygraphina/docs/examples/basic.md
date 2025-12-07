@@ -112,17 +112,18 @@ for start, end, time in routes:
     network.add_edge(stations[start], stations[end], time)
 
 # Find shortest path from A to E
-path = pg.core.dijkstra(
-    network,
+result = network.shortest_path(
     stations["Station A"],
     stations["Station E"]
 )
 
-if path:
+if result:
+    distance, path = result
     # Convert node IDs back to names
     station_names = {v: k for k, v in stations.items()}
     path_names = [station_names[node_id] for node_id in path]
     print(f"Shortest path from A to E: {' → '.join(path_names)}")
+    print(f"Total travel time: {distance} minutes")
 else:
     print("No path found")
 
@@ -180,7 +181,7 @@ most_important = max(paper_importance, key=paper_importance.get)
 print(f"Most important paper (PageRank): {most_important}")
 
 # Find papers that are bridges between research areas
-betweenness = pg.centrality.betweenness(citations)
+betweenness = pg.centrality.betweenness(citations, True)
 paper_bridging = {name: betweenness[node_id] for name, node_id in papers.items()}
 bridge_paper = max(paper_bridging, key=paper_bridging.get)
 print(f"Bridge paper: {bridge_paper}")
@@ -291,7 +292,7 @@ ba_graph = pg.core.barabasi_albert(n=50, m=2, seed=42)
 print(f"Barabási-Albert: {ba_graph.node_count()} nodes, {ba_graph.edge_count()} edges")
 
 # Generate a Watts-Strogatz small-world network
-ws_graph = pg.core.watts_strogatz(n=50, k=4, p=0.1, seed=42)
+ws_graph = pg.core.watts_strogatz(n=50, k=4, beta=0.1, seed=42)
 print(f"Watts-Strogatz: {ws_graph.node_count()} nodes, {ws_graph.edge_count()} edges")
 
 # Generate a complete graph
@@ -342,7 +343,7 @@ print(f"   Communities found: {num_communities}")
 # 3. Important nodes
 print("\n3. Node Importance:")
 pagerank = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
-betweenness = pg.centrality.betweenness(g)
+betweenness = pg.centrality.betweenness(g, True)
 top_pr = max(pagerank, key=pagerank.get)
 top_bet = max(betweenness, key=betweenness.get)
 print(f"   Most important (PageRank): Node {top_pr}")
@@ -358,9 +359,11 @@ for n1, n2, score in sorted(missing_links, key=lambda x: x[2], reverse=True)[:3]
 
 # 5. Paths
 print("\n5. Shortest Paths:")
-path = pg.core.dijkstra(g, 0, 19)
-print(f"   Path from 0 to 19: {path}")
-print(f"   Path length: {len(path) - 1}")
+result = g.shortest_path(0, 19)
+if result:
+    distance, path = result
+    print(f"   Path from 0 to 19: {path}")
+    print(f"   Path length: {len(path) - 1}")
 
 print("\nAnalysis complete!")
 ```

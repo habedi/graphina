@@ -5,7 +5,7 @@ Resource allocation index is a link prediction metric based on resource distribu
 ## Function Signature
 
 ```python
-pg.links.resource_allocation(graph: Union[PyGraph, PyDiGraph]) -> Dict[Tuple[int, int], float]
+pg.links.resource_allocation_index(graph: Union[PyGraph, PyDiGraph]) -> Dict[Tuple[int, int], float]
 ```
 
 ## Parameters
@@ -52,7 +52,7 @@ for u, v in collaborations:
     g.add_edge(researchers[u], researchers[v], 1.0)
 
 # Predict links using resource allocation
-predictions = pg.links.resource_allocation(g)
+predictions = pg.links.resource_allocation_index(g)
 
 # Get top predictions
 top_preds = sorted(predictions.items(), key=lambda x: x[1], reverse=True)

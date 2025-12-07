@@ -73,7 +73,7 @@ for i in range(4, 8):
 g.add_edge(nodes[3], nodes[4], 1.0)
 
 # Detect communities
-communities = pg.community.label_propagation(g, max_iters=100)
+communities = pg.community.label_propagation(g, max_iter=100)
 
 # Display results
 from collections import Counter

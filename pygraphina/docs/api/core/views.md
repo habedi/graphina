@@ -1,10 +1,11 @@
 # Graph Views
 
-Views provide read-only access to graph components (nodes, edges, degrees) with a Pythonic API similar to NetworkX.
+Views provide read-only access to graph components (nodes, edges, and degrees) with a Pythonic API similar to NetworkX.
 
 ## NodeView
 
-Returned by `G.nodes`. behaving like a list of nodes or a dict of node attributes.
+Returned by `G.nodes`.
+It behaves like a list of nodes or a dict of node attributes.
 
 ### Usage
 
@@ -40,7 +41,8 @@ print(list(g.nodes.data("attr")))  # [(1, 100)]
 
 ## EdgeView
 
-Returned by `G.edges`. Provides access to edges and their weights.
+Returned by `G.edges`.
+Provides access to edges and their weights.
 
 ### Usage
 
@@ -74,7 +76,8 @@ print(list(g.edges.data("weight")))  # [(1, 2, 3.5)]
 
 ## DegreeView
 
-Returned by `G.degree`. Provides access to node degrees.
+Returned by `G.degree`.
+Provides access to node degrees.
 
 ### Usage
 

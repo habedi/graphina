@@ -206,7 +206,7 @@ Get a list of all node IDs in the graph.
 ```python
 g = pg.PyGraph()
 a, b, c = [g.add_node(i) for i in range(3)]
-print(g.nodes())  # [0, 1, 2]
+print(g.nodes)  # [0, 1, 2]
 ```
 
 ### node_count

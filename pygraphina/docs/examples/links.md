@@ -81,7 +81,7 @@ for u, v in citations:
     g.add_edge(papers[u], papers[v], 1.0)
 
 # Predict using Adamic-Adar
-predictions = pg.links.adamic_adar(g)
+predictions = pg.links.adamic_adar_index(g)
 
 # Find papers that might be related
 print("Potential citation predictions:")
@@ -120,7 +120,7 @@ for u, v in collaborations:
     g.add_edge(researchers[u], researchers[v], 1.0)
 
 # Predict potential collaborations
-predictions = pg.links.resource_allocation(g)
+predictions = pg.links.resource_allocation_index(g)
 
 # Display top predictions
 print("Potential collaboration recommendations:")
@@ -145,7 +145,7 @@ Preferential attachment favors high-degree nodes.
 import pygraphina as pg
 
 # Create a social network following power-law degree distribution
-g = pg.core.barabasi_albert_graph(20, 2, seed=42)
+g = pg.core.barabasi_albert(20, 2, seed=42)
 
 # Calculate preferential attachment scores
 predictions = pg.links.preferential_attachment(g)
@@ -154,7 +154,7 @@ predictions = pg.links.preferential_attachment(g)
 print("Preferential Attachment Analysis:")
 
 # Get node degrees
-degrees = {n: g.degree(n) for n in g.nodes()}
+degrees = {n: g.degree(n) for n in g.nodes}
 
 # Top predictions
 sorted_pred = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
@@ -170,7 +170,7 @@ for i, ((u, v), score) in enumerate(sorted_pred[:10]):
 
 ## Example 5: Common Neighbors
 
-Simple count of shared neighbors.
+Count shared neighbors between specific node pairs.
 
 ```python
 import pygraphina as pg
@@ -188,16 +188,14 @@ g.add_edge(nodes[2], nodes[3], 1.0)
 g.add_edge(nodes[3], nodes[4], 1.0)
 g.add_edge(nodes[4], nodes[5], 1.0)
 
-# Predict using common neighbors
-predictions = pg.links.common_neighbors(g)
+# Check common neighbors for specific pairs
+pairs_to_check = [(0, 3), (1, 3), (0, 4), (2, 4)]
 
-# Display predictions with counts
-print("Common neighbor predictions:")
-for (u, v), count in sorted(predictions.items(),
-                            key=lambda x: x[1],
-                            reverse=True):
-    if count > 0 and not g.contains_edge(u, v):
-        print(f"  {u} - {v}: {count} common neighbors")
+print("Common neighbors for non-connected pairs:")
+for u, v in pairs_to_check:
+    if not g.contains_edge(u, v):
+        cn = pg.links.common_neighbors(g, u, v)
+        print(f"  Nodes {u} and {v}: {cn} common neighbors")
 ```
 
 ## Example 6: Comparing Link Prediction Methods
@@ -206,15 +204,14 @@ for (u, v), count in sorted(predictions.items(),
 import pygraphina as pg
 
 # Create a test network
-g = pg.core.erdos_renyi_graph(30, 0.15, seed=42)
+g = pg.core.erdos_renyi(30, 0.15, seed=42)
 
-# Apply multiple algorithms
+# Apply algorithms that work on entire graph
 algorithms = {
     "Jaccard": pg.links.jaccard_coefficient,
-    "Adamic-Adar": pg.links.adamic_adar,
-    "Resource Allocation": pg.links.resource_allocation,
+    "Adamic-Adar": pg.links.adamic_adar_index,
+    "Resource Allocation": pg.links.resource_allocation_index,
     "Preferential Attachment": pg.links.preferential_attachment,
-    "Common Neighbors": pg.links.common_neighbors,
 }
 
 # Get predictions from each algorithm
@@ -304,13 +301,13 @@ Use centrality measures to predict links.
 import pygraphina as pg
 
 # Create a network
-g = pg.core.watts_strogatz_graph(30, 4, 0.1, seed=42)
+g = pg.core.watts_strogatz(30, 4, beta=0.1, seed=42)
 
-# Calculate centrality-based predictions
-predictions = pg.links.centrality_based(g)
-
-# Get node centralities for analysis
+# Calculate centrality scores for analysis
 pagerank = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
+
+# Use Jaccard for link prediction - centrality-based prediction example
+predictions = pg.links.jaccard_coefficient(g)
 
 print("Centrality-based link predictions:")
 
@@ -335,10 +332,10 @@ import pygraphina as pg
 import random
 
 # Create a test graph
-g_full = pg.core.barabasi_albert_graph(50, 3, seed=42)
+g_full = pg.core.barabasi_albert(50, 3, seed=42)
 
 # Split edges: 80% training, 20% test
-all_edges = list(g_full.edges())
+all_edges = list(g_full.edges)
 random.seed(42)
 random.shuffle(all_edges)
 
@@ -348,14 +345,14 @@ test_edges = all_edges[split_point:]
 
 # Create training graph
 g_train = pg.PyGraph()
-for node in g_full.nodes():
+for node in g_full.nodes:
     g_train.add_node(node)
 
 for u, v in train_edges:
     g_train.add_edge(u, v, 1.0)
 
 # Make predictions
-predictions = pg.links.adamic_adar(g_train)
+predictions = pg.links.adamic_adar_index(g_train)
 
 # Evaluate on test set
 test_set = {tuple(sorted([u, v])) for u, v in test_edges}
