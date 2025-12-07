@@ -9,14 +9,21 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: indigo
+      accent: cyan
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: indigo
+      accent: cyan
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
   features:
     - content.code.copy
     - navigation.tabs
@@ -25,6 +32,13 @@ theme:
     - navigation.expand
     - content.code.select
     - content.code.annotate
+    - navigation.tracking
+    - navigation.sections
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/habedi/graphina
 
 plugins:
   - search
