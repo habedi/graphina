@@ -23,7 +23,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(5)]
 
 # Add weighted edges
-edges = [(0,1,1), (0,2,4), (1,2,2), (1,3,5), (2,3,1), (3,4,3)]
+edges = [(0, 1, 1), (0, 2, 4), (1, 2, 2), (1, 3, 5), (2, 3, 1), (3, 4, 3)]
 for u, v, w in edges:
     g.add_edge(nodes[u], nodes[v], float(w))
 

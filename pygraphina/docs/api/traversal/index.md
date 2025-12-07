@@ -22,7 +22,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Add edges
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Traverse from starting node
 bfs_order = g.bfs(nodes[0])
@@ -78,7 +78,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Create a graph with isolated components
 for i in range(5):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Find all nodes reachable from node 0
 reachable = g.bfs(nodes[0])

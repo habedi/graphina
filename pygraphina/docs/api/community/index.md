@@ -32,6 +32,7 @@ connected = pg.community.connected_components(g)
 
 # Analyze results
 from collections import Counter
+
 print(f"Label Propagation found {len(set(label_prop.values()))} communities")
 print(f"Louvain found {len(set(louvain.values()))} communities")
 ```

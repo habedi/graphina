@@ -112,8 +112,8 @@ researchers = [g.add_node(i) for i in range(8)]
 collaborations = [
     (0, 1), (0, 2), (1, 2),  # Group 1
     (3, 4), (3, 5), (4, 5),  # Group 2
-    (2, 3),                   # Bridge between groups
-    (5, 6), (6, 7)           # Extended connections
+    (2, 3),  # Bridge between groups
+    (5, 6), (6, 7)  # Extended connections
 ]
 
 for u, v in collaborations:
@@ -164,7 +164,7 @@ for i, ((u, v), score) in enumerate(sorted_pred[:10]):
     if not g.contains_edge(u, v):
         deg_u = degrees[u]
         deg_v = degrees[v]
-        print(f"  {i+1}. Nodes {u}-{v}: score={score:.0f} "
+        print(f"  {i + 1}. Nodes {u}-{v}: score={score:.0f} "
               f"(degrees: {deg_u}, {deg_v})")
 ```
 
@@ -194,8 +194,8 @@ predictions = pg.links.common_neighbors(g)
 # Display predictions with counts
 print("Common neighbor predictions:")
 for (u, v), count in sorted(predictions.items(),
-                           key=lambda x: x[1],
-                           reverse=True):
+                            key=lambda x: x[1],
+                            reverse=True):
     if count > 0 and not g.contains_edge(u, v):
         print(f"  {u} - {v}: {count} common neighbors")
 ```
@@ -259,7 +259,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(20)]
 
 # Time step 1: Initial network
-edges_t1 = [(0,1), (1,2), (2,3), (3,4), (4,0)]
+edges_t1 = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]
 for u, v in edges_t1:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
@@ -268,8 +268,8 @@ predictions_t1 = pg.links.jaccard_coefficient(g)
 
 # Get top predictions
 top_predictions = sorted(predictions_t1.items(),
-                        key=lambda x: x[1],
-                        reverse=True)[:5]
+                         key=lambda x: x[1],
+                         reverse=True)[:5]
 
 print("Predictions before growth:")
 for (u, v), score in top_predictions:
@@ -277,7 +277,7 @@ for (u, v), score in top_predictions:
         print(f"  {u}-{v}: {score:.3f}")
 
 # Time step 2: Add new edges (simulating actual growth)
-edges_t2 = [(1,3), (2,4), (0,5), (5,6)]
+edges_t2 = [(1, 3), (2, 4), (0, 5), (5, 6)]
 for u, v in edges_t2:
     if v < len(nodes):
         g.add_edge(nodes[u], nodes[v], 1.0)

@@ -8,7 +8,7 @@ neighbors.
 ```python
 pg.community.label_propagation(
     graph: PyGraph,
-    max_iters: int = 100
+max_iters: int = 100
 ) -> Dict[int, int]
 ```
 
@@ -61,12 +61,12 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Community 1: nodes 0-3
 for i in range(4):
-    for j in range(i+1, 4):
+    for j in range(i + 1, 4):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Community 2: nodes 4-7
 for i in range(4, 8):
-    for j in range(i+1, 8):
+    for j in range(i + 1, 8):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Bridge edge
@@ -77,6 +77,7 @@ communities = pg.community.label_propagation(g, max_iters=100)
 
 # Display results
 from collections import Counter
+
 print(f"Communities detected: {len(set(communities.values()))}")
 for comm_id, count in Counter(communities.values()).items():
     print(f"  Community {comm_id}: {count} nodes")

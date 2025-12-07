@@ -65,6 +65,9 @@ nav:
       - Visualization: guide/visualization.md
   - Examples:
       - Basic: examples/basic.md
+      - Centrality: examples/centrality.md
+      - Path Finding: examples/paths.md
+      - Visualization: examples/visualization.md
   - API Reference:
       - Rust Docs (docs.rs): https://docs.rs/graphina
       - Crate (crates.io): https://crates.io/crates/graphina

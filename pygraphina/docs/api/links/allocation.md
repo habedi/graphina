@@ -44,8 +44,8 @@ researchers = [g.add_node(i) for i in range(8)]
 collaborations = [
     (0, 1), (0, 2), (1, 2),  # Group 1
     (3, 4), (3, 5), (4, 5),  # Group 2
-    (2, 3),                   # Bridge
-    (5, 6), (6, 7)           # Group 3
+    (2, 3),  # Bridge
+    (5, 6), (6, 7)  # Group 3
 ]
 
 for u, v in collaborations:

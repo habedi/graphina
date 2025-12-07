@@ -8,7 +8,7 @@ approximation is used.
 ```python
 pg.approximation.average_clustering_approx(
     graph: PyGraph,
-    num_samples: int = 1000
+num_samples: int = 1000
 ) -> float
 ```
 
@@ -47,7 +47,7 @@ nodes = [g.add_node(i) for i in range(100)]
 
 # Add edges creating clustering
 for i in range(50):
-    for j in range(i+1, min(i+5, 50)):
+    for j in range(i + 1, min(i + 5, 50)):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Compute approximate clustering

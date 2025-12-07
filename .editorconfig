@@ -1,4 +1,4 @@
-# EditorConfig is awesome: https://EditorConfig.org
+# https://EditorConfig.org
 
 root = true
 
@@ -17,7 +17,7 @@ max_line_length = 100
 max_line_length = 100
 
 [*.md]
-max_line_length = 120
+max_line_length = 150
 trim_trailing_whitespace = false
 
 [*.sh]

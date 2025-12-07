@@ -186,7 +186,7 @@ sorted_edges = sorted(mst_edges, key=lambda e: e[2], reverse=True)
 
 # Remove k-1 heaviest edges to create k clusters
 k = 3
-edges_to_keep = sorted_edges[k-1:]
+edges_to_keep = sorted_edges[k - 1:]
 
 # Build cluster graph
 cluster_graph = pg.PyGraph()

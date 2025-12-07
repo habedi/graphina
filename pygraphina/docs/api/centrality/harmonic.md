@@ -47,7 +47,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(5)]
 
 # Add edges
-edges = [(0,1), (1,2), (2,3), (3,4)]
+edges = [(0, 1), (1, 2), (2, 3), (3, 4)]
 for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 

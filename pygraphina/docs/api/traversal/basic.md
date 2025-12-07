@@ -77,7 +77,7 @@ nodes = [g.add_node(i) for i in range(5)]
 
 # Create path: 0-1-2-3-4
 for i in range(4):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Add a cross-edge
 g.add_edge(nodes[0], nodes[3], 1.0)

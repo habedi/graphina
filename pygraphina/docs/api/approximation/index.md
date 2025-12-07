@@ -47,6 +47,7 @@ nodes = [g.add_node(i) for i in range(20)]
 
 # Add random edges
 import random
+
 random.seed(42)
 for i in range(100):
     u, v = random.randint(0, 19), random.randint(0, 19)

@@ -9,11 +9,11 @@ The visualization module provides tools for creating static and interactive visu
 ```python
 pg.visualization.save_as_html(
     graph: Union[PyGraph, PyDiGraph],
-    path: str,
-    layout: str = "force_directed",
-    width: int = 800,
-    height: int = 600,
-    show_labels: bool = True
+path: str,
+layout: str = "force_directed",
+width: int = 800,
+height: int = 600,
+show_labels: bool = True
 )
 ```
 
@@ -58,9 +58,9 @@ Export graph to D3.js-compatible JSON format.
 ```python
 pg.visualization.compute_layout(
     graph: Union[PyGraph, PyDiGraph],
-    algorithm: str = "force_directed",
-    width: float = 800.0,
-    height: float = 600.0
+algorithm: str = "force_directed",
+width: float = 800.0,
+height: float = 600.0
 ) -> Dict[int, Tuple[float, float]]
 ```
 

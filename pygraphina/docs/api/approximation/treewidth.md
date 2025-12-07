@@ -29,7 +29,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Tree-like structure
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Add some edges to increase treewidth
 g.add_edge(nodes[0], nodes[2], 1.0)

@@ -40,7 +40,7 @@ For small graphs, sequential algorithms may be faster due to threading overhead.
 ```python
 pg.parallel.bfs_parallel(
     graph: Union[PyGraph, PyDiGraph],
-    starts: List[int]
+starts: List[int]
 ) -> List[List[int]]
 ```
 
@@ -66,7 +66,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Add edges
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Run BFS from multiple sources in parallel
 start_nodes = [nodes[0], nodes[5]]
@@ -166,6 +166,7 @@ components = pg.parallel.connected_components_parallel(g)
 
 # Group nodes by component
 from collections import defaultdict
+
 comp_groups = defaultdict(list)
 for node, comp_id in components.items():
     comp_groups[comp_id].append(node)
@@ -217,7 +218,7 @@ par_time = time.time() - start
 
 print(f"Sequential: {seq_time:.4f}s")
 print(f"Parallel: {par_time:.4f}s")
-print(f"Speedup: {seq_time/par_time:.2f}x")
+print(f"Speedup: {seq_time / par_time:.2f}x")
 ```
 
 ## Combining Parallel Operations
@@ -234,6 +235,7 @@ components = pg.parallel.connected_components_parallel(g)
 
 # Analyze degree distribution per component
 from collections import defaultdict
+
 comp_degrees = defaultdict(list)
 
 for node in g.nodes():

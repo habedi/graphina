@@ -81,7 +81,7 @@ for i in range(100):
     g.add_node(i)
 
 for i in range(99):
-    g.add_edge(i, i+1, 1.0)
+    g.add_edge(i, i + 1, 1.0)
 
 # Save in multiple formats
 g.save_edge_list("graph.txt")

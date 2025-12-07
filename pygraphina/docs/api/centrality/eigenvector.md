@@ -7,8 +7,8 @@ Eigenvector centrality measures importance based on connections to other importa
 ```python
 pg.centrality.eigenvector(
     graph: Union[PyGraph, PyDiGraph],
-    max_iters: int = 100,
-    tol: float = 1e-6
+max_iters: int = 100,
+tol: float = 1e-6
 ) -> Dict[int, float]
 ```
 

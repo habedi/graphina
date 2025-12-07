@@ -7,7 +7,7 @@ The Louvain algorithm is a fast greedy optimization method for finding communiti
 ```python
 pg.community.louvain(
     graph: PyGraph,
-    resolution: float = 1.0
+resolution: float = 1.0
 ) -> Dict[int, int]
 ```
 
@@ -50,12 +50,13 @@ import pygraphina as pg
 g = pg.core.karate_club_graph()
 
 # Detect communities with different resolutions
-fine = pg.community.louvain(g, resolution=2.0)      # Smaller communities
-normal = pg.community.louvain(g, resolution=1.0)    # Default
-coarse = pg.community.louvain(g, resolution=0.5)    # Larger communities
+fine = pg.community.louvain(g, resolution=2.0)  # Smaller communities
+normal = pg.community.louvain(g, resolution=1.0)  # Default
+coarse = pg.community.louvain(g, resolution=0.5)  # Larger communities
 
 # Compare results
 from collections import Counter
+
 print(f"Fine (res=2.0): {len(set(fine.values()))} communities")
 print(f"Normal (res=1.0): {len(set(normal.values()))} communities")
 print(f"Coarse (res=0.5): {len(set(coarse.values()))} communities")

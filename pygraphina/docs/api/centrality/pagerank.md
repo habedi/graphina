@@ -7,9 +7,9 @@ PageRank is a link analysis algorithm that assigns importance scores to nodes ba
 ```python
 pg.centrality.pagerank(
     graph: Union[PyGraph, PyDiGraph],
-    damping: float = 0.85,
-    max_iters: int = 100,
-    tol: float = 1e-6
+damping: float = 0.85,
+max_iters: int = 100,
+tol: float = 1e-6
 ) -> Dict[int, float]
 ```
 

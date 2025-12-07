@@ -32,7 +32,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Create backbone connections
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Add cross-connections
 g.add_edge(nodes[0], nodes[5], 1.0)

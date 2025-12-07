@@ -53,6 +53,7 @@ components = pg.community.connected_components(g)
 
 # Group nodes by component
 from collections import defaultdict
+
 comp_groups = defaultdict(list)
 for node, comp_id in components.items():
     comp_groups[comp_id].append(node)

@@ -47,7 +47,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Create a clique of size 5 (nodes 0-4)
 for i in range(5):
-    for j in range(i+1, 5):
+    for j in range(i + 1, 5):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Add some edges from clique to other nodes

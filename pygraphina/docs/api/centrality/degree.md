@@ -14,6 +14,7 @@ Returns a dictionary mapping node IDs to their degree (number of neighbors).
 
 ```python
 import pygraphina as pg
+
 g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(5)]
 g.add_edge(0, 1, 1.0)

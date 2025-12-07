@@ -24,7 +24,7 @@ nodes = [g.add_node(i) for i in range(20)]
 
 # Create a path
 for i in range(19):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Add shortcuts
 g.add_edge(nodes[0], nodes[10], 1.0)

@@ -7,33 +7,33 @@ Node metrics characterize individual nodes in the graph.
 ### Degree Information
 
 ```python
-g.degree(node)           # Total degree of node
+g.degree(node)  # Total degree of node
 # For directed graphs:
-g.in_degree(node)        # In-degree
-g.out_degree(node)       # Out-degree
+g.in_degree(node)  # In-degree
+g.out_degree(node)  # Out-degree
 ```
 
 ### Clustering
 
 ```python
-g.clustering_of(node)    # Local clustering coefficient
-g.triangles_of(node)     # Number of triangles through node
+g.clustering_of(node)  # Local clustering coefficient
+g.triangles_of(node)  # Number of triangles through node
 ```
 
 ### Neighbors
 
 ```python
-g.neighbors(node)        # Adjacent nodes
+g.neighbors(node)  # Adjacent nodes
 # For directed graphs:
-g.out_neighbors(node)    # Outgoing neighbors
-g.in_neighbors(node)     # Incoming neighbors
+g.out_neighbors(node)  # Outgoing neighbors
+g.in_neighbors(node)  # Incoming neighbors
 ```
 
 ### Attributes
 
 ```python
-g.get_node_attr(node)    # Node attribute value
-g.contains_node(node)    # Does node exist
+g.get_node_attr(node)  # Node attribute value
+g.contains_node(node)  # Does node exist
 ```
 
 ## Examples
@@ -47,7 +47,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Add some edges
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 g.add_edge(nodes[0], nodes[5], 1.0)
 
 # Analyze each node

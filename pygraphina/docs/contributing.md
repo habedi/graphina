@@ -20,7 +20,7 @@ There are many ways to contribute to PyGraphina:
 First, fork and clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/graphina.git
+git clone https://github.com/habedi/graphina.git
 cd graphina/pygraphina
 ```
 
@@ -323,20 +323,25 @@ Example:
 ## Add Weighted Katz Centrality
 
 ### What
+
 Adds support for weighted edge values in Katz centrality calculation.
 
 ### Why
+
 The current implementation ignores edge weights. This is needed for weighted graphs.
 
 ### How
+
 Modified the Katz algorithm to multiply the adjacency matrix by edge weights.
 
 ### Testing
+
 - Added unit tests for weighted graphs
 - Verified results match NetworkX for same inputs
 - Tested with various weight distributions
 
 ### Breaking Changes
+
 None. This is backward compatible.
 ```
 

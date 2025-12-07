@@ -7,9 +7,9 @@ Katz centrality measures importance using a weighted sum of node paths, with exp
 ```python
 pg.centrality.katz(
     graph: Union[PyGraph, PyDiGraph],
-    alpha: float = 0.1,
-    max_iters: int = 100,
-    tol: float = 1e-6
+alpha: float = 0.1,
+max_iters: int = 100,
+tol: float = 1e-6
 ) -> Dict[int, float]
 ```
 
@@ -55,7 +55,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(5)]
 
 # Create edges
-edges = [(0,1), (1,2), (2,3), (3,4), (0,4)]
+edges = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 4)]
 for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
