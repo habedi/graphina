@@ -1,4 +1,4 @@
-# Quick Start with Graphina (Rust)
+# Quick Start with Graphina
 
 Create graphs, add nodes, and run algorithms with Graphina.
 
@@ -15,8 +15,8 @@ fn main() {
 }
 ```
 
-> [!NOTE]
-> Use `Digraph` for directed graphs.
+!!! note "Graph Type"
+    Use `Digraph` for directed graphs.
 
 ## Adding Nodes
 

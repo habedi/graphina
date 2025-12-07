@@ -11,7 +11,7 @@ Graphina provides two primary graph structures, both of which are generic over n
 
 ## Strongly Typed Data
 
-Unlike Python where a graph can hold mixed types (strings, ints, objects), Graphina graphs are strongly typed.
+Unlike Python where a graph can hold mixed types (like strings, ints, objects), Graphina graphs are strongly typed.
 
 ```rust
 // A social network: Nodes are people (String), Edges are relationship strength (f64)
@@ -25,13 +25,16 @@ This design allows Graphina to optimize memory layout and guarantee data consist
 
 ## References via NodeId
 
-In NetworkX, the node *value* (like "Alice") is often the identifier. In Graphina, adding a node transfers ownership of the data to the graph and returns a **`NodeId`**.
+In NetworkX, the node *value* (like "Alice") is often the identifier.
+In Graphina, adding a node transfers ownership of the data to the graph and returns a **`NodeId`**.
 
 ```rust
 let id = graph.add_node("Data");
 ```
 
-This `NodeId` is a lightweight handle (essentially an integer index) that permits $O(1)$ access to the node. You use this ID for all subsequent graph operations:
+This `NodeId` is a lightweight handle (essentially an integer index) that permits $O(1)$ access to the node.
+You use this ID for all subsequent graph operations:
+
 *   Creating edges (`graph.add_edge(id1, id2, ...)`)
 *   Querying neighbors (`graph.neighbors(id1)`)
 *   Algorithms (`pagerank(&graph, ...)`)
@@ -48,5 +51,6 @@ Use the `try_` variants or `Option/Result` returning methods for robustness:
 ## Performance
 
 Graphina wraps `petgraph`'s `StableGraph`, meaning:
+
 *   **Fast Lookups**: Nodes and edges are stored in vectors.
 *   **Stability**: Removing a node does not invalidate the `NodeId`s of other nodes.
