@@ -58,6 +58,9 @@ nav:
   - User Guide:
       - Core:
           - Graph Types: guide/graphs.md
+          - Building Graphs: guide/builders.md
+          - Graph Generators: guide/generators.md
+          - Graph I/O: guide/io.md
       - Extensions:
           - Traversal: guide/traversal.md
           - Subgraphs and Views: guide/subgraphs.md
