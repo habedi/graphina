@@ -16,8 +16,7 @@
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
 Graphina is a graph data science library for Rust.
-It provides the common data structures and algorithms used for analyzing the graphs of real-world networks, such as
-social, transportation, and biological networks.
+It provides common data structures and algorithms for analyzing real-world networks, such as social, transportation, and biological networks.
 
 Compared to other Rust graph libraries like [petgraph](https://github.com/petgraph/petgraph)
 and [rustworkx](https://www.rustworkx.org/), Graphina aims to provide a more high-level API and a wide range of
@@ -28,7 +27,7 @@ Rust.
 Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
 Check out [pygraphina](pygraphina/README.md) directory for more details.
 
-See the [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
+See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 
 > [!IMPORTANT]
 > This project is in early development, so bugs and breaking changes are expected.
@@ -43,8 +42,7 @@ The core library provides the basic data structures and algorithms for working w
 The extensions are modules outside the core library that contain more advanced algorithms for specific tasks like
 community detection, link prediction, and calculating node and edge centrality scores.
 
-The extensions are independent of each other.
-However, they depend on the core library for the basic graph operations.
+Extensions are independent of each other but depend on the core library.
 
 #### Graphina Core
 
@@ -85,14 +83,14 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.4.0"
+graphina = "0.3.0-alpha.4"
 ```
 
-Or this to use Graphina with all the features enabled:
+Or enable all features:
 
 ```toml
 [dependencies]
-graphina = { version = "0.4.0", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "visualization", "parallel", "pool"] }
+graphina = { version = "0.3.0-alpha.4", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "visualization", "parallel", "pool"] }
 ```
 
 > [!NOTE]
@@ -100,8 +98,7 @@ graphina = { version = "0.4.0", features = ["centrality", "community", "approxim
 
 ### Documentation
 
-Check out the [docs](docs/README.md) and [docs.rs/graphina](https://docs.rs/graphina) for more information, including
-examples and API references.
+See [docs](https://habedi.github.io/graphina) and [docs.rs/graphina](https://docs.rs/graphina) for information, examples, and API references.
 
 #### Simple Example
 
@@ -155,8 +152,6 @@ use graphina::core::types::Undirected;
 let er = erdos_renyi_graph::<Undirected>(100, 0.2, 42).unwrap();
 let ba = barabasi_albert_graph::<Undirected>(1000, 3, 42).unwrap();
 ```
-
-See the [examples](docs/examples) and [tests](tests) directories for more usage examples.
 
 ---
 
