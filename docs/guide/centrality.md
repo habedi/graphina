@@ -23,15 +23,30 @@ pub fn pagerank<A, W, Ty>(
 ```rust
 use graphina::core::types::Digraph;
 use graphina::centrality::pagerank;
+use graphina::centrality::degree_centrality; // Added for degree_centrality
+use graphina::centrality::DegreeDirection; // Added for DegreeDirection
 
 let mut g = Digraph::<&str, f64>::new();
-// ... add nodes and edges ...
+let n1 = g.add_node("A");
+let n2 = g.add_node("B");
+let n3 = g.add_node("C");
+let n4 = g.add_node("D");
+
+g.add_edge(n1, n2, 1.0);
+g.add_edge(n1, n3, 1.0);
+g.add_edge(n2, n3, 1.0);
+g.add_edge(n3, n4, 1.0);
+g.add_edge(n4, n1, 1.0);
 
 let scores = pagerank(&g, 0.85, 100, 1e-6);
 
 for (node, score) in scores {
     println!("Node {:?} has PageRank {:.4}", node, score);
 }
+
+// Calculate Degree Centrality for the same graph
+let degree_scores = degree_centrality(&g, DegreeDirection::Successors);
+println!("Degree Centrality (Successors): {:?}", degree_scores);
 ```
 
 ## Betweenness Centrality

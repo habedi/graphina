@@ -1,22 +1,14 @@
 # PyGraphina Documentation
 
-Welcome to PyGraphina, the Python bindings for the [Graphina](https://github.com/habedi/graphina) graph data science
-library!
+Welcome to PyGraphina documentation!
 
-[![Python version](https://img.shields.io/badge/python-%3E=3.10-blue)](https://github.com/habedi/graphina)
-[![PyPI version](https://badge.fury.io/py/pygraphina.svg)](https://badge.fury.io/py/pygraphina)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/habedi/graphina)
-
-## What is PyGraphina?
-
-PyGraphina provides Python access to Graphina, a high-performance graph data science library written in Rust. It
-combines the ease of use of Python with the speed and efficiency of Rust, making it ideal for analyzing large-scale
-networks.
+[PyGraphina](https://github.com/habedi/graphina/tree/main/pygraphina) 🐍 allows users to use
+[Graphina](https://github.com/habedi/graphina) 🦀 graph data science library from Python.
 
 ## Features
 
-- **Fast Performance**: Rust-powered backend for high-performance graph algorithms
-- **Rich Algorithm Library**: Comprehensive suite of graph algorithms including:
+- All algorithms and data structures are implemented in Rust
+- A **large collection of graph algorithms** including:
     - **Centrality measures**: PageRank, betweenness, closeness, eigenvector, Katz, and more
     - **Community detection**: Louvain, label propagation, Girvan-Newman, spectral clustering
     - **Link prediction**: Jaccard coefficient, Adamic-Adar, resource allocation, preferential attachment
@@ -24,10 +16,10 @@ networks.
     - **Graph metrics**: Clustering coefficient, transitivity, diameter, assortativity
     - **Approximation algorithms**: For cliques, vertex cover, independent sets, TSP, and more
     - **Minimum spanning trees**: Prim's, Kruskal's, and Borůvka's algorithms
-- **Easy to Use**: Pythonic API that's familiar and intuitive
-- **Graph Generators**: Create random and structured graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz, etc.)
-- **I/O Support**: Read and write graphs in multiple formats (edge lists, adjacency lists, JSON, GraphML)
-- **Parallel Processing**: Multi-threaded implementations for compute-intensive operations
+- **Pythonic API**
+- Create **random and structured graphs** (Erdős-Rényi, Barabási-Albert, Watts-Strogatz, etc.)
+- **Read and write graphs in multiple formats** (edge lists, adjacency lists, JSON, and GraphML)
+- **Multi-threaded implementations** of popular graph algorithms like PageRank
 
 ## Quick Example
 
@@ -57,42 +49,36 @@ jaccard = pg.links.jaccard_coefficient(g)
 print(f"Jaccard coefficients: {jaccard}")
 ```
 
-## Performance
-
-PyGraphina leverages Rust's performance to handle large-scale graphs efficiently. It's designed to be:
-
-- **Fast**: Rust implementation provides near-native performance
-- **Memory efficient**: Optimized data structures minimize memory footprint
-- **Scalable**: Parallel algorithms for multi-core processors
-- **Production-ready**: Battle-tested algorithms with comprehensive test coverage
-
 ## When to Use PyGraphina
 
-PyGraphina is ideal for:
+Typical PyGraphina use cases include:
 
 - **Network analysis**: Social networks, collaboration networks, citation networks
 - **Link prediction**: Recommender systems, knowledge graph completion
 - **Community detection**: Finding clusters and groups in networks
 - **Graph metrics**: Analyzing graph properties and structure
 - **Algorithm research**: Fast prototyping of graph algorithms
-- **Data science pipelines**: Integrating graph analysis into Python workflows
+- **Data science pipelines**: Integrating graph analysis into typical data science workflows that use Python
 
 ## Comparison with NetworkX
 
-While NetworkX is a popular Python graph library, PyGraphina offers significant performance advantages:
+[NetworkX](https://networkx.org/en/) is probably the most popular Python graph data science and network science library.
+NetworkX is relatively mature and has a large collection of graph algorithms, however, it's written in pure Python.
+As a result, it can be slow specially when it comes to large graphs.
+PyGraphina aims to be a drop-in replacement for NetworkX with providing a similar API, but with much better performance and lower memory usage.
 
-| Feature            | PyGraphina                 | NetworkX               |
-|--------------------|----------------------------|------------------------|
-| Language           | Rust + Python bindings     | Pure Python            |
-| Performance        | High (compiled, parallel)  | Moderate (interpreted) |
-| Memory Usage       | Low (optimized structures) | Higher                 |
-| API Style          | Pythonic                   | Pythonic               |
-| Algorithm Coverage | Growing                    | Extensive              |
-| Maturity           | Early development          | Mature                 |
+| Feature            | PyGraphina                | NetworkX    |
+|--------------------|---------------------------|-------------|
+| Language           | Rust plus Python bindings | Pure Python |
+| Performance        | High                      | Moderate    |
+| Memory Usage       | Low                       | Higher      |
+| API Style          | Pythonic                  | Pythonic    |
+| Algorithm Coverage | Growing                   | Extensive   |
+| Maturity           | Early development         | Mature      |
 
 !!! note "Project Status"
-PyGraphina is in early development. While it's functional and tested, you may encounter bugs or breaking changes. Please
-report issues on our [GitHub issue tracker](https://github.com/habedi/graphina/issues).
+    PyGraphina is in early development. While it's functional and tested, you may encounter bugs or breaking changes. Please
+    report issues on our [GitHub issue tracker](https://github.com/habedi/graphina/issues).
 
 ## Next Steps
 

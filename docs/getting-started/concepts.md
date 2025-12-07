@@ -40,8 +40,10 @@ This `NodeId` is a lightweight handle (essentially an integer index) that permit
 
 Graphina offers two styles of interaction:
 
-1.  **Standard API** (like `update_node`): Returns simple booleans or options. Convenient for quick scripts.
-2.  **Robust API** (like `try_update_node`): Returns `Result<_, GraphinaError>`. Recommended for production applications where you need to handle missing nodes or invalid operations gracefully.
+Use the `try_` variants or `Option/Result` returning methods for robustness:
+
+*   `graph.add_node(...)` -> matches `NetworkX` behavior (panics or updates).
+*   `graph.try_add_node(...)` -> Returns `Result`.<_, GraphinaError>`. Recommended for production applications where you need to handle missing nodes or invalid operations gracefully.
 
 ## Performance
 

@@ -57,6 +57,8 @@ Edge weights `W` must implement `Ord`. For floating point numbers, use `OrderedF
 
 ```rust
 use ordered_float::OrderedFloat;
-// ...
+let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+let u = g.add_node(1);
+let v = g.add_node(2);
 g.add_edge(u, v, OrderedFloat(1.5));
 ```

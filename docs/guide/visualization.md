@@ -10,9 +10,10 @@ For small graphs or quick debugging, you can print the graph structure to the co
 use graphina::core::types::Graph;
 use graphina::visualization::d3::D3Graph;
 
-let mut g = Graph::<&str, f64>::new();
-// ...
-println!("{}", g.to_ascii_art());
+// Setup
+let mut graph = Graph::<&str, f64>::new();
+graph.add_node("A");
+println!("{}", graph.to_ascii_art());
 ```
 
 ## Interactive HTML / D3.js
@@ -36,7 +37,7 @@ Open `graph_view.html` in your browser to explore the graph (zoom, pan, drag nod
 
 ### DOT / Graphviz
 
-(Coming soon)
+Graphina plans to support DOT export. Check the roadmap for updates.
 
 ### D3 JSON
 
