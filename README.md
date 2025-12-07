@@ -9,7 +9,6 @@
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&color=4caf50&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
 [![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&labelColor=282c34&logo=codecov)](https://codecov.io/gh/habedi/graphina)
-[![CodeFactor](https://img.shields.io/codefactor/grade/github/habedi/graphina?style=flat&label=quality&labelColor=282c34&logo=codefactor)](https://www.codefactor.io/repository/github/habedi/graphina)
 [![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=e65100&logo=rust)](https://crates.io/crates/graphina)
 [![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-5c6bc0?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
 [![Docs](https://img.shields.io/badge/docs-read-00acc1?style=flat&labelColor=282c34&logo=readthedocs)](https://habedi.github.io/graphina)
