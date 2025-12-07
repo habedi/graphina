@@ -56,19 +56,20 @@ nav:
       - Quick Start: getting-started/quickstart.md
       - Core Concepts: getting-started/concepts.md
   - User Guide:
-      - Graph Types: guide/graphs.md
-      - Traversal: guide/traversal.md
-      - Subgraphs and Views: guide/subgraphs.md
-      - Algorithms:
+      - Core:
+          - Graph Types: guide/graphs.md
+      - Extensions:
+          - Traversal: guide/traversal.md
+          - Subgraphs and Views: guide/subgraphs.md
           - Centrality: guide/centrality.md
           - Community Detection: guide/community.md
           - Path Finding: guide/paths.md
           - Minimum Spanning Tree: guide/mst.md
           - Link Prediction: guide/links.md
           - Approximation: guide/approximation.md
-      - Graph Metrics: guide/metrics.md
-      - Parallel Processing: guide/parallel.md
-      - Visualization: guide/visualization.md
+          - Graph Metrics: guide/metrics.md
+          - Parallel Processing: guide/parallel.md
+          - Visualization: guide/visualization.md
   - Examples:
       - Basic: examples/basic.md
       - Centrality: examples/centrality.md
@@ -92,6 +93,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.details
   - admonition
   - attr_list
   - toc:

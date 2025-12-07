@@ -66,7 +66,6 @@ use graphina::links::allocation::ra_index_soundarajan_hopcroft;
 
 fn main() {
     let mut graph = Graph::<&str, f64>::new();
-    let mut graph = Graph::<&str, f64>::new();
     let n1 = graph.add_node("A");
     let n2 = graph.add_node("B");
 

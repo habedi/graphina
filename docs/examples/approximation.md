@@ -51,7 +51,6 @@ use graphina::approximation::vertex_cover::min_vertex_cover;
 
 fn main() {
     let mut graph = Graph::<i32, f64>::new();
-    let mut graph = Graph::<i32, f64>::new();
     let n1 = graph.add_node(1);
     let n2 = graph.add_node(2);
     graph.add_edge(n1, n2, 1.0);
@@ -71,7 +70,6 @@ use graphina::core::types::Graph;
 use graphina::approximation::clique::max_clique;
 
 fn main() {
-    let mut graph = Graph::<i32, f64>::new();
     let mut graph = Graph::<i32, f64>::new();
     let n1 = graph.add_node(1);
     let n2 = graph.add_node(2);

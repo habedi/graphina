@@ -55,58 +55,59 @@ nav:
       - Quick Start: getting-started/quickstart.md
       - Basic Concepts: getting-started/concepts.md
   - API Reference:
-      - Graph: api/graph.md
-      - Directed Graph: api/digraph.md
-      - Core Operations:
+      - Core:
+          - Graph: api/graph.md
+          - Directed Graph: api/digraph.md
           - Graph Views: api/core/views.md
           - Building Graphs: api/core/builders.md
           - Graph I/O: api/core/io.md
           - Interoperability: api/core/interop.md
           - Graph Generators: api/core/generators.md
           - Paths: api/core/paths.md
-      - Centrality:
-          - Overview: api/centrality/index.md
-          - Degree: api/centrality/degree.md
-          - Betweenness: api/centrality/betweenness.md
-          - Closeness: api/centrality/closeness.md
-          - Eigenvector: api/centrality/eigenvector.md
-          - PageRank: api/centrality/pagerank.md
-          - Katz: api/centrality/katz.md
-          - Harmonic: api/centrality/harmonic.md
-          - Reaching: api/centrality/reaching.md
-      - Community Detection:
-          - Overview: api/community/index.md
-          - Label Propagation: api/community/label_propagation.md
-          - Louvain: api/community/louvain.md
-          - Girvan-Newman: api/community/girvan_newman.md
-          - Spectral Clustering: api/community/spectral.md
-          - Connected Components: api/community/connected_components.md
-      - Link Prediction:
-          - Overview: api/links/index.md
-          - Similarity Metrics: api/links/similarity.md
-          - Resource Allocation: api/links/allocation.md
-          - Preferential Attachment: api/links/attachment.md
-          - Centrality-based: api/links/centrality.md
-      - Approximation Algorithms:
-          - Overview: api/approximation/index.md
-          - Clique: api/approximation/clique.md
-          - Clustering: api/approximation/clustering.md
-          - Connectivity: api/approximation/connectivity.md
-          - Diameter: api/approximation/diameter.md
-          - Independent Set: api/approximation/independent_set.md
-          - Vertex Cover: api/approximation/vertex_cover.md
-          - TSP: api/approximation/tsp.md
-          - Treewidth: api/approximation/treewidth.md
-      - Metrics:
-          - Graph Metrics: api/metrics/graph.md
-          - Node Metrics: api/metrics/node.md
-      - MST: api/mst/index.md
-      - Traversal:
-          - Overview: api/traversal/index.md
-          - BFS and DFS: api/traversal/basic.md
-      - Subgraphs: api/subgraphs/index.md
-      - Parallel: api/parallel/index.md
-      - Visualization: api/visualization/index.md
+      - Extensions:
+          - Centrality:
+              - Overview: api/centrality/index.md
+              - Degree: api/centrality/degree.md
+              - Betweenness: api/centrality/betweenness.md
+              - Closeness: api/centrality/closeness.md
+              - Eigenvector: api/centrality/eigenvector.md
+              - PageRank: api/centrality/pagerank.md
+              - Katz: api/centrality/katz.md
+              - Harmonic: api/centrality/harmonic.md
+              - Reaching: api/centrality/reaching.md
+          - Community Detection:
+              - Overview: api/community/index.md
+              - Label Propagation: api/community/label_propagation.md
+              - Louvain: api/community/louvain.md
+              - Girvan-Newman: api/community/girvan_newman.md
+              - Spectral Clustering: api/community/spectral.md
+              - Connected Components: api/community/connected_components.md
+          - Link Prediction:
+              - Overview: api/links/index.md
+              - Similarity Metrics: api/links/similarity.md
+              - Resource Allocation: api/links/allocation.md
+              - Preferential Attachment: api/links/attachment.md
+              - Centrality-based: api/links/centrality.md
+          - Approximation Algorithms:
+              - Overview: api/approximation/index.md
+              - Clique: api/approximation/clique.md
+              - Clustering: api/approximation/clustering.md
+              - Connectivity: api/approximation/connectivity.md
+              - Diameter: api/approximation/diameter.md
+              - Independent Set: api/approximation/independent_set.md
+              - Vertex Cover: api/approximation/vertex_cover.md
+              - TSP: api/approximation/tsp.md
+              - Treewidth: api/approximation/treewidth.md
+          - Metrics:
+              - Graph Metrics: api/metrics/graph.md
+              - Node Metrics: api/metrics/node.md
+          - MST: api/mst/index.md
+          - Traversal:
+              - Overview: api/traversal/index.md
+              - BFS and DFS: api/traversal/basic.md
+          - Subgraphs: api/subgraphs/index.md
+          - Parallel: api/parallel/index.md
+          - Visualization: api/visualization/index.md
 
   - Examples:
       - Basic Usage: examples/basic.md
@@ -122,6 +123,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.details
   - admonition
   - attr_list
   - toc:

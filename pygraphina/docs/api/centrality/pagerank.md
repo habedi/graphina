@@ -238,8 +238,9 @@ scores = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 Personalized PageRank (PPR) allows you to bias the random jumps toward specific nodes, making the results more relevant
 to a particular starting point.
 
-!!! note "Current Implementation"
-PyGraphina currently provides standard PageRank. For personalized results, you can use the following workaround.
+!!! note "Implementation Note"
+    The current implementation uses the Power Iteration method. While generally fast, for extremely large graphs with
+    slow convergence, other methods (like Arnoldi) might be considered in future releases.lowing workaround.
 
 ### Workaround for Personalized PageRank
 

@@ -5,6 +5,8 @@ Fundamental concepts and design principles of PyGraphina.
 ## Graph Model
 
 PyGraphina represents graphs using an adjacency list data structure, which provides efficient storage and fast neighbor
+    While PyGraphina allows modifying the graph structure, it's generally more efficient to build the graph first and then
+    analyze it. Frequent modifications (especially removals) can be slower than bulk building.
 lookups for sparse graphs (common in real-world networks).
 
 ### Undirected vs. Directed Graphs
@@ -66,7 +68,7 @@ assert node_2 == 2
 ```
 
 !!! warning "Node IDs After Deletion"
-When you remove a node, its ID is not reused. The next added node gets the next sequential ID.
+    When you remove a node, its ID is not reused. The next added node gets the next sequential ID.
 
 ### Node Attributes
 
@@ -86,12 +88,15 @@ assert g.get_node_attr(node_id) == 100
 ```
 
 !!! tip "Use Cases for Node Attributes"
-Node attributes can represent various properties:
+    Node attributes can represent various properties:
 
     - User IDs in a social network
     - Station codes in a transportation network
     - Molecule types in a chemical structure
     - Entity IDs for mapping to external data
+
+    Nodes are mapped to integer `NodeId`s internally. While you can use these IDs directly, the mappings (e.g., node 'A' -> ID 0)
+    are managed by your application if you need to map back to original data.
 
 ## Edges
 

@@ -203,12 +203,12 @@ test-py: develop-py ## Run Python tests
 .PHONY: docs-py
 docs-py: develop-py ## Generate PyGraphina MkDocs documentation
 	@echo "Generating MkDocs documentation..."
-	@$(PY_DEP_MNGR) run mkdocs build --config-file pygraphina/MkDocs.yml
+	@$(PY_DEP_MNGR) run mkdocs build --config-file pygraphina/mkdocs.yml
 
 .PHONY: docs-serve-py
 docs-serve-py: develop-py ## Serve PyGraphina MkDocs documentation locally
 	@echo "Serving MkDocs documentation locally..."
-	@$(PY_DEP_MNGR) run mkdocs serve --config-file pygraphina/MkDocs.yml
+	@$(PY_DEP_MNGR) run mkdocs serve --config-file pygraphina/mkdocs.yml
 
 .PHONY: docs-serve
 docs-serve: ## Serve Graphina MkDocs locally

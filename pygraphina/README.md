@@ -14,7 +14,7 @@ PyGraphina provides Python bindings for [Graphina](https://github.com/habedi/gra
 ### Installation
 
 ```bash
-pip install --pre pygraphina
+pip install pygraphina
 ```
 
 ### Quickstart

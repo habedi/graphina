@@ -49,7 +49,6 @@ use graphina::metrics::{
 
 fn main() {
     let mut graph = Graph::<&str, f64>::new();
-    let mut graph = Graph::<&str, f64>::new();
     let n1 = graph.add_node("A");
     let n2 = graph.add_node("B");
     let n3 = graph.add_node("C");
