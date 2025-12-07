@@ -210,6 +210,26 @@ docs-serve-py: develop-py ## Serve PyGraphina MkDocs documentation locally
 	@echo "Serving MkDocs documentation locally..."
 	@$(PY_DEP_MNGR) run mkdocs serve --config-file pygraphina/mkdocs.yml
 
+.PHONY: rundocs
+rundocs: develop-py ## Test all code examples in PyGraphina documentation using rundoc
+	@echo "Testing documentation code examples..."
+	@failed=0; \
+	for f in $(PYGRAPHINA_DIR)/docs/examples/*.md; do \
+		echo "=== Testing $$(basename $$f) ==="; \
+		if echo | rundoc run "$$f" 2>&1 | grep -q "Failed"; then \
+			echo "FAILED: $$f"; \
+			failed=$$((failed + 1)); \
+		else \
+			echo "PASSED: $$f"; \
+		fi; \
+	done; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$$failed file(s) had failures"; \
+		exit 1; \
+	else \
+		echo "All documentation examples passed!"; \
+	fi
+
 .PHONY: docs-serve
 docs-serve: ## Serve Graphina MkDocs locally
 	@echo "Serving Graphina MkDocs..."
