@@ -1,5 +1,9 @@
 # PyGraphina Documentation
 
+<p align="center">
+  <img src="https://media.githubusercontent.com/media/habedi/graphina/refs/heads/main/logo.png" alt="Graphina Logo" width="300" />
+</p>
+
 Welcome to PyGraphina documentation!
 
 [PyGraphina](https://github.com/habedi/graphina/tree/main/pygraphina) 🐍 allows users to use
