@@ -125,7 +125,8 @@ pub fn pagerank(
 /// TypeError
 ///     If graph is not a PyGraph or PyDiGraph.
 #[pyfunction]
-#[pyo3(signature = (graph, personalization=None, damping=0.85, tolerance=1e-6, max_iter=100, nstart=None))]
+#[pyo3(signature = (graph, personalization=None, damping=0.85, tolerance=1e-6, max_iter=100, nstart=None)
+)]
 pub fn personalized_pagerank(
     graph: &Bound<'_, PyAny>,
     personalization: Option<Vec<f64>>,

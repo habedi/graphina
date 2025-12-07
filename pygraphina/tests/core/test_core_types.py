@@ -1,6 +1,5 @@
-import pytest
-
 import pygraphina
+import pytest
 
 
 # Using the Arrange-Act-Assert pattern for testing
@@ -29,7 +28,7 @@ def test_update_nodes():
     assert success is True, "update_node should return True on success"
 
     # Arrange for error-returning API
-    # Act & Assert: Should not raise an exception.
+    # Act and Assert: Should not raise an exception.
     g.try_update_node(n0, 25)
 
 

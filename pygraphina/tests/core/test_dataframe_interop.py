@@ -4,9 +4,8 @@ Tests the to_node_dataframe and to_edge_dataframe functions that
 export graph data to pandas DataFrames.
 """
 
-import pytest
-
 import pygraphina as pg
+import pytest
 
 try:
     import pandas as pd

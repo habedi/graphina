@@ -5,6 +5,7 @@ Connectivity measures how robust a graph is to node or edge removal.
 ## Overview
 
 Connectivity concepts include:
+
 - Node connectivity: minimum nodes to remove to disconnect graph
 - Edge connectivity: minimum edges to remove to disconnect graph
 - Component connectivity: connections between components
@@ -31,7 +32,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Create backbone connections
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Add cross-connections
 g.add_edge(nodes[0], nodes[5], 1.0)

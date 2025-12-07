@@ -7,9 +7,9 @@ PageRank is a link analysis algorithm that assigns importance scores to nodes ba
 ```python
 pg.centrality.pagerank(
     graph: Union[PyGraph, PyDiGraph],
-    damping: float = 0.85,
-    max_iters: int = 100,
-    tol: float = 1e-6
+damping: float = 0.85,
+max_iters: int = 100,
+tol: float = 1e-6
 ) -> Dict[int, float]
 ```
 
@@ -168,14 +168,14 @@ precise = pg.centrality.pagerank(g, max_iters=200, tol=1e-9)
 
 ## Comparison with Eigenvector Centrality
 
-PageRank and eigenvector centrality are similar but have key differences:
+PageRank and eigenvector centrality are similar but have primary differences:
 
-| Feature | PageRank | Eigenvector |
-|---------|----------|-------------|
-| Damping | Yes (random jumps) | No |
-| Disconnected graphs | Handles well | May fail |
-| Convergence | Always converges | May not converge |
-| Use case | Web ranking | Social influence |
+| Feature             | PageRank           | Eigenvector      |
+|---------------------|--------------------|------------------|
+| Damping             | Yes (random jumps) | No               |
+| Disconnected graphs | Handles well       | May fail         |
+| Convergence         | Always converges   | May not converge |
+| Use case            | Web ranking        | Social influence |
 
 ```python
 # Compare the two
@@ -235,10 +235,11 @@ scores = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 
 ## Personalized PageRank { #personalized }
 
-Personalized PageRank (PPR) allows you to bias the random jumps toward specific nodes, making the results more relevant to a particular starting point.
+Personalized PageRank (PPR) allows you to bias the random jumps toward specific nodes, making the results more relevant
+to a particular starting point.
 
 !!! note "Current Implementation"
-    PyGraphina currently provides standard PageRank. For personalized results, you can use the following workaround.
+PyGraphina currently provides standard PageRank. For personalized results, you can use the following workaround.
 
 ### Workaround for Personalized PageRank
 

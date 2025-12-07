@@ -1,7 +1,7 @@
 /*!
 # Advanced Graph Builders
 
-This module provides enhanced builder patterns for constructing graphs with complex configurations.
+Builder patterns for complex graph construction.
 These builders support fluent APIs, validation, and preset configurations for common graph types.
 */
 
@@ -12,6 +12,7 @@ use std::marker::PhantomData;
 
 /// Ergonomic aliases for common builder types.
 pub type DirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Directed>;
+/// A builder for creating undirected graphs with optional node capacity.
 pub type UndirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Undirected>;
 
 /// Advanced builder for graphs with validation and configuration options.

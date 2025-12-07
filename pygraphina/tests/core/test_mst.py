@@ -1,9 +1,8 @@
 """
 Unit tests for Minimum Spanning Tree algorithms in pygraphina.
 """
-import pytest
-
 import pygraphina
+import pytest
 
 
 class TestMST:

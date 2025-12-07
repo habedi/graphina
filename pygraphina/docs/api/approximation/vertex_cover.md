@@ -1,6 +1,7 @@
 # Vertex Cover Approximation
 
-A vertex cover is a set of nodes such that every edge has at least one endpoint in the set. The minimum vertex cover problem is NP-hard.
+A vertex cover is a set of nodes such that every edge has at least one endpoint in the set. The minimum vertex cover
+problem is NP-hard.
 
 ## Function Signature
 
@@ -19,12 +20,14 @@ Set of node IDs that form the vertex cover.
 ## Description
 
 This implements a 2-approximation algorithm for the minimum vertex cover problem:
+
 - Solution is guaranteed to be within 2x the optimal
 - Runs in polynomial time
 
 ## Algorithm
 
 The algorithm uses a greedy approach based on finding maximum matchings:
+
 1. While uncovered edges exist:
 2. Pick an arbitrary uncovered edge
 3. Add both its endpoints to the cover
@@ -48,7 +51,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(6)]
 
 # Add edges
-edges = [(0,1), (1,2), (2,3), (3,4), (4,5), (5,0)]
+edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 0)]
 for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
@@ -66,6 +69,7 @@ print("All edges covered!")
 ## Approximation Guarantee
 
 This is a 2-approximation algorithm, meaning:
+
 - Size of returned cover ≤ 2 × (size of optimal cover)
 - No polynomial algorithm is known to do better (unless P=NP)
 
@@ -78,8 +82,8 @@ This is a 2-approximation algorithm, meaning:
 
 ## Comparison
 
-| Aspect | Exact | Approximation |
-|--------|-------|--------------|
-| Optimality | Guaranteed | 2x guarantee |
-| Time | Exponential | Polynomial |
-| Scalability | Small graphs | Large graphs |
+| Aspect      | Exact        | Approximation |
+|-------------|--------------|---------------|
+| Optimality  | Guaranteed   | 2x guarantee  |
+| Time        | Exponential  | Polynomial    |
+| Scalability | Small graphs | Large graphs  |

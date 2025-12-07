@@ -1,6 +1,6 @@
 # Contributing to PyGraphina
 
-Thank you for your interest in contributing to PyGraphina! This guide will help you get started.
+Thank you for contributing to PyGraphina! Get started here.
 
 ## Ways to Contribute
 
@@ -20,7 +20,7 @@ There are many ways to contribute to PyGraphina:
 First, fork and clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/graphina.git
+git clone https://github.com/habedi/graphina.git
 cd graphina/pygraphina
 ```
 
@@ -53,6 +53,7 @@ git checkout -b fix/bug-description
 ```
 
 Use descriptive branch names:
+
 - `feature/add-clustering-algorithm`
 - `fix/pagerank-convergence-bug`
 - `docs/improve-quickstart-guide`
@@ -86,6 +87,7 @@ git commit -m "Add: Support for weighted Katz centrality"
 ```
 
 Commit message format:
+
 - `Add: New feature or functionality`
 - `Fix: Bug fix`
 - `Docs: Documentation changes`
@@ -106,6 +108,7 @@ Then go to GitHub and create a pull request.
 ### Python Code
 
 PyGraphina uses:
+
 - **Ruff** for linting and formatting
 - **mypy** for type checking
 
@@ -123,6 +126,7 @@ mypy pygraphina/
 ```
 
 Python style guidelines:
+
 - Follow PEP 8
 - Use type hints
 - Write docstrings (Google style)
@@ -161,6 +165,7 @@ def calculate_centrality(
 ### Rust Code
 
 For Rust code in PyGraphina:
+
 - Follow Rust conventions
 - Use `clippy` for linting: `cargo clippy`
 - Format with `rustfmt`: `cargo fmt`
@@ -237,6 +242,7 @@ def test_pagerank_damping_factor(damping):
 ### Test Coverage
 
 Aim for high test coverage:
+
 - Unit tests for individual functions
 - Integration tests for algorithm combinations
 - Edge cases (empty graphs, single nodes, etc.)
@@ -317,20 +323,25 @@ Example:
 ## Add Weighted Katz Centrality
 
 ### What
+
 Adds support for weighted edge values in Katz centrality calculation.
 
 ### Why
+
 The current implementation ignores edge weights. This is needed for weighted graphs.
 
 ### How
+
 Modified the Katz algorithm to multiply the adjacency matrix by edge weights.
 
 ### Testing
+
 - Added unit tests for weighted graphs
 - Verified results match NetworkX for same inputs
 - Tested with various weight distributions
 
 ### Breaking Changes
+
 None. This is backward compatible.
 ```
 
@@ -361,6 +372,7 @@ If you need help:
 ## Recognition
 
 Contributors are recognized in:
+
 - GitHub contributors page
 - Release notes
 - Documentation acknowledgments

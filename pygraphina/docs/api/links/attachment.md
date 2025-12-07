@@ -80,6 +80,7 @@ for (u, v), score in top_pa[:10]:
 ## Relationship to Graph Models
 
 Preferential attachment is the basis for Barabasi-Albert model:
+
 - New nodes connect to existing nodes with probability proportional to degree
 - Creates power-law degree distributions
 - Models many real-world networks (web, social, biological)

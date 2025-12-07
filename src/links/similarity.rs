@@ -1,6 +1,6 @@
 //! Similarity-based link prediction algorithms.
 //!
-//! This module provides similarity-based algorithms for link prediction.
+//! Similarity-based link prediction algorithms.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use std::collections::HashSet;

@@ -1,6 +1,6 @@
 //! Minimum Spanning Tree algorithms module.
 //!
-//! This module provides various algorithms for computing Minimum Spanning Trees (MST).
+//! Minimum Spanning Tree (MST) algorithms.
 //! All algorithms depend only on the core module for basic graph operations.
 
 pub mod algorithms;

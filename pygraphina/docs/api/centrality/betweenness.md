@@ -24,7 +24,8 @@ For each node u, betweenness is computed as:
 BC(u) = Σ σ(s,t|u) / σ(s,t)
 ```
 
-Where σ(s,t|u) is the number of shortest paths from s to t through u, and σ(s,t) is the total number of shortest paths from s to t.
+Where σ(s,t|u) is the number of shortest paths from s to t through u, and σ(s,t) is the total number of shortest paths
+from s to t.
 
 ## Time Complexity
 
@@ -74,10 +75,10 @@ for node, score in sorted(betweenness.items()):
 
 ## Comparison with Other Centralities
 
-| Centrality | Computes | Best For |
-|-----------|----------|----------|
-| Betweenness | Shortest path frequency | Bridges/connectors |
-| Closeness | Distance to all others | Central hubs |
-| Degree | Direct connections | Immediate importance |
-| Eigenvector | Connection to important nodes | Influence |
-| PageRank | Random walk probability | Web ranking |
+| Centrality  | Computes                      | Best For             |
+|-------------|-------------------------------|----------------------|
+| Betweenness | Shortest path frequency       | Bridges/connectors   |
+| Closeness   | Distance to all others        | Central hubs         |
+| Degree      | Direct connections            | Immediate importance |
+| Eigenvector | Connection to important nodes | Influence            |
+| PageRank    | Random walk probability       | Web ranking          |

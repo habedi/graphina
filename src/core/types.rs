@@ -1,6 +1,6 @@
 /*!
 # Graphina Graph Types
-This module defines the core graph types supported by Graphina.
+Core graph types.
 The `BaseGraph` struct is a wrapper around petgraph's `StableGraph` that provides a uniform API
 for both directed and undirected graphs. Graphina provides two sets of APIs:
 - The **standard API**, which returns simple values (such as booleans or `Option`s).
@@ -155,6 +155,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn builder() -> GraphBuilder<A, W, Ty> {
         GraphBuilder::new()
     }
+    /// Returns true if the graph is directed.
     pub fn is_directed(&self) -> bool {
         self.inner.is_directed()
     }
@@ -407,6 +408,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             )
         })
     }
+    /// Returns an iterator over outgoing edges from the source node.
     pub fn outgoing_edges(&self, source: NodeId) -> impl Iterator<Item = (NodeId, &W)> + '_ {
         self.inner
             .edges(source.0)
@@ -420,11 +422,13 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn as_petgraph(&self) -> &PetGraph<A, W, Ty> {
         &self.inner
     }
+    /// Creates a `NodeMap` (HashMap) by applying a function to each node.
     pub fn to_nodemap<T>(&self, mut eval: impl FnMut(NodeId, &A) -> T) -> NodeMap<T> {
         self.nodes()
             .map(|(nodeid, a)| (nodeid, eval(nodeid, a)))
             .collect()
     }
+    /// Creates a `NodeMap` initialized with default values for each node.
     pub fn to_nodemap_default<T: Default>(&self) -> NodeMap<T> {
         self.to_nodemap(|_, _| Default::default())
     }
@@ -671,6 +675,7 @@ where
         }
         new_graph
     }
+    /// Maps edge weights to a new type, producing a new graph with cloned structure.
     pub fn map_edge_weights<U>(&self, mut f: impl FnMut(EdgeId, &W) -> U) -> BaseGraph<A, U, Ty>
     where
         A: Clone,
@@ -812,24 +817,31 @@ impl<A, W> GraphinaGraph<A, W> for BaseGraph<A, W, Directed> {
 #[derive(Debug, Clone, Default)]
 pub struct OrderedNodeMap<T>(std::collections::BTreeMap<NodeId, T>);
 impl<T> OrderedNodeMap<T> {
+    /// Creates a new, empty map.
     pub fn new() -> Self {
         Self(Default::default())
     }
+    /// Inserts a key-value pair into the map.
     pub fn insert(&mut self, k: NodeId, v: T) -> Option<T> {
         self.0.insert(k, v)
     }
+    /// Returns a reference to the value corresponding to the key.
     pub fn get(&self, k: &NodeId) -> Option<&T> {
         self.0.get(k)
     }
+    /// Returns a mutable reference to the value corresponding to the key.
     pub fn get_mut(&mut self, k: &NodeId) -> Option<&mut T> {
         self.0.get_mut(k)
     }
+    /// Returns an iterator over the map.
     pub fn iter(&self) -> impl Iterator<Item = (&NodeId, &T)> {
         self.0.iter()
     }
+    /// Returns the number of elements in the map.
     pub fn len(&self) -> usize {
         self.0.len()
     }
+    /// Returns true if the map contains no elements.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

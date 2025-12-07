@@ -4,7 +4,7 @@ This tutorial will walk you through creating your first graph with PyGraphina an
 
 ## Creating a Graph
 
-Let's start by importing PyGraphina and creating an empty graph:
+Import PyGraphina and create an empty graph:
 
 ```python
 import pygraphina as pg

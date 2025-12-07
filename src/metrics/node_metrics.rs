@@ -1,7 +1,7 @@
 /*!
 # Node-level Metrics
 
-This module provides node-level metrics for network analysis.
+Node-level metrics for network analysis.
 */
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};

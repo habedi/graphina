@@ -1,9 +1,8 @@
 """
 Unit tests for graph generator functions in pygraphina.
 """
-import pytest
-
 import pygraphina
+import pytest
 
 
 class TestGenerators:

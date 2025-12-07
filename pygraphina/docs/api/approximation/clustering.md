@@ -1,13 +1,14 @@
 # Clustering Coefficient Approximation
 
-Clustering coefficient measures the density of triangles around each node. For large graphs, sampling-based approximation is used.
+Clustering coefficient measures the density of triangles around each node. For large graphs, sampling-based
+approximation is used.
 
 ## Function Signature
 
 ```python
 pg.approximation.average_clustering_approx(
     graph: PyGraph,
-    num_samples: int = 1000
+num_samples: int = 1000
 ) -> float
 ```
 
@@ -24,7 +25,8 @@ Approximate average clustering coefficient (0 to 1).
 
 The clustering coefficient for a node is the fraction of possible triangles through that node that actually exist.
 
-Exact computation requires checking all triangles (O(V³) worst case). The approximation samples nodes and computes exact clustering for those.
+Exact computation requires checking all triangles (O(V³) worst case). The approximation samples nodes and computes exact
+clustering for those.
 
 ## Time Complexity
 
@@ -45,7 +47,7 @@ nodes = [g.add_node(i) for i in range(100)]
 
 # Add edges creating clustering
 for i in range(50):
-    for j in range(i+1, min(i+5, 50)):
+    for j in range(i + 1, min(i + 5, 50)):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Compute approximate clustering

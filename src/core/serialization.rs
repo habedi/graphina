@@ -1,7 +1,7 @@
 /*!
 # Graph Serialization Module
 
-This module provides serialization and deserialization support for graphs in various formats:
+Graph serialization and deserialization.
 - JSON (human-readable, debugging)
 - Binary (fast, compact)
 - GraphML (interoperability with other tools)

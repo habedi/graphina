@@ -18,11 +18,16 @@ use super::layout::{LayoutEngine, NodePosition};
 /// D3.js-compatible node representation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct D3Node {
+    /// Unique identifier for the node
     pub id: String,
+    /// Display label for the node
     pub label: String,
+    /// Optional group ID for clustering/coloring
     pub group: Option<usize>,
+    /// Optional X coordinate
     #[serde(skip_serializing_if = "Option::is_none")]
     pub x: Option<f64>,
+    /// Optional Y coordinate
     #[serde(skip_serializing_if = "Option::is_none")]
     pub y: Option<f64>,
 }
@@ -30,9 +35,13 @@ pub struct D3Node {
 /// D3.js-compatible edge representation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct D3Link {
+    /// Source node ID
     pub source: String,
+    /// Target node ID
     pub target: String,
+    /// Edge weight/value
     pub value: f64,
+    /// Optional label for the edge
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
@@ -40,8 +49,11 @@ pub struct D3Link {
 /// D3.js-compatible graph representation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct D3Graph {
+    /// List of nodes
     pub nodes: Vec<D3Node>,
+    /// List of links (edges)
     pub links: Vec<D3Link>,
+    /// Whether the graph is directed
     pub directed: bool,
 }
 

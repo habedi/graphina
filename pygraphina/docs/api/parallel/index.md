@@ -4,19 +4,22 @@ Parallel algorithms use multi-threading to speed up computations on large graphs
 
 ## Overview
 
-PyGraphina provides parallel implementations of common graph algorithms that leverage multiple CPU cores. These algorithms are useful when working with large graphs where the overhead of parallelization is offset by the performance gain.
+PyGraphina provides parallel implementations of common graph algorithms that leverage multiple CPU cores. These
+algorithms are useful when working with large graphs where the overhead of parallelization is offset by the performance
+gain.
 
 All parallel functions are available under the `pg.parallel` module.
 
 ## Available Functions
 
-| Function | Sequential Equivalent | Time Complexity | Best For |
-|----------|----------------------|----------------|----------|
-| `bfs_parallel()` | Multiple BFS calls | O(V + E) per start | Multiple traversals |
-| `degrees_parallel()` | `degree()` for each node | O(V + E) | Computing all degrees |
-| `connected_components_parallel()` | `connected_components()` | O(V + E) | Large graphs |
+| Function                          | Sequential Equivalent    | Time Complexity    | Best For              |
+|-----------------------------------|--------------------------|--------------------|-----------------------|
+| `bfs_parallel()`                  | Multiple BFS calls       | O(V + E) per start | Multiple traversals   |
+| `degrees_parallel()`              | `degree()` for each node | O(V + E)           | Computing all degrees |
+| `connected_components_parallel()` | `connected_components()` | O(V + E)           | Large graphs          |
 
 Where:
+
 - V = number of nodes
 - E = number of edges
 
@@ -37,7 +40,7 @@ For small graphs, sequential algorithms may be faster due to threading overhead.
 ```python
 pg.parallel.bfs_parallel(
     graph: Union[PyGraph, PyDiGraph],
-    starts: List[int]
+starts: List[int]
 ) -> List[List[int]]
 ```
 
@@ -63,7 +66,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Add edges
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Run BFS from multiple sources in parallel
 start_nodes = [nodes[0], nodes[5]]
@@ -73,7 +76,7 @@ for i, visited in enumerate(results):
     print(f"BFS from {start_nodes[i]}: {visited}")
 ```
 
-**Use Case:** Finding reachable nodes from multiple sources simultaneously (e.g., influence spread analysis).
+**Use Case:** Finding reachable nodes from multiple sources simultaneously (like influence spread analysis).
 
 ### degrees_parallel
 
@@ -163,6 +166,7 @@ components = pg.parallel.connected_components_parallel(g)
 
 # Group nodes by component
 from collections import defaultdict
+
 comp_groups = defaultdict(list)
 for node, comp_id in components.items():
     comp_groups[comp_id].append(node)
@@ -214,7 +218,7 @@ par_time = time.time() - start
 
 print(f"Sequential: {seq_time:.4f}s")
 print(f"Parallel: {par_time:.4f}s")
-print(f"Speedup: {seq_time/par_time:.2f}x")
+print(f"Speedup: {seq_time / par_time:.2f}x")
 ```
 
 ## Combining Parallel Operations
@@ -231,6 +235,7 @@ components = pg.parallel.connected_components_parallel(g)
 
 # Analyze degree distribution per component
 from collections import defaultdict
+
 comp_degrees = defaultdict(list)
 
 for node in g.nodes():

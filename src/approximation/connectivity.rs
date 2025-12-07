@@ -1,6 +1,6 @@
 //! Connectivity approximation algorithms.
 //!
-//! This module provides approximations for connectivity-related problems.
+//! Approximation algorithms for connectivity problems.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use ordered_float::OrderedFloat;

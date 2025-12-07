@@ -42,7 +42,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(6)]
 
 # Add edges
-edges = [(0,1), (1,2), (2,3), (3,4), (4,5), (5,0), (1,4)]
+edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 0), (1, 4)]
 for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
@@ -68,7 +68,8 @@ Create an induced subgraph from a set of nodes.
 
 Induced subgraph containing specified nodes and all edges between them from the original graph.
 
-**Note:** This is typically the same as `subgraph()` but explicitly guarantee all edges between the selected nodes are included.
+**Note:** This is typically the same as `subgraph()` but explicitly guarantee all edges between the selected nodes are
+included.
 
 **Example:**
 
@@ -116,7 +117,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(10)]
 
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Get ego graph around node 5 with radius 2
 ego = g.ego_graph(nodes[5], 2)
@@ -274,7 +275,7 @@ for i in range(10):
 
 # Add some edges
 for i in range(9):
-    g.add_edge(i, i+1, 1.0)
+    g.add_edge(i, i + 1, 1.0)
 
 # Keep only nodes with attribute >= 50
 filtered = g.filter_nodes(lambda nid, attr: attr >= 50)
@@ -332,6 +333,7 @@ communities = pg.community.louvain(g, 1.0)
 # Extract each community as a subgraph
 community_graphs = {}
 from collections import defaultdict
+
 comm_nodes = defaultdict(list)
 
 for node, comm in communities.items():
@@ -375,7 +377,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Create a path
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Find shortest path
 result = g.shortest_path(nodes[0], nodes[9])

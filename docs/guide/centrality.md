@@ -1,0 +1,86 @@
+# Centrality Algorithms
+
+Centrality measures identify the most important nodes in a graph.
+Graphina provides high-performance implementations of standard centrality metrics.
+
+## PageRank
+
+PageRank computes the importance of nodes based on incoming links, modeling a random surfer.
+
+### Function Signature
+
+```rust
+pub fn pagerank<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    damping_factor: f64,
+    max_iterations: usize,
+    tolerance: f64
+) -> HashMap<NodeId, f64>
+```
+
+### Example
+
+```rust
+use graphina::core::types::Digraph;
+use graphina::centrality::pagerank;
+
+let mut g = Digraph::<&str, f64>::new();
+// ... add nodes and edges ...
+
+let scores = pagerank(&g, 0.85, 100, 1e-6);
+
+for (node, score) in scores {
+    println!("Node {:?} has PageRank {:.4}", node, score);
+}
+```
+
+## Betweenness Centrality
+
+Betweenness centrality quantifies the influence of a node over the flow of information between other nodes.
+It counts the fraction of shortest paths that pass through a node.
+
+### Use Case
+
+Finding bridges or bottlenecks in a network (for example, a critical router in a network topology).
+
+```rust
+use graphina::centrality::betweenness;
+
+let scores = betweenness(&g);
+```
+
+## Degree Centrality
+
+The simplest measure: the number of edges connected to a node.
+
+- For **Directed** graphs: often split into In-Degree and Out-Degree.
+- For **Undirected** graphs: just Degree.
+
+```rust
+use graphina::centrality::degree;
+
+let scores = degree(&g);
+```
+
+## Eigenvector Centrality
+
+Determines importance based on connections to other high-scoring nodes. It is similar to PageRank but without the
+damping factor/random jump.
+
+```rust
+use graphina::centrality::eigenvector;
+
+// (graph, max_iterations, tolerance)
+let scores = eigenvector(&g, 100, 1e-6);
+```
+
+## Closeness Centrality
+
+node is central if it is close to all other nodes. It is defined as the reciprocal of the sum of shortest path
+distances.
+
+```rust
+use graphina::centrality::closeness;
+
+let scores = closeness(&g);
+```

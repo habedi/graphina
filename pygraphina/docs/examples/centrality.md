@@ -1,10 +1,10 @@
 # Centrality Analysis Examples
 
-This guide demonstrates how to use various centrality measures to analyze graph structure and identify important nodes.
+Use various centrality measures to analyze graph structure and identify important nodes.
 
 ## Example 1: Comparing Centrality Measures
 
-Different centrality measures capture different notions of "importance". Let's compare them:
+Different centrality measures capture different notions of "importance". Comparison:
 
 ```python
 import pygraphina as pg

@@ -7,9 +7,9 @@ Katz centrality measures importance using a weighted sum of node paths, with exp
 ```python
 pg.centrality.katz(
     graph: Union[PyGraph, PyDiGraph],
-    alpha: float = 0.1,
-    max_iters: int = 100,
-    tol: float = 1e-6
+alpha: float = 0.1,
+max_iters: int = 100,
+tol: float = 1e-6
 ) -> Dict[int, float]
 ```
 
@@ -41,8 +41,8 @@ O(k·(V + E)) where k is number of iterations
 ## Parameters
 
 - **alpha**: Smaller values = less weight on longer paths
-  - Typical range: 0.01 to 0.3
-  - Default 0.1 works well
+    - Typical range: 0.01 to 0.3
+    - Default 0.1 works well
 - **max_iters**: Usually converges in 10-50 iterations
 
 ## Example
@@ -55,7 +55,7 @@ g = pg.PyGraph()
 nodes = [g.add_node(i) for i in range(5)]
 
 # Create edges
-edges = [(0,1), (1,2), (2,3), (3,4), (0,4)]
+edges = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 4)]
 for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
@@ -88,9 +88,9 @@ for node, score in sorted(katz.items()):
 
 ## Comparison
 
-| Centrality | Basis | Best For |
-|-----------|-------|----------|
-| Katz | All paths (weighted) | Influence via all routes |
-| Betweenness | Shortest paths | Bridges/bottlenecks |
-| Eigenvector | Important neighbors | Influence via connections |
-| PageRank | Random walk | Web ranking |
+| Centrality  | Basis                | Best For                  |
+|-------------|----------------------|---------------------------|
+| Katz        | All paths (weighted) | Influence via all routes  |
+| Betweenness | Shortest paths       | Bridges/bottlenecks       |
+| Eigenvector | Important neighbors  | Influence via connections |
+| PageRank    | Random walk          | Web ranking               |

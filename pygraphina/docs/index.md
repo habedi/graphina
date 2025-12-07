@@ -1,6 +1,7 @@
 # PyGraphina Documentation
 
-Welcome to PyGraphina, the Python bindings for the [Graphina](https://github.com/habedi/graphina) graph data science library!
+Welcome to PyGraphina, the Python bindings for the [Graphina](https://github.com/habedi/graphina) graph data science
+library!
 
 [![Python version](https://img.shields.io/badge/python-%3E=3.10-blue)](https://github.com/habedi/graphina)
 [![PyPI version](https://badge.fury.io/py/pygraphina.svg)](https://badge.fury.io/py/pygraphina)
@@ -8,9 +9,11 @@ Welcome to PyGraphina, the Python bindings for the [Graphina](https://github.com
 
 ## What is PyGraphina?
 
-PyGraphina provides Python access to Graphina, a high-performance graph data science library written in Rust. It combines the ease of use of Python with the speed and efficiency of Rust, making it ideal for analyzing large-scale networks.
+PyGraphina provides Python access to Graphina, a high-performance graph data science library written in Rust. It
+combines the ease of use of Python with the speed and efficiency of Rust, making it ideal for analyzing large-scale
+networks.
 
-## Key Features
+## Features
 
 - **Fast Performance**: Rust-powered backend for high-performance graph algorithms
 - **Rich Algorithm Library**: Comprehensive suite of graph algorithms including:
@@ -78,17 +81,18 @@ PyGraphina is ideal for:
 
 While NetworkX is a popular Python graph library, PyGraphina offers significant performance advantages:
 
-| Feature | PyGraphina | NetworkX |
-|---------|-----------|----------|
-| Language | Rust + Python bindings | Pure Python |
-| Performance | High (compiled, parallel) | Moderate (interpreted) |
-| Memory Usage | Low (optimized structures) | Higher |
-| API Style | Pythonic | Pythonic |
-| Algorithm Coverage | Growing | Extensive |
-| Maturity | Early development | Mature |
+| Feature            | PyGraphina                 | NetworkX               |
+|--------------------|----------------------------|------------------------|
+| Language           | Rust + Python bindings     | Pure Python            |
+| Performance        | High (compiled, parallel)  | Moderate (interpreted) |
+| Memory Usage       | Low (optimized structures) | Higher                 |
+| API Style          | Pythonic                   | Pythonic               |
+| Algorithm Coverage | Growing                    | Extensive              |
+| Maturity           | Early development          | Mature                 |
 
 !!! note "Project Status"
-    PyGraphina is in early development. While it's functional and tested, you may encounter bugs or breaking changes. Please report issues on our [GitHub issue tracker](https://github.com/habedi/graphina/issues).
+PyGraphina is in early development. While it's functional and tested, you may encounter bugs or breaking changes. Please
+report issues on our [GitHub issue tracker](https://github.com/habedi/graphina/issues).
 
 ## Next Steps
 
@@ -106,4 +110,5 @@ While NetworkX is a popular Python graph library, PyGraphina offers significant 
 
 ## License
 
-PyGraphina is licensed under the MIT License. See the [LICENSE](https://github.com/habedi/graphina/blob/main/LICENSE-MIT) file for details.
+PyGraphina is licensed under the MIT License. See
+the [LICENSE](https://github.com/habedi/graphina/blob/main/LICENSE-MIT) file for details.

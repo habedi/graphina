@@ -19,7 +19,7 @@ import pygraphina as pg
 dg = pg.PyDiGraph()
 ```
 
-## Key Differences from PyGraph
+## Differences from PyGraph
 
 `PyDiGraph` has all the same methods as `PyGraph`, but with directed graph semantics:
 
@@ -203,8 +203,8 @@ print(f"End tasks: {end_tasks}")
 
 ### Use PyDiGraph when:
 
-- Relationships have direction (e.g., "follows", "depends on", "links to")
-- Order matters (e.g., workflows, dependencies, hierarchies)
+- Relationships have direction (like "follows", "depends on", "links to")
+- Order matters (like workflows, dependencies, hierarchies)
 - Asymmetric relationships (A relates to B doesn't mean B relates to A)
 
 **Examples:**
@@ -217,7 +217,7 @@ print(f"End tasks: {end_tasks}")
 
 ### Use PyGraph when:
 
-- Relationships are symmetric (e.g., "is friends with", "is connected to")
+- Relationships are symmetric (like "is friends with", "is connected to")
 - Order doesn't matter
 - Bidirectional connections
 

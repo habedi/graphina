@@ -1,0 +1,90 @@
+site_name: Graphina Documentation
+site_description: Documentation for the Graphina Rust library.
+repo_url: https://github.com/habedi/graphina
+repo_name: habedi/graphina
+site_url: https://habedi.github.io/graphina/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - content.code.copy
+    - navigation.tabs
+    - navigation.top
+    - navigation.indexes
+    - navigation.expand
+    - content.code.select
+    - content.code.annotate
+    - navigation.tracking
+    - navigation.sections
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/habedi/graphina
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Core Concepts: getting-started/concepts.md
+  - User Guide:
+      - Graph Types: guide/graphs.md
+      - Traversal: guide/traversal.md
+      - Subgraphs & Views: guide/subgraphs.md
+      - Algorithms:
+          - Centrality: guide/centrality.md
+          - Community Detection: guide/community.md
+          - Path Finding: guide/paths.md
+          - Minimum Spanning Tree: guide/mst.md
+          - Link Prediction: guide/links.md
+          - Approximation: guide/approximation.md
+      - Graph Metrics: guide/metrics.md
+      - Parallel Processing: guide/parallel.md
+      - Visualization: guide/visualization.md
+  - Examples:
+      - Basic: examples/basic.md
+      - Centrality: examples/centrality.md
+      - Path Finding: examples/paths.md
+      - Visualization: examples/visualization.md
+  - API Reference:
+      - Rust Docs (docs.rs): https://docs.rs/graphina
+      - Crate (crates.io): https://crates.io/crates/graphina
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true

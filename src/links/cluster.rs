@@ -1,6 +1,6 @@
 //! Within-inter cluster link prediction algorithms.
 //!
-//! This module provides within-inter cluster based algorithms for link prediction.
+//! Cluster-based link prediction algorithms.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 

@@ -7,8 +7,8 @@ Eigenvector centrality measures importance based on connections to other importa
 ```python
 pg.centrality.eigenvector(
     graph: Union[PyGraph, PyDiGraph],
-    max_iters: int = 100,
-    tol: float = 1e-6
+max_iters: int = 100,
+tol: float = 1e-6
 ) -> Dict[int, float]
 ```
 
@@ -24,7 +24,8 @@ Dictionary mapping node IDs to eigenvector centrality scores.
 
 ## Description
 
-Eigenvector centrality is computed using power iteration on the adjacency matrix. A node's importance is proportional to the sum of its neighbors' importances.
+Eigenvector centrality is computed using power iteration on the adjacency matrix. A node's importance is proportional to
+the sum of its neighbors' importances.
 
 ## Time Complexity
 
@@ -81,6 +82,7 @@ for node, score in sorted(eigen.items()):
 ## Convergence
 
 If iteration doesn't converge within max_iters:
+
 - May return approximate result
 - Try increasing max_iters or decreasing tol
 

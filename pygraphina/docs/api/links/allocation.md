@@ -18,9 +18,11 @@ Dictionary mapping edge tuples (u, v) to resource allocation scores.
 
 ## Description
 
-Resource allocation models information flow where each common neighbor distributes resources equally among their neighbors.
+Resource allocation models information flow where each common neighbor distributes resources equally among their
+neighbors.
 
 For nodes u and v:
+
 ```
 RA(u, v) = Σ(1 / degree(w)) for all common neighbors w
 ```
@@ -42,8 +44,8 @@ researchers = [g.add_node(i) for i in range(8)]
 collaborations = [
     (0, 1), (0, 2), (1, 2),  # Group 1
     (3, 4), (3, 5), (4, 5),  # Group 2
-    (2, 3),                   # Bridge
-    (5, 6), (6, 7)           # Group 3
+    (2, 3),  # Bridge
+    (5, 6), (6, 7)  # Group 3
 ]
 
 for u, v in collaborations:
@@ -63,6 +65,7 @@ for (u, v), score in top_preds[:5]:
 ## Interpretation
 
 Higher scores indicate:
+
 - More common neighbors
 - Low-degree common neighbors (more resources distributed)
 - Higher likelihood of future connection

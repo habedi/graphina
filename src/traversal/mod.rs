@@ -1,6 +1,6 @@
 //! Graph traversal algorithms module.
 //!
-//! This module provides various graph traversal algorithms including BFS, DFS, IDDFS, and bidirectional search.
+//! Graph traversal algorithms: BFS, DFS, IDDFS, and bidirectional search.
 //! All algorithms depend only on the core module for basic graph operations.
 
 pub mod algorithms;

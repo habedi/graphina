@@ -9,11 +9,11 @@ The visualization module provides tools for creating static and interactive visu
 ```python
 pg.visualization.save_as_html(
     graph: Union[PyGraph, PyDiGraph],
-    path: str,
-    layout: str = "force_directed",
-    width: int = 800,
-    height: int = 600,
-    show_labels: bool = True
+path: str,
+layout: str = "force_directed",
+width: int = 800,
+height: int = 600,
+show_labels: bool = True
 )
 ```
 
@@ -22,7 +22,7 @@ Save graph as interactive HTML file with D3.js visualization.
 **Parameters:**
 
 - `graph`: The input graph (PyGraph or PyDiGraph).
-- `path`: Output file path (e.g., "graph.html").
+- `path`: Output file path (like "graph.html").
 - `layout`: Layout algorithm name. Options: "force_directed", "circular", "hierarchical", "grid", "random".
 - `width`: Canvas width in pixels.
 - `height`: Canvas height in pixels.
@@ -58,9 +58,9 @@ Export graph to D3.js-compatible JSON format.
 ```python
 pg.visualization.compute_layout(
     graph: Union[PyGraph, PyDiGraph],
-    algorithm: str = "force_directed",
-    width: float = 800.0,
-    height: float = 600.0
+algorithm: str = "force_directed",
+width: float = 800.0,
+height: float = 600.0
 ) -> Dict[int, Tuple[float, float]]
 ```
 
@@ -70,11 +70,11 @@ Compute node positions for graph visualization.
 
 - `graph`: Input graph.
 - `algorithm`: Layout algorithm name.
-  - `"force_directed"`: Physics-based force simulation (default).
-  - `"circular"`: Nodes arranged in a circle.
-  - `"hierarchical"`: Tree-like layout (Sugiyama).
-  - `"grid"`: Regular grid arrangement.
-  - `"random"`: Random placement.
+    - `"force_directed"`: Physics-based force simulation (default).
+    - `"circular"`: Nodes arranged in a circle.
+    - `"hierarchical"`: Tree-like layout (Sugiyama).
+    - `"grid"`: Regular grid arrangement.
+    - `"random"`: Random placement.
 - `width`: Canvas width.
 - `height`: Canvas height.
 

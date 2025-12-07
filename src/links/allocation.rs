@@ -1,6 +1,6 @@
 //! Resource allocation-based link prediction algorithms.
 //!
-//! This module provides resource allocation-based algorithms for link prediction.
+//! Resource allocation-based link prediction algorithms.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use std::collections::HashSet;

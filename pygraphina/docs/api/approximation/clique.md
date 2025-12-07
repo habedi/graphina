@@ -1,6 +1,7 @@
 # Clique Approximation
 
-A clique is a complete subgraph where every pair of nodes is connected. Finding maximum cliques is NP-hard, so PyGraphina provides approximation algorithms.
+A clique is a complete subgraph where every pair of nodes is connected. Finding maximum cliques is NP-hard, so
+PyGraphina provides approximation algorithms.
 
 ## Function Signatures
 
@@ -23,9 +24,11 @@ pg.approximation.clique_removal(graph: PyGraph) -> List[List[int]]
 ## Description
 
 ### Maximum Clique (Approximation)
+
 Finds a large clique using a greedy approach. May not find the true maximum clique but finds good solutions quickly.
 
 ### Clique Removal
+
 Iteratively finds and removes cliques from the graph, revealing community structure.
 
 ## Time Complexity
@@ -44,7 +47,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Create a clique of size 5 (nodes 0-4)
 for i in range(5):
-    for j in range(i+1, 5):
+    for j in range(i + 1, 5):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Add some edges from clique to other nodes

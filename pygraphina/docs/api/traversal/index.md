@@ -4,12 +4,12 @@ Graph traversal algorithms systematically visit all nodes in a graph, exploring 
 
 ## Available Algorithms
 
-| Algorithm | Time | Space | Usage |
-|-----------|------|-------|-------|
-| BFS | O(V+E) | O(V) | Level-order exploration |
-| DFS | O(V+E) | O(V) | Deep exploration |
-| IDDFS | O(V+E) | O(d) | Limited memory |
-| Bidirectional | O(V+E) | O(V) | Point-to-point paths |
+| Algorithm     | Time   | Space | Usage                   |
+|---------------|--------|-------|-------------------------|
+| BFS           | O(V+E) | O(V)  | Level-order exploration |
+| DFS           | O(V+E) | O(V)  | Deep exploration        |
+| IDDFS         | O(V+E) | O(d)  | Limited memory          |
+| Bidirectional | O(V+E) | O(V)  | Point-to-point paths    |
 
 ## Common Usage Pattern
 
@@ -22,7 +22,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Add edges
 for i in range(9):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Traverse from starting node
 bfs_order = g.bfs(nodes[0])
@@ -78,7 +78,7 @@ nodes = [g.add_node(i) for i in range(10)]
 
 # Create a graph with isolated components
 for i in range(5):
-    g.add_edge(nodes[i], nodes[i+1], 1.0)
+    g.add_edge(nodes[i], nodes[i + 1], 1.0)
 
 # Find all nodes reachable from node 0
 reachable = g.bfs(nodes[0])

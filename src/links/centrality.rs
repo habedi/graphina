@@ -1,6 +1,6 @@
 //! Common neighbor centrality link prediction algorithms.
 //!
-//! This module provides common neighbor centrality based algorithms for link prediction.
+//! Common neighbor centrality-based link prediction.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use std::collections::HashSet;

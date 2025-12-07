@@ -1,8 +1,9 @@
 """
 Tests for PageRank algorithms in pygraphina.
 """
-import pytest
 import pygraphina as pg
+import pytest
+
 
 class TestPageRank:
     """Tests for pagerank and personalized_pagerank."""

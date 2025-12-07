@@ -1,5 +1,5 @@
 //! Centrality-facing wrappers for community algorithms that produce node->label maps.
-//! These provide a NodeMap<usize> interface for label propagation and infomap.
+//! These provide a `NodeMap<usize>` interface for label propagation and infomap.
 
 use crate::community::{infomap::infomap, label_propagation::label_propagation};
 use crate::core::error::Result;

@@ -21,6 +21,7 @@ pg.links.centrality_based(graph: Union[PyGraph, PyDiGraph]) -> Dict[Tuple[int, i
 ## Combinations Used
 
 Common combinations:
+
 - **PageRank Product**: PR(u) * PR(v)
 - **Betweenness Sum**: BC(u) + BC(v)
 - **Closeness Product**: C(u) * C(v)
@@ -37,6 +38,7 @@ nodes = [g.add_node(i) for i in range(20)]
 
 # Add random edges
 import random
+
 random.seed(42)
 for _ in range(40):
     u, v = random.sample(nodes, 2)

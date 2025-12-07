@@ -1,13 +1,14 @@
 # Girvan-Newman Algorithm
 
-Girvan-Newman is a divisive algorithm that detects communities by iteratively removing edges with high betweenness centrality.
+Girvan-Newman is a divisive algorithm that detects communities by iteratively removing edges with high betweenness
+centrality.
 
 ## Function Signature
 
 ```python
 pg.community.girvan_newman(
     graph: PyGraph,
-    num_communities: int
+num_communities: int
 ) -> Dict[int, int]
 ```
 
@@ -48,12 +49,12 @@ nodes = [g.add_node(i) for i in range(8)]
 
 # Community 1: nodes 0-2
 for i in range(3):
-    for j in range(i+1, 3):
+    for j in range(i + 1, 3):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Community 2: nodes 3-5
 for i in range(3, 6):
-    for j in range(i+1, 6):
+    for j in range(i + 1, 6):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Community 3: nodes 6-7
@@ -67,6 +68,7 @@ g.add_edge(nodes[5], nodes[6], 1.0)  # Bridge 2-3
 communities = pg.community.girvan_newman(g, num_communities=3)
 
 from collections import defaultdict
+
 groups = defaultdict(list)
 for node, comm in communities.items():
     groups[comm].append(node)
@@ -103,9 +105,9 @@ print(f"Communities: {dict(groups)}")
 
 ## Comparison
 
-| Algorithm | Speed | Quality | Parameters |
-|-----------|-------|---------|-----------|
-| Girvan-Newman | Slow | Excellent | k (num communities) |
-| Label Propagation | Very Fast | Good | max_iters |
-| Louvain | Fast | Excellent | resolution |
-| Spectral | Medium | Good | k (num communities) |
+| Algorithm         | Speed     | Quality   | Parameters          |
+|-------------------|-----------|-----------|---------------------|
+| Girvan-Newman     | Slow      | Excellent | k (num communities) |
+| Label Propagation | Very Fast | Good      | max_iters           |
+| Louvain           | Fast      | Excellent | resolution          |
+| Spectral          | Medium    | Good      | k (num communities) |

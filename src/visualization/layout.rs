@@ -9,7 +9,9 @@ use std::collections::HashMap;
 /// Node position in 2D space
 #[derive(Debug, Clone, Copy)]
 pub struct NodePosition {
+    /// X coordinate
     pub x: f64,
+    /// Y coordinate
     pub y: f64,
 }
 

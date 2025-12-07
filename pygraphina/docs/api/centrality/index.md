@@ -19,19 +19,20 @@ All centrality functions are available under the `pg.centrality` module.
 
 ## Available Functions
 
-| Function | Time Complexity | Best For |
-|----------|----------------|----------|
-| `degree()` | O(V) | Quick importance metric |
-| `betweenness()` | O(V·E) | Finding bridges/connectors |
-| `closeness()` | O(V·E) | Finding central nodes |
-| `eigenvector()` | O(V·E·k) | Influence-based importance |
-| `pagerank()` | O(V·E·k) | Web ranking, influence |
-| `katz()` | O(V·E·k) | Weighted influence |
-| `harmonic()` | O(V·E) | Alternative to closeness |
-| `local_reaching()` | O(V·E) | Local reachability |
-| `global_reaching()` | O(V·E) | Global reachability |
+| Function            | Time Complexity | Best For                   |
+|---------------------|-----------------|----------------------------|
+| `degree()`          | O(V)            | Quick importance metric    |
+| `betweenness()`     | O(V·E)          | Finding bridges/connectors |
+| `closeness()`       | O(V·E)          | Finding central nodes      |
+| `eigenvector()`     | O(V·E·k)        | Influence-based importance |
+| `pagerank()`        | O(V·E·k)        | Web ranking, influence     |
+| `katz()`            | O(V·E·k)        | Weighted influence         |
+| `harmonic()`        | O(V·E)          | Alternative to closeness   |
+| `local_reaching()`  | O(V·E)          | Local reachability         |
+| `global_reaching()` | O(V·E)          | Global reachability        |
 
 Where:
+
 - V = number of nodes
 - E = number of edges
 - k = number of iterations (for iterative algorithms)

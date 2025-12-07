@@ -7,9 +7,11 @@ This directory contains the integration and end-to-end tests for the Graphina gr
 The tests are organized into five consolidated test suites:
 
 #### 1. **regression_tests.rs**
+
 Bug fixes, regressions, and stability tests to ensure fixes don't reappear.
 
 **Coverage:**
+
 - Bug fixes validation
 - Regression tests for community detection and graph generators
 - Core graph operations with deleted/non-contiguous node indices
@@ -18,9 +20,11 @@ Bug fixes, regressions, and stability tests to ensure fixes don't reappear.
 - MST and path algorithm consistency
 
 #### 2. **integration_tests.rs**
+
 Cross-module functionality, architecture validation, and real-world graph analysis.
 
 **Coverage:**
+
 - Architecture and validation utilities
 - Cross-module integration (traversal+metrics, paths+centrality, community+metrics)
 - Real-world graph datasets and operations
@@ -30,9 +34,11 @@ Cross-module functionality, architecture validation, and real-world graph analys
 - Module independence tests
 
 #### 3. **e2e_tests.rs**
+
 Comprehensive end-to-end tests using real-world datasets.
 
 **Coverage:**
+
 - Complete graph analysis pipelines
 - Directed graph analysis
 - All datasets validation
@@ -47,9 +53,11 @@ Comprehensive end-to-end tests using real-world datasets.
 - Stress tests (large graphs)
 
 #### 4. **property_based_tests.rs**
+
 Property-based tests using `proptest` for algorithm correctness across diverse inputs.
 
 **Coverage:**
+
 - Graph generator properties
 - Graph traversal properties
 - Graph operation properties
@@ -57,9 +65,11 @@ Property-based tests using `proptest` for algorithm correctness across diverse i
 - Graph invariants
 
 #### 5. **visualizations_tests.rs**
+
 Tests for graph visualization functionality.
 
 **Coverage:**
+
 - ASCII art generation
 - D3.js JSON export
 - HTML generation
@@ -72,11 +82,13 @@ Tests for graph visualization functionality.
 ### Running Tests
 
 Run all tests:
+
 ```bash
 cargo test --all-features
 ```
 
 Run specific test suite:
+
 ```bash
 cargo test --test regression_tests --all-features
 cargo test --test integration_tests --all-features
@@ -86,6 +98,7 @@ cargo test --test visualizations_tests --all-features
 ```
 
 Run tests with real-world datasets:
+
 ```bash
 # Download datasets first:
 huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir tests/testdata/graphina-graphs

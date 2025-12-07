@@ -1,7 +1,7 @@
 /*!
 # Minimum Spanning Tree Algorithms
 
-This module implements multiple Minimum Spanning Tree (MST) algorithms for the Graphina library.
+Minimum Spanning Tree (MST) algorithms.
 It provides the following algorithms:
 
 - **Prim's Algorithm:**
@@ -76,8 +76,11 @@ impl UnionFind {
 /// Represents an edge in the MST.
 #[derive(Debug, Clone, Copy)]
 pub struct MstEdge<W> {
+    /// Source node
     pub u: NodeId,
+    /// Target node
     pub v: NodeId,
+    /// Edge weight
     pub weight: W,
 }
 

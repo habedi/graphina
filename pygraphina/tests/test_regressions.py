@@ -7,9 +7,9 @@ Tests for critical bugs that were identified and fixed:
 """
 
 import math
-import pytest
 
 import pygraphina as pg
+import pytest
 
 try:
     import networkx as nx

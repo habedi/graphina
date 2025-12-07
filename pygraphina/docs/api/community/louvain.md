@@ -7,7 +7,7 @@ The Louvain algorithm is a fast greedy optimization method for finding communiti
 ```python
 pg.community.louvain(
     graph: PyGraph,
-    resolution: float = 1.0
+resolution: float = 1.0
 ) -> Dict[int, int]
 ```
 
@@ -15,9 +15,9 @@ pg.community.louvain(
 
 - **graph**: Undirected graph to analyze
 - **resolution**: Resolution parameter for community size
-  - < 1.0: Larger communities
-  - = 1.0: Default (default)
-  - > 1.0: Smaller communities
+    - < 1.0: Larger communities
+    - = 1.0: Default (default)
+    - > 1.0: Smaller communities
 
 ## Returns
 
@@ -50,12 +50,13 @@ import pygraphina as pg
 g = pg.core.karate_club_graph()
 
 # Detect communities with different resolutions
-fine = pg.community.louvain(g, resolution=2.0)      # Smaller communities
-normal = pg.community.louvain(g, resolution=1.0)    # Default
-coarse = pg.community.louvain(g, resolution=0.5)    # Larger communities
+fine = pg.community.louvain(g, resolution=2.0)  # Smaller communities
+normal = pg.community.louvain(g, resolution=1.0)  # Default
+coarse = pg.community.louvain(g, resolution=0.5)  # Larger communities
 
 # Compare results
 from collections import Counter
+
 print(f"Fine (res=2.0): {len(set(fine.values()))} communities")
 print(f"Normal (res=1.0): {len(set(normal.values()))} communities")
 print(f"Coarse (res=0.5): {len(set(coarse.values()))} communities")
@@ -91,6 +92,7 @@ The resolution parameter controls community size:
 - **2.0**: Smaller, finer communities
 
 Choose resolution based on application:
+
 - Network analysis: 1.0 (default)
 - Finding major groups: 0.5
 - Finding micro-communities: 2.0
@@ -105,15 +107,16 @@ Choose resolution based on application:
 ## Reproducibility
 
 For reproducible results with the same graph:
+
 - Results are deterministic with same seed (if available)
 - Try multiple resolutions
 - Average results if needed
 
 ## Comparison
 
-| Algorithm | Speed | Quality | Scalability |
-|-----------|-------|---------|-------------|
-| Louvain | Very Fast | Good-Excellent | Excellent |
-| Girvan-Newman | Slow | Excellent | Poor |
-| Label Propagation | Fast | Good | Excellent |
-| Spectral | Medium | Good | Medium |
+| Algorithm         | Speed     | Quality        | Scalability |
+|-------------------|-----------|----------------|-------------|
+| Louvain           | Very Fast | Good-Excellent | Excellent   |
+| Girvan-Newman     | Slow      | Excellent      | Poor        |
+| Label Propagation | Fast      | Good           | Excellent   |
+| Spectral          | Medium    | Good           | Medium      |

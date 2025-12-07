@@ -9,19 +9,10 @@ on:
       - "v*"
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  contents: write
 
 jobs:
   deploy-docs:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -41,8 +32,16 @@ jobs:
       - name: Install Dependencies
         run: uv sync --extra dev
 
-      - name: Build Documentation
+      - name: Build Graphina Docs
+        run: uv run mkdocs build
+
+      - name: Build PyGraphina Docs
         run: uv run mkdocs build --config-file pygraphina/mkdocs.yml
+
+      - name: Merge Documentation Sites
+        run: |
+             mkdir -p site/python
+             cp -r pygraphina/site/* site/python/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -52,4 +51,4 @@ jobs:
           publish_branch: gh-pages
           user_name: ${{ github.actor }}
           user_email: ${{ github.actor }}@users.noreply.github.com
-          commit_message: "docs: Deploy documentation from ${{ github.sha }} by ${{ github.actor }}"
+          commit_message: "Deploy documentation from ${{ github.sha }} by ${{ github.actor }}"

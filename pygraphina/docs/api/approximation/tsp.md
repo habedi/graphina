@@ -1,14 +1,17 @@
 # Traveling Salesman Problem (TSP) Approximation
 
-The Traveling Salesman Problem seeks the shortest tour visiting all nodes exactly once. It is NP-hard, so approximation is used for large instances.
+The Traveling Salesman Problem seeks the shortest tour visiting all nodes exactly once. It is NP-hard, so approximation
+is used for large instances.
 
 ## Overview
 
-TSP has many practical applications. Exact solutions are only feasible for small instances (< 1000 nodes). For larger problems, approximation algorithms are necessary.
+TSP has many practical applications. Exact solutions are only feasible for small instances (< 1000 nodes). For larger
+problems, approximation algorithms are necessary.
 
 ## Approximation Algorithms
 
 ### MST-Based Approximation
+
 - Use minimum spanning tree as starting point
 - Approximation ratio: 2 for metric TSP
 - Time complexity: O(V² log V)
