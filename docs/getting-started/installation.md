@@ -23,7 +23,7 @@ Graphina is modular. Enable only what you need using the respective feature flag
 *   `approximation`: Approximation algorithms for NP-hard problems
 *   `metrics`: Graph metrics (like Diameter, Clustering Coefficient)
 *   `mst`: Minimum Spanning Tree algorithms
-*   `traversal`: Graph traversal algorithms (BFS, DFS)
+*   `traversal`: Graph traversal algorithms (BFS and DFS)
 *   `subgraphs`: Subgraph extraction and filtering
 *   `parallel`: Parallel algorithm implementations
 *   `visualization`: Visualization helper functions

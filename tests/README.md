@@ -2,6 +2,10 @@
 
 This directory contains the integration and end-to-end tests for the Graphina graph library.
 
+> [!NOTE]
+> Unit tests are kept in their respective modules (in src/**/*.rs) and are not included in this directory.
+> This directory is to store all other types of tests.
+
 ### Test Organization
 
 The tests are organized into five consolidated test suites:
@@ -110,7 +114,8 @@ cargo test --test e2e_tests --all-features
 
 ### Test Data
 
-Some tests require real-world graph datasets from the Graphina graphs repository. Download them using:
+Some tests require real-world graph datasets from the Graphina graphs repository.
+Download them using:
 
 ```bash
 huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir tests/testdata/graphina-graphs

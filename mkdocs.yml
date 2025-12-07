@@ -58,6 +58,9 @@ nav:
   - User Guide:
       - Core:
           - Graph Types: guide/graphs.md
+          - Building Graphs: guide/builders.md
+          - Graph Generators: guide/generators.md
+          - Graph I/O: guide/io.md
       - Extensions:
           - Traversal: guide/traversal.md
           - Subgraphs and Views: guide/subgraphs.md
@@ -72,6 +75,8 @@ nav:
           - Visualization: guide/visualization.md
   - Examples:
       - Basic: examples/basic.md
+      - Generators: examples/generators.md
+      - I/O: examples/io.md
       - Centrality: examples/centrality.md
       - Community Detection: examples/community.md
       - Link Prediction: examples/links.md
@@ -87,6 +92,11 @@ nav:
       - Rust Docs (docs.rs): https://docs.rs/graphina
       - Crate (crates.io): https://crates.io/crates/graphina
 
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -94,6 +104,8 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
   - admonition
   - attr_list
   - toc:

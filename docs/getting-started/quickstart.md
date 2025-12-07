@@ -1,10 +1,11 @@
-# Quick Start with Graphina (Rust)
+# Quick Start with Graphina
 
 Create graphs, add nodes, and run algorithms with Graphina.
 
 ## Creating a Graph
 
-Rust requires defined types for node and edge data. Create an undirected graph with `String` nodes and `f64` edge weights:
+Rust requires defined types for node and edge data.
+Create an undirected graph with `String` nodes and `f64` edge weights:
 
 ```rust
 use graphina::core::types::Graph;
@@ -15,8 +16,8 @@ fn main() {
 }
 ```
 
-> [!NOTE]
-> Use `Digraph` for directed graphs.
+!!! note "Graph Type"
+    Use `Digraph` for directed graphs.
 
 ## Adding Nodes
 

@@ -42,8 +42,8 @@ let (mst_edges, total_weight) = kruskal_mst(&g).unwrap();
 
 A parallel implementation that is efficient for large graphs. It works by finding the minimum weight edge incident to each component in parallel.
 
-> [!NOTE]
-> Requires the `parallel` feature and `W` must implement `Send + Sync`.
+!!! note "Parallel Feature"
+    Requires the `parallel` feature and `W` must implement `Send + Sync`.
 
 ```rust
 use graphina::mst::boruvka_mst;
