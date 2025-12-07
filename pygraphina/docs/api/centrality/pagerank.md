@@ -7,9 +7,9 @@ PageRank is a link analysis algorithm that assigns importance scores to nodes ba
 ```python
 pg.centrality.pagerank(
     graph: Union[PyGraph, PyDiGraph],
-damping: float = 0.85,
-max_iters: int = 100,
-tol: float = 1e-6
+    damping: float = 0.85,
+    max_iter: int = 100,
+    tolerance: float = 1e-6
 ) -> Dict[int, float]
 ```
 
@@ -17,8 +17,8 @@ tol: float = 1e-6
 
 - **graph**: The graph to analyze (directed or undirected)
 - **damping**: Damping factor (probability of following a link vs random jump). Default: 0.85
-- **max_iters**: Maximum number of iterations. Default: 100
-- **tol**: Convergence tolerance. Default: 1e-6
+- **max_iter**: Maximum number of iterations. Default: 100
+- **tolerance**: Convergence tolerance. Default: 1e-6
 
 ## Returns
 
@@ -65,7 +65,7 @@ g.add_edge(c, a, 1.0)
 g.add_edge(d, c, 1.0)
 
 # Calculate PageRank
-scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
+scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tolerance=1e-6)
 
 print("PageRank scores:")
 for node, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
@@ -156,14 +156,14 @@ for damping in [0.70, 0.85, 0.95]:
 
 ### Convergence
 
-Adjust `max_iters` and `tol` for speed vs accuracy:
+Adjust `max_iter` and `tolerance` for speed vs accuracy:
 
 ```python
 # Fast approximation (fewer iterations)
-fast = pg.centrality.pagerank(g, max_iter=10, tol=1e-3)
+fast = pg.centrality.pagerank(g, max_iter=10, tolerance=1e-3)
 
 # High precision (more iterations, tighter tolerance)
-precise = pg.centrality.pagerank(g, max_iter=200, tol=1e-9)
+precise = pg.centrality.pagerank(g, max_iter=200, tolerance=1e-9)
 ```
 
 ## Comparison with Eigenvector Centrality

@@ -211,7 +211,7 @@ Measures of node importance and influence:
 
 ```python
 # PageRank centrality
-pagerank = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
+pagerank = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tolerance=1e-6)
 
 # Betweenness centrality
 betweenness = pg.centrality.betweenness(g, True)

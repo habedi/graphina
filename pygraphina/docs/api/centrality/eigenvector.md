@@ -7,16 +7,16 @@ Eigenvector centrality measures importance based on connections to other importa
 ```python
 pg.centrality.eigenvector(
     graph: Union[PyGraph, PyDiGraph],
-max_iters: int = 100,
-tol: float = 1e-6
+    max_iter: int = 100,
+    tolerance: float = 1e-6
 ) -> Dict[int, float]
 ```
 
 ## Parameters
 
-- **graph**: The graph to analyze
-- **max_iters**: Maximum number of iterations (default: 100)
-- **tol**: Convergence tolerance (default: 1e-6)
+- **graph**: The graph to analyze (directed or undirected)
+- **max_iter**: Maximum number of iterations. Default: 100
+- **tolerance**: Convergence tolerance (default: 1e-6)
 
 ## Returns
 
@@ -54,7 +54,7 @@ for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
 # Calculate eigenvector centrality
-eigen = pg.centrality.eigenvector(g, max_iter=100, tol=1e-6)
+eigen = pg.centrality.eigenvector(g, max_iter=100, tolerance=1e-6)
 
 for node, score in sorted(eigen.items()):
     print(f"Node {node}: {score:.4f}")
@@ -81,10 +81,10 @@ for node, score in sorted(eigen.items()):
 
 ## Convergence
 
-If iteration doesn't converge within max_iters:
+If iteration doesn't converge within max_iter:
 
 - May return approximate result
-- Try increasing max_iters or decreasing tol
+- Try increasing max_iter or decreasing tolerance
 
 ## Relationship to PageRank
 
