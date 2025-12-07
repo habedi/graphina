@@ -40,7 +40,8 @@ use graphina::core::paths::a_star;
 
 // Heuristic function: estimate distance from u to target
 let heuristic = |u: NodeId| -> f64 {
-    // ... calculate distance
+    // Calculate distance
+    let dist = (x1 - x2).hypot(y1 - y2);
     0.0
 };
 

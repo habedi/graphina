@@ -103,7 +103,7 @@ nav:
       - MST: api/mst/index.md
       - Traversal:
           - Overview: api/traversal/index.md
-          - BFS & DFS: api/traversal/basic.md
+          - BFS and DFS: api/traversal/basic.md
       - Subgraphs: api/subgraphs/index.md
       - Parallel: api/parallel/index.md
       - Visualization: api/visualization/index.md

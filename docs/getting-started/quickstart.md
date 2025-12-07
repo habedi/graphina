@@ -72,7 +72,11 @@ Calculate PageRank:
 ```rust
 use graphina::centrality::pagerank;
 
-    // ... (graph creation code)
+    // Create a simple graph for the example
+    let mut graph = Graph::<String, f64>::new();
+    let n1 = graph.add_node("Alice".to_string());
+    let n2 = graph.add_node("Bob".to_string());
+    graph.add_edge(n1, n2, 1.0);
 
     // Calculate PageRank
     // (graph, damping_factor, max_iterations, tolerance, nstart)

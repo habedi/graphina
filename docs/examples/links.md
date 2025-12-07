@@ -43,7 +43,13 @@ use graphina::links::allocation::resource_allocation_index;
 
 fn main() {
     let mut graph = Graph::<&str, f64>::new();
-    // ... setup graph ...
+    let n0 = graph.add_node("Alice");
+    let n1 = graph.add_node("Bob");
+    let n2 = graph.add_node("Charlie");
+
+    // Alice and Bob both know Charlie
+    graph.add_edge(n0, n2, 1.0);
+    graph.add_edge(n1, n2, 1.0);
 
     let ra_scores = resource_allocation_index(&graph, None);
     // Process scores...
@@ -60,7 +66,14 @@ use graphina::links::allocation::ra_index_soundarajan_hopcroft;
 
 fn main() {
     let mut graph = Graph::<&str, f64>::new();
-    // ... setup graph ...
+    let mut graph = Graph::<&str, f64>::new();
+    let n1 = graph.add_node("A");
+    let n2 = graph.add_node("B");
+
+    // Two nodes in the same community (e.g., both even indices)
+    let n3 = graph.add_node("C");
+    graph.add_edge(n1, n2, 1.0);
+    graph.add_edge(n2, n3, 1.0);
 
     // Mock community assignment closure
     let community_map = |node_id| {

@@ -58,7 +58,7 @@ nav:
   - User Guide:
       - Graph Types: guide/graphs.md
       - Traversal: guide/traversal.md
-      - Subgraphs & Views: guide/subgraphs.md
+      - Subgraphs and Views: guide/subgraphs.md
       - Algorithms:
           - Centrality: guide/centrality.md
           - Community Detection: guide/community.md
@@ -75,7 +75,12 @@ nav:
       - Community Detection: examples/community.md
       - Link Prediction: examples/links.md
       - Approximation: examples/approximation.md
+      - Graph Metrics: examples/metrics.md
+      - Minimum Spanning Tree: examples/mst.md
+      - Parallel Processing: examples/parallel.md
       - Path Finding: examples/paths.md
+      - Subgraphs and Views: examples/subgraphs.md
+      - Traversal: examples/traversal.md
       - Visualization: examples/visualization.md
   - API Reference:
       - Rust Docs (docs.rs): https://docs.rs/graphina

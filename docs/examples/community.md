@@ -59,9 +59,18 @@ use graphina::community::girvan_newman::girvan_newman;
 
 fn main() {
     let mut graph = Graph::<&str, f64>::new();
-    // ... setup graph ...
+    let n1 = graph.add_node("A");
+    let n2 = graph.add_node("B");
+    let n3 = graph.add_node("C");
 
-    // Split into exactly 2 communities
+    // A triangle
+    graph.add_edge(n1, n2, 1.0);
+    graph.add_edge(n2, n3, 1.0);
+    graph.add_edge(n3, n1, 1.0);
+
+    // Split into exactly 2 communities (might fail on a strict triangle, so we add a disconnected node)
+    let n4 = graph.add_node("D");
+
     match girvan_newman(&graph, 2) {
         Ok(communities) => {
             for (i, comm) in communities.iter().enumerate() {
@@ -83,7 +92,10 @@ use graphina::community::infomap::infomap;
 
 fn main() {
     let mut graph = Graph::<&str, f64>::new();
-    // ... setup graph ...
+    let mut graph = Graph::<&str, f64>::new();
+    let n1 = graph.add_node("A");
+    let n2 = graph.add_node("B");
+    graph.add_edge(n1, n2, 1.0);
 
     let communities = infomap(&graph, 100, None).unwrap();
     // communities is a Vec<usize> mapping NodeIndex -> ModuleID

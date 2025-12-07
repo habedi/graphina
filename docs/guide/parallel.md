@@ -25,7 +25,10 @@ use graphina::core::types::Digraph;
 use graphina::parallel::pagerank_parallel;
 
 let mut g = Digraph::<&str, f64>::new();
-// ... load graph ...
+// Add some nodes
+let n1 = g.add_node("A");
+let n2 = g.add_node("B");
+g.add_edge(n1, n2, 1.0);
 
 let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
 ```
@@ -54,9 +57,10 @@ let visited = bfs_parallel(&g, start_nodes);
 
 ## When to use Parallelism?
 
-- **Small graphs (< 10,000 nodes)**: The overhead of managing threads might make parallel algorithms slower. Use the
-  standard sequential versions.
-- **Large graphs (> 100,000 nodes)**: Parallel algorithms will likely provide a significant speedup.
+Parallelism implies overhead. Use it when:
+
+*   The graph has > 100,000 nodes.
+*   The algorithm is computationally intensive (e.g., Betweenness Centrality).
 
 ## Thread Safety
 
