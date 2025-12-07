@@ -4,7 +4,7 @@ Add `graphina` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.3.0"
+graphina = "0.3.0-alpha.4"
 ```
 
 ## Feature Flags
@@ -18,5 +18,5 @@ Graphina is modular. Enable only what you need:
 
 ```toml
 [dependencies]
-graphina = { version = "0.3.0", features = ["centrality", "parallel"] }
+graphina = { version = "0.3.0-alpha.4", features = ["centrality", "parallel"] }
 ```

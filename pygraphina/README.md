@@ -8,8 +8,8 @@
 PyGraphina provides Python bindings for [Graphina](https://github.com/habedi/graphina).
 
 > [!IMPORTANT]
-> PyGraphina is in early development; expect breaking changes.
-> Report bugs on [GitHub issues](https://github.com/habedi/graphina/issues).
+> PyGraphina is in early development, so breaking changes and bugs are expected.
+> Please report bugs on [GitHub issues](https://github.com/habedi/graphina/issues).
 
 ### Installation
 
@@ -40,6 +40,10 @@ comps = pg.community.connected_components(g)
 # Compute Jaccard coefficients
 jc = pg.links.jaccard_coefficient(g)
 ```
+
+### Documentation
+
+Visit PyGraphina's [documentation page](https://habedi.github.io/graphina/python) for detailed information including examples and API reference.
 
 ### License
 

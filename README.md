@@ -43,6 +43,7 @@ The extensions are modules outside the core library that contain more advanced a
 community detection, link prediction, and calculating node and edge centrality scores.
 
 Extensions are independent of each other but depend on the core library.
+To use an extension, you must enable it in your `Cargo.toml` file as a feature (see Installation section below).
 
 #### Graphina Core
 
@@ -86,7 +87,7 @@ Or add this to your `Cargo.toml`:
 graphina = "0.3.0-alpha.4"
 ```
 
-Or enable all features:
+Or enable all features with:
 
 ```toml
 [dependencies]

@@ -18,7 +18,7 @@ Graphina focuses on simple graphs to maximize performance. Multiple edges betwee
 use graphina::core::types::Graph;
 
 // Nodes store &str, Edges store f64 weights
-let mut g = Graph::< & str, f64>::new();
+let mut g = Graph::<&str, f64>::new();
 ```
 
 ### `Digraph<A, W>` (Directed)
@@ -31,7 +31,7 @@ let mut g = Graph::< & str, f64>::new();
 ```rust
 use graphina::core::types::Digraph;
 
-let mut dg = Digraph::< & str, f64>::new();
+let mut dg = Digraph::<&str, f64>::new();
 ```
 
 ## Performance and Memory Layout

@@ -47,7 +47,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./pygraphina/site
+          publish_dir: ./site
           publish_branch: gh-pages
           user_name: ${{ github.actor }}
           user_email: ${{ github.actor }}@users.noreply.github.com

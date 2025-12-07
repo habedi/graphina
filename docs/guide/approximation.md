@@ -50,3 +50,77 @@ use graphina::approximation::clique::max_clique;
 
 let clique = max_clique(&graph);
 ```
+
+## Other Approximations
+
+### Average Clustering Coefficient
+
+Estimates the average local clustering coefficient.
+
+```rust
+use graphina::approximation::clustering::average_clustering;
+
+let avg_cc = average_clustering(&graph);
+```
+
+### Local Node Connectivity
+
+Approximates the local node connectivity between two nodes using repeated BFS.
+
+```rust
+use graphina::approximation::connectivity::local_node_connectivity;
+
+let conn = local_node_connectivity(&graph, source, target);
+```
+
+### Diameter Lower Bound
+
+Approximates the diameter of the graph by sampling.
+
+```rust
+use graphina::approximation::diameter::approximate_diameter;
+
+let diameter = approximate_diameter(&graph).unwrap();
+```
+
+### Minimum Maximal Matching
+
+Greedy approximation for minimum maximal matching.
+
+```rust
+use graphina::approximation::matching::min_maximal_matching;
+
+let matching = min_maximal_matching(&graph);
+```
+
+### Ramsey R(2, t)
+
+Approximates the Ramsey number R(2, t) by finding a max clique and max independent set.
+
+```rust
+use graphina::approximation::ramsey::ramsey_r2;
+
+let (clique, ind_set) = ramsey_r2(&graph);
+```
+
+### Densest Subgraph
+
+Finds a subgraph with maximum average degree using a greedy peeling strategy.
+
+```rust
+use graphina::approximation::subgraph::densest_subgraph;
+
+let nodes = densest_subgraph(&graph, None);
+```
+
+### Treewidth
+
+Approximates treewidth using minimum degree or minimum fill-in heuristics.
+
+```rust
+use graphina::approximation::treewidth::{treewidth_min_degree, treewidth_min_fill_in};
+
+let (tw, order) = treewidth_min_degree(&graph);
+// or
+let (tw, order) = treewidth_min_fill_in(&graph);
+```

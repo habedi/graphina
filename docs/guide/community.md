@@ -31,6 +31,51 @@ for (node, comm_id) in communities {
 }
 ```
 
+## Infomap
+
+A flow-based method that minimizes the map equation to detect communities.
+Efficient for understanding flow constraints in networks.
+
+```rust
+use graphina::community::infomap::infomap;
+
+// infomap(graph, max_iterations, optional_seed)
+let communities_map = infomap(&graph, 100, Some(42)).unwrap();
+```
+
+## Girvan-Newman
+
+A hierarchical method that progressively removes edges with high betweenness centrality.
+Good for small to medium graphs where hierarchy is important.
+
+```rust
+use graphina::community::girvan_newman::girvan_newman;
+
+// girvan_newman(graph, target_communities)
+let communities = girvan_newman(&graph, 3).unwrap();
+```
+
+## Spectral Clustering
+
+Uses the eigenvectors of the graph Laplacian to partition the graph.
+
+```rust
+use graphina::community::spectral::spectral_clustering;
+
+// spectral_clustering(graph, num_clusters, optional_seed)
+let communities = spectral_clustering(&graph, 3, Some(42)).unwrap();
+```
+
+## Personalized PageRank Communities
+
+Detects communities based on random walk proximity to a seed set.
+
+```rust
+use graphina::community::personalized_pagerank::personalized_page_rank;
+
+let ppr_scores = personalized_page_rank(&graph, None, 0.85, 1e-6, 100).unwrap();
+```
+
 ## Louvain Method
 
 A heuristic method to extract communities by optimizing modularity.

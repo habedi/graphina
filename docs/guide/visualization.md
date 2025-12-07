@@ -36,7 +36,7 @@ Open `graph_view.html` in your browser to explore the graph (zoom, pan, drag nod
 
 ### DOT / Graphviz
 
-(Coming soon)
+Graphina plans to support DOT export. Check the roadmap for updates.
 
 ### D3 JSON
 

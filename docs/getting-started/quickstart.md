@@ -75,8 +75,8 @@ use graphina::centrality::pagerank;
     // ... (graph creation code)
 
     // Calculate PageRank
-    // (graph, damping_factor, max_iterations, tolerance)
-    let scores = pagerank(&graph, 0.85, 100, 1e-6);
+    // (graph, damping_factor, max_iterations, tolerance, nstart)
+    let scores = pagerank(&graph, 0.85, 100, 1e-6, None).unwrap();
 
     println!("PageRank scores:");
     for (node_id, score) in scores {
@@ -107,7 +107,7 @@ fn main() {
 
     println!("Nodes: {}, Edges: {}", g.node_count(), g.edge_count());
 
-    let ranks = pagerank(&g, 0.85, 100, 1e-6);
+    let ranks = pagerank(&g, 0.85, 100, 1e-6, None).unwrap();
     println!("PageRank for A: {:.4}", ranks.get(&a).unwrap());
 }
 ```

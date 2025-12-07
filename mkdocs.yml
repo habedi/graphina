@@ -72,6 +72,9 @@ nav:
   - Examples:
       - Basic: examples/basic.md
       - Centrality: examples/centrality.md
+      - Community Detection: examples/community.md
+      - Link Prediction: examples/links.md
+      - Approximation: examples/approximation.md
       - Path Finding: examples/paths.md
       - Visualization: examples/visualization.md
   - API Reference:
