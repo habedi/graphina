@@ -34,7 +34,7 @@ use graphina::core::types::Digraph;
 let mut dg = Digraph::< & str, f64>::new();
 ```
 
-## Performance & Memory Layout
+## Performance and Memory Layout
 
 Graphina uses a `StableGraph` backend from `petgraph`.
 
