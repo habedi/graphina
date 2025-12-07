@@ -1,6 +1,12 @@
 # Installation
 
-Add `graphina` to your `Cargo.toml`:
+To add `graphina` to your project, run:
+
+```bash
+cargo add graphina
+```
+
+Or manually add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -9,14 +15,26 @@ graphina = "0.3.0-alpha.4"
 
 ## Feature Flags
 
-Graphina is modular. Enable only what you need:
+Graphina is modular. Enable only what you need using the respective feature flags.
 
 *   `centrality`: Centrality measures (PageRank, Betweenness, etc.)
-*   `community`: Community detection (Louvain, Label Propagation)
-*   `parallel`: Parallel algorithm implementations (requires `rayon`)
-*   `visualization`: Visualization helpers
+*   `community`: Community detection (Louvain, Label Propagation, etc.)
+*   `links`: Link prediction algorithms (like Jaccard and Adamic-Adar indexes)
+*   `approximation`: Approximation algorithms for NP-hard problems
+*   `metrics`: Graph metrics (like Diameter, Clustering Coefficient)
+*   `mst`: Minimum Spanning Tree algorithms
+*   `traversal`: Graph traversal algorithms (BFS, DFS)
+*   `subgraphs`: Subgraph extraction and filtering
+*   `parallel`: Parallel algorithm implementations
+*   `visualization`: Visualization helper functions
 
 ```toml
 [dependencies]
 graphina = { version = "0.3.0-alpha.4", features = ["centrality", "parallel"] }
+```
+
+You can also add features via command line:
+
+```bash
+cargo add graphina --features centrality,parallel
 ```

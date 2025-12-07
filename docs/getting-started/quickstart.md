@@ -90,8 +90,6 @@ use graphina::centrality::pagerank;
 
 ## Complete Example
 
-## Complete Example
-
 Combine creation, population, and analysis:
 
 ```rust
@@ -113,5 +111,27 @@ fn main() {
 
     let ranks = pagerank(&g, 0.85, 100, 1e-6, None).unwrap();
     println!("PageRank for A: {:.4}", ranks.get(&a).unwrap());
+}
+```
+
+## Advanced Graph Creation
+
+For more control over graph properties (capacity, self-loops, etc.), use the `AdvancedGraphBuilder`.
+
+```rust
+use graphina::core::builders::UndirectedGraphBuilder;
+
+fn main() {
+    let graph = UndirectedGraphBuilder::<i32, f64>::undirected()
+        .with_capacity(100, 200)       // Pre-allocate memory
+        .allow_self_loops(false)       // Disallow self-loops
+        .allow_parallel_edges(false)   // Disallow parallel edges
+        .add_node(1)
+        .add_node(2)
+        .add_edge(0, 1, 1.0)
+        .build()
+        .unwrap();
+
+    println!("Graph created with {} nodes", graph.node_count());
 }
 ```
