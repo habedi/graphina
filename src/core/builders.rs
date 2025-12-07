@@ -12,6 +12,7 @@ use std::marker::PhantomData;
 
 /// Ergonomic aliases for common builder types.
 pub type DirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Directed>;
+/// A builder for creating undirected graphs with optional node capacity.
 pub type UndirectedGraphBuilder<A, W> = AdvancedGraphBuilder<A, W, Undirected>;
 
 /// Advanced builder for graphs with validation and configuration options.

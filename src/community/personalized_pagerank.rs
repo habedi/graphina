@@ -12,7 +12,7 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 ///
 /// Update rule:
 ///
-/// rank_new[j] = (1 - damping) * p[j] + damping * Σ_i (rank[i] * (w_ij / outdegree[i]))
+/// rank_new\[j\] = (1 - damping) * p\[j\] + damping * Σ_i (rank\[i\] * (w_ij / outdegree\[i\]))
 ///
 /// Dangling nodes (zero outdegree) redistribute their rank uniformly.
 ///

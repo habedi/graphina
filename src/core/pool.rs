@@ -17,7 +17,7 @@ use crate::core::types::NodeId;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-/// A pool for reusable HashSet<NodeId> instances.
+/// A pool for reusable `HashSet<NodeId>` instances.
 ///
 /// This is useful for algorithms that frequently need temporary sets of nodes,
 /// such as BFS/DFS traversals.
@@ -56,7 +56,7 @@ impl NodeSetPool {
     }
 }
 
-/// A HashSet<NodeId> that returns itself to the pool when dropped.
+/// A `HashSet<NodeId>` that returns itself to the pool when dropped.
 pub struct PooledNodeSet<'a> {
     set: HashSet<NodeId>,
     pool: &'a NodeSetPool,
@@ -148,7 +148,7 @@ impl<T> Drop for PooledNodeMap<'_, T> {
     }
 }
 
-/// A pool for reusable VecDeque<NodeId> instances.
+/// A pool for reusable `VecDeque<NodeId>` instances.
 ///
 /// Useful for BFS queues and other queue-based algorithms.
 pub struct NodeQueuePool {
@@ -186,7 +186,7 @@ impl NodeQueuePool {
     }
 }
 
-/// A VecDeque<NodeId> that returns itself to the pool when dropped.
+/// A `VecDeque<NodeId>` that returns itself to the pool when dropped.
 pub struct PooledNodeQueue<'a> {
     queue: VecDeque<NodeId>,
     pool: &'a NodeQueuePool,

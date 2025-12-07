@@ -41,6 +41,7 @@ use std::ops::{Add, Sub};
 
 use ordered_float::NotNan;
 
+/// Result type for pathfinding algorithms: (distances, predecessors).
 pub type PathFindResult = (NodeMap<Option<f64>>, NodeMap<Option<NodeId>>);
 
 /// Returns an iterator over outgoing edges from a given node as `(target, weight)`.

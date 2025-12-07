@@ -63,11 +63,21 @@ pub enum GraphinaError {
 
     /// Exceeded maximum iterations
     #[error("Exceeded max iterations ({iterations}): {message}")]
-    ExceededMaxIterations { iterations: usize, message: String },
+    ExceededMaxIterations {
+        /// Number of iterations performed
+        iterations: usize,
+        /// Description of the limit reached
+        message: String,
+    },
 
     /// Power iteration failed to converge
     #[error("Convergence failed after {iterations} iterations: {message}")]
-    ConvergenceFailed { iterations: usize, message: String },
+    ConvergenceFailed {
+        /// Number of iterations performed
+        iterations: usize,
+        /// Description of the failure
+        message: String,
+    },
 
     /// I/O error
     #[error("I/O error: {0}")]

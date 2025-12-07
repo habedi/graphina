@@ -76,8 +76,11 @@ impl UnionFind {
 /// Represents an edge in the MST.
 #[derive(Debug, Clone, Copy)]
 pub struct MstEdge<W> {
+    /// Source node
     pub u: NodeId,
+    /// Target node
     pub v: NodeId,
+    /// Edge weight
     pub weight: W,
 }
 

@@ -31,13 +31,17 @@ Enable only the features you need to keep compile times and dependency footprint
 The `pool` feature is experimental; its public API may change. Gate usage with `cfg(feature = "pool")` if you rely on it.
 */
 
+/// Approximation algorithms for NP-hard problems.
 #[cfg(feature = "approximation")]
 pub mod approximation;
 #[cfg(feature = "centrality")]
 pub mod centrality;
+/// Community detection and clustering algorithms.
 #[cfg(feature = "community")]
 pub mod community;
+/// Core graph types and utilities.
 pub mod core;
+/// Link prediction algorithms.
 #[cfg(feature = "links")]
 pub mod links;
 #[cfg(feature = "metrics")]
