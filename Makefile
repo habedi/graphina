@@ -40,13 +40,18 @@ format: ## Format Rust files
 	@cargo fmt
 
 .PHONY: test
-test: format ## Run the tests
+test: format doctest ## Run the tests
 	@echo "Running tests..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --features all --all-targets \
 	--workspace -- --nocapture
 
+.PHONY: doctest
+doctest: ## Run documentation tests (Rust code examples in doc comments)
+	@echo "Running documentation tests..."
+	@cargo test --doc --features all
+
 .PHONY: coverage
-coverage: format ## Generate test coverage report
+coverage: format doctest ## Generate test coverage report
 	@echo "Generating test coverage report..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --features all --out Xml --out Html
 
