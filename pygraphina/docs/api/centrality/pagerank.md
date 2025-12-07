@@ -65,7 +65,7 @@ g.add_edge(c, a, 1.0)
 g.add_edge(d, c, 1.0)
 
 # Calculate PageRank
-scores = pg.centrality.pagerank(g, damping=0.85, max_iters=100, tol=1e-6)
+scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
 
 print("PageRank scores:")
 for node, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
@@ -160,10 +160,10 @@ Adjust `max_iters` and `tol` for speed vs accuracy:
 
 ```python
 # Fast approximation (fewer iterations)
-fast = pg.centrality.pagerank(g, max_iters=10, tol=1e-3)
+fast = pg.centrality.pagerank(g, max_iter=10, tol=1e-3)
 
 # High precision (more iterations, tighter tolerance)
-precise = pg.centrality.pagerank(g, max_iters=200, tol=1e-9)
+precise = pg.centrality.pagerank(g, max_iter=200, tol=1e-9)
 ```
 
 ## Comparison with Eigenvector Centrality
@@ -183,7 +183,7 @@ pagerank_scores = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
 eigenvector_scores = pg.centrality.eigenvector(g, 100, 1e-6)
 
 print("Comparison:")
-for node in g.nodes():
+for node in g.nodes:
     print(f"Node {node}: PR={pagerank_scores[node]:.4f}, "
           f"EV={eigenvector_scores[node]:.4f}")
 ```

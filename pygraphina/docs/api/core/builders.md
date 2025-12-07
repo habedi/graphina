@@ -136,5 +136,5 @@ print(f"Network size: {network.node_count()} users, {network.edge_count()} frien
 - `g.clear()` - Remove all nodes and edges
 - `g.filter_nodes()` - Create subgraph with filtered nodes
 - `g.filter_edges()` - Create subgraph with filtered edges
-- `g.nodes()` - Get all node IDs
-- `g.edges()` - Get all edges
+- `g.nodes` - Get all node IDs
+- `g.edges` - Get all edges

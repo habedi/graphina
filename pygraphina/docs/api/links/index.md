@@ -34,7 +34,7 @@ g = pg.core.karate_club_graph()
 
 # Predict links using different methods
 jaccard = pg.links.jaccard_coefficient(g)
-adamic = pg.links.adamic_adar(g)
+adamic = pg.links.adamic_adar_index(g)
 common = pg.links.common_neighbors(g)
 
 # Get top predictions
@@ -57,14 +57,14 @@ To evaluate predictions on a dataset:
 import random
 
 # Split edges
-all_edges = list(g.edges())
+all_edges = list(g.edges)
 test_size = int(0.2 * len(all_edges))
 test_edges = set(all_edges[:test_size])
 train_edges = all_edges[test_size:]
 
 # Build training graph
 g_train = pg.PyGraph()
-for node in g.nodes():
+for node in g.nodes:
     g_train.add_node(node)
 
 for u, v in train_edges:

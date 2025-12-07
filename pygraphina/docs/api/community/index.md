@@ -26,8 +26,8 @@ import pygraphina as pg
 g = pg.core.karate_club_graph()
 
 # Detect communities using different algorithms
-label_prop = pg.community.label_propagation(g, max_iters=100)
-louvain = pg.community.louvain(g, resolution=1.0)
+label_prop = pg.community.label_propagation(g, max_iter=100)
+louvain = pg.community.louvain(g)
 connected = pg.community.connected_components(g)
 
 # Analyze results

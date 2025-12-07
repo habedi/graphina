@@ -168,7 +168,7 @@ print(g.is_directed())  # False
 print(g.density())  # 0.666...
 
 # Get all nodes
-print(g.nodes())  # [0, 1, 2]
+print(g.nodes)  # [0, 1, 2]
 
 # Get neighbors of a node
 print(g.neighbors(a))  # [1]
@@ -211,10 +211,10 @@ Measures of node importance and influence:
 
 ```python
 # PageRank centrality
-pagerank = pg.centrality.pagerank(g, damping=0.85, max_iters=100, tol=1e-6)
+pagerank = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
 
 # Betweenness centrality
-betweenness = pg.centrality.betweenness(g)
+betweenness = pg.centrality.betweenness(g, True)
 
 # Degree centrality
 degree = pg.centrality.degree(g)
@@ -226,7 +226,7 @@ Community detection and clustering:
 
 ```python
 # Label propagation
-communities = pg.community.label_propagation(g, max_iters=100)
+communities = pg.community.label_propagation(g, max_iter=100)
 
 # Louvain method
 communities = pg.community.louvain(g)

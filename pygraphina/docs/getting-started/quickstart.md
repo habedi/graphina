@@ -78,7 +78,7 @@ print(f"Node A's attribute: {attr}")
 ### Get All Nodes
 
 ```python
-all_nodes = g.nodes()
+all_nodes = g.nodes
 print(f"All nodes: {all_nodes}")
 ```
 

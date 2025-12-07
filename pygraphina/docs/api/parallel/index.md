@@ -208,7 +208,7 @@ g = pg.core.barabasi_albert(10000, 5, seed=42)
 
 # Sequential degree computation
 start = time.time()
-seq_degrees = {node: g.degree(node) for node in g.nodes()}
+seq_degrees = {node: g.degree(node) for node in g.nodes}
 seq_time = time.time() - start
 
 # Parallel degree computation
@@ -238,7 +238,7 @@ from collections import defaultdict
 
 comp_degrees = defaultdict(list)
 
-for node in g.nodes():
+for node in g.nodes:
     comp_id = components[node]
     degree = degrees[node]
     comp_degrees[comp_id].append(degree)

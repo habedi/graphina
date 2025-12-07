@@ -404,7 +404,7 @@ g = pg.core.erdos_renyi(5000, 0.01, seed=42)
 
 # Sequential degree computation
 start = time.time()
-seq_degrees = {node: g.degree(node) for node in g.nodes()}
+seq_degrees = {node: g.degree(node) for node in g.nodes}
 seq_time = time.time() - start
 
 # Parallel degree computation
@@ -448,9 +448,9 @@ print(f"Complete K10: {complete.node_count()} nodes, {complete.edge_count()} edg
 cycle = pg.core.cycle_graph(n=20)
 print(f"Cycle: {cycle.node_count()} nodes, {cycle.edge_count()} edges")
 
-# Path graph
-path = pg.core.path_graph(n=15)
-print(f"Path: {path.node_count()} nodes, {path.edge_count()} edges")
+# Star graph
+star = pg.core.star_graph(n=15)
+print(f"Star: {star.node_count()} nodes, {star.edge_count()} edges")
 ```
 
 ## I/O Operations

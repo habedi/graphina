@@ -181,7 +181,7 @@ most_important = max(paper_importance, key=paper_importance.get)
 print(f"Most important paper (PageRank): {most_important}")
 
 # Find papers that are bridges between research areas
-betweenness = pg.centrality.betweenness(citations)
+betweenness = pg.centrality.betweenness(citations, True)
 paper_bridging = {name: betweenness[node_id] for name, node_id in papers.items()}
 bridge_paper = max(paper_bridging, key=paper_bridging.get)
 print(f"Bridge paper: {bridge_paper}")
@@ -343,7 +343,7 @@ print(f"   Communities found: {num_communities}")
 # 3. Important nodes
 print("\n3. Node Importance:")
 pagerank = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
-betweenness = pg.centrality.betweenness(g)
+betweenness = pg.centrality.betweenness(g, True)
 top_pr = max(pagerank, key=pagerank.get)
 top_bet = max(betweenness, key=betweenness.get)
 print(f"   Most important (PageRank): Node {top_pr}")

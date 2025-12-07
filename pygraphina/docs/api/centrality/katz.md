@@ -60,7 +60,7 @@ for u, v in edges:
     g.add_edge(nodes[u], nodes[v], 1.0)
 
 # Calculate Katz centrality
-katz = pg.centrality.katz(g, alpha=0.1, max_iters=100)
+katz = pg.centrality.katz(g, alpha=0.1, max_iter=100)
 
 for node, score in sorted(katz.items()):
     print(f"Node {node}: {score:.4f}")
