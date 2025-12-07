@@ -250,6 +250,9 @@ pub fn acquire_node_queue() -> PooledNodeQueue<'static> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::core::types::NodeId;
+
     #[test]
     fn test_node_set_pool() {
         let pool = NodeSetPool::new(5);
