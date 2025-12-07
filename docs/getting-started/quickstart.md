@@ -1,30 +1,26 @@
 # Quick Start with Graphina (Rust)
 
-This guide will walk you through creating your first graph with Graphina, adding nodes and edges, and running basic algorithms.
+Create graphs, add nodes, and run algorithms with Graphina.
 
 ## Creating a Graph
 
-Unlike dynamic languages where graphs can hold any data, Rust requires us to define the types of data our nodes and edges will hold.
-
-Let's create an undirected graph where nodes store names (`String`) and edges store weights (`f64`).
+Rust requires defined types for node and edge data. Create an undirected graph with `String` nodes and `f64` edge weights:
 
 ```rust
 use graphina::core::types::Graph;
 
 fn main() {
-    // Create an empty graph
     // Node type: String, Edge type: f64
     let mut graph = Graph::<String, f64>::new();
 }
 ```
 
 > [!NOTE]
-> For directed graphs, use `Digraph` instead of `Graph`.
+> Use `Digraph` for directed graphs.
 
 ## Adding Nodes
 
-In Graphina, adding a node returns a `NodeId`. You use this ID to refer to the node later (like when creating edges).
-This differs from libraries like NetworkX where you might use the node value itself as the identifier.
+`add_node` returns a `NodeId`. Use this ID to reference the node, like when adding edges.
 
 ```rust
     // Add nodes
@@ -37,7 +33,7 @@ This differs from libraries like NetworkX where you might use the node value its
 
 ## Adding Edges
 
-Edges connect two nodes using their `NodeId`s. You also provide the edge weight/attribute.
+Connect nodes using their `NodeId`s.
 
 ```rust
     // Add weighted edges
@@ -52,7 +48,7 @@ Edges connect two nodes using their `NodeId`s. You also provide the edge weight/
 
 ## Examining the Graph
 
-You can check if nodes or edges exist, and inspect their degrees or neighbors.
+Check for existence, degrees, or neighbors.
 
 ```rust
     // Check degree
@@ -69,9 +65,9 @@ You can check if nodes or edges exist, and inspect their degrees or neighbors.
 
 ## Running Algorithms
 
-Graphina comes with a suite of standard algorithms in modules like `centrality`, `community`, and `paths`.
+Graphina provides standard algorithms in modules like `centrality`, `community`, and `paths`.
 
-Here is how to calculate PageRank:
+Calculate PageRank:
 
 ```rust
 use graphina::centrality::pagerank;
@@ -90,7 +86,9 @@ use graphina::centrality::pagerank;
 
 ## Complete Example
 
-Putting it all together:
+## Complete Example
+
+Combine creation, population, and analysis:
 
 ```rust
 use graphina::core::types::Graph;

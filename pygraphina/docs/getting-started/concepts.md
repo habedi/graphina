@@ -1,6 +1,6 @@
 # Basic Concepts
 
-This guide explains the fundamental concepts and design principles of PyGraphina.
+Fundamental concepts and design principles of PyGraphina.
 
 ## Graph Model
 

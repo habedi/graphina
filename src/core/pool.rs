@@ -1,7 +1,7 @@
 /*!
 # Memory Pool
 
-This module provides memory pooling utilities for performance-critical graph operations.
+Memory pooling utilities for performance.
 Memory pools reduce allocation overhead by reusing pre-allocated memory, which is especially
 beneficial for algorithms that create many temporary data structures.
 

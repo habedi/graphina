@@ -1,6 +1,6 @@
 //! Graph metrics module.
 //!
-//! This module provides graph-level and node-level metrics for network analysis.
+//! Graph and node metrics for network analysis.
 //! All metrics depend only on the core module for basic graph operations.
 
 pub mod graph_metrics;

@@ -1,6 +1,6 @@
 /*!
 # Graphina Graph Types
-This module defines the core graph types supported by Graphina.
+Core graph types.
 The `BaseGraph` struct is a wrapper around petgraph's `StableGraph` that provides a uniform API
 for both directed and undirected graphs. Graphina provides two sets of APIs:
 - The **standard API**, which returns simple values (such as booleans or `Option`s).

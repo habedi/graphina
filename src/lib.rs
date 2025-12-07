@@ -2,33 +2,33 @@
 /*!
 # Graphina Crate
 
-High-level graph data science library providing graph types, algorithms, and analytics.
+High-level graph data science library. Provides graph types, algorithms, and analytics.
 
 ## Module Overview
 
-* `core` – always enabled: basic graph types, builders, IO, serialization, paths, validation.
-* `centrality` *(feature: centrality)* – node/edge importance measures (Result-based APIs).
-* `community` *(feature: community)* – community detection & clustering (Result-based APIs).
-* `links` *(feature: links)* – link prediction algorithms.
-* `metrics` *(feature: metrics)* – graph and node metrics (diameter, radius, clustering, etc.).
-* `mst` *(feature: mst)* – minimum spanning tree algorithms.
+* `core` – Always enabled: basic graph types, builders, IO, serialization, paths, validation.
+* `centrality` *(feature: centrality)* – Node/edge importance measures (Result-based APIs).
+* `community` *(feature: community)* – Community detection and clustering (Result-based APIs).
+* `links` *(feature: links)* – Link prediction algorithms.
+* `metrics` *(feature: metrics)* – Graph and node metrics (diameter, radius, clustering, etc.).
+* `mst` *(feature: mst)* – Minimum spanning tree algorithms.
 * `traversal` *(feature: traversal)* – BFS/DFS and related traversal strategies.
-* `approximation` *(feature: approximation)* – heuristics for NP-hard problems.
-* `parallel` *(feature: parallel)* – parallel implementations for selected algorithms.
-* `subgraphs` *(feature: subgraphs)* – induced subgraph and ego network utilities.
-* `visualization` *(feature: visualization)* – layouts and render helpers (ASCII/HTML/SVG/PNG).
-* `core::pool` *(feature: pool)* – experimental memory pooling utilities (subject to change).
+* `approximation` *(feature: approximation)* – Heuristics for NP-hard problems.
+* `parallel` *(feature: parallel)* – Parallel implementations for selected algorithms.
+* `subgraphs` *(feature: subgraphs)* – Induced subgraph and ego network utilities.
+* `visualization` *(feature: visualization)* – Layouts and render helpers (ASCII/HTML/SVG/PNG).
+* `core::pool` *(feature: pool)* – Experimental memory pooling utilities.
 
 ## API Conventions
 
-Most algorithm functions return `Result<_, graphina::core::error::GraphinaError>` for robust error handling.
-Selector-style helpers that simply pick nodes (e.g. `voterank`) may return plain collections.
+Algorithms return `Result<_, graphina::core::error::GraphinaError>` for robust error handling.
+Selector-style helpers that pick nodes (like `voterank`) may return plain collections.
 
-Enable only the features you need to keep compile times and dependency footprint low.
+Enable only required features to minimize size and compile time.
 
 ## Stability Notes
 
-The `pool` feature is experimental; its public API may change. Gate usage with `cfg(feature = "pool")` if you rely on it.
+The `pool` feature is experimental; API subject to change. Gate usage with `cfg(feature = "pool")`.
 */
 
 /// Approximation algorithms for NP-hard problems.

@@ -13,7 +13,7 @@ pub struct VisualizationConfig {
     pub height: u32,
     /// Layout algorithm to use
     pub layout: LayoutAlgorithm,
-    /// Node color (hex format, e.g., "#69b3a2")
+    /// Node color (hex format, like "#69b3a2")
     pub node_color: String,
     /// Edge color (hex format)
     pub edge_color: String,

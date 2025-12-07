@@ -76,7 +76,7 @@ for i, visited in enumerate(results):
     print(f"BFS from {start_nodes[i]}: {visited}")
 ```
 
-**Use Case:** Finding reachable nodes from multiple sources simultaneously (e.g., influence spread analysis).
+**Use Case:** Finding reachable nodes from multiple sources simultaneously (like influence spread analysis).
 
 ### degrees_parallel
 

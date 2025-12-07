@@ -1,6 +1,6 @@
 # Installation
 
-This guide will help you install PyGraphina on your system.
+Install PyGraphina on your system.
 
 ## Requirements
 

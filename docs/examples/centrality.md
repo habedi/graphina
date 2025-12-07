@@ -1,6 +1,6 @@
 # Centrality Examples
 
-This guide demonstrates how to use various centrality measures to identify important nodes in a graph.
+Use various centrality measures to identify important nodes in a graph.
 
 ## Degree Centrality
 

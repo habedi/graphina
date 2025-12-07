@@ -1,7 +1,7 @@
 /*!
 # Graph Generators
 
-This module provides various graph generators that create classic graphs such as
+Graph generators for classic graphs:
 Erdős–Rényi, complete, bipartite, star, cycle, Watts–Strogatz small-world, and
 Barabási–Albert scale-free graphs. Each generator is generic over the graph type
 (directed or undirected) using the `GraphConstructor` trait. Node attributes are fixed

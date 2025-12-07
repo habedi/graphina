@@ -33,7 +33,7 @@ if let Some(cost) = result.get(&end_node).unwrap() {
 ## A* (A-Star) Search
 
 Finds the shortest path to a specific target using a heuristic function to guide the search.
-Faster than Dijkstra if you have a good heuristic (e.g., Euclidean distance for maps).
+Faster than Dijkstra if you have a good heuristic (like Euclidean distance for maps).
 
 ```rust
 use graphina::core::paths::a_star;

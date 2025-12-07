@@ -1,7 +1,7 @@
 /*!
 # Graph Views and Subgraphs Module
 
-This module provides efficient ways to work with subsets of graphs:
+Work efficiently with graph subsets:
 - Filtered views (zero-copy)
 - Subgraph extraction
 - Ego networks

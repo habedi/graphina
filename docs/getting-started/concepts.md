@@ -25,7 +25,7 @@ This design allows Graphina to optimize memory layout and guarantee data consist
 
 ## References via NodeId
 
-In NetworkX, the node *value* (e.g., "Alice") is often the identifier. In Graphina, adding a node transfers ownership of the data to the graph and returns a **`NodeId`**.
+In NetworkX, the node *value* (like "Alice") is often the identifier. In Graphina, adding a node transfers ownership of the data to the graph and returns a **`NodeId`**.
 
 ```rust
 let id = graph.add_node("Data");
@@ -40,8 +40,8 @@ This `NodeId` is a lightweight handle (essentially an integer index) that permit
 
 Graphina offers two styles of interaction:
 
-1.  **Standard API** (e.g., `update_node`): Returns simple booleans or options. Convenient for quick scripts.
-2.  **Robust API** (e.g., `try_update_node`): Returns `Result<_, GraphinaError>`. Recommended for production applications where you need to handle missing nodes or invalid operations gracefully.
+1.  **Standard API** (like `update_node`): Returns simple booleans or options. Convenient for quick scripts.
+2.  **Robust API** (like `try_update_node`): Returns `Result<_, GraphinaError>`. Recommended for production applications where you need to handle missing nodes or invalid operations gracefully.
 
 ## Performance
 

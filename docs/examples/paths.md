@@ -1,6 +1,6 @@
 # Path Finding Examples
 
-This guide provides examples of finding shortest paths in Graphina.
+Examples of finding shortest paths in Graphina.
 
 ## Dijkstra's Algorithm
 

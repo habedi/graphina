@@ -1,7 +1,7 @@
 /*!
 # Graph Traversal Algorithms
 
-This module implements a collection of graph traversal algorithms for the graph types defined in `src/core/types.rs`.
+Graph traversal algorithms.
 The algorithms include:
 
 - **Breadth-First Search (BFS):**

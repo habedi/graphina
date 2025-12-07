@@ -1,7 +1,7 @@
 /*!
 # Input/Output (I/O) Routines
 
-This module provides functions to read from and write to files containing graph representations.
+Read and write graph files.
 Specifically, it supports:
 
 - **Edge List I/O:**

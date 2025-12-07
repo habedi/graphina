@@ -1,7 +1,7 @@
 /*!
 # Minimum Spanning Tree Algorithms
 
-This module implements multiple Minimum Spanning Tree (MST) algorithms for the Graphina library.
+Minimum Spanning Tree (MST) algorithms.
 It provides the following algorithms:
 
 - **Prim's Algorithm:**

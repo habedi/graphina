@@ -1,6 +1,6 @@
 # Contributing to PyGraphina
 
-Thank you for your interest in contributing to PyGraphina! This guide will help you get started.
+Thank you for contributing to PyGraphina! Get started here.
 
 ## Ways to Contribute
 

@@ -6,7 +6,7 @@ using Rayon for multi-threading. These implementations can provide 4-8x speedup 
 
 All parallel functions have the `_parallel` suffix to distinguish them from sequential versions.
 
-This module is independent of other extensions and only depends on the core library.
+Independent of other extensions; depends only on core.
 */
 
 pub mod bfs;

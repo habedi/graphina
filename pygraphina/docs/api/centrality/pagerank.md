@@ -168,7 +168,7 @@ precise = pg.centrality.pagerank(g, max_iters=200, tol=1e-9)
 
 ## Comparison with Eigenvector Centrality
 
-PageRank and eigenvector centrality are similar but have key differences:
+PageRank and eigenvector centrality are similar but have primary differences:
 
 | Feature             | PageRank           | Eigenvector      |
 |---------------------|--------------------|------------------|

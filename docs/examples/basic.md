@@ -1,7 +1,7 @@
 # Basic Examples
 
 This example demonstrates how to build a social network analysis tool using Graphina.
-We will use a custom struct for node data, which is a powerful feature of Graphina's generic system.
+Use a custom struct for node data, a powerful feature of Graphina's generic system.
 
 ## Social Network Analysis
 

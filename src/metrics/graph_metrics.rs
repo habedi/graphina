@@ -1,7 +1,7 @@
 /*!
 # Graph-level Metrics
 
-This module provides graph-level metrics and statistics used in network analysis.
+Graph-level metrics and statistics.
 */
 
 use std::collections::{HashMap, VecDeque};

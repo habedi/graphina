@@ -1,7 +1,7 @@
 /*!
 # Advanced Graph Builders
 
-This module provides enhanced builder patterns for constructing graphs with complex configurations.
+Builder patterns for complex graph construction.
 These builders support fluent APIs, validation, and preset configurations for common graph types.
 */
 

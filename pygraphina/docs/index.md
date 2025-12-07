@@ -13,7 +13,7 @@ PyGraphina provides Python access to Graphina, a high-performance graph data sci
 combines the ease of use of Python with the speed and efficiency of Rust, making it ideal for analyzing large-scale
 networks.
 
-## Key Features
+## Features
 
 - **Fast Performance**: Rust-powered backend for high-performance graph algorithms
 - **Rich Algorithm Library**: Comprehensive suite of graph algorithms including:

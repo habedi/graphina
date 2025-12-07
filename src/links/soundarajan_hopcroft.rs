@@ -1,6 +1,6 @@
 //! Soundarajan-Hopcroft link prediction algorithms.
 //!
-//! This module provides Soundarajan-Hopcroft based algorithms for link prediction.
+//! Soundarajan-Hopcroft link prediction algorithms.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 

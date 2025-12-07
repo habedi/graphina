@@ -7,7 +7,7 @@ This extension provides multiple ways to visualize graphs:
 - **HTML Interactive Viewers**: Create standalone HTML files with interactive visualizations
 - **ASCII Art**: Simple CLI debugging visualization
 
-This module is independent of other extensions and only depends on the core library.
+Independent of other extensions; depends only on core.
 
 # Examples
 

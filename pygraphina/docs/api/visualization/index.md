@@ -22,7 +22,7 @@ Save graph as interactive HTML file with D3.js visualization.
 **Parameters:**
 
 - `graph`: The input graph (PyGraph or PyDiGraph).
-- `path`: Output file path (e.g., "graph.html").
+- `path`: Output file path (like "graph.html").
 - `layout`: Layout algorithm name. Options: "force_directed", "circular", "hierarchical", "grid", "random".
 - `width`: Canvas width in pixels.
 - `height`: Canvas height in pixels.
