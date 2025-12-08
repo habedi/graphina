@@ -4,7 +4,8 @@ Type stubs for PyGraphina - Python bindings for Graphina graph library.
 This file provides type hints for IDEs and type checkers.
 """
 
-from typing import Optional, Dict, List, Tuple, Callable, Union, Any, Iterator
+from typing import Optional, Dict, List, Tuple, Union, Any, Iterator
+
 
 class PyGraph:
     """

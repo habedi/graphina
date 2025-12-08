@@ -9,14 +9,14 @@ def make_two_components():
     g.add_edge(a[1], a[2], 1.0)
     g.add_edge(b[0], b[1], 1.0)
     g.add_edge(b[1], b[2], 1.0)
-    return g, a, b
+    return (g, a, b)
 
 
 def test_connected_components():
     g, a, b = make_two_components()
     comps = pygraphina.community.connected_components(g)
     assert len(comps) == 2
-    assert sorted(len(c) for c in comps) == [3, 3]
+    assert sorted((len(c) for c in comps)) == [3, 3]
 
 
 def test_label_propagation_and_louvain():
