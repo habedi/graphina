@@ -41,6 +41,10 @@ repository = "https://github.com/habedi/graphina"
 module-name = "pygraphina"
 bindings = "pyo3"
 features = ["pyo3/extension-module"]
-include = [{ path = ".", format = "sdist" }]
+include = [
+    { path = ".", format = "sdist" },
+    { path = "pygraphina.pyi", format = ["sdist", "wheel"] },
+    { path = "py.typed", format = ["sdist", "wheel"] }
+]
 strip = true
 release = true
