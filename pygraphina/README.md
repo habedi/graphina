@@ -39,6 +39,11 @@ comps = pg.community.connected_components(g)
 
 # Compute Jaccard coefficients
 jc = pg.links.jaccard_coefficient(g)
+
+print(f"PageRank: {pr}")
+print(f"Clique size: {size}")
+print(f"Connected components: {comps}")
+print(f"Jaccard coefficients: {jc}")
 ```
 
 ### Documentation
