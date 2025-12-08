@@ -348,11 +348,17 @@ fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<
                 .unwrap_or(0);
             // Try to use the original id if it's a small integer
             let py_id = if let Ok(int_id) = node_obj.extract::<usize>() {
-                // If node_key is an integer that fits in usize, use it directly
-                // but we still need to assign internal id ourselves
-                let nid = dg.graph.add_node(attr);
-                dg.mapper.add_with_id(nid, int_id);
-                int_id
+                // Check for ID collision before using the original ID
+                if dg.mapper.contains_py(int_id) {
+                    // ID collision detected, fall back to auto-assignment
+                    let nid = dg.graph.add_node(attr);
+                    dg.mapper.add(nid)
+                } else {
+                    // Safe to use the original ID
+                    let nid = dg.graph.add_node(attr);
+                    dg.mapper.add_with_id(nid, int_id);
+                    int_id
+                }
             } else {
                 let nid = dg.graph.add_node(attr);
                 dg.mapper.add(nid)
@@ -404,9 +410,17 @@ fn from_networkx(py: pyo3::Python<'_>, nx_graph: &Bound<'_, PyAny>) -> PyResult<
                 .and_then(|v| v.extract().ok())
                 .unwrap_or(0);
             let py_id = if let Ok(int_id) = node_obj.extract::<usize>() {
-                let nid = g.graph.add_node(attr);
-                g.mapper.add_with_id(nid, int_id);
-                int_id
+                // Check for ID collision before using the original ID
+                if g.mapper.contains_py(int_id) {
+                    // ID collision detected, fall back to auto-assignment
+                    let nid = g.graph.add_node(attr);
+                    g.mapper.add(nid)
+                } else {
+                    // Safe to use the original ID
+                    let nid = g.graph.add_node(attr);
+                    g.mapper.add_with_id(nid, int_id);
+                    int_id
+                }
             } else {
                 let nid = g.graph.add_node(attr);
                 g.mapper.add(nid)

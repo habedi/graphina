@@ -68,3 +68,39 @@ def test_from_networkx_arbitrary_node_ids():
     # Attributes preserved (values may map to any ids; verify multiset)
     attrs = [v for _, v in g.nodes_with_attrs()]
     assert sorted(attrs) == [5, 6]
+
+
+def test_from_networkx_id_collision_handling():
+    """Test that ID collisions are handled gracefully when converting from NetworkX."""
+    # Create a NetworkX graph with integer node IDs that could collide
+    G = nx.Graph()
+    G.add_node(0, attr=100)
+    G.add_node(1, attr=200)
+    G.add_node(2, attr=300)
+    G.add_edge(0, 1, weight=1.0)
+    G.add_edge(1, 2, weight=2.0)
+
+    # Convert to PyGraphina - should handle sequential IDs without collision
+    g = pg.from_networkx(G)
+    assert g.node_count() == 3
+    assert g.edge_count() == 2
+
+    # Verify all nodes are accessible and have correct attributes
+    attrs = dict(g.nodes_with_attrs())
+    assert len(attrs) == 3
+    assert set(attrs.values()) == {100, 200, 300}
+
+    # Test with directed graph as well
+    DG = nx.DiGraph()
+    DG.add_node(0, attr=10)
+    DG.add_node(1, attr=20)
+    DG.add_edge(0, 1, weight=5.0)
+
+    dg = pg.from_networkx(DG)
+    assert isinstance(dg, pg.PyDiGraph)
+    assert dg.node_count() == 2
+    assert dg.edge_count() == 1
+
+    attrs = dict(dg.nodes_with_attrs())
+    assert len(attrs) == 2
+    assert set(attrs.values()) == {10, 20}
