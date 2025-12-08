@@ -101,6 +101,8 @@ def test_from_networkx_id_collision_handling():
     assert dg.node_count() == 2
     assert dg.edge_count() == 1
 
-    attrs = dict(dg.nodes_with_attrs())
-    assert len(attrs) == 2
-    assert set(attrs.values()) == {10, 20}
+    # For digraph, verify structure is correct by checking nodes exist and edge is preserved
+    # Convert back to NetworkX to verify attributes
+    nx_dg = pg.to_networkx(dg)
+    attrs_set = {nx_dg.nodes[n]["attr"] for n in nx_dg.nodes()}
+    assert attrs_set == {10, 20}
