@@ -7,21 +7,18 @@ The Louvain algorithm is a fast greedy optimization method for finding communiti
 ```python
 pg.community.louvain(
     graph: PyGraph,
-resolution: float = 1.0
-) -> Dict[int, int]
+    seed: Optional[int] = None
+) -> List[List[int]]
 ```
 
 ## Parameters
 
 - **graph**: Undirected graph to analyze
-- **resolution**: Resolution parameter for community size
-    - < 1.0: Larger communities
-    - = 1.0: Default (default)
-    - > 1.0: Smaller communities
+- **seed**: Random seed for reproducibility (optional)
 
 ## Returns
 
-Dictionary mapping node IDs to community labels.
+List of communities, where each community is a list of node IDs. Each node appears in exactly one community.
 
 ## Description
 
@@ -47,55 +44,61 @@ O(V + E)
 import pygraphina as pg
 
 # Create a network with natural communities
-g = pg.core.karate_club_graph()
+g = pg.PyGraph()
+nodes = [g.add_node(i) for i in range(34)]
 
-# Detect communities with different resolutions
-fine = pg.community.louvain(g)  # Smaller communities
-normal = pg.community.louvain(g)  # Default
-coarse = pg.community.louvain(g)  # Larger communities
+# Add edges to create a graph with community structure
+# (simplified karate club-like structure)
+edges = [
+    (0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (2, 3),
+    (5, 6), (5, 7), (5, 8), (6, 7), (6, 8), (7, 8),
+    (4, 5), (3, 9), (9, 10), (10, 11)
+]
+for u, v in edges:
+    g.add_edge(nodes[u], nodes[v], 1.0)
 
-# Compare results
-from collections import Counter
+# Detect communities
+communities = pg.community.louvain(g, seed=42)
 
-print(f"Fine (res=2.0): {len(set(fine.values()))} communities")
-print(f"Normal (res=1.0): {len(set(normal.values()))} communities")
-print(f"Coarse (res=0.5): {len(set(coarse.values()))} communities")
-
-# Analyze community quality
-for comm_id, members in Counter(normal.values()).items():
-    print(f"Community {comm_id}: {members} nodes")
+# Analyze results
+print(f"Found {len(communities)} communities")
+for comm_id, members in enumerate(communities):
+    print(f"Community {comm_id}: {len(members)} nodes - {members[:5]}...")
 ```
 
 ## Advantages
 
 - Very fast - suitable for large graphs
 - Good quality communities
-- Resolution parameter allows flexibility
 - Widely used and well-tested
 - Multi-level hierarchical clustering
+- Reproducible with seed parameter
 
 ## Disadvantages
 
-- Non-deterministic (may vary on runs)
+- Non-deterministic without seed
 - Greedy approach not guaranteed optimal
-- Resolution parameter affects results
-- May miss small communities with low resolution
+- May produce different results on different runs without fixed seed
 
 ## Parameters
 
-### Resolution
+### Seed
 
-The resolution parameter controls community size:
+The seed parameter controls randomness:
 
-- **0.5**: Larger, coarser communities
-- **1.0**: Default, balanced
-- **2.0**: Smaller, finer communities
+- **None**: Non-deterministic behavior (different results each run)
+- **Integer**: Reproducible results with same seed value
 
-Choose resolution based on application:
+Use a seed when you need:
 
-- Network analysis: 1.0 (default)
-- Finding major groups: 0.5
-- Finding micro-communities: 2.0
+- Reproducible research results
+- Consistent testing
+- Comparable experiments
+
+Omit seed when you want:
+
+- Multiple different community structures
+- Robustness testing across runs
 
 ## When to Use
 

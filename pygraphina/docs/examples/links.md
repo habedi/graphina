@@ -89,12 +89,10 @@ existing = set(citations)
 for (u, v), score in sorted(predictions.items(),
                             key=lambda x: x[1],
                             reverse=True)[:10]:
-    u_idx = papers.index(u) if u in papers else -1
-    v_idx = papers.index(v) if v in papers else -1
-    if u_idx != -1 and v_idx != -1:
-        pair = tuple(sorted([u_idx, v_idx]))
-        if pair not in existing:
-            print(f"  Paper {u_idx} <-> Paper {v_idx}: {score:.3f}")
+    # u and v are node IDs (0-9), which directly correspond to paper indices
+    pair = tuple(sorted([u, v]))
+    if pair not in existing and (u, v) not in [(a, b) for a, b in citations] and (v, u) not in [(a, b) for a, b in citations]:
+        print(f"  Paper {u} <-> Paper {v}: {score:.3f}")
 ```
 
 ## Example 3: Resource Allocation

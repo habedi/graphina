@@ -96,8 +96,9 @@ nav:
               - Diameter: api/approximation/diameter.md
               - Independent Set: api/approximation/independent_set.md
               - Vertex Cover: api/approximation/vertex_cover.md
-              - TSP: api/approximation/tsp.md
               - Treewidth: api/approximation/treewidth.md
+              - Subgraph: api/approximation/subgraph.md
+              - Ramsey: api/approximation/ramsey.md
           - Metrics:
               - Graph Metrics: api/metrics/graph.md
               - Node Metrics: api/metrics/node.md

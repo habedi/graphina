@@ -29,8 +29,8 @@ Where d is average degree.
 ```python
 import pygraphina as pg
 
-# Load or create a graph
-g = pg.core.karate_club_graph()
+# Create a social network graph
+g = pg.core.barabasi_albert(50, 3, 42)
 
 # Predict links using different methods
 jaccard = pg.links.jaccard_coefficient(g)

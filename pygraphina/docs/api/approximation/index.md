@@ -9,16 +9,17 @@ approximation algorithms provide good solutions quickly instead of spending expo
 
 ## Available Algorithms
 
-| Algorithm       | Problem                 | Approximation Ratio | Time Complexity |
-|-----------------|-------------------------|---------------------|-----------------|
-| Large Clique    | Maximum Clique          | Heuristic           | Polynomial      |
-| Vertex Cover    | Minimum Vertex Cover    | 2-approximation     | Polynomial      |
-| Clustering      | Graph Clustering        | Approximation       | Polynomial      |
-| Connectivity    | Graph Connectivity      | Approximation       | Polynomial      |
-| Diameter        | Graph Diameter          | Approximation       | Polynomial      |
-| Independent Set | Maximum Independent Set | Approximation       | Polynomial      |
-| Treewidth       | Graph Treewidth         | Approximation       | Polynomial      |
-| TSP             | Traveling Salesman      | Approximation       | Polynomial      |
+| Algorithm         | Problem                 | Approximation Ratio | Time Complexity |
+|-------------------|-------------------------|---------------------|-----------------|
+| Large Clique      | Maximum Clique          | Heuristic           | O(V²)           |
+| Vertex Cover      | Minimum Vertex Cover    | 2-approximation     | O(V + E)        |
+| Clustering        | Graph Clustering        | Approximation       | O(V²)           |
+| Connectivity      | Graph Connectivity      | Approximation       | O(V + E)        |
+| Diameter          | Graph Diameter          | Approximation       | O(V²)           |
+| Independent Set   | Maximum Independent Set | Approximation       | O(V²)           |
+| Treewidth         | Graph Treewidth         | Approximation       | O(V³)           |
+| Densest Subgraph  | Densest Subgraph        | 2-approximation     | O(V²)           |
+| Ramsey R(2,2)     | Clique/Independent Set  | log(n) guarantee    | O(V²)           |
 
 ## When to Use Approximation Algorithms
 
@@ -57,7 +58,7 @@ for i in range(100):
 # Use approximation algorithms
 clique_size = pg.approximation.large_clique_size(g)
 vc_size = len(pg.approximation.min_weighted_vertex_cover(g))
-diameter_approx = pg.approximation.approximate_diameter(g)
+diameter_approx = pg.approximation.diameter(g)
 
 print(f"Approximate clique size: {clique_size}")
 print(f"Approximate vertex cover: {vc_size}")

@@ -8,14 +8,16 @@ neighbors.
 ```python
 pg.community.label_propagation(
     graph: PyGraph,
-max_iters: int = 100
+    max_iter: int,
+    seed: int = None
 ) -> Dict[int, int]
 ```
 
 ## Parameters
 
 - **graph**: Undirected graph to analyze
-- **max_iters**: Maximum number of iterations (default: 100)
+- **max_iter**: Maximum number of iterations
+- **seed**: Optional random seed for reproducibility (default: None)
 
 ## Returns
 

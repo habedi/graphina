@@ -118,11 +118,19 @@ for graph in [er, ba, ws]:
 
 ## Seeding
 
-All generators support optional seed parameter for reproducibility:
+All random graph generators require a seed parameter for reproducibility:
 
 ```python
 # Same seed produces identical graphs
 g1 = pg.core.erdos_renyi(100, 0.1, seed=42)
 g2 = pg.core.erdos_renyi(100, 0.1, seed=42)
 # g1 and g2 are identical
+
+# Use different seeds for different random graphs
+g3 = pg.core.erdos_renyi(100, 0.1, seed=123)
+g4 = pg.core.erdos_renyi(100, 0.1, seed=456)
+# g3 and g4 are different random graphs
 ```
+
+!!! note "Seed Parameter"
+    The seed parameter is required (not optional) for all random graph generators (Erdős-Rényi, Barabási-Albert, Watts-Strogatz, Bipartite). This ensures reproducibility of generated graphs. Deterministic generators (Complete, Cycle, Star) do not require a seed.

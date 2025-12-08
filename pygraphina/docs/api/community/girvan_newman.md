@@ -99,8 +99,35 @@ print(f"Communities: {dict(groups)}")
 
 ## Variants
 
-- **Fast Girvan-Newman**: Approximations for speed
-- **Edge Betweenness**: Can use other edge centralities
+The basic algorithm can be modified:
+
+- **Edge weighting**: Weight betweenness by edge strength
+- **Stopping criteria**: Stop when modularity peaks instead of specifying communities
+- **Local optimization**: Improve communities after each removal
+
+## Comparison with Other Methods
+
+| Method | Speed | Quality | Best For |
+|--------|-------|---------|----------|
+| Girvan-Newman | Slow | Good | Understanding structure |
+| Louvain | Fast | Excellent | Practical use |
+| Label Propagation | Very Fast | Good | Large graphs |
+| Spectral | Medium | Very Good | Mathematical rigor |
+
+## Implementation Notes
+
+- Edge removal is permanent - graph is modified during execution
+- For undirected graphs only
+- Works on disconnected components
+- Returns community IDs starting from 0
+
+## See Also
+
+- [Louvain Algorithm](louvain.md) - Faster, more practical alternative
+- [Label Propagation](label_propagation.md) - Very fast for large graphs
+- [Spectral Clustering](spectral.md) - Mathematically rigorous approach
+- [Connected Components](connected_components.md) - Trivial case of community detection
+
 - **Hierarchical Clustering**: Generate dendrograms
 
 ## Comparison

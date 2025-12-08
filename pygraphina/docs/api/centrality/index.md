@@ -26,6 +26,7 @@ All centrality functions are available under the `pg.centrality` module.
 | `closeness()`       | O(V·E)          | Finding central nodes      |
 | `eigenvector()`     | O(V·E·k)        | Influence-based importance |
 | `pagerank()`        | O(V·E·k)        | Web ranking, influence     |
+| `personalized_pagerank()` | O(V·E·k)   | Topic-biased ranking       |
 | `katz()`            | O(V·E·k)        | Weighted influence         |
 | `harmonic()`        | O(V·E)          | Alternative to closeness   |
 | `local_reaching()`  | O(V·E)          | Local reachability         |
@@ -47,7 +48,7 @@ g = pg.PyGraph()
 # ... add nodes and edges ...
 
 # Calculate centrality
-scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
+scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tolerance=1e-6)
 
 # Find the most important node
 most_important = max(scores, key=scores.get)
@@ -89,7 +90,7 @@ Based on average distance to all other nodes. Good for finding central hubs.
 ### Eigenvector Centrality
 
 ```python
-scores = pg.centrality.eigenvector(g, max_iter=100, tol=1e-6)
+scores = pg.centrality.eigenvector(g, max_iter=100, tolerance=1e-6)
 ```
 
 Connections to important nodes matter more. Similar to PageRank.
@@ -97,7 +98,7 @@ Connections to important nodes matter more. Similar to PageRank.
 ### PageRank
 
 ```python
-scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tol=1e-6)
+scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tolerance=1e-6)
 ```
 
 The algorithm behind Google Search. Models random surfing behavior.
@@ -105,7 +106,7 @@ The algorithm behind Google Search. Models random surfing behavior.
 ### Katz Centrality
 
 ```python
-scores = pg.centrality.katz(g, alpha=0.1, beta=1.0, max_iter=100, tol=1e-6)
+scores = pg.centrality.katz(g, alpha=0.1, beta=1.0, max_iter=100, tolerance=1e-6)
 ```
 
 Weighted sum of all paths, with exponential decay for longer paths.

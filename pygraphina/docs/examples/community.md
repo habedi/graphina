@@ -33,7 +33,7 @@ g.add_edge(nodes[3], nodes[4], 1.0)
 g.add_edge(nodes[7], nodes[8], 1.0)
 
 # Detect communities
-communities = pg.community.label_propagation(g, 100)
+communities = pg.community.label_propagation(g, max_iter=100)
 
 # Group nodes by community
 from collections import defaultdict

@@ -11,8 +11,8 @@ subsets of nodes where connections within the community are more frequent than c
 
 | Algorithm            | Time Complexity     | Parameters          | Best For                    |
 |----------------------|---------------------|---------------------|-----------------------------|
-| Label Propagation    | O(k·(V+E))          | max_iters           | Fast, simple detection      |
-| Louvain              | O(V log V) to O(V²) | resolution          | Quality and speed balance   |
+| Label Propagation    | O(k·(V+E))          | max_iter            | Fast, simple detection      |
+| Louvain              | O(V log V) to O(V²) | seed                | Quality and speed balance   |
 | Girvan-Newman        | O(V·E²)             | None                | Small graphs, understanding |
 | Spectral Clustering  | O(V³)               | k (num communities) | Well-separated communities  |
 | Connected Components | O(V+E)              | None                | Disconnected components     |
@@ -22,19 +22,19 @@ subsets of nodes where connections within the community are more frequent than c
 ```python
 import pygraphina as pg
 
-# Load or create a graph
-g = pg.core.karate_club_graph()
+# Create a graph with community structure
+g = pg.core.barabasi_albert(100, 3, 42)
 
 # Detect communities using different algorithms
 label_prop = pg.community.label_propagation(g, max_iter=100)
-louvain = pg.community.louvain(g)
+louvain = pg.community.louvain(g, seed=42)
 connected = pg.community.connected_components(g)
 
 # Analyze results
 from collections import Counter
 
 print(f"Label Propagation found {len(set(label_prop.values()))} communities")
-print(f"Louvain found {len(set(louvain.values()))} communities")
+print(f"Louvain found {len(louvain)} communities")
 ```
 
 ## Choosing an Algorithm

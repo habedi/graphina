@@ -45,7 +45,7 @@ fn main() {
     social_graph.add_edge(charlie, dave, 0.3);
 
     // 4. Analyze: Find the "Influencer" of the group using PageRank
-    let ranks = pagerank(&social_graph, 0.85, 100, 1e-6);
+    let ranks = pagerank(&social_graph, 0.85, 100, 1e-6, None).unwrap();
 
     println!("Social Influence Ranking:");
 

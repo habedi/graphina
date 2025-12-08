@@ -10,6 +10,12 @@ pg.PyGraph()
 
 An undirected graph with integer node attributes and floating-point edge weights.
 
+!!! info "Attribute Types"
+    - **Node attributes:** Must be integers (`i64` range: -2^63 to 2^63-1)
+    - **Edge weights:** Floating-point numbers (`f64`)
+
+    For complex node attributes (strings, objects), use an external dictionary. See [Basic Concepts](../getting-started/concepts.md#storing-rich-node-attributes).
+
 ### Creating a Graph
 
 ```python
@@ -31,11 +37,15 @@ Add a node with an integer attribute to the graph.
 
 **Parameters:**
 
-- `attr` (int): The attribute value for the node
+- `attr` (int): The attribute value for the node (must be an integer in range -2^63 to 2^63-1)
 
 **Returns:**
 
-- `int`: The node ID (a non-negative integer)
+- `int`: The node ID (a non-negative integer, starts from 0)
+
+**Raises:**
+
+- `TypeError`: If `attr` is not an integer
 
 **Example:**
 
@@ -43,6 +53,11 @@ Add a node with an integer attribute to the graph.
 g = pg.PyGraph()
 node_a = g.add_node(100)  # Returns 0
 node_b = g.add_node(200)  # Returns 1
+
+# For complex attributes, use external storage
+node_data = {}
+node_c = g.add_node(2)  # Store simple ID
+node_data[node_c] = {"name": "Alice", "age": 30}  # Store rich data externally
 ```
 
 ### update_node
@@ -419,18 +434,16 @@ print(g.neighbors(a))  # [1, 2]
 ### degree
 
 ```python
-degree(node: int) -> Optional[int]
+degree: DegreeView
 ```
 
-Get the degree (number of neighbors) of a node.
+Get a degree view object that allows accessing the degree of any node.
 
-**Parameters:**
-
-- `node` (int): The node ID
+The `degree` property returns a `DegreeView` object that supports dictionary-like access to node degrees.
 
 **Returns:**
 
-- `Optional[int]`: The degree if the node exists, None otherwise
+- `DegreeView`: A view object that maps node IDs to their degrees (number of neighbors)
 
 **Example:**
 
@@ -439,8 +452,23 @@ g = pg.PyGraph()
 a, b, c = [g.add_node(i) for i in range(3)]
 g.add_edge(a, b, 1.0)
 g.add_edge(a, c, 1.0)
-print(g.degree(a))  # 2
+
+# Access degree using the degree property
+degree_view = g.degree
+print(degree_view[a])  # 2 - node a has 2 neighbors
+
+# Iterate over all nodes and their degrees
+for node, deg in g.degree:
+    print(f"Node {node} has degree {deg}")
+
+# Get all degrees as a dict
+all_degrees = dict(g.degree)
+print(all_degrees)  # {0: 2, 1: 1, 2: 1}
 ```
+
+!!! tip "Degree vs Centrality"
+    - Use `g.degree[node]` to get the raw degree count (number of neighbors)
+    - Use `pg.centrality.degree(g)` to get normalized degree centrality scores (0.0-1.0)
 
 ## Utility Operations
 

@@ -12,10 +12,11 @@ PageRank computes the importance of nodes based on incoming links, modeling a ra
 ```rust
 pub fn pagerank<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
-    damping_factor: f64,
-    max_iterations: usize,
-    tolerance: f64
-) -> HashMap<NodeId, f64>
+    damping: f64,
+    max_iter: usize,
+    tolerance: f64,
+    nstart: Option<&NodeMap<f64>>,
+) -> Result<NodeMap<f64>>
 ```
 
 ### Example
@@ -38,7 +39,7 @@ g.add_edge(n2, n3, 1.0);
 g.add_edge(n3, n4, 1.0);
 g.add_edge(n4, n1, 1.0);
 
-let scores = pagerank(&g, 0.85, 100, 1e-6);
+let scores = pagerank(&g, 0.85, 100, 1e-6, None).unwrap();
 
 for (node, score) in scores {
     println!("Node {:?} has PageRank {:.4}", node, score);

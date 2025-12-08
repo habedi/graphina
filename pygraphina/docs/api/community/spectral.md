@@ -74,12 +74,70 @@ print(f"Size distribution: {Counter(communities.values())}")
 - Theoretically well-founded
 - Works well for balanced clusters
 - Handles complex network structures
+- Optimal for certain graph cuts
 
 ## Disadvantages
 
 - Requires knowing k in advance
 - Computationally expensive for large graphs
-- Assumes well-separated clusters
+- O(V³) complexity limits scalability
+- Sensitive to graph structure
+
+## When to Use
+
+- Medium-sized graphs (< 10,000 nodes)
+- Known number of communities
+- Need mathematical rigor
+- Graph has balanced community sizes
+
+## Comparison with Other Methods
+
+| Method | Speed | Scalability | Quality | Requires k |
+|--------|-------|-------------|---------|-----------|
+| Spectral | Slow | Poor | Very Good | Yes |
+| Louvain | Fast | Excellent | Excellent | No |
+| Label Propagation | Very Fast | Excellent | Good | No |
+| Girvan-Newman | Very Slow | Very Poor | Good | Yes |
+
+## Mathematical Background
+
+The algorithm is based on the graph Laplacian:
+
+```
+L = D - A
+```
+
+Where:
+- D is the degree matrix (diagonal)
+- A is the adjacency matrix
+
+The eigenvectors of L provide information about graph structure. Nodes with similar eigenvector values tend to be in the same community.
+
+## Practical Notes
+
+- Initialize k-means carefully for stable results
+- Normalize eigenvectors for consistent clustering
+- Works on both connected and disconnected graphs
+- May need preprocessing for weighted graphs
+
+## Implementation Notes
+
+- Uses spectral decomposition of Laplacian matrix
+- Applies k-means to eigenvector coordinates
+- Returns community labels (0 to k-1)
+- Deterministic for a given input
+
+## See Also
+
+- [Louvain Algorithm](louvain.md) - Faster practical alternative
+- [Label Propagation](label_propagation.md) - Fast scalable method
+- [Girvan-Newman](girvan_newman.md) - Hierarchical divisive approach
+- [Connected Components](connected_components.md) - Finding trivial communities
+
+## References
+
+- Ng, A. Y., Jordan, M. I., & Weiss, Y. (2001). On spectral clustering: Analysis and an algorithm.
+- von Luxburg, U. (2007). A tutorial on spectral clustering.
 
 ## When to Use
 
