@@ -85,7 +85,7 @@ print(f"Found dense core with {len(core)} members")
 
 # Analyze the core
 core_graph = g.subgraph(core)
-avg_degree = sum(core_graph.degree(n) for n in core_graph.nodes) / len(core)
+avg_degree = sum(core_graph.degree[n] for n in core_graph.nodes) / len(core)
 print(f"Average degree in core: {avg_degree:.2f}")
 print(f"Core density: {core_graph.density():.3f}")
 ```

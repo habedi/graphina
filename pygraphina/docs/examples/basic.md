@@ -63,7 +63,7 @@ for person1, person2 in friendships:
     friends.add_edge(people[person1], people[person2], 1.0)
 
 # Find the most connected person
-degrees = {name: friends.degree(node_id) for name, node_id in people.items()}
+degrees = {name: friends.degree[node_id] for name, node_id in people.items()}
 most_connected = max(degrees, key=degrees.get)
 print(f"Most connected person: {most_connected} ({degrees[most_connected]} friends)")
 
@@ -273,7 +273,7 @@ except:
 # Node-level analysis
 print("\nNode Analysis:")
 for node in nodes[:5]:  # First 5 nodes
-    degree = g.degree(node)
+    degree = g.degree[node]
     neighbors = g.neighbors(node)
     print(f"  Node {node}: degree={degree}, neighbors={neighbors}")
 ```

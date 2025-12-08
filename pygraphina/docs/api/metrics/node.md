@@ -7,10 +7,10 @@ Node metrics characterize individual nodes in the graph.
 ### Degree Information
 
 ```python
-g.degree(node)  # Total degree of node
+g.degree[node]  # Total degree of node
 # For directed graphs:
-g.in_degree(node)  # In-degree
-g.out_degree(node)  # Out-degree
+g.in_degree[node]  # In-degree
+g.out_degree[node]  # Out-degree
 ```
 
 ### Clustering
@@ -52,7 +52,7 @@ g.add_edge(nodes[0], nodes[5], 1.0)
 
 # Analyze each node
 for node in nodes:
-    degree = g.degree(node)
+    degree = g.degree[node]
     neighbors = g.neighbors(node)
     clustering = g.clustering_of(node)
     triangles = g.triangles_of(node)

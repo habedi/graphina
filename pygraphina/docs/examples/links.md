@@ -152,7 +152,7 @@ predictions = pg.links.preferential_attachment(g)
 print("Preferential Attachment Analysis:")
 
 # Get node degrees
-degrees = {n: g.degree(n) for n in g.nodes}
+degrees = {n: g.degree[n] for n in g.nodes}
 
 # Top predictions
 sorted_pred = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
