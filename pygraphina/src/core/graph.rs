@@ -32,48 +32,230 @@ impl PyGraph {
     }
 
     // Basic operations
+    /// Add a node with an integer attribute to the graph.
+    ///
+    /// Parameters
+    /// ----------
+    /// attr : int
+    ///     The attribute value for the node (must be in range -2^63 to 2^63-1)
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The node ID (non-negative integer, starts from 0)
+    ///
+    /// Examples
+    /// --------
+    /// >>> g = PyGraph()
+    /// >>> node_id = g.add_node(100)
+    /// >>> print(node_id)
+    /// 0
     pub fn add_node(&mut self, attr: i64) -> usize {
         self.add_node_impl(attr)
     }
+
+    /// Update the attribute of an existing node.
+    ///
+    /// Parameters
+    /// ----------
+    /// py_node : int
+    ///     The node ID
+    /// new_attr : int
+    ///     The new attribute value
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     True if the node exists and was updated, False otherwise
     pub fn update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<bool> {
         self.update_node_impl(py_node, new_attr)
     }
+
+    /// Update a node's attribute, raising an error if the node doesn't exist.
+    ///
+    /// Parameters
+    /// ----------
+    /// py_node : int
+    ///     The node ID
+    /// new_attr : int
+    ///     The new attribute value
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the node doesn't exist
     pub fn try_update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
         self.try_update_node_impl(py_node, new_attr)
     }
+
+    /// Add an edge between two nodes with a weight.
+    ///
+    /// Parameters
+    /// ----------
+    /// source : int
+    ///     The source node ID
+    /// target : int
+    ///     The target node ID
+    /// weight : float
+    ///     The edge weight (must be finite, not NaN or infinity)
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The edge ID
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If either node doesn't exist or weight is not finite
     pub fn add_edge(&mut self, source: usize, target: usize, weight: f64) -> PyResult<usize> {
         self.add_edge_impl(source, target, weight)
     }
+
+    /// Remove a node from the graph.
+    ///
+    /// Removes all edges incident to this node as well.
+    ///
+    /// Parameters
+    /// ----------
+    /// py_node : int
+    ///     The node ID to remove
+    ///
+    /// Returns
+    /// -------
+    /// int or None
+    ///     The node's attribute if it existed, None otherwise
     pub fn remove_node(&mut self, py_node: usize) -> PyResult<Option<i64>> {
         self.remove_node_impl(py_node)
     }
+
+    /// Remove a node from the graph, raising an error if it doesn't exist.
+    ///
+    /// Parameters
+    /// ----------
+    /// py_node : int
+    ///     The node ID to remove
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The node's attribute value
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the node doesn't exist
     pub fn try_remove_node(&mut self, py_node: usize) -> PyResult<i64> {
         self.try_remove_node_impl(py_node)
     }
+
+    /// Get the number of nodes in the graph.
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The number of nodes
     pub fn node_count(&self) -> usize {
         self.graph.node_count()
     }
+
+    /// Get the number of edges in the graph.
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The number of edges
     pub fn edge_count(&self) -> usize {
         self.graph.edge_count()
     }
+
+    /// Check if the graph is directed.
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     False for PyGraph (always undirected)
     pub fn is_directed(&self) -> bool {
         self.graph.is_directed()
     }
+
+    /// Calculate the density of the graph.
+    ///
+    /// Density is the ratio of actual edges to possible edges.
+    /// For an undirected graph: density = 2*E / (N*(N-1))
+    ///
+    /// Returns
+    /// -------
+    /// float
+    ///     The graph density (0.0 to 1.0)
     pub fn density(&self) -> f64 {
         self.graph.density()
     }
+
+    /// Check if a node exists in the graph.
+    ///
+    /// Parameters
+    /// ----------
+    /// py_node : int
+    ///     The node ID to check
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     True if the node exists, False otherwise
     pub fn contains_node(&self, py_node: usize) -> bool {
         self.contains_node_impl(py_node)
     }
+
+    /// Check if an edge exists between two nodes.
+    ///
+    /// Parameters
+    /// ----------
+    /// source : int
+    ///     The source node ID
+    /// target : int
+    ///     The target node ID
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     True if the edge exists, False otherwise
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If either node doesn't exist
     pub fn contains_edge(&self, source: usize, target: usize) -> PyResult<bool> {
         self.contains_edge_impl(source, target)
     }
+    /// Get a view of all nodes in the graph.
+    ///
+    /// Returns
+    /// -------
+    /// NodeView
+    ///     A view object for iterating over nodes
     #[getter]
     pub fn nodes(slf: PyRef<'_, Self>) -> PyResult<NodeView> {
         let py = slf.py();
         Ok(NodeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
 
+    /// Get the neighbors of a node.
+    ///
+    /// Parameters
+    /// ----------
+    /// py_node : int
+    ///     The node ID
+    ///
+    /// Returns
+    /// -------
+    /// list of int
+    ///     List of neighbor node IDs
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the node doesn't exist
     pub fn neighbors(&self, py_node: usize) -> PyResult<Vec<usize>> {
         self.neighbors_impl(py_node)
     }
@@ -83,28 +265,129 @@ impl PyGraph {
         self.degree_impl(py_node)
     }
 
+    /// Get a view for accessing node degrees.
+    ///
+    /// Returns
+    /// -------
+    /// DegreeView
+    ///     A view object for accessing degrees via bracket notation: g.degree[node]
+    ///
+    /// Examples
+    /// --------
+    /// >>> g = PyGraph()
+    /// >>> a = g.add_node(1)
+    /// >>> b = g.add_node(2)
+    /// >>> g.add_edge(a, b, 1.0)
+    /// >>> print(g.degree[a])
+    /// 1
     #[getter]
     pub fn degree(slf: PyRef<'_, Self>) -> PyResult<DegreeView> {
         let py = slf.py();
         Ok(DegreeView::new(slf.into_pyobject(py)?.into_any().unbind()))
     }
+
+    /// Get the attribute value of a node.
+    ///
+    /// Parameters
+    /// ----------
+    /// py_node : int
+    ///     The node ID
+    ///
+    /// Returns
+    /// -------
+    /// int or None
+    ///     The node's attribute value, or None if the node doesn't exist
     pub fn get_node_attr(&self, py_node: usize) -> Option<i64> {
         self.get_node_attr_impl(py_node)
     }
+
+    /// Remove all nodes and edges from the graph.
     pub fn clear(&mut self) {
         self.clear_impl()
     }
 
     // Edge operations
+    /// Remove an edge between two nodes.
+    ///
+    /// Parameters
+    /// ----------
+    /// source : int
+    ///     The source node ID
+    /// target : int
+    ///     The target node ID
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     True if the edge was removed, False if it didn't exist
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If either node doesn't exist
     pub fn remove_edge(&mut self, source: usize, target: usize) -> PyResult<bool> {
         self.remove_edge_impl(source, target)
     }
+
+    /// Remove an edge, raising an error if it doesn't exist.
+    ///
+    /// Parameters
+    /// ----------
+    /// source : int
+    ///     The source node ID
+    /// target : int
+    ///     The target node ID
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If either node doesn't exist or the edge doesn't exist
     pub fn try_remove_edge(&mut self, source: usize, target: usize) -> PyResult<()> {
         self.try_remove_edge_impl(source, target)
     }
+
+    /// Get the weight of an edge.
+    ///
+    /// Parameters
+    /// ----------
+    /// source : int
+    ///     The source node ID
+    /// target : int
+    ///     The target node ID
+    ///
+    /// Returns
+    /// -------
+    /// float or None
+    ///     The edge weight, or None if the edge doesn't exist
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If either node doesn't exist
     pub fn get_edge_weight(&self, source: usize, target: usize) -> PyResult<Option<f64>> {
         self.get_edge_weight_impl(source, target)
     }
+
+    /// Update the weight of an existing edge.
+    ///
+    /// Parameters
+    /// ----------
+    /// source : int
+    ///     The source node ID
+    /// target : int
+    ///     The target node ID
+    /// new_weight : float
+    ///     The new edge weight
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     True if the edge was updated, False if it didn't exist
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If either node doesn't exist
     pub fn update_edge_weight(
         &mut self,
         source: usize,
@@ -113,6 +396,22 @@ impl PyGraph {
     ) -> PyResult<bool> {
         self.update_edge_weight_impl(source, target, new_weight)
     }
+
+    /// Update edge weight, raising an error if the edge doesn't exist.
+    ///
+    /// Parameters
+    /// ----------
+    /// source : int
+    ///     The source node ID
+    /// target : int
+    ///     The target node ID
+    /// new_weight : float
+    ///     The new edge weight
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If either node doesn't exist or the edge doesn't exist
     pub fn try_update_edge_weight(
         &mut self,
         source: usize,
@@ -123,9 +422,42 @@ impl PyGraph {
     }
 
     // Traversal
+    /// Perform breadth-first search from a starting node.
+    ///
+    /// Parameters
+    /// ----------
+    /// start : int
+    ///     The starting node ID
+    ///
+    /// Returns
+    /// -------
+    /// list of int
+    ///     Nodes in BFS order
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the start node doesn't exist
     pub fn bfs(&self, start: usize) -> PyResult<Vec<usize>> {
         self.bfs_impl(start)
     }
+
+    /// Perform depth-first search from a starting node.
+    ///
+    /// Parameters
+    /// ----------
+    /// start : int
+    ///     The starting node ID
+    ///
+    /// Returns
+    /// -------
+    /// list of int
+    ///     Nodes in DFS order
+    ///
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     If the start node doesn't exist
     pub fn dfs(&self, start: usize) -> PyResult<Vec<usize>> {
         self.dfs_impl(start)
     }
