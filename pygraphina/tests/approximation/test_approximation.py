@@ -6,7 +6,7 @@ def make_line(n=5):
     nodes = [g.add_node(i) for i in range(n)]
     for i in range(n - 1):
         g.add_edge(nodes[i], nodes[i + 1], 1.0)
-    return g, nodes
+    return (g, nodes)
 
 
 def test_max_clique_and_size():

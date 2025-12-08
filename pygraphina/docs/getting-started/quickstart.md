@@ -188,7 +188,7 @@ for (node1, node2), score in sorted(jaccard.items(),
 # Graph statistics
 print(f"\nNetwork statistics:")
 print(f"  Density: {network.density():.3f}")
-print(f"  Average degree: {sum(network.degree(n) for n in network.nodes()) / network.node_count():.2f}")
+print(f"  Average degree: {sum(network.degree[n] for n in network.nodes) / network.node_count():.2f}")
 ```
 
 ## Working with Directed Graphs

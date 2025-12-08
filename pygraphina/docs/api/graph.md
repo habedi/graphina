@@ -512,7 +512,7 @@ g.add_edge(charlie, alice, 1.5)
 print(f"Nodes: {g.node_count()}")        # 3
 print(f"Edges: {g.edge_count()}")        # 3
 print(f"Density: {g.density():.3f}")     # 1.0 (complete triangle)
-print(f"Bob's degree: {g.degree(bob)}")  # 2
+print(f"Bob's degree: {g.degree[bob]}")  # 2
 print(f"Bob's neighbors: {g.neighbors(bob)}")  # [0, 2]
 
 # Modify the graph

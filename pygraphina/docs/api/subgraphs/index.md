@@ -362,7 +362,7 @@ import pygraphina as pg
 g = pg.core.barabasi_albert(1000, 3, seed=42)
 
 # Find high-degree node
-degrees = {n: g.degree(n) for n in g.nodes}
+degrees = {n: g.degree[n] for n in g.nodes}
 hub = max(degrees, key=degrees.get)
 
 # Analyze hub's local network

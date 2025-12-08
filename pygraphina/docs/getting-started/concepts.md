@@ -215,7 +215,7 @@ print(g.neighbors(a))  # [1]
 print(g.neighbors(b))  # [0, 2]
 
 # Get node degree
-print(g.degree(b))  # 2
+print(g.degree[b])  # 2
 ```
 
 ### Modifying Graphs

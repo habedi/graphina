@@ -22,6 +22,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Rust",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
@@ -41,6 +42,10 @@ repository = "https://github.com/habedi/graphina"
 module-name = "pygraphina"
 bindings = "pyo3"
 features = ["pyo3/extension-module"]
-include = [{ path = ".", format = "sdist" }]
+include = [
+    { path = ".", format = "sdist" },
+    { path = "pygraphina.pyi", format = ["sdist", "wheel"] },
+    { path = "py.typed", format = ["sdist", "wheel"] }
+]
 strip = true
 release = true

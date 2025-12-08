@@ -298,7 +298,7 @@ for u, v in edges:
 # Compute node-level metrics
 print("Node-Level Metrics:")
 for node in nodes:
-    degree = g.degree(node)
+    degree = g.degree[node]
     clustering = g.clustering_of(node)
     triangles = g.triangles_of(node)
 
@@ -404,7 +404,7 @@ g = pg.core.erdos_renyi(5000, 0.01, seed=42)
 
 # Sequential degree computation
 start = time.time()
-seq_degrees = {node: g.degree(node) for node in g.nodes}
+seq_degrees = {node: g.degree[node] for node in g.nodes}
 seq_time = time.time() - start
 
 # Parallel degree computation

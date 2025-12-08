@@ -50,8 +50,8 @@ top_pa = sorted(pa.items(), key=lambda x: x[1], reverse=True)
 
 print("Top predicted links by preferential attachment:")
 for (u, v), score in top_pa[:10]:
-    deg_u = g.degree(u)
-    deg_v = g.degree(v)
+    deg_u = g.degree[u]
+    deg_v = g.degree[v]
     print(f"  {u}-{v}: score={score:.0f} (degrees: {deg_u}, {deg_v})")
 ```
 
