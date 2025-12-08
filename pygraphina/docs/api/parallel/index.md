@@ -2,56 +2,45 @@
 
 Parallel implementations of graph algorithms for large-scale graphs.
 
-!!! warning "Development Status"
-    This module is currently under development. Most algorithms are available in sequential form via the main API.
-
 ## Overview
 
-For very large graphs (millions of nodes, tens of millions of edges), PyGraphina can leverage parallel processing to speed up computations. The parallel module provides multi-threaded implementations of popular algorithms.
+For very large graphs (millions of nodes, tens of millions of edges), PyGraphina provides parallel processing to speed up computations. The parallel module offers multi-threaded implementations of popular algorithms to maximize performance on multi-core systems.
 
 ## Available Algorithms
 
-| Algorithm | Status | Speedup | Notes |
-|-----------|--------|---------|-------|
-| Parallel PageRank | ⚠️ Planned | 3-4x | Multi-threaded power iteration |
-| Parallel BFS | ⚠️ Planned | 2-3x | Level-synchronous BFS |
-| Parallel Community Detection | ⚠️ Planned | 2-4x | Parallel label propagation |
-| Parallel Centrality | ⚠️ Planned | 3-5x | Multiple centrality measures |
+| Algorithm | Description |
+|-----------|-------------|
+| PageRank | Multi-threaded power iteration |
+| BFS | Breadth-first search from multiple starting points |
+| Connected Components | Parallel union-find for connected component detection |
+| Degrees | Parallel degree calculation for all nodes |
+| Triangles | Parallel triangle counting |
+| Clustering Coefficients | Parallel clustering coefficient calculation |
+| Shortest Paths | Parallel shortest path computation |
 
-## Current Status
+## Usage
 
-PyGraphina's algorithms are already **highly optimized** thanks to Rust:
-
-- ✅ Memory efficient (Rust's zero-cost abstractions)
-- ✅ Fast single-threaded performance
-- ✅ No GIL issues (computation happens in Rust)
-- ⚠️ Explicit parallel versions coming soon
-
-## Performance Tips
-
-While dedicated parallel algorithms are in development, you can still achieve good performance:
-
-### 1. Use Sequential Algorithms (Already Fast!)
-
-The sequential algorithms are written in Rust and are much faster than pure Python:
+### Basic Usage
 
 ```python
+import pygraphina.parallel as pgp
 import pygraphina as pg
 
-# This is already fast for most graphs
 g = pg.PyGraph()
 # ... add nodes and edges ...
 
-# Fast single-threaded PageRank
-scores = pg.centrality.pagerank(g, 0.85, 100, 1e-6)
+# Parallel PageRank
+scores = pgp.pagerank_parallel(g, damping=0.85, max_iterations=100, tolerance=1e-6)
+
+# Parallel BFS from multiple starting points
+results = pgp.bfs_parallel(g, starts=[0, 10, 20])
+
+# Parallel degree computation
+degrees = pgp.degrees_parallel(g)
 ```
 
-**Typical performance:**
-- Small graphs (< 10K nodes): Milliseconds
-- Medium graphs (10K - 100K nodes): Seconds
-- Large graphs (100K - 1M nodes): Tens of seconds
 
-### 2. Process Multiple Graphs in Parallel
+### Processing Multiple Graphs
 
 Use Python's multiprocessing for independent graphs:
 
@@ -83,96 +72,103 @@ with Pool(processes=4) as pool:
     results = pool.map(analyze_graph, graphs)
 ```
 
-### 3. Optimize Graph Construction
+### Graph Construction
 
 Build graphs efficiently:
 
 ```python
-# ✅ Good: Batch operations
+# Recommended: Batch operations
 g = pg.PyGraph()
 node_ids = [g.add_node(attr) for attr in node_attributes]
 for src, tgt, weight in edge_list:
     g.add_edge(src, tgt, weight)
 
-# ❌ Slower: Many small operations
+# Slower: Many small operations
 for attr in node_attributes:
     node_id = g.add_node(attr)
     # Do something with node_id immediately
 ```
 
-## When to Use Parallel Algorithms
+## API Reference
 
-Consider parallel implementations when:
+### pagerank_parallel()
 
-- Graph has > 1 million nodes
-- Running the same algorithm repeatedly
-- Real-time or latency-critical applications
-- Multiple CPU cores available
-
-For most applications, sequential algorithms are sufficient!
-
-## Upcoming Features
-
-Planned parallel implementations:
-
-### Parallel PageRank (In Development)
+Compute PageRank scores using parallel processing.
 
 ```python
-# Coming soon
 import pygraphina.parallel as pgp
 
 scores = pgp.pagerank_parallel(
-    g,
+    graph,
     damping=0.85,
-    max_iter=100,
+    max_iterations=100,
     tolerance=1e-6,
-    num_threads=4
+    nstart=None
 )
 ```
 
-**Expected speedup:** 3-4x on 4+ cores
 
-### Parallel Community Detection (Planned)
+### bfs_parallel()
+
+Perform breadth-first search from multiple starting nodes.
 
 ```python
-# Coming soon
-communities = pgp.label_propagation_parallel(
-    g,
-    max_iter=100,
-    num_threads=4
+import pygraphina.parallel as pgp
+
+results = pgp.bfs_parallel(
+    graph,
+    starts=[0, 10, 20]
 )
 ```
 
-**Expected speedup:** 2-4x on 4+ cores
+### connected_components_parallel()
 
-### Parallel BFS (Planned)
+Find connected components using parallel union-find.
 
 ```python
-# Coming soon
-order = pgp.bfs_parallel(
-    g,
-    start_nodes=[0, 10, 20],  # Multiple start points
-    num_threads=4
-)
+import pygraphina.parallel as pgp
+
+components = pgp.connected_components_parallel(graph)
 ```
 
-**Expected speedup:** 2-3x on 4+ cores
 
-## Benchmarks
+### degrees_parallel()
 
-Preliminary benchmarks on a 4-core system:
+Compute node degrees in parallel.
 
-| Graph Size | Algorithm | Sequential | Parallel (4 threads) | Speedup |
-|------------|-----------|------------|---------------------|---------|
-| 10K nodes | PageRank | 0.5s | 0.2s | 2.5x |
-| 100K nodes | PageRank | 5.2s | 1.5s | 3.5x |
-| 1M nodes | PageRank | 58s | 16s | 3.6x |
+```python
+degrees = pgp.degrees_parallel(graph)
+```
 
-*Benchmarks are provisional and may change in final implementation.*
+### triangles_parallel()
+
+Count triangles in parallel.
+
+```python
+triangle_counts = pgp.triangles_parallel(graph)
+```
+
+### clustering_coefficients_parallel()
+
+Calculate clustering coefficients in parallel.
+
+```python
+clustering = pgp.clustering_coefficients_parallel(graph)
+```
+
+### shortest_paths_parallel()
+
+Compute shortest paths in parallel.
+
+```python
+paths = pgp.shortest_paths_parallel(graph, sources=[0, 1, 2])
+```
+
+
 
 ## Contributing
 
-Interested in parallel algorithms? We welcome contributions!
+Interested in parallel algorithms or optimizations? We welcome contributions!
 
 1. Check [open issues](https://github.com/habedi/graphina/issues) for parallel algorithm tasks
 2. See [CONTRIBUTING.md](../../contributing.md) for guidelines
@@ -180,20 +176,6 @@ Interested in parallel algorithms? We welcome contributions!
 
 ## See Also
 
-- [Core Algorithms](../centrality/index.md) - Sequential implementations
-- [Performance Guide](../../guide/performance.md) - Optimization tips
+- [Centrality Algorithms](../centrality/index.md) - Sequential centrality measure implementations
+- [Community Detection](../community/index.md) - Community structure detection algorithms
 - [GitHub Roadmap](https://github.com/habedi/graphina/blob/main/ROADMAP.md) - Development plans
-
-## Questions?
-
-- **Q: Why aren't parallel versions available yet?**  
-  A: We're focused on correctness and API stability first. Parallel versions will be added once the core API is stable.
-
-- **Q: Will parallel versions have the same API?**  
-  A: Yes! Parallel versions will be drop-in replacements with an optional `num_threads` parameter.
-
-- **Q: Can I use multiprocessing with PyGraphina?**  
-  A: Yes! PyGraphina graphs can be pickled and passed between processes.
-
-- **Q: How do I know if I need parallel algorithms?**  
-  A: Profile first! Most applications don't need explicit parallelism. Try sequential algorithms first.
