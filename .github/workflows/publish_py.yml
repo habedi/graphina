@@ -10,8 +10,93 @@ permissions:
   contents: read
 
 jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-14, windows-latest]
+        include:
+          # Linux builds (x86_64 and aarch64)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          # macOS x86_64
+          - os: macos-13
+            target: x86_64-apple-darwin
+          # macOS ARM64 (Apple Silicon)
+          - os: macos-14
+            target: aarch64-apple-darwin
+          # Windows x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          # Windows ARM64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Set Up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Zig (for cross-compilation)
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Install uv
+        run: |
+          pip install uv
+
+      - name: Install dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfontconfig1-dev
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Install dependencies (macOS)
+        run: |
+          brew install fontconfig
+        if: startsWith(matrix.os, 'macos-')
+
+      - name: Build wheel (Linux with Zig)
+        run: |
+          cd pygraphina
+          pip install maturin
+          maturin build --release --out dist --zig
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Build wheel (macOS/Windows)
+        run: |
+          cd pygraphina
+          pip install maturin
+          maturin build --release --out dist
+        if: matrix.os != 'ubuntu-latest'
+        shell: bash
+
+      - name: Upload wheels as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.target }}
+          path: pygraphina/dist/
+
   publish_to_pypi:
+    name: Publish to PyPI
+    needs: build_wheels
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Checkout Repository
@@ -24,16 +109,20 @@ jobs:
 
       - name: Install uv
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip make libfontconfig1-dev
-          pip install uv
+          pip install uv twine
 
-      - name: Install Python Dependencies
-        run: |
-          uv sync --extra dev
-          source .venv/bin/activate
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: wheels
+          merge-multiple: true
 
-      - name: Build and Publish Package
+      - name: Verify wheels
         run: |
-          uv run make wheel-manylinux
-          PYPI_TOKEN=${{ secrets.PYPI_API_TOKEN }} uv run make publish-py
+          ls -la wheels/
+          twine check wheels/*
+
+      - name: Publish wheels to PyPI
+        run: |
+          twine upload wheels/* -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
+        if: success()
