@@ -7,10 +7,6 @@
 
 PyGraphina provides Python bindings for [Graphina](https://github.com/habedi/graphina).
 
-> [!IMPORTANT]
-> PyGraphina is in early development, so breaking changes and bugs are expected.
-> Please report bugs on [GitHub issues](https://github.com/habedi/graphina/issues).
-
 ### Installation
 
 ```bash
