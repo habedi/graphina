@@ -44,6 +44,45 @@ use ordered_float::NotNan;
 /// Result type for pathfinding algorithms: (distances, predecessors).
 pub type PathFindResult = (NodeMap<Option<f64>>, NodeMap<Option<NodeId>>);
 
+pub fn backtraced_path(
+    predecessors: &NodeMap<Option<NodeId>>,
+    path_end: NodeId,
+) -> Result<Vec<NodeId>> {
+    let Some(end) = predecessors.get(&path_end) else {
+        return Err(GraphinaError::InvalidGraph(
+            "Path end node does not exist in predesscors nodemap".to_string(),
+        ));
+    };
+
+    let Some(curr) = *end else {
+        return Err(GraphinaError::InvalidGraph(
+            "Path end node unreachable in predecessors path traversal".to_string(),
+        ));
+    };
+
+    let mut backtrace = vec![curr];
+
+    loop {
+        let Some(c) = backtrace.last() else {
+            unreachable!()
+        };
+        let Some(pred) = predecessors.get(c) else {
+            return Err(GraphinaError::InvalidGraph(
+                "Path end node does not exist in predesscors nodemap".to_string(),
+            ));
+        };
+
+        if let Some(pred) = pred {
+            backtrace.push(*pred);
+        } else {
+            // reached src
+            break;
+        }
+    }
+
+    Ok(backtrace)
+}
+
 /// Returns an iterator over outgoing edges from a given node as `(target, weight)`.
 fn outgoing_edges<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
