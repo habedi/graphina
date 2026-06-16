@@ -9,10 +9,18 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest
+# queued. Do not cancel in-progress runs as we want to let deployments complete.
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  deploy-docs:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -43,12 +51,18 @@ jobs:
              mkdir -p site/python
              cp -r pygraphina/site/* site/python/
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
-          publish_branch: gh-pages
-          user_name: ${{ github.actor }}
-          user_email: ${{ github.actor }}@users.noreply.github.com
-          commit_message: "Deploy documentation from ${{ github.sha }} by ${{ github.actor }}"
+          path: ./site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
