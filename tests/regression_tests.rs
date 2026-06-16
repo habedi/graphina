@@ -856,3 +856,29 @@ fn test_shortest_path_algorithms_consistency() {
         }
     }
 }
+
+#[test]
+#[cfg(feature = "metrics")]
+fn test_assortativity_is_symmetric_newman_coefficient() {
+    // Degree assortativity is the Pearson correlation over the symmetric joint
+    // degree distribution of edge endpoints: each undirected edge contributes
+    // both orderings. A star is perfectly disassortative (a degree-k hub joined
+    // only to degree-1 leaves), so its coefficient is exactly -1.0. The earlier
+    // implementation correlated a single edge ordering, giving the two endpoints
+    // different means; on a star that collapsed the variance to zero and
+    // returned 0.0 instead of -1.0.
+    use graphina::metrics::assortativity;
+
+    let mut g: Graph<i32, f64> = Graph::new();
+    let center = g.add_node(0);
+    for i in 1..=4 {
+        let leaf = g.add_node(i);
+        g.add_edge(center, leaf, 1.0);
+    }
+
+    let r = assortativity(&g);
+    assert!(
+        (r - (-1.0)).abs() < 1e-9,
+        "star degree assortativity should be -1.0, got {r}"
+    );
+}
