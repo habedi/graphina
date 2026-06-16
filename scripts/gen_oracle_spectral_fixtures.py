@@ -16,6 +16,11 @@ checks the centrality structure rather than the normalization convention.
 
   - eigenvector centrality -> nx.eigenvector_centrality, L2-normalized
   - Katz centrality        -> nx.katz_centrality(alpha=ALPHA), L2-normalized
+  - Laplacian centrality   -> nx.laplacian_centrality(normalized=False)
+
+Laplacian centrality is the unnormalized drop in Laplacian energy. Graphina
+ignores edge weights for this measure, so the corpus is unweighted and the
+comparison is exact.
 
 The graphs are connected (eigenvector centrality is well defined and NetworkX's
 power iteration converges) and unweighted, so the adjacency spectral radius stays
@@ -80,6 +85,7 @@ def main():
         try:
             eig = nx.eigenvector_centrality(g, max_iter=NX_MAX_ITER, tol=NX_TOL)
             katz = nx.katz_centrality(g, alpha=ALPHA, max_iter=NX_MAX_ITER, tol=NX_TOL)
+            laplacian = nx.laplacian_centrality(g, normalized=False)
         except nx.PowerIterationFailedConvergence:
             # Skip graphs where NetworkX's power iteration does not converge
             # (for example near-bipartite graphs); resample a different graph.
@@ -92,6 +98,7 @@ def main():
                 "edges": [[u, v] for u, v in edges],
                 "eigenvector": l2_normalize([eig[k] for k in range(n)]),
                 "katz": l2_normalize([katz[k] for k in range(n)]),
+                "laplacian": [float(laplacian[k]) for k in range(n)],
             }
         )
         i += 1

@@ -31,6 +31,15 @@ the source and a worked example during development:
     reference is effectively exact; the Rust side compares with a slack tolerance
     that absorbs iteration and rounding differences.
 
+  - personalized PageRank          -> nx.pagerank(personalization=..., weight="weight")
+    Weighted PageRank with a per-node teleportation bias. The personalization
+    vector (proportional to node index + 1, normalized to sum to 1) is stored in
+    the corpus and passed to both implementations.
+
+  - VoteRank                        -> nx.voterank
+    Ordered list of elected influential nodes; unweighted. The full election is
+    stored (NetworkX stops once no node has remaining votes).
+
 The graphs are simple (no self-loops and no parallel edges) and undirected, so
 no direction or self-loop convention difference can creep into the comparison.
 
@@ -88,6 +97,16 @@ def main():
         closeness = nx.closeness_centrality(g, distance="weight")
         harmonic = nx.harmonic_centrality(g, distance="weight")
         pagerank = nx.pagerank(g, alpha=ALPHA, tol=NX_TOL, max_iter=NX_MAX_ITER, weight="weight")
+        total = sum(k + 1 for k in range(n))
+        personalization = [(k + 1) / total for k in range(n)]
+        ppr = nx.pagerank(
+            g,
+            alpha=ALPHA,
+            personalization={k: personalization[k] for k in range(n)},
+            tol=NX_TOL,
+            max_iter=NX_MAX_ITER,
+            weight="weight",
+        )
 
         cases.append(
             {
@@ -101,6 +120,9 @@ def main():
                 "closeness": [closeness[k] for k in range(n)],
                 "harmonic": [harmonic[k] for k in range(n)],
                 "pagerank": [pagerank[k] for k in range(n)],
+                "personalization": personalization,
+                "personalized_pagerank": [ppr[k] for k in range(n)],
+                "voterank": [int(x) for x in nx.voterank(g)],
             }
         )
 

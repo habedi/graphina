@@ -177,6 +177,7 @@ oracle-fixtures: ## Regenerate the NetworkX oracle corpora (for the oracle tests
 	@echo "Generating NetworkX oracle fixtures..."
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_fixtures.py tests/oracle/networkx_oracle.json
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_directed_fixtures.py tests/oracle/networkx_directed_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_directed_centrality_fixtures.py tests/oracle/networkx_directed_centrality_oracle.json
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_centrality_fixtures.py tests/oracle/networkx_centrality_oracle.json
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_spectral_fixtures.py tests/oracle/networkx_spectral_oracle.json
 

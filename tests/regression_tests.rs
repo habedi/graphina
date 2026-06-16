@@ -470,6 +470,90 @@ fn test_katz_centrality_symmetric_on_undirected() {
     );
 }
 
+// Regression: Laplacian centrality used the formula d^2 + sum(neighbor degrees),
+// missing the +d term and the factor of 2 on the neighbor-degree sum. The
+// unnormalized Laplacian centrality of a node in an unweighted graph is
+// d^2 + d + 2 * sum(neighbor degrees). In a triangle each node has degree 2 and
+// two neighbors of degree 2, so the value is 4 + 2 + 2*4 = 14, not 8.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_laplacian_centrality_formula() {
+    use graphina::centrality::other::laplacian_centrality;
+    use ordered_float::OrderedFloat;
+
+    let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    g.add_edge(n0, n1, OrderedFloat(1.0));
+    g.add_edge(n1, n2, OrderedFloat(1.0));
+    g.add_edge(n2, n0, OrderedFloat(1.0));
+
+    let lc = laplacian_centrality(&g).expect("laplacian should succeed");
+    for n in [n0, n1, n2] {
+        assert!(
+            (lc[&n] - 14.0).abs() < 1e-9,
+            "expected 14.0, got {}",
+            lc[&n]
+        );
+    }
+}
+
+// Regression: VoteRank previously iterated a HashSet (non-deterministic output),
+// kept a dead `votes` array, and never reduced neighbors' voting ability or
+// stopped when no votes remained, so it elected spurious extra seeds. On a star
+// the center is elected first; afterward every leaf's voting ability is spent,
+// so the standard algorithm stops, electing exactly one node even when more are
+// requested. The result must also be deterministic across runs.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_voterank_stops_and_is_deterministic() {
+    use graphina::centrality::other::voterank;
+
+    let mut g = Graph::<i32, f64>::new();
+    let center = g.add_node(0);
+    let leaves: Vec<_> = (1..=4).map(|i| g.add_node(i)).collect();
+    for &leaf in &leaves {
+        g.add_edge(center, leaf, 1.0);
+    }
+
+    let first = voterank(&g, 4);
+    assert_eq!(
+        first,
+        vec![center],
+        "star elects only the center, then stops"
+    );
+
+    // Deterministic: repeated calls give the same election.
+    for _ in 0..5 {
+        assert_eq!(voterank(&g, 4), first);
+    }
+}
+
+// Regression: personalized PageRank redistributed the rank mass of dangling
+// nodes uniformly instead of by the personalization vector. With no edges every
+// node is dangling, so all mass teleports by personalization and the result must
+// equal the (normalized) personalization vector exactly.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_personalized_pagerank_dangling_uses_personalization() {
+    use graphina::centrality::personalized::personalized_pagerank;
+
+    let mut g = Graph::<i32, f64>::new();
+    let nodes: Vec<_> = (0..3).map(|i| g.add_node(i)).collect();
+
+    let p = vec![0.5, 0.3, 0.2];
+    let pr = personalized_pagerank(&g, Some(p.clone()), 0.85, 1e-12, 2000)
+        .expect("personalized pagerank should succeed");
+    for (i, &want) in p.iter().enumerate() {
+        assert!(
+            (pr[&nodes[i]] - want).abs() < 1e-9,
+            "node {i}: expected {want}, got {}",
+            pr[&nodes[i]]
+        );
+    }
+}
+
 // Graph Generator Regressions
 
 #[test]

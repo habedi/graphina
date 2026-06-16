@@ -36,6 +36,7 @@ struct Case {
     edges: Vec<[usize; 2]>,
     eigenvector: Vec<f64>,
     katz: Vec<f64>,
+    laplacian: Vec<f64>,
 }
 
 /// The Katz attenuation factor must match the generator (`ALPHA`).
@@ -97,6 +98,27 @@ fn oracle_eigenvector_centrality() {
                 "eigenvector: case {} node {i}: expected {want}, got {}",
                 case.id,
                 got[i]
+            );
+        }
+    }
+}
+
+#[test]
+fn oracle_laplacian_centrality() {
+    use graphina::centrality::other::laplacian_centrality;
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let lc = laplacian_centrality(&g)
+            .unwrap_or_else(|e| panic!("laplacian_centrality failed in case {}: {e}", case.id));
+        for (i, &want) in case.laplacian.iter().enumerate() {
+            let got = *lc
+                .get(&ids[i])
+                .unwrap_or_else(|| panic!("laplacian: case {} missing node {i}", case.id));
+            assert!(
+                (got - want).abs() < EPS,
+                "laplacian: case {} node {i}: expected {want}, got {got}",
+                case.id
             );
         }
     }
