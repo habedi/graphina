@@ -79,7 +79,7 @@ harness = false
 
 [profile.release]
 strip = "debuginfo"
-panic = "abort"
+panic = "unwind"
 codegen-units = 1
 lto = true
 
