@@ -12,6 +12,13 @@ on:
       - 'docs/**'
       - 'pygraphina/**'
   push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'pygraphina/**'
     tags:
       - 'v*'
 
