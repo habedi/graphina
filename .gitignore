@@ -72,7 +72,6 @@ tarpaulin-report.html
 
 # Dependency lock files (uncomment to ignore)
 poetry.lock
-Cargo.lock
 #uv.lock
 
 # Ignore files in the tests/testdata/[graphina-graphs] directory

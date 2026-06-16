@@ -13,9 +13,9 @@ TEST_DATA_DIR  := tests/testdata
 SHELL           := /bin/bash
 MSRV          := 1.85
 
-# Pinned versions for Rust development tools
+# Pinned versions for Rust 1.85.0
 TARPAULIN_VERSION=0.32.8
-NEXTEST_VERSION=0.9.101
+NEXTEST_VERSION=0.9.100
 AUDIT_VERSION=0.21.2
 CAREFUL_VERSION=0.4.8
 
