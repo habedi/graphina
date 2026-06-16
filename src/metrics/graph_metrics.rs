@@ -231,8 +231,8 @@ pub fn assortativity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     let m = graph.edge_count() as f64;
 
     for (u, v, _) in graph.edges() {
-        let j = graph.degree(u).unwrap() as f64;
-        let k = graph.degree(v).unwrap() as f64;
+        let j = graph.degree(u).unwrap_or(0) as f64;
+        let k = graph.degree(v).unwrap_or(0) as f64;
 
         sum_jk += j * k;
         sum_j += j;

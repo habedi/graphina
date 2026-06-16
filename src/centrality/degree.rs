@@ -28,8 +28,8 @@ where
             out_counts.insert(node, 0);
         }
         for (u, v, _w) in graph.edges() {
-            *out_counts.get_mut(&u).unwrap() += 1;
-            *in_counts.get_mut(&v).unwrap() += 1;
+            *out_counts.entry(u).or_insert(0) += 1;
+            *in_counts.entry(v).or_insert(0) += 1;
         }
         for (node, _) in graph.nodes() {
             let d = in_counts[&node] + out_counts[&node];
@@ -42,10 +42,10 @@ where
         }
         for (u, v, _w) in graph.edges() {
             if u == v {
-                *counts.get_mut(&u).unwrap() += 2;
+                *counts.entry(u).or_insert(0) += 2;
             } else {
-                *counts.get_mut(&u).unwrap() += 1;
-                *counts.get_mut(&v).unwrap() += 1;
+                *counts.entry(u).or_insert(0) += 1;
+                *counts.entry(v).or_insert(0) += 1;
             }
         }
         for (node, _) in graph.nodes() {
@@ -71,7 +71,7 @@ where
             in_counts.insert(node, 0);
         }
         for (_u, v, _w) in graph.edges() {
-            *in_counts.get_mut(&v).unwrap() += 1;
+            *in_counts.entry(v).or_insert(0) += 1;
         }
         for (node, _) in graph.nodes() {
             centrality.insert(node, in_counts[&node] as f64);
@@ -84,10 +84,10 @@ where
         }
         for (u, v, _w) in graph.edges() {
             if u == v {
-                *counts.get_mut(&u).unwrap() += 2;
+                *counts.entry(u).or_insert(0) += 2;
             } else {
-                *counts.get_mut(&u).unwrap() += 1;
-                *counts.get_mut(&v).unwrap() += 1;
+                *counts.entry(u).or_insert(0) += 1;
+                *counts.entry(v).or_insert(0) += 1;
             }
         }
         for (node, _) in graph.nodes() {
@@ -113,7 +113,7 @@ where
             out_counts.insert(node, 0);
         }
         for (u, _v, _w) in graph.edges() {
-            *out_counts.get_mut(&u).unwrap() += 1;
+            *out_counts.entry(u).or_insert(0) += 1;
         }
         for (node, _) in graph.nodes() {
             centrality.insert(node, out_counts[&node] as f64);
@@ -126,10 +126,10 @@ where
         }
         for (u, v, _w) in graph.edges() {
             if u == v {
-                *counts.get_mut(&u).unwrap() += 2;
+                *counts.entry(u).or_insert(0) += 2;
             } else {
-                *counts.get_mut(&u).unwrap() += 1;
-                *counts.get_mut(&v).unwrap() += 1;
+                *counts.entry(u).or_insert(0) += 1;
+                *counts.entry(v).or_insert(0) += 1;
             }
         }
         for (node, _) in graph.nodes() {

@@ -237,8 +237,8 @@ fn bench_node_removal(c: &mut Criterion) {
                 },
                 |(mut graph, nodes)| {
                     // Remove half the nodes
-                    for i in 0..size / 2 {
-                        graph.remove_node(nodes[i]);
+                    for &node in nodes.iter().take(size / 2) {
+                        graph.remove_node(node);
                     }
                     black_box(graph)
                 },

@@ -144,8 +144,8 @@ fn k_means(
                 .iter()
                 .enumerate()
                 .map(|(j, centroid)| (j, euclidean_distance(point, centroid)))
-                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                .unwrap();
+                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+                .unwrap_or((0, 0.0));
             if assignments[i] != best_j {
                 assignments[i] = best_j;
                 changed = true;

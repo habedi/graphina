@@ -77,15 +77,19 @@ where
 
         // Block all intermediate nodes (exclude source and target)
         // For a path [s, n1, n2, ..., nk, t], we want to block n1, n2, ..., nk
-        if path.len() > 2 {
-            for &node in path.iter().skip(1).take(path.len() - 2) {
-                blocked.insert(node);
+        match path.len().cmp(&2) {
+            std::cmp::Ordering::Greater => {
+                for &node in path.iter().skip(1).take(path.len() - 2) {
+                    blocked.insert(node);
+                }
             }
-        } else if path.len() == 2 {
-            // Direct edge from source to target
-            // No intermediate nodes to block, but we can't find more disjoint paths
-            connectivity += 1;
-            break;
+            std::cmp::Ordering::Equal => {
+                // Direct edge from source to target
+                // No intermediate nodes to block, but we can't find more disjoint paths
+                connectivity += 1;
+                break;
+            }
+            std::cmp::Ordering::Less => {}
         }
 
         connectivity += 1;

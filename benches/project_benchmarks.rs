@@ -157,8 +157,8 @@ fn bench_incremental_updates(c: &mut Criterion) {
                     for i in 0..10 {
                         let new_node = graph.add_node((size + i) as u32);
                         // Connect to random existing nodes
-                        for j in 0..3.min(nodes.len()) {
-                            graph.add_edge(new_node, nodes[j], (i + j) as f32);
+                        for (j, &node) in nodes.iter().enumerate().take(3) {
+                            graph.add_edge(new_node, node, (i + j) as f32);
                         }
                     }
 
