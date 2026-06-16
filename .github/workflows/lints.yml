@@ -42,5 +42,11 @@ jobs:
           sudo apt-get install -y clang curl pkg-config libssl-dev make
           make install-deps
 
+      - name: Check Formatting
+        run: make format-check
+
+      - name: Check Module Dependencies
+        run: make check-module-deps
+
       - name: Run Linters
         run: make lint

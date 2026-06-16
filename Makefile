@@ -39,6 +39,11 @@ format: ## Format Rust files
 	@echo "Formatting Rust files..."
 	@cargo fmt
 
+.PHONY: format-check
+format-check: ## Check Rust formatting without modifying files (for CI)
+	@echo "Checking Rust formatting..."
+	@cargo fmt --all --check
+
 .PHONY: test
 test: format doctest ## Run the tests
 	@echo "Running tests..."
