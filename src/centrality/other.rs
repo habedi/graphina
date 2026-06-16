@@ -83,42 +83,84 @@ pub fn voterank<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, num_seeds: usize) -> Vec<
 where
     Ty: GraphConstructor<A, W>,
 {
-    // Use a compact mapping to avoid relying on raw StableGraph indices
+    // Compact mapping to avoid relying on raw StableGraph indices.
     let node_list: Vec<NodeId> = graph.nodes().map(|(u, _)| u).collect();
+    let n = node_list.len();
+    let mut influential = Vec::new();
+    if n == 0 {
+        return influential;
+    }
     let mut node_to_idx: HashMap<NodeId, usize> = HashMap::new();
     for (i, &nid) in node_list.iter().enumerate() {
         node_to_idx.insert(nid, i);
     }
-    let mut votes = vec![0.0; node_list.len()];
-    let mut selected = Vec::new();
-    let mut remaining: HashSet<NodeId> = node_list.iter().copied().collect();
+    let directed = graph.is_directed();
 
-    for _ in 0..num_seeds.min(node_list.len()) {
-        let mut max_vote = -1.0;
-        let mut candidate = None;
-        for &node in &remaining {
-            let vote = graph
-                .neighbors(node)
-                .filter(|n| remaining.contains(n))
-                .count() as f64;
-            if vote > max_vote {
-                max_vote = vote;
-                candidate = Some(node);
+    // Average degree (in-degree for directed graphs) sets the rate at which a
+    // selected node's neighbors lose voting ability.
+    let total_degree: usize = node_list
+        .iter()
+        .map(|&v| {
+            if directed {
+                graph.in_degree(v).unwrap_or(0)
+            } else {
+                graph.degree(v).unwrap_or(0)
+            }
+        })
+        .sum();
+    let avg_degree = total_degree as f64 / n as f64;
+    let decay = if avg_degree > 0.0 {
+        1.0 / avg_degree
+    } else {
+        0.0
+    };
+
+    let mut ability = vec![1.0f64; n];
+    let mut selected = vec![false; n];
+
+    for _ in 0..num_seeds.min(n) {
+        // Tally votes: each node's score is the sum of the voting ability of the
+        // nodes that vote for it (its neighbors, or in-neighbors when directed).
+        let mut score = vec![0.0f64; n];
+        for (u, v, _) in graph.edges() {
+            let (ui, vi) = (node_to_idx[&u], node_to_idx[&v]);
+            score[vi] += ability[ui];
+            if !directed {
+                score[ui] += ability[vi];
             }
         }
-        if let Some(node) = candidate {
-            selected.push(node);
-            remaining.remove(&node);
-            for neighbor in graph.neighbors(node) {
-                if remaining.contains(&neighbor) {
-                    if let Some(&idx) = node_to_idx.get(&neighbor) {
-                        votes[idx] -= 1.0;
-                    }
-                }
+        for (i, &sel) in selected.iter().enumerate() {
+            if sel {
+                score[i] = 0.0;
+            }
+        }
+
+        // Select the highest-scoring node, breaking ties by node order.
+        let mut best = 0usize;
+        let mut best_score = -1.0;
+        for (i, &s) in score.iter().enumerate() {
+            if s > best_score {
+                best_score = s;
+                best = i;
+            }
+        }
+        // No remaining node has any votes: stop electing.
+        if best_score <= 0.0 {
+            break;
+        }
+
+        selected[best] = true;
+        ability[best] = 0.0;
+        influential.push(node_list[best]);
+
+        // Weaken the voting ability of the selected node's neighbors.
+        for neighbor in graph.neighbors(node_list[best]) {
+            if let Some(&j) = node_to_idx.get(&neighbor) {
+                ability[j] = (ability[j] - decay).max(0.0);
             }
         }
     }
-    selected
+    influential
 }
 
 /// Laplacian centrality: based on the Laplacian matrix of the graph.
@@ -138,9 +180,12 @@ where
     let mut centrality = NodeMap::new();
     for (node, _) in graph.nodes() {
         let degree = graph.neighbors(node).count() as f64;
-        let mut sum = degree * degree;
+        // Unnormalized Laplacian centrality (Qi et al.): the drop in Laplacian
+        // energy when the node is removed. For an unweighted graph this is
+        // d^2 + d + 2 * sum of neighbor degrees.
+        let mut sum = degree * degree + degree;
         for neighbor in graph.neighbors(node) {
-            sum += graph.neighbors(neighbor).count() as f64;
+            sum += 2.0 * graph.neighbors(neighbor).count() as f64;
         }
         centrality.insert(node, sum);
     }

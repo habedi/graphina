@@ -93,7 +93,7 @@ mod approximation_tests {
 
         let matching = min_maximal_matching(&graph);
         // Path of 4 nodes can have at most 2 edges in matching
-        assert!(matching.len() >= 1 && matching.len() <= 2);
+        assert!(!matching.is_empty() && matching.len() <= 2);
     }
 
     #[test]

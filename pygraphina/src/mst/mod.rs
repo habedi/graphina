@@ -9,6 +9,9 @@ use graphina::mst::{
 };
 use ordered_float::OrderedFloat;
 
+/// Total weight of the tree together with its edges as `(u, v, weight)` triples.
+type MstResult = PyResult<(f64, Vec<(usize, usize, f64)>)>;
+
 fn to_ordered_graph(
     py_graph: &PyGraph,
 ) -> (
@@ -63,7 +66,7 @@ fn map_edges_to_py(
 
 /// Compute the Minimum Spanning Tree using Prim's algorithm.
 #[pyfunction]
-pub fn prim_mst(graph: &PyGraph) -> PyResult<(f64, Vec<(usize, usize, f64)>)> {
+pub fn prim_mst(graph: &PyGraph) -> MstResult {
     let (og, old_to_new) = to_ordered_graph(graph);
     let mut new_to_old = std::collections::HashMap::new();
     for (old, new) in old_to_new.into_iter() {
@@ -78,7 +81,7 @@ pub fn prim_mst(graph: &PyGraph) -> PyResult<(f64, Vec<(usize, usize, f64)>)> {
 
 /// Compute the Minimum Spanning Tree using Kruskal's algorithm.
 #[pyfunction]
-pub fn kruskal_mst(graph: &PyGraph) -> PyResult<(f64, Vec<(usize, usize, f64)>)> {
+pub fn kruskal_mst(graph: &PyGraph) -> MstResult {
     let (og, old_to_new) = to_ordered_graph(graph);
     let mut new_to_old = std::collections::HashMap::new();
     for (old, new) in old_to_new.into_iter() {
@@ -93,7 +96,7 @@ pub fn kruskal_mst(graph: &PyGraph) -> PyResult<(f64, Vec<(usize, usize, f64)>)>
 
 /// Compute the Minimum Spanning Tree using Borůvka's algorithm (parallel).
 #[pyfunction]
-pub fn boruvka_mst(graph: &PyGraph) -> PyResult<(f64, Vec<(usize, usize, f64)>)> {
+pub fn boruvka_mst(graph: &PyGraph) -> MstResult {
     let (og, old_to_new) = to_ordered_graph(graph);
     let mut new_to_old = std::collections::HashMap::new();
     for (old, new) in old_to_new.into_iter() {

@@ -199,17 +199,18 @@ mod visualization_tests {
 
     #[test]
     fn test_visualization_config_customization() {
-        let mut config = VisualizationConfig::default();
-
-        config.width = 1200;
-        config.height = 900;
-        config.layout = LayoutAlgorithm::Circular;
-        config.node_color = "#FF5733".to_string();
-        config.edge_color = "#33FF57".to_string();
-        config.node_size = 20.0;
-        config.edge_width = 3.0;
-        config.show_labels = false;
-        config.font_size = 16;
+        let config = VisualizationConfig {
+            width: 1200,
+            height: 900,
+            layout: LayoutAlgorithm::Circular,
+            node_color: "#FF5733".to_string(),
+            edge_color: "#33FF57".to_string(),
+            node_size: 20.0,
+            edge_width: 3.0,
+            show_labels: false,
+            font_size: 16,
+            ..Default::default()
+        };
 
         assert_eq!(config.width, 1200);
         assert_eq!(config.height, 900);

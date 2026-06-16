@@ -53,10 +53,11 @@ where
     W: Copy,
     Ty: GraphConstructor<A, W>,
 {
-    graph
-        .edges()
-        .filter(move |(src, _tgt, _w)| *src == u)
-        .map(|(_src, tgt, w)| (tgt, *w))
+    // Delegate to the graph's own incident-edge iterator, which follows petgraph
+    // adjacency: outgoing edges for a directed graph, and all incident edges for
+    // an undirected graph. Filtering `graph.edges()` by source would miss the
+    // undirected edges stored with `u` as the target.
+    graph.outgoing_edges(u).map(|(tgt, w)| (tgt, *w))
 }
 
 // ============================

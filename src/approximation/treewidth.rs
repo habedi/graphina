@@ -89,7 +89,7 @@ where
 
     let mut treewidth = 0;
     while !remaining.is_empty() {
-        let u = remaining
+        let Some(u) = remaining
             .iter()
             .min_by_key(|&&u| {
                 let neighbors: Vec<NodeId> = graph
@@ -107,7 +107,9 @@ where
                 fill_in
             })
             .copied()
-            .unwrap_or_else(|| *remaining.iter().next().unwrap()); // Safe fallback- logic guarantees non-empty
+        else {
+            break;
+        };
 
         let deg = graph.neighbors(u).filter(|v| remaining.contains(v)).count();
         if deg > treewidth {

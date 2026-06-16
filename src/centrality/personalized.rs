@@ -1,10 +1,10 @@
 //! Personalized PageRank centrality facade.
 //!
 //! Provides a NodeMap-based personalized PageRank interface consistent with other centrality
-//! routines, wrapping the community implementation. Use `personalized_pagerank_vec` if you need
+//! routines, wrapping the raw vector implementation. Use `personalized_pagerank_vec` if you need
 //! the raw contiguous vector aligned to internal node ordering.
 
-use crate::community::personalized_pagerank::personalized_page_rank;
+use super::personalized_pagerank::personalized_page_rank;
 use crate::core::error::Result;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use petgraph::EdgeType;

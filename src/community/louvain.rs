@@ -43,7 +43,11 @@ where
 
     // Handle single node
     if n == 1 {
-        let node = graph.nodes().next().map(|(nid, _)| nid).unwrap();
+        let node = graph
+            .nodes()
+            .next()
+            .map(|(nid, _)| nid)
+            .ok_or_else(|| GraphinaError::invalid_graph("Louvain: missing node"))?;
         return Ok(vec![vec![node]]);
     }
 
@@ -83,10 +87,7 @@ where
     }
 
     // Cache: community degree sums; indexed by community id (which starts as node index)
-    let mut community_degree = vec![0.0f64; n];
-    for i in 0..n {
-        community_degree[i] = degrees[i];
-    }
+    let mut community_degree = degrees.clone();
 
     let mut rng = create_rng(seed);
     let mut improvement = true;

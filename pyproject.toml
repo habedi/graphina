@@ -8,6 +8,7 @@ dependencies = [
   "huggingface-hub (>=0.29.3,<0.30.0)",
   "networkx (>=3.4.2,<4.0.0)",
   "numpy (>=2.2.6,<3.0.0)",
+  "scipy (>=1.13.0,<2.0.0)",
   "pandas>=2.3.3,<3.0.0",
 ]
 

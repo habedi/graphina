@@ -44,17 +44,24 @@ pub mod core;
 /// Link prediction algorithms.
 #[cfg(feature = "links")]
 pub mod links;
+/// Graph metrics and metrics-based algorithms.
 #[cfg(feature = "metrics")]
 pub mod metrics;
+/// Minimum spanning tree algorithms.
 #[cfg(feature = "mst")]
 pub mod mst;
+/// Parallel implementations of algorithms.
 #[cfg(feature = "parallel")]
 pub mod parallel;
+/// Logging configuration.
 #[cfg(feature = "logging")]
 mod settings;
+/// Induced subgraph and ego network utilities.
 #[cfg(feature = "subgraphs")]
 pub mod subgraphs;
+/// Graph traversal algorithms.
 #[cfg(feature = "traversal")]
 pub mod traversal;
+/// Graph visualization utilities.
 #[cfg(feature = "visualization")]
 pub mod visualization;

@@ -321,6 +321,239 @@ fn test_betweenness_centrality_two_nodes_division_by_zero_fix() {
     assert_eq!(*centrality.get(&n2).unwrap(), 0.0);
 }
 
+// Regression: the generic Dijkstra followed only the stored edge orientation,
+// so on an undirected graph a node reached via an edge stored as (other, node)
+// could not reach back. Here the edges are stored as (0,1) and (1,2); from node
+// 2, Dijkstra must still reach node 0 at distance 2.
+#[test]
+fn test_dijkstra_undirected_follows_both_directions() {
+    use graphina::core::paths::dijkstra;
+
+    let mut g = Graph::<i32, i32>::new();
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    g.add_edge(n0, n1, 1);
+    g.add_edge(n1, n2, 1);
+
+    let dist = dijkstra(&g, n2).expect("dijkstra should succeed");
+    assert_eq!(dist[&n2], Some(0));
+    assert_eq!(dist[&n1], Some(1));
+    assert_eq!(dist[&n0], Some(2), "node 0 must be reachable from node 2");
+}
+
+// Regression: harmonic centrality summed reciprocal distances over all nodes
+// including the source itself, whose distance is 0, yielding 1/0 = infinity for
+// every node. In a unit-weight triangle each node's harmonic centrality is
+// 1/1 + 1/1 = 2.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_harmonic_centrality_excludes_source() {
+    use graphina::centrality::harmonic::harmonic_centrality;
+    use ordered_float::OrderedFloat;
+
+    let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    g.add_edge(n0, n1, OrderedFloat(1.0));
+    g.add_edge(n1, n2, OrderedFloat(1.0));
+    g.add_edge(n2, n0, OrderedFloat(1.0));
+
+    let hc = harmonic_centrality(&g).expect("harmonic should succeed");
+    for n in [n0, n1, n2] {
+        assert!(hc[&n].is_finite(), "harmonic centrality must be finite");
+        assert!((hc[&n] - 2.0).abs() < 1e-9, "expected 2.0, got {}", hc[&n]);
+    }
+}
+
+// Regression: unnormalized undirected betweenness did not halve the raw Brandes
+// count (which accumulates each shortest path from both endpoints), so values
+// were double the standard definition. On the unit-weight path 0-1-2-3 the
+// middle nodes have unnormalized betweenness 2.0, not 4.0.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_betweenness_undirected_halving() {
+    use graphina::centrality::betweenness::betweenness_centrality;
+    use ordered_float::OrderedFloat;
+
+    let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+    let nodes: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+    g.add_edge(nodes[0], nodes[1], OrderedFloat(1.0));
+    g.add_edge(nodes[1], nodes[2], OrderedFloat(1.0));
+    g.add_edge(nodes[2], nodes[3], OrderedFloat(1.0));
+
+    let bc = betweenness_centrality(&g, false).expect("betweenness should succeed");
+    assert!((bc[&nodes[0]] - 0.0).abs() < 1e-9);
+    assert!(
+        (bc[&nodes[1]] - 2.0).abs() < 1e-9,
+        "expected 2.0, got {}",
+        bc[&nodes[1]]
+    );
+    assert!(
+        (bc[&nodes[2]] - 2.0).abs() < 1e-9,
+        "expected 2.0, got {}",
+        bc[&nodes[2]]
+    );
+    assert!((bc[&nodes[3]] - 0.0).abs() < 1e-9);
+}
+
+// Regression: closeness centrality summed reciprocal distances (the harmonic
+// centrality formula) instead of computing closeness. On the unit-weight path
+// 0-1-2 the endpoint's closeness is (reachable / sum_dist) * (reachable / (n-1))
+// = (2/3) * (2/2) = 0.6667, not the harmonic value 1/1 + 1/2 = 1.5.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_closeness_centrality_is_not_harmonic() {
+    use graphina::centrality::closeness::closeness_centrality;
+    use ordered_float::OrderedFloat;
+
+    let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    g.add_edge(n0, n1, OrderedFloat(1.0));
+    g.add_edge(n1, n2, OrderedFloat(1.0));
+
+    let cc = closeness_centrality(&g).expect("closeness should succeed");
+    assert!(
+        (cc[&n0] - 2.0 / 3.0).abs() < 1e-9,
+        "expected 0.6667, got {}",
+        cc[&n0]
+    );
+    assert!(
+        (cc[&n1] - 1.0).abs() < 1e-9,
+        "expected 1.0, got {}",
+        cc[&n1]
+    );
+    assert!(
+        (cc[&n2] - 2.0 / 3.0).abs() < 1e-9,
+        "expected 0.6667, got {}",
+        cc[&n2]
+    );
+}
+
+// Regression: Katz centrality built a directed-only adjacency matrix, so on an
+// undirected graph it was asymmetric and broke the graph's symmetry. Here nodes
+// 1 and 3 are symmetric, as are 0 and 4, so their Katz centralities must be
+// equal.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_katz_centrality_symmetric_on_undirected() {
+    use graphina::centrality::katz::katz_centrality;
+    use ordered_float::OrderedFloat;
+
+    let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+    let ids: Vec<_> = (0..5).map(|i| g.add_node(i)).collect();
+    for (u, v, w) in [
+        (0, 1, 1.0),
+        (1, 2, 1.0),
+        (2, 3, 1.0),
+        (1, 3, 2.0),
+        (3, 4, 1.0),
+    ] {
+        g.add_edge(ids[u], ids[v], OrderedFloat(w));
+    }
+
+    let kc = katz_centrality(&g, 0.1, None, 2000, 1e-9).expect("katz should succeed");
+    assert!(
+        (kc[&ids[1]] - kc[&ids[3]]).abs() < 1e-9,
+        "symmetric nodes 1 and 3 must be equal: {} vs {}",
+        kc[&ids[1]],
+        kc[&ids[3]]
+    );
+    assert!(
+        (kc[&ids[0]] - kc[&ids[4]]).abs() < 1e-9,
+        "symmetric nodes 0 and 4 must be equal: {} vs {}",
+        kc[&ids[0]],
+        kc[&ids[4]]
+    );
+}
+
+// Regression: Laplacian centrality used the formula d^2 + sum(neighbor degrees),
+// missing the +d term and the factor of 2 on the neighbor-degree sum. The
+// unnormalized Laplacian centrality of a node in an unweighted graph is
+// d^2 + d + 2 * sum(neighbor degrees). In a triangle each node has degree 2 and
+// two neighbors of degree 2, so the value is 4 + 2 + 2*4 = 14, not 8.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_laplacian_centrality_formula() {
+    use graphina::centrality::other::laplacian_centrality;
+    use ordered_float::OrderedFloat;
+
+    let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    g.add_edge(n0, n1, OrderedFloat(1.0));
+    g.add_edge(n1, n2, OrderedFloat(1.0));
+    g.add_edge(n2, n0, OrderedFloat(1.0));
+
+    let lc = laplacian_centrality(&g).expect("laplacian should succeed");
+    for n in [n0, n1, n2] {
+        assert!(
+            (lc[&n] - 14.0).abs() < 1e-9,
+            "expected 14.0, got {}",
+            lc[&n]
+        );
+    }
+}
+
+// Regression: VoteRank previously iterated a HashSet (non-deterministic output),
+// kept a dead `votes` array, and never reduced neighbors' voting ability or
+// stopped when no votes remained, so it elected spurious extra seeds. On a star
+// the center is elected first; afterward every leaf's voting ability is spent,
+// so the standard algorithm stops, electing exactly one node even when more are
+// requested. The result must also be deterministic across runs.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_voterank_stops_and_is_deterministic() {
+    use graphina::centrality::other::voterank;
+
+    let mut g = Graph::<i32, f64>::new();
+    let center = g.add_node(0);
+    let leaves: Vec<_> = (1..=4).map(|i| g.add_node(i)).collect();
+    for &leaf in &leaves {
+        g.add_edge(center, leaf, 1.0);
+    }
+
+    let first = voterank(&g, 4);
+    assert_eq!(
+        first,
+        vec![center],
+        "star elects only the center, then stops"
+    );
+
+    // Deterministic: repeated calls give the same election.
+    for _ in 0..5 {
+        assert_eq!(voterank(&g, 4), first);
+    }
+}
+
+// Regression: personalized PageRank redistributed the rank mass of dangling
+// nodes uniformly instead of by the personalization vector. With no edges every
+// node is dangling, so all mass teleports by personalization and the result must
+// equal the (normalized) personalization vector exactly.
+#[test]
+#[cfg(feature = "centrality")]
+fn test_personalized_pagerank_dangling_uses_personalization() {
+    use graphina::centrality::personalized::personalized_pagerank;
+
+    let mut g = Graph::<i32, f64>::new();
+    let nodes: Vec<_> = (0..3).map(|i| g.add_node(i)).collect();
+
+    let p = vec![0.5, 0.3, 0.2];
+    let pr = personalized_pagerank(&g, Some(p.clone()), 0.85, 1e-12, 2000)
+        .expect("personalized pagerank should succeed");
+    for (i, &want) in p.iter().enumerate() {
+        assert!(
+            (pr[&nodes[i]] - want).abs() < 1e-9,
+            "node {i}: expected {want}, got {}",
+            pr[&nodes[i]]
+        );
+    }
+}
+
 // Graph Generator Regressions
 
 #[test]
@@ -475,6 +708,104 @@ fn test_mst_algorithms_consistency() {
     assert_eq!(weight_kruskal, weight_boruvka);
 }
 
+// Regression: prim_mst dropped edges incident to a freshly added node when the
+// edge was stored with that node as the target. On a connected graph it
+// returned a partial tree (here 2 edges instead of 5). The spanning tree of
+// this connected, 6-node graph must have 5 edges and total weight 19.
+#[test]
+#[cfg(feature = "mst")]
+fn test_prim_mst_undirected_target_edges() {
+    use graphina::mst::{kruskal_mst, prim_mst};
+    use ordered_float::OrderedFloat;
+
+    let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+    let nodes: Vec<_> = (0..6).map(|i| g.add_node(i)).collect();
+    for (u, v, w) in [
+        (0, 4, 5.0),
+        (0, 5, 2.0),
+        (1, 5, 1.0),
+        (2, 4, 10.0),
+        (3, 4, 1.0),
+    ] {
+        g.add_edge(nodes[u], nodes[v], OrderedFloat(w));
+    }
+
+    let (prim_edges, prim_weight) = prim_mst(&g).unwrap();
+    assert_eq!(prim_edges.len(), 5);
+    assert_eq!(prim_weight, OrderedFloat(19.0));
+
+    let (kruskal_edges, kruskal_weight) = kruskal_mst(&g).unwrap();
+    assert_eq!(prim_edges.len(), kruskal_edges.len());
+    assert_eq!(prim_weight, kruskal_weight);
+}
+
+// Regression: boruvka_mst used the raw union-find parent pointer instead of the
+// canonical root to group nodes by component. After the first round the parent
+// array is not path-compressed, so cheapest-edge selection mis-grouped nodes,
+// missed valid merges, and returned a forest with too few edges (here 9 instead
+// of 10). This connected, 11-node graph must yield a spanning tree of 10 edges
+// and total weight 25.
+#[test]
+#[cfg(feature = "mst")]
+fn test_boruvka_mst_canonical_root_grouping() {
+    use graphina::mst::{boruvka_mst, kruskal_mst};
+    use ordered_float::OrderedFloat;
+
+    let edges = [
+        (0, 2, 4.0),
+        (0, 3, 1.0),
+        (0, 4, 4.0),
+        (0, 5, 4.0),
+        (0, 6, 3.0),
+        (1, 2, 8.0),
+        (1, 3, 6.0),
+        (1, 4, 5.0),
+        (1, 5, 4.0),
+        (1, 6, 10.0),
+        (1, 7, 1.0),
+        (1, 8, 7.0),
+        (2, 3, 7.0),
+        (2, 4, 7.0),
+        (2, 5, 9.0),
+        (2, 8, 8.0),
+        (2, 9, 1.0),
+        (2, 10, 3.0),
+        (3, 4, 9.0),
+        (3, 5, 10.0),
+        (3, 10, 5.0),
+        (4, 6, 5.0),
+        (4, 9, 7.0),
+        (4, 10, 5.0),
+        (5, 6, 7.0),
+        (5, 7, 7.0),
+        (5, 8, 5.0),
+        (5, 9, 4.0),
+        (5, 10, 5.0),
+        (6, 7, 6.0),
+        (6, 8, 2.0),
+        (6, 9, 5.0),
+        (6, 10, 4.0),
+        (7, 9, 2.0),
+        (7, 10, 9.0),
+        (8, 10, 9.0),
+        (9, 10, 10.0),
+    ];
+
+    let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+    let nodes: Vec<_> = (0..11).map(|i| g.add_node(i)).collect();
+    for (u, v, w) in edges {
+        g.add_edge(nodes[u], nodes[v], OrderedFloat(w));
+    }
+
+    let (boruvka_edges, boruvka_weight) = boruvka_mst(&g).unwrap();
+    assert_eq!(boruvka_edges.len(), 10);
+    assert_eq!(boruvka_weight, OrderedFloat(25.0));
+
+    let (kruskal_edges, kruskal_weight) = kruskal_mst(&g).unwrap();
+    assert_eq!(boruvka_edges.len(), kruskal_edges.len());
+    assert_eq!(boruvka_weight, kruskal_weight);
+}
+
 #[test]
 #[cfg(feature = "traversal")]
 fn test_traversal_algorithms_find_same_paths() {
@@ -524,4 +855,30 @@ fn test_shortest_path_algorithms_consistency() {
             _ => panic!("Algorithms disagree on reachability"),
         }
     }
+}
+
+#[test]
+#[cfg(feature = "metrics")]
+fn test_assortativity_is_symmetric_newman_coefficient() {
+    // Degree assortativity is the Pearson correlation over the symmetric joint
+    // degree distribution of edge endpoints: each undirected edge contributes
+    // both orderings. A star is perfectly disassortative (a degree-k hub joined
+    // only to degree-1 leaves), so its coefficient is exactly -1.0. The earlier
+    // implementation correlated a single edge ordering, giving the two endpoints
+    // different means; on a star that collapsed the variance to zero and
+    // returned 0.0 instead of -1.0.
+    use graphina::metrics::assortativity;
+
+    let mut g: Graph<i32, f64> = Graph::new();
+    let center = g.add_node(0);
+    for i in 1..=4 {
+        let leaf = g.add_node(i);
+        g.add_edge(center, leaf, 1.0);
+    }
+
+    let r = assortativity(&g);
+    assert!(
+        (r - (-1.0)).abs() < 1e-9,
+        "star degree assortativity should be -1.0, got {r}"
+    );
 }

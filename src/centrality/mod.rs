@@ -15,6 +15,5 @@ pub mod katz;
 pub mod other;
 pub mod pagerank;
 pub mod personalized;
-pub use crate::community::personalized_pagerank::personalized_page_rank as personalized_pagerank_vec;
-pub mod community_wrappers;
-pub use community_wrappers::{infomap_map, label_propagation_map};
+pub mod personalized_pagerank;
+pub use personalized_pagerank::personalized_page_rank as personalized_pagerank_vec;

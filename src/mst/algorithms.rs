@@ -146,14 +146,17 @@ where
     let mut components = n;
 
     while components > 1 {
-        let uf_snapshot = uf.parent.clone();
+        // Use the canonical component root for each node, not the raw parent
+        // pointer: after unions the parent array is not path-compressed, so two
+        // nodes in the same component can have different parents.
+        let roots: Vec<usize> = (0..n).map(|i| uf.find(i)).collect();
         let cheapest: Vec<Option<(NodeId, NodeId, W)>> = (0..n)
             .into_par_iter()
             .map(|comp| {
                 let mut min_edge: Option<(NodeId, NodeId, W)> = None;
                 for &(u, v, w) in &all_edges {
-                    let comp_u = uf_snapshot[u.index()];
-                    let comp_v = uf_snapshot[v.index()];
+                    let comp_u = roots[u.index()];
+                    let comp_v = roots[v.index()];
                     if (comp_u == comp && comp_v != comp) || (comp_v == comp && comp_u != comp) {
                         match min_edge {
                             Some((_, _, current)) if w < current => min_edge = Some((u, v, w)),
@@ -319,13 +322,22 @@ where
         in_tree[start.index()] = true;
         let mut heap = std::collections::BinaryHeap::new();
 
-        // Add all edges incident to the starting node.
+        // Add all edges incident to the starting node. The graph may be
+        // undirected, so an incident edge can be stored with the start node as
+        // either endpoint; seed both directions to mirror the expansion below.
         for (_, v, weight) in graph
             .edges()
             .filter(|(u, _v, _w)| *u == start)
             .map(|(u, v, w)| (u, v, *w))
         {
             heap.push(std::cmp::Reverse((weight, start, v)));
+        }
+        for (u, _, weight) in graph
+            .edges()
+            .filter(|(_u, v, _w)| *v == start)
+            .map(|(u, v, w)| (u, v, *w))
+        {
+            heap.push(std::cmp::Reverse((weight, start, u)));
         }
 
         while let Some(std::cmp::Reverse((w, u, v))) = heap.pop() {
@@ -352,8 +364,9 @@ where
                         heap.push(std::cmp::Reverse((weight, to, neighbor)));
                     }
                 }
-                // Also add edges where 'to' is the target.
-                for (_, neighbor, weight) in graph
+                // Also add edges where 'to' is the target; here the neighbor is
+                // the edge source, not the target.
+                for (neighbor, _, weight) in graph
                     .edges()
                     .filter(|(_x, y, _w)| *y == to)
                     .map(|(x, y, w)| (x, y, *w))

@@ -1,6 +1,7 @@
-//! Personalized PageRank algorithms.
+//! Personalized PageRank algorithm.
 //!
-//! This module provides personalized PageRank for community detection.
+//! This module provides the raw personalized PageRank ranking vector. The NodeMap facade lives in
+//! [`super::personalized`].
 
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
@@ -95,8 +96,12 @@ where
                     new_rank[j] += contribution * weight;
                 }
             } else {
-                for nr in new_rank.iter_mut() {
-                    *nr += damping * rank[i] / (n as f64);
+                // Dangling nodes redistribute their rank according to the
+                // personalization vector (which is uniform for plain PageRank),
+                // matching the standard personalized PageRank convention.
+                let dangling = damping * rank[i];
+                for (j, nr) in new_rank.iter_mut().enumerate() {
+                    *nr += dangling * p[j];
                 }
             }
         }

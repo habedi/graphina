@@ -20,6 +20,12 @@ pub struct PyDiGraph {
     pub(crate) mapper: crate::core::id_map::IdMapper,
 }
 
+impl Default for PyDiGraph {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[pymethods]
 impl PyDiGraph {
     /// Creates a new, empty directed graph.
@@ -373,7 +379,7 @@ impl PyDiGraph {
                         break;
                     }
                 }
-                if *path.last().unwrap() != start_id {
+                if path.last() != Some(&start_id) {
                     return Ok(None);
                 }
                 path.reverse();

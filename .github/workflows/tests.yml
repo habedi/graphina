@@ -2,6 +2,8 @@ name: Run Tests
 
 on:
   workflow_dispatch:
+  schedule: # Run every night at midnight (UTC)
+    - cron: '0 0 * * *'
   workflow_call:
   pull_request:
     branches:
@@ -11,6 +13,13 @@ on:
       - 'docs/**'
       - 'pygraphina/**'
   push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'pygraphina/**'
     tags:
       - 'v*'
 
@@ -25,30 +34,25 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        # Define the Rust versions to test against
-        rust-version: [ "1.86.0", "stable" ]
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      - name: Set Up Rust ${{ matrix.rust-version }}
+      - name: Set up Rust (stable)
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: ${{ matrix.rust-version }}
+          toolchain: stable
           cache: true
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y make
           make install-deps
 
-      - name: Download Test Datasets (for Integration and E2E tests)
+      - name: Download test datasets (for integration and E2E tests)
         run: |
           pip install uv
           uv sync --extra dev
@@ -56,11 +60,36 @@ jobs:
           make testdata
         continue-on-error: true
 
-      - name: Run Tests and Generate Coverage Report
+      - name: Run tests and generate coverage report
         run: make coverage
 
-      - name: Upload Coverage Reports to Codecov
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: rust
         continue-on-error: true
+
+  msrv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: '1.85.0'
+          cache: true
+          cache-key: msrv
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang curl pkg-config libssl-dev libfontconfig1-dev make
+
+      - name: Check that the workspace compiles on the MSRV
+        run: cargo check --workspace --all-targets --all-features --locked

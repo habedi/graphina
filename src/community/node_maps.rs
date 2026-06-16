@@ -1,7 +1,7 @@
-//! Centrality-facing wrappers for community algorithms that produce node->label maps.
+//! NodeMap-returning wrappers for community algorithms.
 //! These provide a `NodeMap<usize>` interface for label propagation and infomap.
 
-use crate::community::{infomap::infomap, label_propagation::label_propagation};
+use super::{infomap::infomap, label_propagation::label_propagation};
 use crate::core::error::Result;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use petgraph::EdgeType;

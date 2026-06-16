@@ -94,7 +94,7 @@ graphina = { version = "0.3.0-alpha.4", features = ["centrality", "community", "
 ```
 
 > [!NOTE]
-> Graphina requires Rust 1.86 or later.
+> Graphina requires Rust 1.85 or later.
 
 ### Documentation
 

@@ -20,6 +20,12 @@ pub struct PyGraph {
     pub(crate) mapper: crate::core::id_map::IdMapper,
 }
 
+impl Default for PyGraph {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[pymethods]
 impl PyGraph {
     /// Creates a new, empty graph.

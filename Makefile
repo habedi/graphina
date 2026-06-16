@@ -11,11 +11,11 @@ PYGRAPHINA_DIR  := pygraphina
 PY_DEP_MNGR := uv # Use `uv sync --all-extras` to make the environment
 TEST_DATA_DIR  := tests/testdata
 SHELL           := /bin/bash
-MSRV          := 1.86
+MSRV          := 1.85
 
-# Pinned versions for Rust development tools
+# Pinned versions for Rust 1.85.0
 TARPAULIN_VERSION=0.32.8
-NEXTEST_VERSION=0.9.101
+NEXTEST_VERSION=0.9.100
 AUDIT_VERSION=0.21.2
 CAREFUL_VERSION=0.4.8
 
@@ -38,6 +38,11 @@ help: ## Show the help message for each target
 format: ## Format Rust files
 	@echo "Formatting Rust files..."
 	@cargo fmt
+
+.PHONY: format-check
+format-check: ## Check Rust formatting without modifying files (for CI)
+	@echo "Checking Rust formatting..."
+	@cargo fmt --all --check
 
 .PHONY: test
 test: format doctest ## Run the tests
@@ -94,7 +99,14 @@ install-deps: install-snap ## Install development dependencies
 .PHONY: lint
 lint: format ## Run linters on Rust files
 	@echo "Linting Rust files..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
+	@# graphina production code (all features): ban unwrap/expect as well as warnings.
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy --features all -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
+	@# graphina all targets (tests, benches, examples): warnings only, since unwrap/expect are allowed in tests.
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy --features all --all-targets -- -D warnings
+	@# pygraphina production code: same unwrap/expect ban.
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -p pygraphina --all-features -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
+	@# pygraphina all targets: warnings only.
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -p pygraphina --all-features --all-targets -- -D warnings
 
 .PHONY: publish
 publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to be set)
@@ -164,6 +176,18 @@ nextest: ## Run tests using nextest
 testdata: ## Download the datasets used in tests
 	@echo "Downloading test data..."
 	@$(SHELL) $(TEST_DATA_DIR)/download_datasets.sh $(TEST_DATA_DIR)
+
+.PHONY: oracle-fixtures
+oracle-fixtures: ## Regenerate the NetworkX oracle corpora (for the oracle tests)
+	@echo "Generating NetworkX oracle fixtures..."
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_fixtures.py tests/oracle/networkx_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_directed_fixtures.py tests/oracle/networkx_directed_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_directed_centrality_fixtures.py tests/oracle/networkx_directed_centrality_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_centrality_fixtures.py tests/oracle/networkx_centrality_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_spectral_fixtures.py tests/oracle/networkx_spectral_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_links_fixtures.py tests/oracle/networkx_links_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_metrics_fixtures.py tests/oracle/networkx_metrics_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_community_fixtures.py tests/oracle/networkx_community_oracle.json
 
 .PHONY: install-msrv
 install-msrv: ## Install the minimum supported Rust version (MSRV) for development

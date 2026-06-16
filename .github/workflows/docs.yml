@@ -15,7 +15,7 @@ jobs:
   deploy-docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install uv
@@ -29,16 +29,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: uv sync --extra dev
 
-      - name: Build Graphina Docs
+      - name: Build Graphina docs
         run: uv run mkdocs build
 
-      - name: Build PyGraphina Docs
+      - name: Build PyGraphina docs
         run: uv run mkdocs build --config-file pygraphina/mkdocs.yml
 
-      - name: Merge Documentation Sites
+      - name: Merge documentation sites
         run: |
              mkdir -p site/python
              cp -r pygraphina/site/* site/python/

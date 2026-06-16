@@ -228,17 +228,22 @@ pub fn assortativity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     let mut sum_k = 0.0;
     let mut sum_j2 = 0.0;
     let mut sum_k2 = 0.0;
-    let m = graph.edge_count() as f64;
+    // Degree assortativity (Newman) is the Pearson correlation over the joint
+    // degree distribution of edge endpoints, which is symmetric: each
+    // undirected edge contributes both orderings (j, k) and (k, j). Counting a
+    // single ordering would give the two endpoints different means and yield a
+    // different, direction-dependent coefficient.
+    let m = (graph.edge_count() * 2) as f64;
 
     for (u, v, _) in graph.edges() {
-        let j = graph.degree(u).unwrap() as f64;
-        let k = graph.degree(v).unwrap() as f64;
+        let j = graph.degree(u).unwrap_or(0) as f64;
+        let k = graph.degree(v).unwrap_or(0) as f64;
 
-        sum_jk += j * k;
-        sum_j += j;
-        sum_k += k;
-        sum_j2 += j * j;
-        sum_k2 += k * k;
+        sum_jk += 2.0 * j * k;
+        sum_j += j + k;
+        sum_k += j + k;
+        sum_j2 += j * j + k * k;
+        sum_k2 += j * j + k * k;
     }
 
     let numerator = sum_jk / m - (sum_j / m) * (sum_k / m);
