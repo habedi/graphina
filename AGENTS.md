@@ -32,6 +32,7 @@ Priorities, in order:
 - Add comments only when they clarify non-obvious behavior.
 - Do not add features, error handling, or abstractions beyond what is needed for the current task.
 - Add tests for every bug fix and new feature to prevent regression.
+- Follow red-green TDD: write a failing test first, then the code to pass it (see Test-Driven Development).
 
 ## Writing Style
 
@@ -112,6 +113,27 @@ Run `make lint` and `make test` for any change. Key targets:
 PyGraphina targets: `make develop-py` (build and install into the active environment with maturin),
 `make test-py` (pytest), `make wheel` / `make wheel-manylinux` (build wheels), and `make rundoc` (test Python
 doc examples). The Python toolchain uses `uv`.
+
+## Test-Driven Development
+
+Develop with the red-green-refactor cycle. Write the test before the implementation.
+
+1. Red: write a test that captures the desired behavior, then run it (`make test`, or `cargo test`
+   scoped to the module) and confirm it fails for the expected reason. A test that passes before any
+   code is written is not exercising the new behavior.
+2. Green: write the smallest amount of code that makes the test pass. Do not add behavior the failing
+   test does not require.
+3. Refactor: clean up the implementation and tests while keeping them green, then rerun `make lint` and
+   `make test`.
+
+Guidelines:
+
+- One logical behavior per cycle. Add edge cases (empty graphs, disconnected components, self-loops,
+  negative weights) as separate red-green steps rather than in a single large test.
+- For bug fixes, the regression test in `tests/regression_tests.rs` is the red step: it must fail on the
+  current code and pass after the fix.
+- Put the test where the behavior lives: `#[cfg(test)]` modules for unit-level logic, `tests/` for
+  user-facing behavior, and `property_based_tests.rs` for algorithmic invariants.
 
 ## Testing Expectations
 
