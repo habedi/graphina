@@ -11,7 +11,7 @@ homepage = "https://github.com/habedi/graphina"
 documentation = "https://docs.rs/graphina"
 categories = ["data-structures", "algorithms"]
 edition = "2024"
-rust-version = "1.86.0"
+rust-version = "1.85.0"
 
 resolver = "2"
 
@@ -53,7 +53,7 @@ rand = "=0.9.0"
 sprs = "0.11.3"
 ordered-float = "5.0.0"
 rayon = "1.10.0"
-nalgebra = "=0.33.2" # Latest version that is compatible with Rust 1.86
+nalgebra = "=0.33.2" # Latest version that is compatible with Rust 1.85
 petgraph = { version = "0.8.3", features = ["graphmap", "stable_graph", "matrix_graph", "serde-1", "rayon"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

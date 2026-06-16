@@ -11,7 +11,7 @@ PYGRAPHINA_DIR  := pygraphina
 PY_DEP_MNGR := uv # Use `uv sync --all-extras` to make the environment
 TEST_DATA_DIR  := tests/testdata
 SHELL           := /bin/bash
-MSRV          := 1.86
+MSRV          := 1.85
 
 # Pinned versions for Rust development tools
 TARPAULIN_VERSION=0.32.8

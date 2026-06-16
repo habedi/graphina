@@ -60,7 +60,7 @@ Priorities, in order:
   `tests/testdata/` (downloaded via `make testdata`).
 - `docs/`, `mkdocs.yml`: MkDocs documentation site.
 - `Makefile`: GNU Make wrapper around `cargo`, maturin, and tooling commands.
-- `rust-toolchain.toml`: Pinned Rust toolchain (1.86.0, MSRV) with `rustfmt` and `clippy`.
+- `rust-toolchain.toml`: Pinned Rust toolchain (1.85.0 as MSRV) with `rustfmt` and `clippy`.
 
 ## Architecture
 
@@ -98,6 +98,7 @@ Run `make lint` and `make test` for any change. Key targets:
 | Target            | Command                  | What It Runs                                                          |
 |-------------------|--------------------------|----------------------------------------------------------------------|
 | Format            | `make format`            | `cargo fmt`                                                          |
+| Format Check      | `make format-check`      | `cargo fmt --all --check` (non-mutating, used in CI)                |
 | Lint              | `make lint`              | `cargo clippy` with `-D warnings -D clippy::unwrap_used -D clippy::expect_used` |
 | Test              | `make test`              | All workspace tests with `--features all --all-targets`, plus doctests |
 | Doctest           | `make doctest`           | Doc-comment code examples (`cargo test --doc --features all`)        |
