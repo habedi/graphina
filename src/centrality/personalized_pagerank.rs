@@ -1,6 +1,7 @@
-//! Personalized PageRank algorithms.
+//! Personalized PageRank algorithm.
 //!
-//! This module provides personalized PageRank for community detection.
+//! This module provides the raw personalized PageRank ranking vector. The NodeMap facade lives in
+//! [`super::personalized`].
 
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
