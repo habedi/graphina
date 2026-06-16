@@ -59,7 +59,7 @@ impl DegreeView {
         weight: Option<String>,
     ) -> PyResult<Py<PyAny>> {
         let _ = weight; // Silence unused warning
-        if nbunch.is_none() {
+        let Some(nbunch) = nbunch else {
             // Return a new View (equivalent to self)
             return Ok(DegreeView {
                 graph: self.graph.clone_ref(py),
@@ -67,9 +67,7 @@ impl DegreeView {
             .into_pyobject(py)?
             .into_any()
             .unbind());
-        }
-
-        let nbunch = nbunch.unwrap();
+        };
 
         if let Ok(node) = nbunch.extract::<usize>(py) {
             return self

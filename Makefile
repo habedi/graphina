@@ -94,10 +94,14 @@ install-deps: install-snap ## Install development dependencies
 .PHONY: lint
 lint: format ## Run linters on Rust files
 	@echo "Linting Rust files..."
-	@# Production code (all features): ban unwrap/expect as well as warnings.
+	@# graphina production code (all features): ban unwrap/expect as well as warnings.
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy --features all -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
-	@# All targets (tests, benches, examples): warnings only, since unwrap/expect are allowed in tests.
+	@# graphina all targets (tests, benches, examples): warnings only, since unwrap/expect are allowed in tests.
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy --features all --all-targets -- -D warnings
+	@# pygraphina production code: same unwrap/expect ban.
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -p pygraphina --all-features -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
+	@# pygraphina all targets: warnings only.
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -p pygraphina --all-features --all-targets -- -D warnings
 
 .PHONY: publish
 publish: ## Publish the package to crates.io (requires CARGO_REGISTRY_TOKEN to be set)

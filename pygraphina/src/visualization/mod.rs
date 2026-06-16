@@ -52,8 +52,7 @@ pub fn compute_layout(
     };
 
     if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
-        let positions =
-            LayoutEngine::compute_layout(&py_graph.graph, layout_algo.clone(), width, height);
+        let positions = LayoutEngine::compute_layout(&py_graph.graph, layout_algo, width, height);
 
         let mut out = HashMap::new();
         for (nid, pos) in positions.into_iter() {
@@ -63,8 +62,7 @@ pub fn compute_layout(
         }
         Ok(out)
     } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
-        let positions =
-            LayoutEngine::compute_layout(&py_graph.graph, layout_algo.clone(), width, height);
+        let positions = LayoutEngine::compute_layout(&py_graph.graph, layout_algo, width, height);
 
         let mut out = HashMap::new();
         for (nid, pos) in positions.into_iter() {
