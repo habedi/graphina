@@ -29,9 +29,12 @@ where
     let mut centrality = NodeMap::new();
     for (node, _) in graph.nodes() {
         let distances = dijkstra(graph, node)?;
+        // Exclude the node itself: its distance is 0, and 1 / 0 is infinite.
+        // Harmonic centrality sums reciprocal distances over the other nodes.
         let sum: f64 = distances
-            .into_values()
-            .filter_map(|d| d.map(|od| 1.0 / od.0))
+            .into_iter()
+            .filter(|(other, _)| *other != node)
+            .filter_map(|(_, d)| d.map(|od| 1.0 / od.0))
             .sum();
         centrality.insert(node, sum);
     }

@@ -113,14 +113,22 @@ where
         }
     }
 
-    if normalized && n > 2 {
-        let norm = if graph.is_directed() {
-            1.0 / ((n - 1) * (n - 2)) as f64
-        } else {
-            2.0 / ((n - 1) * (n - 2)) as f64
-        };
+    if normalized {
+        // Brandes accumulates each shortest path from both endpoints on an
+        // undirected graph, so the normalization constant is the same for
+        // directed and undirected graphs: the doubled undirected count cancels
+        // the halved pair count.
+        if n > 2 {
+            let norm = 1.0 / ((n - 1) * (n - 2)) as f64;
+            for val in centrality.values_mut() {
+                *val *= norm;
+            }
+        }
+    } else if !graph.is_directed() {
+        // Unnormalized undirected betweenness halves the raw count, since each
+        // shortest path is accumulated once from each of its two endpoints.
         for val in centrality.values_mut() {
-            *val *= norm;
+            *val *= 0.5;
         }
     }
 

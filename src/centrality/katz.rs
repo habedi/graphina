@@ -50,13 +50,20 @@ where
         node_to_idx.insert(node, idx);
     }
 
-    // Build adjacency matrix with proper indexing
+    // Build adjacency matrix with proper indexing. For undirected graphs each
+    // edge is stored once, so the reverse entry is added explicitly to keep the
+    // matrix symmetric; otherwise Katz centrality would not respect the graph's
+    // symmetry.
+    let directed = graph.is_directed();
     let mut adj = DMatrix::<f64>::zeros(n, n);
     for (u, v, w) in graph.edges() {
         let ui = node_to_idx[&u];
         let vi = node_to_idx[&v];
         let weight: f64 = (*w).into();
         adj[(ui, vi)] += weight;
+        if !directed && ui != vi {
+            adj[(vi, ui)] += weight;
+        }
     }
 
     // Initial vector
