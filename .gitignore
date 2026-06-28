@@ -109,3 +109,7 @@ graph*.txt
 *.bin
 *.log
 site/
+.claude/
+.antigravitycli/
+.codex
+.agents/
