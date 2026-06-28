@@ -211,11 +211,16 @@ where
     NodeId: Ord,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    let mut dist = graph.to_nodemap_default();
-    let mut trace = graph.to_nodemap_default();
+    // Dense, index-keyed buffers (see `dijkstra`). A cutoff or impassable-edge
+    // search may touch few nodes, but the return contract is a complete map (one
+    // entry per node, `None` when unreachable), so we fill from the dense buffers
+    // at the end rather than building two full maps up front.
+    let bound = index_bound(graph);
+    let mut dist: Vec<Option<f64>> = vec![None; bound];
+    let mut trace: Vec<Option<NodeId>> = vec![None; bound];
     let mut heap = BinaryHeap::new();
 
-    dist.insert(source, Some(0.0));
+    dist[source.index()] = Some(0.0);
 
     heap.push(Reverse((
         NotNan::new(0.0).unwrap_or_else(|_| NotNan::new(1.0).unwrap_or(NotNan::from(1))),
@@ -223,7 +228,7 @@ where
     )));
 
     while let Some(Reverse((d, u))) = heap.pop() {
-        if let Some(current) = dist[&u] {
+        if let Some(current) = dist[u.index()] {
             if *d > current {
                 continue;
             }
@@ -250,14 +255,18 @@ where
                     continue;
                 }
             }
-            if dist[&v].is_none() || Some(*next) < dist[&v] {
-                dist.insert(v, Some(*next));
-                trace.insert(v, Some(u));
+            let vi = v.index();
+            if dist[vi].is_none() || Some(*next) < dist[vi] {
+                dist[vi] = Some(*next);
+                trace[vi] = Some(u);
                 heap.push(Reverse((next, v)));
             }
         }
     }
-    Ok((dist, trace))
+    Ok((
+        dense_to_nodemap(graph, &dist),
+        dense_to_nodemap(graph, &trace),
+    ))
 }
 
 /// Full implementation of Dijkstra's algorithm for finding shortest paths in a graph
