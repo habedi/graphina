@@ -273,21 +273,6 @@ fn test_parallel_module_accessible() {
 }
 
 #[test]
-#[cfg(feature = "visualization")]
-fn test_visualization_module_accessible() {
-    use graphina::visualization::{LayoutAlgorithm, LayoutEngine};
-
-    let mut g = Graph::<&str, f64>::new();
-    let n1 = g.add_node("A");
-    let n2 = g.add_node("B");
-    g.add_edge(n1, n2, 1.0);
-
-    let positions = LayoutEngine::compute_layout(&g, LayoutAlgorithm::Circular, 800.0, 600.0);
-
-    assert_eq!(positions.len(), 2);
-}
-
-#[test]
 fn test_graph_builder_basic() {
     let g = Graph::<i32, f64>::builder()
         .add_node(1)

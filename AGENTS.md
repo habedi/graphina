@@ -64,14 +64,14 @@ Quick examples:
 - `src/core/`: Always-enabled core library. Basic graph types, builders, IO, serialization, shortest paths,
   validation, generators, and experimental memory pooling.
 - `src/centrality/`, `src/community/`, `src/links/`, `src/metrics/`, `src/mst/`, `src/traversal/`,
-  `src/approximation/`, `src/parallel/`, `src/subgraphs/`, `src/visualization/`: Optional extensions, each
+  `src/approximation/`, `src/parallel/`, `src/subgraphs/`: Optional extensions, each
   behind a Cargo feature of the same name. The `all` feature enables them together.
 - `src/lib.rs`: Crate root with module declarations, crate-level docs, and API conventions.
 - `src/settings.rs`: Runtime settings (such as the `DEBUG_GRAPHINA` toggle).
 - `pygraphina/`: PyGraphina, the Python bindings crate built with maturin and published to PyPI as
   `pygraphina`. Contains its own `Cargo.toml`, `src/`, `tests/`, type stubs (`pygraphina.pyi`), and docs.
 - `benches/`: Criterion benchmarks (`graph_benchmarks`, `algorithm_benchmarks`, `project_benchmarks`).
-- `tests/`: Workspace integration, end-to-end, regression, property-based, and visualization tests, plus
+- `tests/`: Workspace integration, end-to-end, regression, and property-based tests, plus
   `tests/testdata/` (downloaded via `make testdata`).
 - `docs/`, `mkdocs.yml`: MkDocs documentation site.
 - `Makefile`: GNU Make wrapper around `cargo`, maturin, and tooling commands.
@@ -88,9 +88,9 @@ The crate is split into a core library and a set of independent extensions.
   experimental `pool` module.
 - Extensions are feature-gated modules outside `core` for higher-level tasks: centrality, community
   detection, link prediction, metrics, minimum spanning trees, traversal, approximation of NP-hard problems,
-  parallel algorithms, subgraph extraction, and visualization.
+  parallel algorithms, and subgraph extraction.
 - Graphina builds on `petgraph` for the underlying graph storage and uses `nalgebra`, `sprs`, and `rayon`
-  for numerical and parallel work, and `plotters` (optional) for visualization rendering.
+  for numerical and parallel work.
 
 ### Key Design Decisions
 
@@ -113,7 +113,7 @@ grep) rather than by the compiler. Keep the dependency direction acyclic and hub
 
 0. `core` sits at the bottom. It depends on no other Graphina module.
 1. Each extension (`approximation`, `centrality`, `community`, `links`, `metrics`, `mst`, `parallel`,
-   `subgraphs`, `traversal`, `visualization`) may depend on `core` only.
+   `subgraphs`, `traversal`) may depend on `core` only.
 2. No extension may depend on another extension, not through a `use crate::<other>` import and not through a
    fully-qualified `crate::<other>::` path. If two extensions need the same helper, move it into `core` or
    duplicate the small piece.
@@ -153,9 +153,6 @@ extension; promote it to the contract deliberately or keep it private.
 - Fixed attribute types in IO and generators: `core::io` reads and writes graphs with `i32` node attributes
   and `f32` edge weights; `core::generators` produces `u32` node attributes and `f32` edge weights. Convert
   with `BaseGraph::convert` or `map_node_attrs`/`map_edge_weights` if you need other types.
-- Feature-gated rendering: the `visualization` D3 export (`to_d3_graph`, `to_d3_json`), `to_ascii_art`, and
-  `save_as_html` are available whenever the `visualization` feature is on, but `save_as_png` and
-  `save_as_svg` additionally require the `plotters` backend pulled in by that same feature.
 
 ## Component APIs
 
@@ -315,16 +312,6 @@ the result; `filter_nodes` and `filter_edges` also remap but return the graph di
 (`k_hop_neighbors`, `connected_component`) return `Vec<NodeId>` over the original ids, with `radius`/`k` of 0
 returning just the start node.
 
-### `visualization`
-
-- `LayoutEngine::compute_layout(graph, algorithm, width, height) -> HashMap<NodeId, NodePosition>`: one of
-  `ForceDirected`, `Circular`, `Hierarchical`, `Grid`, or `Random`; never errors.
-- `to_d3_graph` (to the `D3Graph` struct), `to_d3_json` (to a JSON string), `to_ascii_art` (debug string),
-  and `save_as_html` (interactive D3 file, references a D3 CDN) require only the node and edge attributes to
-  be `Display`.
-- `save_as_png` and `save_as_svg` render through `plotters` and write to disk; they need the `visualization`
-  feature's `plotters` backend.
-
 ## Required Validation
 
 Run `make lint` and `make test` for any change. Key targets:
@@ -375,7 +362,7 @@ Guidelines:
 
 - Unit tests live in each module's source files using `#[cfg(test)]` modules.
 - Workspace-level tests live in `tests/`: `integration_tests.rs`, `e2e_tests.rs`, `regression_tests.rs`,
-  `property_based_tests.rs` (proptest), and `visualizations_tests.rs`.
+  and `property_based_tests.rs` (proptest).
 - Some integration tests reference public datasets; run `make testdata` to fetch them first.
 - Property-based tests cover algorithmic invariants; add cases when changing numerical behavior.
 - Regression tests exist for fixed bugs; add one for every bug fix.

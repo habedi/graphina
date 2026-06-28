@@ -90,21 +90,6 @@ Property-based tests using `proptest` for algorithm correctness across diverse i
 - Algorithm correctness properties
 - Graph invariants
 
-#### 6. **visualizations_tests.rs**
-
-Tests for graph visualization functionality.
-
-**Coverage:**
-
-- ASCII art generation
-- D3.js JSON export
-- HTML generation
-- Layout algorithms (force-directed, circular, hierarchical, grid, random)
-- PNG and SVG generation
-- Configuration customization
-- Empty graph handling
-- Large graph performance
-
 ### Running Tests
 
 Run all tests:
@@ -121,7 +106,6 @@ cargo test --test regression_tests --all-features
 cargo test --test integration_tests --all-features
 cargo test --test e2e_tests --all-features
 cargo test --test property_based_tests --all-features
-cargo test --test visualizations_tests --all-features
 ```
 
 Run tests with real-world datasets:
@@ -153,12 +137,11 @@ Tests that require datasets will skip gracefully if the data is not available.
 | Unit tests (src/) | 154 | Module-level unit tests |
 | algorithm_tests.rs | 49 | Algorithm coverage |
 | e2e_tests.rs | 12 | End-to-end pipelines |
-| integration_tests.rs | 30 | Cross-module integration |
+| integration_tests.rs | 29 | Cross-module integration |
 | property_based_tests.rs | 29 | Property-based verification |
 | regression_tests.rs | 25 | Bug regression prevention |
-| visualizations_tests.rs | 13 | Visualization features |
 | Doc tests | 44 | Documentation examples |
-| **Total** | **356** | |
+| **Total** | **342** | |
 
 ### Notes
 

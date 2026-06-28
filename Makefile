@@ -126,7 +126,7 @@ deny: ## Check dependencies for advisories, license compliance, and duplicates
 check-module-deps: ## Check that top-level modules only depend on core (not on each other)
 	@echo "Checking module dependencies..."
 	@ERROR=0; \
-	TOP_MODULES="approximation centrality community links metrics mst parallel subgraphs traversal visualization"; \
+	TOP_MODULES="approximation centrality community links metrics mst parallel subgraphs traversal"; \
 	for module in $$TOP_MODULES; do \
 		if [ -d "src/$$module" ]; then \
 			for other_module in $$TOP_MODULES; do \

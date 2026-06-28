@@ -1,5 +1,5 @@
 site_name: Graphina Documentation
-site_description: Documentation for the Graphina Rust library.
+site_description: Documentation for the Graphina Rust library
 repo_url: https://github.com/habedi/graphina
 repo_name: habedi/graphina
 site_url: https://habedi.github.io/graphina/
@@ -72,7 +72,6 @@ nav:
           - Approximation: guide/approximation.md
           - Graph Metrics: guide/metrics.md
           - Parallel Processing: guide/parallel.md
-          - Visualization: guide/visualization.md
   - Examples:
       - Basic: examples/basic.md
       - Generators: examples/generators.md
@@ -87,7 +86,6 @@ nav:
       - Path Finding: examples/paths.md
       - Subgraphs and Views: examples/subgraphs.md
       - Traversal: examples/traversal.md
-      - Visualization: examples/visualization.md
   - API Reference:
       - Rust Docs (docs.rs): https://docs.rs/graphina
       - Crate (crates.io): https://crates.io/crates/graphina

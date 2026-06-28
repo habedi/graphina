@@ -108,7 +108,6 @@ nav:
               - BFS and DFS: api/traversal/basic.md
           - Subgraphs: api/subgraphs/index.md
           - Parallel: api/parallel/index.md
-          - Visualization: api/visualization/index.md
 
   - Examples:
       - Basic Usage: examples/basic.md

@@ -26,7 +26,6 @@ Graphina is modular. Enable only what you need using the respective feature flag
 *   `traversal`: Graph traversal algorithms (BFS and DFS)
 *   `subgraphs`: Subgraph extraction and filtering
 *   `parallel`: Parallel algorithm implementations
-*   `visualization`: Visualization helper functions
 
 ```toml
 [dependencies]

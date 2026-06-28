@@ -36,13 +36,12 @@ community = []
 links = []
 approximation = []
 parallel = []
-visualization = ["plotters"]
 metrics = []
 mst = []
 traversal = []
 subgraphs = []
 pool = []
-all = ["centrality", "community", "links", "approximation", "parallel", "visualization", "metrics", "mst", "traversal", "subgraphs"]
+all = ["centrality", "community", "links", "approximation", "parallel", "metrics", "mst", "traversal", "subgraphs"]
 
 [dependencies]
 ctor = "=0.6.0"
@@ -57,7 +56,6 @@ petgraph = { version = "0.8.3", features = ["graphmap", "stable_graph", "matrix_
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 bincode = { version = "=2.0.1", features = ["serde"] }
-plotters = { version = "0.3", optional = true }
 thiserror = "2.0"
 
 [dev-dependencies]
