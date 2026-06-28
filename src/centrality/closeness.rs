@@ -28,7 +28,7 @@ where
     }
 
     let n = graph.node_count();
-    let mut centralities = NodeMap::new();
+    let mut centralities = NodeMap::default();
 
     for (node, _) in graph.nodes() {
         let dist_map = dijkstra(graph, node)?;

@@ -118,9 +118,18 @@ pub type Graph<A, W> = BaseGraph<A, W, Undirected>;
 /// Marker alias for undirected graphs.
 pub type GraphMarker = Undirected;
 /// type alias for HashMap mapping NodeId to T
-pub type NodeMap<T> = HashMap<NodeId, T>;
+///
+/// Uses `FxBuildHasher` rather than the default SipHash. `NodeId` keys are small
+/// integers, so the faster, non-DoS-resistant Fx hash is appropriate and removes
+/// per-lookup hashing cost from the inner loops of every algorithm.
+pub type NodeMap<T> = HashMap<NodeId, T, rustc_hash::FxBuildHasher>;
 /// type alias for HashMap mapping EdgeId to T
-pub type EdgeMap<T> = HashMap<EdgeId, T>;
+pub type EdgeMap<T> = HashMap<EdgeId, T, rustc_hash::FxBuildHasher>;
+/// type alias for a set of `NodeId`s using `FxBuildHasher`
+///
+/// Used for visited and frontier sets in traversals, where the same fast,
+/// integer-friendly hash applies as for [`NodeMap`].
+pub type NodeSet = std::collections::HashSet<NodeId, rustc_hash::FxBuildHasher>;
 /// Base graph structure that wraps around a petgraph instance.
 ///
 /// Generic parameters:
@@ -857,7 +866,7 @@ impl<T> From<NodeMap<T>> for OrderedNodeMap<T> {
 }
 impl<T> From<OrderedNodeMap<T>> for NodeMap<T> {
     fn from(ordered: OrderedNodeMap<T>) -> Self {
-        let mut h = HashMap::with_capacity(ordered.0.len());
+        let mut h = NodeMap::with_capacity_and_hasher(ordered.0.len(), rustc_hash::FxBuildHasher);
         for (k, v) in ordered.0 {
             h.insert(k, v);
         }

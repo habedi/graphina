@@ -540,9 +540,9 @@ where
         row[i] = Some(W::from(0u8));
     }
     // Convert to NodeMap form
-    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::new();
+    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::default();
     for (i, u) in nodes.iter().enumerate() {
-        let mut inner: NodeMap<Option<W>> = NodeMap::new();
+        let mut inner: NodeMap<Option<W>> = NodeMap::default();
         for (j, v) in nodes.iter().enumerate() {
             inner.insert(*v, dist[i][j]);
         }
@@ -629,9 +629,9 @@ where
         }
     }
     // Convert to NodeMap form
-    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::new();
+    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::default();
     for (i, u) in nodes.iter().enumerate() {
-        let mut inner: NodeMap<Option<W>> = NodeMap::new();
+        let mut inner: NodeMap<Option<W>> = NodeMap::default();
         for (j, v) in nodes.iter().enumerate() {
             inner.insert(*v, dist[i][j]);
         }

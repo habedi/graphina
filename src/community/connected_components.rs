@@ -2,8 +2,8 @@
 //!
 //! This module provides connected components for community detection.
 
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
-use std::collections::{HashSet, VecDeque};
+use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap, NodeSet};
+use std::collections::VecDeque;
 
 /// Compute connected components of an undirected graph using BFS.
 ///
@@ -21,7 +21,7 @@ where
     W: Copy,
     Ty: GraphConstructor<A, W>,
 {
-    let mut visited: HashSet<NodeId> = HashSet::new();
+    let mut visited: NodeSet = NodeSet::default();
     let mut components = Vec::new();
 
     for (start_node, _) in graph.nodes() {
@@ -61,7 +61,7 @@ where
     Ty: GraphConstructor<A, W>,
 {
     let lists = connected_components(graph);
-    let mut map: NodeMap<usize> = NodeMap::new();
+    let mut map: NodeMap<usize> = NodeMap::default();
     for (cid, comp) in lists.into_iter().enumerate() {
         for node in comp {
             map.insert(node, cid);
@@ -85,7 +85,7 @@ where
     W: Copy,
     Ty: GraphConstructor<A, W>,
 {
-    let mut visited: HashSet<NodeId> = HashSet::new();
+    let mut visited: NodeSet = NodeSet::default();
     let mut components = Vec::new();
 
     for (start_node, _) in graph.nodes() {

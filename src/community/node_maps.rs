@@ -19,7 +19,7 @@ where
     let labels_vec = label_propagation(graph, max_iter, seed)?;
     let nodes: Vec<NodeId> = graph.nodes().map(|(nid, _)| nid).collect();
     // Map vector indices to NodeIds
-    let mut map = NodeMap::new();
+    let mut map = NodeMap::default();
     for (i, nid) in nodes.iter().enumerate() {
         if let Some(label) = labels_vec.get(i) {
             map.insert(*nid, *label);
@@ -40,7 +40,7 @@ where
 {
     let modules_vec = infomap(graph, max_iter, seed)?;
     let nodes: Vec<NodeId> = graph.nodes().map(|(nid, _)| nid).collect();
-    let mut map = NodeMap::new();
+    let mut map = NodeMap::default();
     for (i, nid) in nodes.iter().enumerate() {
         if let Some(module) = modules_vec.get(i) {
             map.insert(*nid, *module);

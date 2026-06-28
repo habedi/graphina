@@ -39,7 +39,7 @@ where
         ));
     }
 
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
         centrality.insert(node, 0.0);
     }
@@ -47,9 +47,9 @@ where
     for (s, _) in graph.nodes() {
         let mut stack = Vec::new();
         let mut preds: HashMap<NodeId, Vec<NodeId>> = HashMap::new();
-        let mut sigma = NodeMap::new();
-        let mut dist = NodeMap::new();
-        let mut delta = NodeMap::new();
+        let mut sigma = NodeMap::default();
+        let mut dist = NodeMap::default();
+        let mut delta = NodeMap::default();
 
         for (node, _) in graph.nodes() {
             preds.insert(node, Vec::new());
@@ -174,9 +174,9 @@ where
     for (s, _) in graph.nodes() {
         let mut stack = Vec::new();
         let mut preds: HashMap<NodeId, Vec<NodeId>> = HashMap::new();
-        let mut sigma = NodeMap::new();
-        let mut dist = NodeMap::new();
-        let mut delta = NodeMap::new();
+        let mut sigma = NodeMap::default();
+        let mut dist = NodeMap::default();
+        let mut delta = NodeMap::default();
 
         for (node, _) in graph.nodes() {
             preds.insert(node, Vec::new());

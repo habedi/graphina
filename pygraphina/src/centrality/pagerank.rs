@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::{PyDiGraph, PyGraph};
 use graphina::centrality::pagerank::pagerank as pagerank_core;
 use graphina::centrality::personalized::personalized_pagerank as personalized_pagerank_core;
+use graphina::core::types::NodeMap;
 
 /// Compute the PageRank of nodes in the graph.
 ///
@@ -42,7 +43,7 @@ pub fn pagerank(
 ) -> PyResult<HashMap<usize, f64>> {
     if let Ok(g) = graph.extract::<PyRef<PyGraph>>() {
         let nstart_map = if let Some(ns) = nstart {
-            let mut map = HashMap::new();
+            let mut map = NodeMap::default();
             for (py_id, val) in ns {
                 if let Some(&internal_id) = g.mapper.py_to_internal.get(&py_id) {
                     map.insert(internal_id, val);
@@ -66,7 +67,7 @@ pub fn pagerank(
         Ok(out)
     } else if let Ok(g) = graph.extract::<PyRef<PyDiGraph>>() {
         let nstart_map = if let Some(ns) = nstart {
-            let mut map = HashMap::new();
+            let mut map = NodeMap::default();
             for (py_id, val) in ns {
                 if let Some(&internal_id) = g.mapper.py_to_internal.get(&py_id) {
                     map.insert(internal_id, val);

@@ -27,13 +27,13 @@
 //! budget, and the scale sweep come from environment variables; see
 //! `Config::from_env` for the knobs and their defaults.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::convert::Infallible;
 use std::time::{Duration, Instant};
 
 use ordered_float::OrderedFloat;
 
-use graphina::core::types::{Graph, NodeId};
+use graphina::core::types::{Graph, NodeId, NodeMap};
 
 use rustworkx_core::centrality::{
     betweenness_centrality as rwx_betweenness, closeness_centrality as rwx_closeness,
@@ -295,7 +295,7 @@ fn build_petgraph(data: &Dataset) -> (UnGraph<(), f64>, Vec<NodeIndex>) {
 // ----------------------------------------------------------------------------
 
 /// Spreads a graphina `NodeMap<f64>` into a dense vector indexed by node index.
-fn map_to_vec(map: &HashMap<NodeId, f64>, n: usize) -> Vec<f64> {
+fn map_to_vec(map: &NodeMap<f64>, n: usize) -> Vec<f64> {
     let mut v = vec![0.0; n];
     for (id, &val) in map {
         v[id.index()] = val;

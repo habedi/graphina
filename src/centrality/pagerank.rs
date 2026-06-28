@@ -36,7 +36,7 @@ where
 {
     let n = graph.node_count();
     if n == 0 {
-        return Ok(NodeMap::new());
+        return Ok(NodeMap::default());
     }
 
     // Build proper node index mapping to handle non-contiguous indices
@@ -128,7 +128,7 @@ where
     }
 
     // Convert to NodeMap using the node list
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     for (idx, &node) in node_list.iter().enumerate() {
         centrality.insert(node, pr[idx]);
     }
@@ -210,7 +210,7 @@ mod tests {
         graph.add_edge(n2, n1, 1.0);
 
         // Bias start towards node 1
-        let mut nstart = NodeMap::new();
+        let mut nstart = NodeMap::default();
         nstart.insert(n1, 0.8);
         nstart.insert(n2, 0.2);
 
@@ -222,7 +222,7 @@ mod tests {
         // With 0 iterations using small max_iter (if we could control validation better),
         // effectively we check it doesn't crash and converges normally.
         // Let's verify it accepts partial nstart (rest zero assumption)
-        let mut partial_start = NodeMap::new();
+        let mut partial_start = NodeMap::default();
         partial_start.insert(n1, 1.0);
         // n2 missing -> assumed 0.0
 
