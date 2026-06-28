@@ -117,6 +117,11 @@ bench-rustworkx: ## Run the graphina vs rustworkx-core comparison harness
 	@echo "Running graphina vs rustworkx-core comparison..."
 	@cd benchmarks/rustworkx-compare && cargo run --release
 
+.PHONY: bench-pygraphina
+bench-pygraphina: develop-py ## Run the PyGraphina vs rustworkx comparison harness
+	@echo "Running PyGraphina vs rustworkx comparison..."
+	@uv run --with rustworkx python benchmarks/pygraphina-compare/compare.py
+
 .PHONY: audit
 audit: ## Run security audit on Rust dependencies
 	@echo "Running security audit..."
