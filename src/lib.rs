@@ -16,12 +16,11 @@ A graph data science library that provides common graph types, algorithms, and d
 * `approximation` *(feature: approximation)* – Heuristics for NP-hard problems.
 * `parallel` *(feature: parallel)* – Parallel implementations for selected algorithms.
 * `subgraphs` *(feature: subgraphs)* – Induced subgraph and ego network utilities.
-* `visualization` *(feature: visualization)* – Layouts and render helpers (ASCII/HTML/SVG/PNG).
 * `core::pool` *(feature: pool)* – Experimental memory pooling utilities.
 
 ## API Conventions
 
-Algorithms return `Result<_, graphina::core::error::GraphinaError>` for robust error handling.
+Algorithms return `Result<_, graphina::core::error::GraphinaError>` for error handling.
 Selector-style helpers that pick nodes (like `voterank`) may return plain collections.
 
 Enable only required features to minimize size and compile time.
@@ -62,6 +61,3 @@ pub mod subgraphs;
 /// Graph traversal algorithms.
 #[cfg(feature = "traversal")]
 pub mod traversal;
-/// Graph visualization utilities.
-#[cfg(feature = "visualization")]
-pub mod visualization;

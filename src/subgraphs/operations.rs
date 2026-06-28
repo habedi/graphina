@@ -11,7 +11,7 @@ Work efficiently with graph subsets:
 use std::collections::{HashSet, VecDeque};
 
 use crate::core::error::{GraphinaError, Result};
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap, NodeSet};
 use petgraph::EdgeType;
 
 /// Trait for subgraph operations on graphs.
@@ -78,7 +78,7 @@ where
     /// assert_eq!(subgraph.edge_count(), 1);
     /// ```
     fn subgraph(&self, nodes: &[NodeId]) -> Result<BaseGraph<A, W, Ty>> {
-        let node_set: HashSet<NodeId> = nodes.iter().copied().collect();
+        let node_set: NodeSet = nodes.iter().copied().collect();
 
         // Verify all nodes exist
         for node in nodes {
@@ -172,9 +172,9 @@ where
             )));
         }
 
-        let mut nodes_in_ego = HashSet::new();
+        let mut nodes_in_ego = NodeSet::default();
         let mut queue = VecDeque::new();
-        let mut distances = std::collections::HashMap::new();
+        let mut distances = NodeMap::default();
 
         nodes_in_ego.insert(center);
         queue.push_back(center);
@@ -307,9 +307,9 @@ where
             return vec![];
         }
 
-        let mut visited = HashSet::new();
+        let mut visited = NodeSet::default();
         let mut queue = VecDeque::new();
-        let mut distances = std::collections::HashMap::new();
+        let mut distances = NodeMap::default();
         let mut result = vec![];
 
         visited.insert(start);
@@ -360,7 +360,7 @@ where
             return vec![];
         }
 
-        let mut visited = HashSet::new();
+        let mut visited = NodeSet::default();
         let mut stack = vec![start];
         let mut result = vec![];
 

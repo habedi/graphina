@@ -40,12 +40,12 @@ where
 {
     let n = graph.node_count();
     if n == 0 {
-        return Ok(NodeMap::new());
+        return Ok(NodeMap::default());
     }
 
     // Fast path: graphs with no edges yield uniform centrality
     if graph.edge_count() == 0 {
-        let mut centrality = NodeMap::new();
+        let mut centrality = NodeMap::default();
         let uniform_value = 1.0 / n as f64;
         for (node, _) in graph.nodes() {
             centrality.insert(node, uniform_value);
@@ -109,7 +109,7 @@ where
             x *= (n as f64) / sum;
         }
 
-        let mut centrality = NodeMap::new();
+        let mut centrality = NodeMap::default();
         for (idx, &val) in x.iter().enumerate() {
             centrality.insert(node_list[idx], val);
         }
@@ -126,7 +126,7 @@ where
 
         if norm < 1e-10 {
             // Graph is disconnected or has zero weights, return uniform distribution
-            let mut centrality = NodeMap::new();
+            let mut centrality = NodeMap::default();
             let uniform_value = 1.0 / n as f64;
             for &node in &node_list {
                 centrality.insert(node, uniform_value);
@@ -174,7 +174,7 @@ where
         x *= n as f64 / sum;
     }
 
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     for (idx, &val) in x.iter().enumerate() {
         centrality.insert(node_list[idx], val.abs());
     }

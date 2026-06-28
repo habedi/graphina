@@ -26,8 +26,6 @@ Rust.
 Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
 Check out [pygraphina](pygraphina/README.md) directory for more details.
 
-See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
-
 > [!IMPORTANT]
 > This project is in early development, so bugs and breaking changes are expected.
 > Please use the [issues page](https://github.com/habedi/graphina/issues) to report bugs or request features.
@@ -71,7 +69,6 @@ To use an extension, you must enable it in your `Cargo.toml` file as a feature (
 | [**Community**](src/community/)         | <ul><li>Label propagation</li><li>Louvain method</li><li>Girvan-Newman algorithm</li><li>Spectral clustering</li><li>Personalized PageRank</li><li>Infomap</li><li>Connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                  | Community detection and clustering algorithms        |
 | [**Approximation**](src/approximation/) | <ul><li>Node connectivity (BFS-based)</li><li>Maximum independent set (greedy)</li><li>Maximum clique (greedy heuristic)</li><li>Clique removal</li><li>Large clique size</li><li>Average clustering coefficient (approximate)</li><li>Densest subgraph (greedy peeling)</li><li>Diameter lower bound</li><li>Minimum weighted vertex cover (greedy)</li><li>Minimum maximal matching (greedy)</li><li>Ramsey number R(2,t) approximation</li><li>TSP approximations (greedy, simulated annealing, threshold accepting, and Christofides)</li><li>Treewidth decompositions (min degree, and min fill-in)</li></ul> | Approximation algorithms for NP-hard problems        |
 | [**Parallel**](src/parallel/)           | <ul><li>Parallel BFS</li><li>Parallel degree computation</li><li>Parallel clustering coefficients</li><li>Parallel triangles counting</li><li>Parallel PageRank</li><li>Parallel shortest paths</li><li>Parallel connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                    | Parallel implementations of popular graph algorithms |
-| [**Visualization**](src/visualization/) | <ul><li>ASCII art visualization</li><li>Force-directed layout</li><li>Circular layout</li><li>Grid layout</li><li>Hierarchical layout</li><li>HTML generation</li><li>SVG export</li><li>PNG export</li><li>D3.js JSON format</li></ul>                                                                                                                                                                                                                                                                                                                                                                            | Graph visualization algorithms                       |
 
 ### Installation
 
@@ -90,7 +87,7 @@ Or enable all features with:
 
 ```toml
 [dependencies]
-graphina = { version = "0.3.0-alpha.4", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "visualization", "parallel", "pool"] }
+graphina = { version = "0.3.0-alpha.4", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "pool"] }
 ```
 
 > [!NOTE]

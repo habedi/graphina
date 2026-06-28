@@ -27,7 +27,7 @@ where
     let node_list: Vec<NodeId> = graph.nodes().map(|(nid, _)| nid).collect();
     let ranks_vec = personalized_page_rank(graph, personalization, damping, tol, max_iter)?;
     // Safety: personalized_page_rank returns rank vector sized to node_list.len()
-    let mut map = NodeMap::new();
+    let mut map = NodeMap::default();
     for (i, nid) in node_list.iter().enumerate() {
         if let Some(val) = ranks_vec.get(i) {
             map.insert(*nid, *val);

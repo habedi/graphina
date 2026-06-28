@@ -16,5 +16,5 @@ networkx = []
 
 [dependencies]
 pyo3 = { version = "0.27.0", features = ["abi3-py310", "extension-module", "auto-initialize"] }
-graphina = { path = "..", features = ["centrality", "approximation", "community", "links", "metrics", "mst", "traversal", "subgraphs", "parallel", "visualization"] }
+graphina = { path = "..", features = ["centrality", "approximation", "community", "links", "metrics", "mst", "traversal", "subgraphs", "parallel"] }
 ordered-float = "5.0.0"

@@ -20,13 +20,13 @@ Ranges from 0 (no common neighbors) to 1 (identical neighborhoods).
 
 ## Common Neighbors
 
-The simplest metric - just count shared neighbors:
+A simple metric that counts shared neighbors:
 
 ```python
 pg.links.common_neighbors(graph) -> Dict[Tuple, int]
 ```
 
-Fast but less sophisticated than other metrics.
+This counts the number of common neighbors between two nodes.
 
 ## Adamic-Adar Index
 

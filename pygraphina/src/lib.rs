@@ -25,8 +25,6 @@ mod parallel;
 mod subgraphs;
 mod traversal;
 
-mod visualization;
-
 /// Compute the diameter of the graph.
 ///
 /// The diameter is the maximum eccentricity, or the length of the longest shortest path.
@@ -196,10 +194,6 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let links_mod = PyModule::new(m.py(), "links")?;
     links::register_links(&links_mod)?;
     m.add_submodule(&links_mod)?;
-
-    let visualization_mod = PyModule::new(m.py(), "visualization")?;
-    visualization::register_visualization(&visualization_mod)?;
-    m.add_submodule(&visualization_mod)?;
 
     #[cfg(feature = "networkx")]
     {

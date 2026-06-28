@@ -1,7 +1,7 @@
 # Centrality Algorithms
 
 Centrality measures identify the most important nodes in a graph.
-Graphina provides high-performance implementations of standard centrality metrics.
+Graphina provides implementations of standard centrality metrics.
 
 ## PageRank
 

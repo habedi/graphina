@@ -1,0 +1,20 @@
+[package]
+name = "rustworkx-compare"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+graphina = { path = "../..", features = ["centrality", "community", "metrics", "traversal"] }
+rustworkx-core = "0.18"
+ordered-float = "5"
+
+# Detached from the graphina workspace on purpose
+[workspace]
+
+# Mirror the graphina root release profile
+[profile.release]
+strip = "debuginfo"
+panic = "unwind"
+codegen-units = 1
+lto = true

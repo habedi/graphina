@@ -19,7 +19,7 @@ pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMa
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     if graph.is_directed() {
         let mut in_counts: HashMap<NodeId, usize> = HashMap::new();
         let mut out_counts: HashMap<NodeId, usize> = HashMap::new();
@@ -64,7 +64,7 @@ pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<Nod
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     if graph.is_directed() {
         let mut in_counts: HashMap<NodeId, usize> = HashMap::new();
         for (node, _) in graph.nodes() {
@@ -106,7 +106,7 @@ pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<No
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     if graph.is_directed() {
         let mut out_counts: HashMap<NodeId, usize> = HashMap::new();
         for (node, _) in graph.nodes() {

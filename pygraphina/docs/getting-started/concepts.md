@@ -136,7 +136,7 @@ for node_id, score in pagerank.items():
     print(f"{person['name']}: {score:.4f}")
 ```
 
-This pattern is common in high-performance graph libraries and allows PyGraphina to maintain its speed advantages while giving you flexibility for complex data.
+This pattern allows PyGraphina to maintain graph operations on simple types while supporting complex node attributes.
 
 ## Edges
 

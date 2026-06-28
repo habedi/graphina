@@ -4,15 +4,15 @@
   <img src="https://media.githubusercontent.com/media/habedi/graphina/refs/heads/main/logo.png" alt="Graphina Logo" width="300" />
 </p>
 
-Graphina is a high-performance graph data science library for Rust 🦀.
-It provides a robust collection of graph algorithms, data structures, and analytics tools designed for efficiency and ease of use.
+Graphina is a graph data science library for Rust 🦀.
+It provides graph algorithms, data structures, and analytics tools.
 
 ## Features
 
-* Flexible and efficient `Graph` (undirected) and `Digraph` (directed) implementations.
-* Optimized for speed and memory usage, with parallel implementations for heavy workloads.
-* Includes a comprehensive collection of graph algorithms including Centrality, Community Detection, Path Finding, and more.
-* Has ready-to-use Python bindings to use Graphina from Python 🐍.
+* `Graph` (undirected) and `Digraph` (directed) implementations.
+* Sequential and parallel algorithm implementations.
+* Algorithms for centrality, community detection, path finding, and other network analysis tasks.
+* Python bindings for PyGraphina.
 
 ## Using Graphina from Python
 

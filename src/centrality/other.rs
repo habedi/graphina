@@ -28,7 +28,7 @@ pub fn local_reaching_centrality<A, W, Ty>(
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
         let mut reached = HashSet::new();
         let mut current = HashSet::new();
@@ -177,7 +177,7 @@ where
     W: Copy + PartialOrd + Into<f64>,
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
         let degree = graph.neighbors(node).count() as f64;
         // Unnormalized Laplacian centrality (Qi et al.): the drop in Laplacian

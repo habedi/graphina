@@ -28,7 +28,7 @@ where
     }
 
     let n = graph.node_count();
-    let mut centralities = NodeMap::new();
+    let mut centralities = NodeMap::default();
 
     for (node, _) in graph.nodes() {
         let dist_map = dijkstra(graph, node)?;
@@ -36,9 +36,11 @@ where
         // reachable. Closeness is the reciprocal of the mean distance.
         let mut sum_dist = 0.0;
         let mut reachable = 0usize;
-        for (other_node, _) in graph.nodes() {
+        // Iterate the distance map directly rather than doing one hash lookup per
+        // other node. Summation is order-independent, so iteration order is fine.
+        for (&other_node, dist_opt) in &dist_map {
             if node != other_node {
-                if let Some(Some(d)) = dist_map.get(&other_node) {
+                if let Some(d) = dist_opt {
                     let dist_f64: f64 = (*d).into();
                     if dist_f64 > 0.0 && dist_f64.is_finite() {
                         sum_dist += dist_f64;

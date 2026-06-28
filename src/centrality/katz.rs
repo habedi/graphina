@@ -40,7 +40,7 @@ where
 {
     let n = graph.node_count();
     if n == 0 {
-        return Ok(NodeMap::new());
+        return Ok(NodeMap::default());
     }
 
     // Build proper node index mapping
@@ -92,7 +92,7 @@ where
         ));
     }
 
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     for (idx, &val) in x.iter().enumerate() {
         centrality.insert(node_list[idx], val);
     }

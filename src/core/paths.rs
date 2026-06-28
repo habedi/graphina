@@ -60,6 +60,38 @@ where
     graph.outgoing_edges(u).map(|(tgt, w)| (tgt, *w))
 }
 
+/// Returns an upper bound on node indices, suitable for sizing a dense `Vec`
+/// indexed by `NodeId::index()`.
+///
+/// `BaseGraph` wraps a `StableGraph`, so node indices are stable but not
+/// necessarily contiguous after removals. Sizing by this bound (rather than
+/// `node_count`) keeps `vec[id.index()]` in range while still allowing dense,
+/// hash-free indexing in the inner loops.
+fn index_bound<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> usize
+where
+    Ty: GraphConstructor<A, W>,
+{
+    graph
+        .node_ids()
+        .map(|n| n.index())
+        .max()
+        .map_or(0, |m| m + 1)
+}
+
+/// Converts a dense, index-keyed slice of per-node values into the `NodeMap`
+/// public return type, inserting one entry per existing node.
+fn dense_to_nodemap<A, W, Ty, T>(graph: &BaseGraph<A, W, Ty>, dense: &[T]) -> NodeMap<T>
+where
+    T: Copy,
+    Ty: GraphConstructor<A, W>,
+{
+    let mut map = NodeMap::with_capacity_and_hasher(graph.node_count(), rustc_hash::FxBuildHasher);
+    for u in graph.node_ids() {
+        map.insert(u, dense[u.index()]);
+    }
+    map
+}
+
 // ============================
 // Dijkstra’s Algorithm
 // ============================
@@ -179,11 +211,16 @@ where
     NodeId: Ord,
     BaseGraph<A, W, Ty>: GraphinaGraph<A, W>,
 {
-    let mut dist = graph.to_nodemap_default();
-    let mut trace = graph.to_nodemap_default();
+    // Dense, index-keyed buffers (see `dijkstra`). A cutoff or impassable-edge
+    // search may touch few nodes, but the return contract is a complete map (one
+    // entry per node, `None` when unreachable), so we fill from the dense buffers
+    // at the end rather than building two full maps up front.
+    let bound = index_bound(graph);
+    let mut dist: Vec<Option<f64>> = vec![None; bound];
+    let mut trace: Vec<Option<NodeId>> = vec![None; bound];
     let mut heap = BinaryHeap::new();
 
-    dist.insert(source, Some(0.0));
+    dist[source.index()] = Some(0.0);
 
     heap.push(Reverse((
         NotNan::new(0.0).unwrap_or_else(|_| NotNan::new(1.0).unwrap_or(NotNan::from(1))),
@@ -191,7 +228,7 @@ where
     )));
 
     while let Some(Reverse((d, u))) = heap.pop() {
-        if let Some(current) = dist[&u] {
+        if let Some(current) = dist[u.index()] {
             if *d > current {
                 continue;
             }
@@ -218,14 +255,18 @@ where
                     continue;
                 }
             }
-            if dist[&v].is_none() || Some(*next) < dist[&v] {
-                dist.insert(v, Some(*next));
-                trace.insert(v, Some(u));
+            let vi = v.index();
+            if dist[vi].is_none() || Some(*next) < dist[vi] {
+                dist[vi] = Some(*next);
+                trace[vi] = Some(u);
                 heap.push(Reverse((next, v)));
             }
         }
     }
-    Ok((dist, trace))
+    Ok((
+        dense_to_nodemap(graph, &dist),
+        dense_to_nodemap(graph, &trace),
+    ))
 }
 
 /// Full implementation of Dijkstra's algorithm for finding shortest paths in a graph
@@ -306,15 +347,16 @@ where
     Ty: GraphConstructor<A, W>,
     NodeId: Ord,
 {
-    // Use a NodeMap instead of Vec to avoid relying on contiguous NodeIndex values from StableGraph
-    let mut dist: NodeMap<Option<W>> = graph.to_nodemap_default();
+    // Dense, index-keyed distance buffer: `vec[id.index()]` is hash-free in the
+    // inner loop. Converted to the `NodeMap` return type once at the end.
+    let mut dist: Vec<Option<W>> = vec![None; index_bound(graph)];
     let mut heap = BinaryHeap::new();
 
-    dist.insert(source, Some(W::from(0u8)));
+    dist[source.index()] = Some(W::from(0u8));
     heap.push(Reverse((W::from(0u8), source)));
 
     while let Some(Reverse((d, u))) = heap.pop() {
-        if let Some(current) = dist[&u] {
+        if let Some(current) = dist[u.index()] {
             if d > current {
                 continue;
             }
@@ -327,13 +369,14 @@ where
                 )));
             }
             let next = d + w;
-            if dist[&v].is_none() || Some(next) < dist[&v] {
-                dist.insert(v, Some(next));
+            let vi = v.index();
+            if dist[vi].is_none() || Some(next) < dist[vi] {
+                dist[vi] = Some(next);
                 heap.push(Reverse((next, v)));
             }
         }
     }
-    Ok(dist)
+    Ok(dense_to_nodemap(graph, &dist))
 }
 
 /// ============================
@@ -356,17 +399,25 @@ where
     Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
-    let mut dist: NodeMap<Option<W>> = graph.to_nodemap_default();
-    dist.insert(source, Some(W::from(0u8)));
+    // Dense, index-keyed distance buffer (see `dijkstra`).
+    let mut dist: Vec<Option<W>> = vec![None; index_bound(graph)];
+    dist[source.index()] = Some(W::from(0u8));
 
     for _ in 0..n.saturating_sub(1) {
         let mut updated = false;
-        for (u, v, &w) in graph.edges() {
-            if let Some(du) = dist[&u] {
-                let candidate = du + w;
-                if dist[&v].is_none() || Some(candidate) < dist[&v] {
-                    dist.insert(v, Some(candidate));
-                    updated = true;
+        // Relax via the per-node incident-edge iterator, which follows undirected
+        // edges in both directions (iterating `graph.edges()` would relax each
+        // stored edge in one direction only, leaving most nodes unreachable on an
+        // undirected graph). This matches dijkstra.
+        for u in graph.node_ids() {
+            if let Some(du) = dist[u.index()] {
+                for (v, w) in outgoing_edges(graph, u) {
+                    let candidate = du + w;
+                    let vi = v.index();
+                    if dist[vi].is_none() || Some(candidate) < dist[vi] {
+                        dist[vi] = Some(candidate);
+                        updated = true;
+                    }
                 }
             }
         }
@@ -375,14 +426,18 @@ where
         }
     }
     // Check for negative cycles.
-    for (u, v, &w) in graph.edges() {
-        if let (Some(du), Some(dv)) = (dist[&u], dist[&v]) {
-            if du + w < dv {
-                return None;
+    for u in graph.node_ids() {
+        if let Some(du) = dist[u.index()] {
+            for (v, w) in outgoing_edges(graph, u) {
+                if let Some(dv) = dist[v.index()] {
+                    if du + w < dv {
+                        return None;
+                    }
+                }
             }
         }
     }
-    Some(dist)
+    Some(dense_to_nodemap(graph, &dist))
 }
 
 /// ============================
@@ -491,18 +546,25 @@ where
 {
     let n = graph.node_count();
     let nodes: Vec<NodeId> = graph.node_ids().collect();
+    // Map each NodeId to its position in `nodes`. NodeId indices are not guaranteed
+    // to be contiguous (a StableGraph never recycles indices), so positions, not
+    // raw indices, address the matrix.
+    let pos: NodeMap<usize> = nodes.iter().enumerate().map(|(i, u)| (*u, i)).collect();
 
     let mut dist = vec![vec![None; n]; n];
     for (i, row) in dist.iter_mut().enumerate().take(n) {
         row[i] = Some(W::from(0u8));
     }
-    for (u, v, &w) in graph.edges() {
-        let ui = u.index();
-        let vi = v.index();
-        match dist[ui][vi] {
-            Some(current) if w < current => dist[ui][vi] = Some(w),
-            None => dist[ui][vi] = Some(w),
-            _ => {}
+    // Populate via outgoing_edges so undirected edges (stored once) are recorded in
+    // both directions, matching dijkstra and bellman_ford.
+    for (i, &u) in nodes.iter().enumerate() {
+        for (v, w) in outgoing_edges(graph, u) {
+            let Some(&j) = pos.get(&v) else { continue };
+            match dist[i][j] {
+                Some(current) if w < current => dist[i][j] = Some(w),
+                None => dist[i][j] = Some(w),
+                _ => {}
+            }
         }
     }
     for k in 0..n {
@@ -523,9 +585,9 @@ where
         row[i] = Some(W::from(0u8));
     }
     // Convert to NodeMap form
-    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::new();
+    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::default();
     for (i, u) in nodes.iter().enumerate() {
-        let mut inner: NodeMap<Option<W>> = NodeMap::new();
+        let mut inner: NodeMap<Option<W>> = NodeMap::default();
         for (j, v) in nodes.iter().enumerate() {
             inner.insert(*v, dist[i][j]);
         }
@@ -612,9 +674,9 @@ where
         }
     }
     // Convert to NodeMap form
-    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::new();
+    let mut outer: NodeMap<NodeMap<Option<W>>> = NodeMap::default();
     for (i, u) in nodes.iter().enumerate() {
-        let mut inner: NodeMap<Option<W>> = NodeMap::new();
+        let mut inner: NodeMap<Option<W>> = NodeMap::default();
         for (j, v) in nodes.iter().enumerate() {
             inner.insert(*v, dist[i][j]);
         }
@@ -660,6 +722,26 @@ mod tests {
         assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
     }
     #[test]
+    fn test_bellman_ford_undirected() {
+        // Path 0-1-2-3 on an undirected graph, with each edge stored in the
+        // reverse orientation (higher index as source). Bellman-Ford must follow
+        // undirected edges in both directions, matching dijkstra, so every node
+        // is reachable from node 0.
+        use crate::core::types::Graph;
+        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::default();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n0, OrderedFloat(1.0));
+        graph.add_edge(n2, n1, OrderedFloat(2.0));
+        graph.add_edge(n3, n2, OrderedFloat(3.0));
+        let dist = bellman_ford(&graph, n0).expect("No negative cycle");
+        assert_eq!(dist[&n1], Some(OrderedFloat(1.0)));
+        assert_eq!(dist[&n2], Some(OrderedFloat(3.0)));
+        assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
+    }
+    #[test]
     fn test_a_star_directed() {
         let (graph, nodes) = build_test_graph_ordered();
         let n0 = nodes[&0];
@@ -681,5 +763,25 @@ mod tests {
         let n3 = nodes[&3];
         let matrix = floyd_warshall(&graph).expect("No negative cycle");
         assert_eq!(matrix[&n0][&n3], Some(OrderedFloat(6.0)));
+    }
+    #[test]
+    fn test_floyd_warshall_undirected() {
+        // Path 0-1-2-3 on an undirected graph, with each edge stored in the
+        // reverse orientation. Floyd-Warshall must record undirected edges in both
+        // directions, so the all-pairs matrix is symmetric and every pair reachable.
+        use crate::core::types::Graph;
+        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::default();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n0, OrderedFloat(1.0));
+        graph.add_edge(n2, n1, OrderedFloat(2.0));
+        graph.add_edge(n3, n2, OrderedFloat(3.0));
+        let matrix = floyd_warshall(&graph).expect("No negative cycle");
+        assert_eq!(matrix[&n0][&n3], Some(OrderedFloat(6.0)));
+        assert_eq!(matrix[&n3][&n0], Some(OrderedFloat(6.0)));
+        assert_eq!(matrix[&n0][&n2], Some(OrderedFloat(3.0)));
+        assert_eq!(matrix[&n1][&n3], Some(OrderedFloat(5.0)));
     }
 }

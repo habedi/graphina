@@ -24,10 +24,6 @@
               # Build dependencies
               pkg-config
 
-              # Visualization backend (plotters renders via fontconfig and freetype)
-              fontconfig
-              freetype
-
               # Rust development tools
               cargo-nextest
               cargo-tarpaulin
@@ -45,12 +41,6 @@
               # Git hooks
               pre-commit
             ];
-
-            # Ensure the linker can find fontconfig and freetype for the visualization feature
-            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
-              fontconfig
-              freetype
-            ]);
           };
         }
       );
@@ -72,11 +62,6 @@
 
             nativeBuildInputs = with pkgs; [
               pkg-config
-            ];
-
-            buildInputs = with pkgs; [
-              fontconfig
-              freetype
             ];
           };
         }

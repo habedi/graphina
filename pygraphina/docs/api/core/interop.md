@@ -1,7 +1,6 @@
 # Interoperability
 
-PyGraphina provides seamless interoperability with NetworkX and pandas for easy data exchange and integration with
-existing Python data science workflows.
+PyGraphina can convert graphs to and from NetworkX and pandas structures for data exchange and integration with existing Python workflows.
 
 ## NetworkX Conversion
 

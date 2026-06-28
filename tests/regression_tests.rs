@@ -342,6 +342,53 @@ fn test_dijkstra_undirected_follows_both_directions() {
     assert_eq!(dist[&n0], Some(2), "node 0 must be reachable from node 2");
 }
 
+// Regression: bellman_ford relaxed each stored edge in one direction only, so on
+// an undirected graph it left nodes reachable only against the stored edge
+// orientation unreachable, disagreeing with dijkstra. It must follow undirected
+// edges in both directions.
+#[test]
+fn test_bellman_ford_undirected_follows_both_directions() {
+    use graphina::core::paths::bellman_ford;
+
+    let mut g = Graph::<i32, i32>::new();
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    g.add_edge(n0, n1, 1);
+    g.add_edge(n1, n2, 1);
+
+    let dist = bellman_ford(&g, n2).expect("bellman_ford should succeed");
+    assert_eq!(dist[&n2], Some(0));
+    assert_eq!(dist[&n1], Some(1));
+    assert_eq!(dist[&n0], Some(2), "node 0 must be reachable from node 2");
+}
+
+// Regression: floyd_warshall initialized its distance matrix by iterating
+// graph.edges() and writing only dist[u][v], never dist[v][u]. On an undirected
+// graph (edges stored once) the all-pairs matrix came out asymmetric and most
+// pairs unreachable, inconsistent with dijkstra and bellman_ford.
+#[test]
+fn test_floyd_warshall_undirected_follows_both_directions() {
+    use graphina::core::paths::floyd_warshall;
+
+    let mut g = Graph::<i32, i32>::new();
+    let n0 = g.add_node(0);
+    let n1 = g.add_node(1);
+    let n2 = g.add_node(2);
+    g.add_edge(n0, n1, 1);
+    g.add_edge(n1, n2, 1);
+
+    let matrix = floyd_warshall(&g).expect("floyd_warshall should succeed");
+    assert_eq!(
+        matrix[&n2][&n0],
+        Some(2),
+        "node 0 must be reachable from node 2"
+    );
+    assert_eq!(matrix[&n0][&n2], Some(2), "matrix must be symmetric");
+    assert_eq!(matrix[&n1][&n0], Some(1));
+    assert_eq!(matrix[&n0][&n1], Some(1));
+}
+
 // Regression: harmonic centrality summed reciprocal distances over all nodes
 // including the source itself, whose distance is 0, yielding 1/0 = infinity for
 // every node. In a unit-weight triangle each node's harmonic centrality is

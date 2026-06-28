@@ -1,6 +1,6 @@
 # Graph Types in Graphina
 
-Graphina provides robust, statically typed graph structures.
+Graphina provides statically typed graph structures.
 Select the appropriate type for your use case.
 
 ## Main Types

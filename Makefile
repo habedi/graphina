@@ -1,7 +1,4 @@
 # Variables
-REPO             := github.com/habedi/graphina
-BINARY_NAME     := $(or $(PROJ_BINARY), $(notdir $(REPO)))
-BINARY          := target/release/$(BINARY_NAME)
 PATH            := /snap/bin:$(PATH)
 DEBUG_GRAPHINA  := 1
 RUST_LOG        := info
@@ -18,6 +15,7 @@ TARPAULIN_VERSION=0.32.8
 NEXTEST_VERSION=0.9.100
 AUDIT_VERSION=0.21.2
 CAREFUL_VERSION=0.4.8
+DENY_VERSION=0.16.4
 
 # Find the latest built Python wheel file
 WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
@@ -56,19 +54,14 @@ doctest: ## Run documentation tests (Rust code examples in doc comments)
 	@cargo test --doc --features all
 
 .PHONY: coverage
-coverage: format doctest ## Generate test coverage report
+coverage: format doctest ## Generate test coverage report (excludes the pygraphina cdylib crate)
 	@echo "Generating test coverage report..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --features all --out Xml --out Html
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --workspace --exclude pygraphina --features all --out Xml --out Html
 
 .PHONY: build
 build: format ## Build the binary for the current platform
 	@echo "Building the project..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo build --release
-
-.PHONY: run
-run: build ## Build and run the binary
-	@echo "Running binary: $(BINARY)"
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) ./$(BINARY)
 
 .PHONY: clean
 clean: ## Remove generated and temporary files
@@ -93,6 +86,7 @@ install-deps: install-snap ## Install development dependencies
 	@cargo install --locked cargo-nextest --version ${NEXTEST_VERSION}
 	@cargo install --locked cargo-audit --version ${AUDIT_VERSION}
 	@cargo install --locked cargo-careful --version ${CAREFUL_VERSION}
+	@cargo install --locked cargo-deny --version ${DENY_VERSION}
 	@sudo apt-get install python3-pip libfontconfig1-dev
 	@pip install $(PY_DEP_MNGR)
 
@@ -118,16 +112,31 @@ bench: ## Run benchmarks
 	@echo "Running benchmarks..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench --features all
 
+.PHONY: bench-rustworkx
+bench-rustworkx: ## Run the graphina vs rustworkx-core comparison harness
+	@echo "Running graphina vs rustworkx-core comparison..."
+	@cd benchmarks/rustworkx-compare && cargo run --release
+
+.PHONY: bench-pygraphina
+bench-pygraphina: develop-py ## Run the PyGraphina vs rustworkx comparison harness
+	@echo "Running PyGraphina vs rustworkx comparison..."
+	@uv run --with rustworkx python benchmarks/pygraphina-compare/compare.py
+
 .PHONY: audit
 audit: ## Run security audit on Rust dependencies
 	@echo "Running security audit..."
 	@cargo audit
 
+.PHONY: deny
+deny: ## Check dependencies for advisories, license compliance, and duplicates
+	@echo "Running cargo-deny..."
+	@cargo deny check
+
 .PHONY: check-module-deps
 check-module-deps: ## Check that top-level modules only depend on core (not on each other)
 	@echo "Checking module dependencies..."
 	@ERROR=0; \
-	TOP_MODULES="approximation centrality community links metrics mst parallel subgraphs traversal visualization"; \
+	TOP_MODULES="approximation centrality community links metrics mst parallel subgraphs traversal"; \
 	for module in $$TOP_MODULES; do \
 		if [ -d "src/$$module" ]; then \
 			for other_module in $$TOP_MODULES; do \
@@ -153,9 +162,9 @@ check-module-deps: ## Check that top-level modules only depend on core (not on e
 	fi
 
 .PHONY: careful
-careful: ## Run security checks on Rust code
-	@echo "Running security checks..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo careful run
+careful: ## Run tests under cargo-careful (detects undefined behavior and unsafe misuse)
+	@echo "Running tests under cargo-careful..."
+	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo careful test --features all
 
 .PHONY: docs
 docs: format ## Generate the documentation
@@ -239,8 +248,8 @@ docs-serve-py: develop-py ## Serve PyGraphina MkDocs documentation locally
 	@echo "Serving MkDocs documentation locally..."
 	@$(PY_DEP_MNGR) run mkdocs serve --config-file pygraphina/mkdocs.yml
 
-.PHONY: rundocs
-rundocs: develop-py ## Test all code examples in PyGraphina documentation using rundoc
+.PHONY: rundoc
+rundoc: develop-py ## Test all code examples in PyGraphina documentation using rundoc
 	@echo "Testing documentation code examples..."
 	@failed=0; \
 	for f in $(PYGRAPHINA_DIR)/docs/examples/*.md; do \

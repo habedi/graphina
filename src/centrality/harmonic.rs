@@ -26,7 +26,7 @@ pub fn harmonic_centrality<A, Ty>(
 where
     Ty: GraphConstructor<A, OrderedFloat<f64>>,
 {
-    let mut centrality = NodeMap::new();
+    let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
         let distances = dijkstra(graph, node)?;
         // Exclude the node itself: its distance is 0, and 1 / 0 is infinite.

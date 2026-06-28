@@ -22,8 +22,8 @@ if no valid path exists.
 */
 
 use crate::core::error::{GraphinaError, Result};
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
-use std::collections::{HashMap, HashSet, VecDeque};
+use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap, NodeSet};
+use std::collections::VecDeque;
 
 /// Performs a breadth-first search (BFS) starting from `start`.
 ///
@@ -63,7 +63,7 @@ where
         return Vec::new();
     }
 
-    let mut visited = HashSet::new();
+    let mut visited = NodeSet::default();
     let mut order = Vec::new();
     let mut queue = VecDeque::new();
 
@@ -119,7 +119,7 @@ where
         return Vec::new();
     }
 
-    let mut visited = HashSet::new();
+    let mut visited = NodeSet::default();
     let mut order = Vec::new();
     dfs_util(graph, start, &mut visited, &mut order);
     order
@@ -136,7 +136,7 @@ where
 fn dfs_util<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     node: NodeId,
-    visited: &mut HashSet<NodeId>,
+    visited: &mut NodeSet,
     order: &mut Vec<NodeId>,
 ) where
     Ty: GraphConstructor<A, W>,
@@ -200,7 +200,7 @@ where
 {
     for depth in 0..=max_depth {
         let mut path = Vec::new();
-        let mut visited = HashSet::new();
+        let mut visited = NodeSet::default();
         if dls(graph, start, target, depth, &mut visited, &mut path) {
             return Some(path);
         }
@@ -259,7 +259,7 @@ where
 
     for depth in 0..=max_depth {
         let mut path = Vec::new();
-        let mut visited = HashSet::new();
+        let mut visited = NodeSet::default();
         if dls(graph, start, target, depth, &mut visited, &mut path) {
             return Ok(path);
         }
@@ -291,7 +291,7 @@ fn dls<A, W, Ty>(
     current: NodeId,
     target: NodeId,
     depth: usize,
-    visited: &mut HashSet<NodeId>,
+    visited: &mut NodeSet,
     path: &mut Vec<NodeId>,
 ) -> bool
 where
@@ -369,15 +369,15 @@ where
     let mut forward_queue = VecDeque::new();
     let mut backward_queue = VecDeque::new();
 
-    let mut forward_parents: HashMap<NodeId, Option<NodeId>> = HashMap::new();
-    let mut backward_parents: HashMap<NodeId, Option<NodeId>> = HashMap::new();
+    let mut forward_parents: NodeMap<Option<NodeId>> = NodeMap::default();
+    let mut backward_parents: NodeMap<Option<NodeId>> = NodeMap::default();
 
-    let mut forward_visited = HashSet::new();
-    let mut backward_visited = HashSet::new();
+    let mut forward_visited = NodeSet::default();
+    let mut backward_visited = NodeSet::default();
 
     // Track the current frontier separately from visited
-    let mut forward_frontier = HashSet::new();
-    let mut backward_frontier = HashSet::new();
+    let mut forward_frontier = NodeSet::default();
+    let mut backward_frontier = NodeSet::default();
 
     forward_queue.push_back(start);
     forward_visited.insert(start);
