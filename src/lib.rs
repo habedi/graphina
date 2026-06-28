@@ -20,7 +20,7 @@ A graph data science library that provides common graph types, algorithms, and d
 
 ## API Conventions
 
-Algorithms return `Result<_, graphina::core::error::GraphinaError>` for robust error handling.
+Algorithms return `Result<_, graphina::core::error::GraphinaError>` for error handling.
 Selector-style helpers that pick nodes (like `voterank`) may return plain collections.
 
 Enable only required features to minimize size and compile time.

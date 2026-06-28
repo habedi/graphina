@@ -9,7 +9,7 @@ Graphina supports multiple formats for saving and loading graphs, facilitating d
 | **Edge List** | Yes | Yes | Simple, text-based data exchange. |
 | **Adjacency List** | Yes | Yes | Compact text representation. |
 | **JSON** | Yes | Yes | Web applications and detailed attribute storage. |
-| **Binary** | Yes | Yes | High-performance storage for large graphs. |
+| **Binary** | Yes | Yes | Compact storage for large graphs. |
 | **GraphML** | No | Yes | Interoperability with Gephi, Cytoscape, etc. |
 
 ## Text Formats
