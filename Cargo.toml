@@ -99,6 +99,9 @@ members = [
   ".",
   "pygraphina"
 ]
+exclude = [
+  "benchmarks/rustworkx-compare"
+]
 
 [package.metadata.docs.rs]
 all-features = true

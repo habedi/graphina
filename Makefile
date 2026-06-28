@@ -112,6 +112,11 @@ bench: ## Run benchmarks
 	@echo "Running benchmarks..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench --features all
 
+.PHONY: bench-rustworkx
+bench-rustworkx: ## Run the graphina vs rustworkx-core comparison harness
+	@echo "Running graphina vs rustworkx-core comparison..."
+	@cd benchmarks/rustworkx-compare && cargo run --release
+
 .PHONY: audit
 audit: ## Run security audit on Rust dependencies
 	@echo "Running security audit..."
