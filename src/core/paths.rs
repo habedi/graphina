@@ -361,12 +361,18 @@ where
 
     for _ in 0..n.saturating_sub(1) {
         let mut updated = false;
-        for (u, v, &w) in graph.edges() {
+        // Relax via the per-node incident-edge iterator, which follows undirected
+        // edges in both directions (iterating `graph.edges()` would relax each
+        // stored edge in one direction only, leaving most nodes unreachable on an
+        // undirected graph). This matches dijkstra.
+        for u in graph.node_ids() {
             if let Some(du) = dist[&u] {
-                let candidate = du + w;
-                if dist[&v].is_none() || Some(candidate) < dist[&v] {
-                    dist.insert(v, Some(candidate));
-                    updated = true;
+                for (v, w) in outgoing_edges(graph, u) {
+                    let candidate = du + w;
+                    if dist[&v].is_none() || Some(candidate) < dist[&v] {
+                        dist.insert(v, Some(candidate));
+                        updated = true;
+                    }
                 }
             }
         }
@@ -375,10 +381,14 @@ where
         }
     }
     // Check for negative cycles.
-    for (u, v, &w) in graph.edges() {
-        if let (Some(du), Some(dv)) = (dist[&u], dist[&v]) {
-            if du + w < dv {
-                return None;
+    for u in graph.node_ids() {
+        if let Some(du) = dist[&u] {
+            for (v, w) in outgoing_edges(graph, u) {
+                if let Some(dv) = dist[&v] {
+                    if du + w < dv {
+                        return None;
+                    }
+                }
             }
         }
     }
@@ -491,18 +501,25 @@ where
 {
     let n = graph.node_count();
     let nodes: Vec<NodeId> = graph.node_ids().collect();
+    // Map each NodeId to its position in `nodes`. NodeId indices are not guaranteed
+    // to be contiguous (a StableGraph never recycles indices), so positions, not
+    // raw indices, address the matrix.
+    let pos: NodeMap<usize> = nodes.iter().enumerate().map(|(i, u)| (*u, i)).collect();
 
     let mut dist = vec![vec![None; n]; n];
     for (i, row) in dist.iter_mut().enumerate().take(n) {
         row[i] = Some(W::from(0u8));
     }
-    for (u, v, &w) in graph.edges() {
-        let ui = u.index();
-        let vi = v.index();
-        match dist[ui][vi] {
-            Some(current) if w < current => dist[ui][vi] = Some(w),
-            None => dist[ui][vi] = Some(w),
-            _ => {}
+    // Populate via outgoing_edges so undirected edges (stored once) are recorded in
+    // both directions, matching dijkstra and bellman_ford.
+    for (i, &u) in nodes.iter().enumerate() {
+        for (v, w) in outgoing_edges(graph, u) {
+            let Some(&j) = pos.get(&v) else { continue };
+            match dist[i][j] {
+                Some(current) if w < current => dist[i][j] = Some(w),
+                None => dist[i][j] = Some(w),
+                _ => {}
+            }
         }
     }
     for k in 0..n {
@@ -660,6 +677,26 @@ mod tests {
         assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
     }
     #[test]
+    fn test_bellman_ford_undirected() {
+        // Path 0-1-2-3 on an undirected graph, with each edge stored in the
+        // reverse orientation (higher index as source). Bellman-Ford must follow
+        // undirected edges in both directions, matching dijkstra, so every node
+        // is reachable from node 0.
+        use crate::core::types::Graph;
+        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::default();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n0, OrderedFloat(1.0));
+        graph.add_edge(n2, n1, OrderedFloat(2.0));
+        graph.add_edge(n3, n2, OrderedFloat(3.0));
+        let dist = bellman_ford(&graph, n0).expect("No negative cycle");
+        assert_eq!(dist[&n1], Some(OrderedFloat(1.0)));
+        assert_eq!(dist[&n2], Some(OrderedFloat(3.0)));
+        assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
+    }
+    #[test]
     fn test_a_star_directed() {
         let (graph, nodes) = build_test_graph_ordered();
         let n0 = nodes[&0];
@@ -681,5 +718,25 @@ mod tests {
         let n3 = nodes[&3];
         let matrix = floyd_warshall(&graph).expect("No negative cycle");
         assert_eq!(matrix[&n0][&n3], Some(OrderedFloat(6.0)));
+    }
+    #[test]
+    fn test_floyd_warshall_undirected() {
+        // Path 0-1-2-3 on an undirected graph, with each edge stored in the
+        // reverse orientation. Floyd-Warshall must record undirected edges in both
+        // directions, so the all-pairs matrix is symmetric and every pair reachable.
+        use crate::core::types::Graph;
+        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::default();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n0, OrderedFloat(1.0));
+        graph.add_edge(n2, n1, OrderedFloat(2.0));
+        graph.add_edge(n3, n2, OrderedFloat(3.0));
+        let matrix = floyd_warshall(&graph).expect("No negative cycle");
+        assert_eq!(matrix[&n0][&n3], Some(OrderedFloat(6.0)));
+        assert_eq!(matrix[&n3][&n0], Some(OrderedFloat(6.0)));
+        assert_eq!(matrix[&n0][&n2], Some(OrderedFloat(3.0)));
+        assert_eq!(matrix[&n1][&n3], Some(OrderedFloat(5.0)));
     }
 }

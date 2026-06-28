@@ -67,11 +67,6 @@ The differential check runs before timing: medians for an algorithm the librarie
 meaningless, since a library doing the wrong amount of work can look faster. A divergent algorithm is
 reported as `DIFF` and not timed.
 
-> [!NOTE]
-> `bellman_ford` currently reports `DIFF`: graphina's implementation relaxes each stored edge in one
-> direction only, so on an undirected graph it leaves most nodes unreachable and disagrees with both
-> rustworkx and graphina's own `dijkstra`. The harness surfaces this rather than hiding it.
-
 ### Fairness Notes
 
 - The graph carries unit edge weights, so weighted shortest paths equal unweighted hop counts. rustworkx

@@ -543,10 +543,6 @@ fn run_at(cfg: &Config, nodes: u64, edges: u64) -> Vec<Row> {
     );
 
     // Bellman-Ford single-source shortest path (unit weights, no negative cycle).
-    // Note: graphina's bellman_ford relaxes each stored edge in one direction
-    // only, so on an undirected graph it leaves most nodes unreachable and
-    // diverges from rustworkx (and from graphina's own dijkstra). The harness
-    // reports this as a DIFF rather than hiding it.
     diff_and_bench(
         "bellman_ford (SSSP)",
         cfg,
