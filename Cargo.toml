@@ -30,7 +30,6 @@ path = "src/lib.rs"
 
 [features]
 default = []
-binaries = []
 logging = []
 centrality = []
 community = []

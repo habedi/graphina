@@ -329,21 +329,22 @@ returning just the start node.
 
 Run `make lint` and `make test` for any change. Key targets:
 
-| Target            | Command                  | What It Runs                                                          |
-|-------------------|--------------------------|----------------------------------------------------------------------|
-| Format            | `make format`            | `cargo fmt`                                                          |
-| Format Check      | `make format-check`      | `cargo fmt --all --check` (non-mutating, used in CI)                |
-| Lint              | `make lint`              | `cargo clippy` with `-D warnings -D clippy::unwrap_used -D clippy::expect_used` |
-| Test              | `make test`              | All workspace tests with `--features all --all-targets`, plus doctests |
-| Doctest           | `make doctest`           | Doc-comment code examples (`cargo test --doc --features all`)        |
-| Nextest           | `make nextest`           | Tests via `cargo nextest` with `--features all`                      |
-| Module Deps       | `make check-module-deps` | Verifies extensions depend only on `core`                            |
-| Build             | `make build`             | Release build                                                        |
-| Bench             | `make bench`             | Criterion benchmarks with `--features all`                           |
-| Coverage          | `make coverage`          | `cargo tarpaulin` with XML and HTML output                           |
-| Audit             | `make audit`             | `cargo audit` on dependencies                                        |
-| Careful           | `make careful`           | `cargo careful` for undefined-behavior checks                        |
-| Test Data         | `make testdata`          | Downloads datasets used in integration tests                         |
+| Target       | Command                  | What It Runs                                                                    |
+|--------------|--------------------------|---------------------------------------------------------------------------------|
+| Format       | `make format`            | `cargo fmt`                                                                     |
+| Format Check | `make format-check`      | `cargo fmt --all --check` (non-mutating, used in CI)                            |
+| Lint         | `make lint`              | `cargo clippy` with `-D warnings -D clippy::unwrap_used -D clippy::expect_used` |
+| Test         | `make test`              | All workspace tests with `--features all --all-targets`, plus doctests          |
+| Doctest      | `make doctest`           | Doc-comment code examples (`cargo test --doc --features all`)                   |
+| Nextest      | `make nextest`           | Tests via `cargo nextest` with `--features all`                                 |
+| Module Deps  | `make check-module-deps` | Verifies extensions depend only on `core`                                       |
+| Build        | `make build`             | Release build                                                                   |
+| Bench        | `make bench`             | Criterion benchmarks with `--features all`                                      |
+| Coverage     | `make coverage`          | `cargo tarpaulin` with XML and HTML output                                      |
+| Audit        | `make audit`             | `cargo audit` on dependencies                                                   |
+| Deny         | `make deny`              | `cargo deny check` for advisories, license compliance, and bans                 |
+| Careful      | `make careful`           | `cargo careful test --features all` for undefined-behavior checks               |
+| Test Data    | `make testdata`          | Downloads datasets used in integration tests                                    |
 
 PyGraphina targets: `make develop-py` (build and install into the active environment with maturin),
 `make test-py` (pytest), `make wheel` / `make wheel-manylinux` (build wheels), and `make rundoc` (test Python
