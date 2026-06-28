@@ -178,4 +178,3 @@ Interested in parallel algorithms or optimizations? We welcome contributions!
 
 - [Centrality Algorithms](../centrality/index.md) - Sequential centrality measure implementations
 - [Community Detection](../community/index.md) - Community structure detection algorithms
-- [GitHub Roadmap](https://github.com/habedi/graphina/blob/main/ROADMAP.md) - Development plans

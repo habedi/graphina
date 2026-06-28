@@ -397,7 +397,7 @@ Suggested PR checklist:
 - [ ] New algorithm gated behind the correct feature flag
 - [ ] `make lint && make test` passes
 - [ ] `make check-module-deps` passes
-- [ ] Docs, README, or ROADMAP updated (if API surface changed)
+- [ ] Docs or README updated (if API surface changed)
 
 ## Review Guidelines (P0/P1 Focus)
 
