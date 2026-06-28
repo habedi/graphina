@@ -23,7 +23,7 @@ dev = [
   "mkdocs (>=1.6.1,<2.0.0)",
   "mkdocs-material (>=9.6.12,<10.0.0)",
   "mkdocstrings-python (>=1.16.10,<2.0.0)",
-  "pyyaml (>=6.0.1,<7.0.0)",
+  "pyyaml == 6.0.3", # For MkDocs compatibility
   "rundoc (>=0.2.3,<0.3.0)",
 ]
 
