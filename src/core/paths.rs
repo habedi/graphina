@@ -60,6 +60,38 @@ where
     graph.outgoing_edges(u).map(|(tgt, w)| (tgt, *w))
 }
 
+/// Returns an upper bound on node indices, suitable for sizing a dense `Vec`
+/// indexed by `NodeId::index()`.
+///
+/// `BaseGraph` wraps a `StableGraph`, so node indices are stable but not
+/// necessarily contiguous after removals. Sizing by this bound (rather than
+/// `node_count`) keeps `vec[id.index()]` in range while still allowing dense,
+/// hash-free indexing in the inner loops.
+fn index_bound<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> usize
+where
+    Ty: GraphConstructor<A, W>,
+{
+    graph
+        .node_ids()
+        .map(|n| n.index())
+        .max()
+        .map_or(0, |m| m + 1)
+}
+
+/// Converts a dense, index-keyed slice of per-node values into the `NodeMap`
+/// public return type, inserting one entry per existing node.
+fn dense_to_nodemap<A, W, Ty, T>(graph: &BaseGraph<A, W, Ty>, dense: &[T]) -> NodeMap<T>
+where
+    T: Copy,
+    Ty: GraphConstructor<A, W>,
+{
+    let mut map = NodeMap::with_capacity_and_hasher(graph.node_count(), rustc_hash::FxBuildHasher);
+    for u in graph.node_ids() {
+        map.insert(u, dense[u.index()]);
+    }
+    map
+}
+
 // ============================
 // Dijkstra’s Algorithm
 // ============================
@@ -306,15 +338,16 @@ where
     Ty: GraphConstructor<A, W>,
     NodeId: Ord,
 {
-    // Use a NodeMap instead of Vec to avoid relying on contiguous NodeIndex values from StableGraph
-    let mut dist: NodeMap<Option<W>> = graph.to_nodemap_default();
+    // Dense, index-keyed distance buffer: `vec[id.index()]` is hash-free in the
+    // inner loop. Converted to the `NodeMap` return type once at the end.
+    let mut dist: Vec<Option<W>> = vec![None; index_bound(graph)];
     let mut heap = BinaryHeap::new();
 
-    dist.insert(source, Some(W::from(0u8)));
+    dist[source.index()] = Some(W::from(0u8));
     heap.push(Reverse((W::from(0u8), source)));
 
     while let Some(Reverse((d, u))) = heap.pop() {
-        if let Some(current) = dist[&u] {
+        if let Some(current) = dist[u.index()] {
             if d > current {
                 continue;
             }
@@ -327,13 +360,14 @@ where
                 )));
             }
             let next = d + w;
-            if dist[&v].is_none() || Some(next) < dist[&v] {
-                dist.insert(v, Some(next));
+            let vi = v.index();
+            if dist[vi].is_none() || Some(next) < dist[vi] {
+                dist[vi] = Some(next);
                 heap.push(Reverse((next, v)));
             }
         }
     }
-    Ok(dist)
+    Ok(dense_to_nodemap(graph, &dist))
 }
 
 /// ============================
@@ -356,8 +390,9 @@ where
     Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
-    let mut dist: NodeMap<Option<W>> = graph.to_nodemap_default();
-    dist.insert(source, Some(W::from(0u8)));
+    // Dense, index-keyed distance buffer (see `dijkstra`).
+    let mut dist: Vec<Option<W>> = vec![None; index_bound(graph)];
+    dist[source.index()] = Some(W::from(0u8));
 
     for _ in 0..n.saturating_sub(1) {
         let mut updated = false;
@@ -366,11 +401,12 @@ where
         // stored edge in one direction only, leaving most nodes unreachable on an
         // undirected graph). This matches dijkstra.
         for u in graph.node_ids() {
-            if let Some(du) = dist[&u] {
+            if let Some(du) = dist[u.index()] {
                 for (v, w) in outgoing_edges(graph, u) {
                     let candidate = du + w;
-                    if dist[&v].is_none() || Some(candidate) < dist[&v] {
-                        dist.insert(v, Some(candidate));
+                    let vi = v.index();
+                    if dist[vi].is_none() || Some(candidate) < dist[vi] {
+                        dist[vi] = Some(candidate);
                         updated = true;
                     }
                 }
@@ -382,9 +418,9 @@ where
     }
     // Check for negative cycles.
     for u in graph.node_ids() {
-        if let Some(du) = dist[&u] {
+        if let Some(du) = dist[u.index()] {
             for (v, w) in outgoing_edges(graph, u) {
-                if let Some(dv) = dist[&v] {
+                if let Some(dv) = dist[v.index()] {
                     if du + w < dv {
                         return None;
                     }
@@ -392,7 +428,7 @@ where
             }
         }
     }
-    Some(dist)
+    Some(dense_to_nodemap(graph, &dist))
 }
 
 /// ============================

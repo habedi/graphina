@@ -10,6 +10,20 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, VecDeque};
 
+/// Returns an upper bound on node indices, for sizing dense `Vec`s indexed by
+/// `NodeId::index()`. Indices are stable but not contiguous after removals, so
+/// this bound (not `node_count`) keeps `vec[id.index()]` in range.
+fn dist_bound<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> usize
+where
+    Ty: GraphConstructor<A, W>,
+{
+    graph
+        .node_ids()
+        .map(|n| n.index())
+        .max()
+        .map_or(0, |m| m + 1)
+}
+
 /// Betweenness centrality: measures the extent to which a node lies on paths between other nodes.
 /// It is the sum of the fraction of all-pairs shortest paths that pass through the node.
 ///
@@ -39,78 +53,73 @@ where
         ));
     }
 
-    let mut centrality = NodeMap::default();
-    for (node, _) in graph.nodes() {
-        centrality.insert(node, 0.0);
-    }
+    // Dense, index-keyed buffers reused across all sources. `vec[id.index()]` is
+    // hash-free in the inner loops; we convert to the `NodeMap` return type once
+    // at the end. See `dist_bound` below for why the bound, not `node_count`.
+    let bound = dist_bound(graph);
+    let mut centrality_vec = vec![0.0f64; bound];
+    let mut preds: Vec<Vec<NodeId>> = vec![Vec::new(); bound];
+    let mut sigma = vec![0.0f64; bound];
+    let mut dist = vec![-1.0f64; bound];
+    let mut delta = vec![0.0f64; bound];
+    let mut stack: Vec<NodeId> = Vec::new();
+    let mut queue: VecDeque<NodeId> = VecDeque::new();
 
     for (s, _) in graph.nodes() {
-        let mut stack = Vec::new();
-        let mut preds: HashMap<NodeId, Vec<NodeId>> = HashMap::new();
-        let mut sigma = NodeMap::default();
-        let mut dist = NodeMap::default();
-        let mut delta = NodeMap::default();
-
-        for (node, _) in graph.nodes() {
-            preds.insert(node, Vec::new());
-            sigma.insert(node, 0.0);
-            dist.insert(node, -1.0);
-            delta.insert(node, 0.0);
+        // Reset per-source state, reusing the buffers' allocations.
+        stack.clear();
+        for i in 0..bound {
+            preds[i].clear();
+            sigma[i] = 0.0;
+            dist[i] = -1.0;
+            delta[i] = 0.0;
         }
-        sigma.insert(s, 1.0);
-        dist.insert(s, 0.0);
-
-        let mut queue = VecDeque::new();
+        let si = s.index();
+        sigma[si] = 1.0;
+        dist[si] = 0.0;
         queue.push_back(s);
 
         // BFS to find shortest paths
         while let Some(v) = queue.pop_front() {
+            let vi = v.index();
             stack.push(v);
-            let v_dist = dist.get(&v).copied().unwrap_or(-1.0);
+            let v_dist = dist[vi];
 
-            // Fixed: iterate over neighbors of v, not all edges
             for w in graph.neighbors(v) {
-                let w_dist = dist.get(&w).copied().unwrap_or(-1.0);
+                let wi = w.index();
                 // w found for the first time?
-                if w_dist < 0.0 {
-                    let new_dist = v_dist + 1.0;
-                    dist.insert(w, new_dist);
+                if dist[wi] < 0.0 {
+                    dist[wi] = v_dist + 1.0;
                     queue.push_back(w);
                 }
                 // shortest path to w via v?
-                // Need to re-read w_dist after potential update
-                let w_dist = dist.get(&w).copied().unwrap_or(-1.0);
-                if w_dist == v_dist + 1.0 {
-                    let sigma_w = sigma.get(&w).copied().unwrap_or(0.0);
-                    let sigma_v = sigma.get(&v).copied().unwrap_or(0.0);
-                    sigma.insert(w, sigma_w + sigma_v);
-                    if let Some(pred_list) = preds.get_mut(&w) {
-                        pred_list.push(v);
-                    }
+                if dist[wi] == v_dist + 1.0 {
+                    sigma[wi] += sigma[vi];
+                    preds[wi].push(v);
                 }
             }
         }
 
         // Accumulation
         while let Some(w) = stack.pop() {
-            let delta_w = delta.get(&w).copied().unwrap_or(0.0);
-            let sigma_w = sigma.get(&w).copied().unwrap_or(1.0);
+            let wi = w.index();
+            let delta_w = delta[wi];
+            let sigma_w = sigma[wi];
 
-            if let Some(pred_list) = preds.get(&w) {
-                for &v in pred_list {
-                    let sigma_v = sigma.get(&v).copied().unwrap_or(0.0);
-                    let delta_v = delta.get(&v).copied().unwrap_or(0.0);
-                    let contribution = (sigma_v / sigma_w) * (1.0 + delta_w);
-                    delta.insert(v, delta_v + contribution);
-                }
+            for &v in &preds[wi] {
+                let contribution = (sigma[v.index()] / sigma_w) * (1.0 + delta_w);
+                delta[v.index()] += contribution;
             }
 
             if w != s {
-                if let Some(cent) = centrality.get_mut(&w) {
-                    *cent += delta_w;
-                }
+                centrality_vec[wi] += delta_w;
             }
         }
+    }
+
+    let mut centrality = NodeMap::with_capacity_and_hasher(n, rustc_hash::FxBuildHasher);
+    for node in graph.node_ids() {
+        centrality.insert(node, centrality_vec[node.index()]);
     }
 
     if normalized {
@@ -163,7 +172,10 @@ where
         ));
     }
 
-    let mut centrality = HashMap::new();
+    // Accumulate into an Fx-hashed edge map for the hot inner updates; convert to
+    // the std `HashMap` return type once at the end.
+    let mut centrality: rustc_hash::FxHashMap<(NodeId, NodeId), f64> =
+        rustc_hash::FxHashMap::default();
     for (u, v, _) in graph.edges() {
         centrality.insert((u, v), 0.0);
         if !graph.is_directed() {
@@ -171,65 +183,59 @@ where
         }
     }
 
+    // Dense, index-keyed buffers reused across all sources (see
+    // `betweenness_centrality`).
+    let bound = dist_bound(graph);
+    let mut preds: Vec<Vec<NodeId>> = vec![Vec::new(); bound];
+    let mut sigma = vec![0.0f64; bound];
+    let mut dist = vec![-1.0f64; bound];
+    let mut delta = vec![0.0f64; bound];
+    let mut stack: Vec<NodeId> = Vec::new();
+    let mut queue: VecDeque<NodeId> = VecDeque::new();
+
     for (s, _) in graph.nodes() {
-        let mut stack = Vec::new();
-        let mut preds: HashMap<NodeId, Vec<NodeId>> = HashMap::new();
-        let mut sigma = NodeMap::default();
-        let mut dist = NodeMap::default();
-        let mut delta = NodeMap::default();
-
-        for (node, _) in graph.nodes() {
-            preds.insert(node, Vec::new());
-            sigma.insert(node, 0.0);
-            dist.insert(node, -1.0);
-            delta.insert(node, 0.0);
+        stack.clear();
+        for i in 0..bound {
+            preds[i].clear();
+            sigma[i] = 0.0;
+            dist[i] = -1.0;
+            delta[i] = 0.0;
         }
-        sigma.insert(s, 1.0);
-        dist.insert(s, 0.0);
-
-        let mut queue = VecDeque::new();
+        let si = s.index();
+        sigma[si] = 1.0;
+        dist[si] = 0.0;
         queue.push_back(s);
 
         while let Some(v) = queue.pop_front() {
+            let vi = v.index();
             stack.push(v);
-            let v_dist = dist.get(&v).copied().unwrap_or(-1.0);
+            let v_dist = dist[vi];
 
-            // Fixed: iterate over neighbors of v
             for w in graph.neighbors(v) {
-                let w_dist = dist.get(&w).copied().unwrap_or(-1.0);
-                if w_dist < 0.0 {
-                    let new_dist = v_dist + 1.0;
-                    dist.insert(w, new_dist);
+                let wi = w.index();
+                if dist[wi] < 0.0 {
+                    dist[wi] = v_dist + 1.0;
                     queue.push_back(w);
                 }
-                // Re-read w_dist after potential update
-                let w_dist = dist.get(&w).copied().unwrap_or(-1.0);
-                if w_dist == v_dist + 1.0 {
-                    let sigma_w = sigma.get(&w).copied().unwrap_or(0.0);
-                    let sigma_v = sigma.get(&v).copied().unwrap_or(0.0);
-                    sigma.insert(w, sigma_w + sigma_v);
-                    if let Some(pred_list) = preds.get_mut(&w) {
-                        pred_list.push(v);
-                    }
+                if dist[wi] == v_dist + 1.0 {
+                    sigma[wi] += sigma[vi];
+                    preds[wi].push(v);
                 }
             }
         }
 
         while let Some(w) = stack.pop() {
-            let delta_w = delta.get(&w).copied().unwrap_or(0.0);
-            let sigma_w = sigma.get(&w).copied().unwrap_or(1.0);
+            let wi = w.index();
+            let delta_w = delta[wi];
+            let sigma_w = sigma[wi];
 
-            if let Some(pred_list) = preds.get(&w) {
-                for &v in pred_list {
-                    let sigma_v = sigma.get(&v).copied().unwrap_or(0.0);
-                    let delta_v = delta.get(&v).copied().unwrap_or(0.0);
-                    let contribution = (sigma_v / sigma_w) * (1.0 + delta_w);
-                    delta.insert(v, delta_v + contribution);
+            for &v in &preds[wi] {
+                let contribution = (sigma[v.index()] / sigma_w) * (1.0 + delta_w);
+                delta[v.index()] += contribution;
 
-                    // Update edge centrality
-                    if let Some(edge_cent) = centrality.get_mut(&(v, w)) {
-                        *edge_cent += contribution;
-                    }
+                // Update edge centrality
+                if let Some(edge_cent) = centrality.get_mut(&(v, w)) {
+                    *edge_cent += contribution;
                 }
             }
         }
@@ -246,7 +252,7 @@ where
         }
     }
 
-    Ok(centrality)
+    Ok(centrality.into_iter().collect())
 }
 
 #[cfg(test)]
