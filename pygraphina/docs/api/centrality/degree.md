@@ -3,10 +3,10 @@
 Degree centrality measures node importance based on the number of connections.
 
 !!! important "Centrality Scores vs Raw Degree"
-    This function returns **normalized centrality scores** (0.0 to 1.0), NOT raw degree counts.
+    This function returns normalized centrality scores (0.0 to 1.0), NOT raw degree counts.
 
-    - **Centrality score**: `degree / (n - 1)` where n = number of nodes
-    - **Raw degree count**: Use `g._degree(node)` instead
+    - Centrality score: `degree / (n - 1)` where n = number of nodes
+    - Raw degree count: Use `g._degree(node)` instead
 
 ## Function
 
@@ -16,10 +16,10 @@ pg.centrality.degree(graph: Union[PyGraph, PyDiGraph]) -> Dict[int, float]
 
 Returns a dictionary mapping node IDs to their degree centrality scores (normalized between 0 and 1).
 
-**Parameters:**
+Parameters:
 - `graph`: The input graph (PyGraph or PyDiGraph)
 
-**Returns:**
+Returns:
 - `Dict[int, float]`: Mapping of node IDs to degree centrality scores
 
 ## Understanding Degree Centrality
@@ -28,9 +28,9 @@ Returns a dictionary mapping node IDs to their degree centrality scores (normali
 
 Degree centrality is a normalized measure of connectivity:
 
-- **Score = 1.0**: Node is connected to all other nodes (maximum centrality)
-- **Score = 0.5**: Node is connected to half of all nodes
-- **Score = 0.0**: Node has no connections (isolated)
+- Score = 1.0: Node is connected to all other nodes (maximum centrality)
+- Score = 0.5: Node is connected to half of all nodes
+- Score = 0.0: Node has no connections (isolated)
 
 Formula: `centrality(v) = degree(v) / (n - 1)`
 
@@ -43,8 +43,8 @@ Where:
 
 | Measure | Function | Returns | Use Case |
 |---------|----------|---------|----------|
-| **Degree Centrality** | `pg.centrality.degree(g)` | `Dict[int, float]` (0.0-1.0) | Comparing importance across different graphs |
-| **Raw Degree** | `g._degree(node)` | `int` (count) | Local analysis, exact connection counts |
+| Degree Centrality | `pg.centrality.degree(g)` | `Dict[int, float]` (0.0-1.0) | Comparing importance across different graphs |
+| Raw Degree | `g._degree(node)` | `int` (count) | Local analysis, exact connection counts |
 
 ## Examples
 
@@ -96,13 +96,13 @@ print(f"Raw degree of node 0: {raw_degree}")  # 2
 
 ### When to Use Each
 
-**Use Degree Centrality** when:
+Use Degree Centrality when:
 - Comparing nodes across graphs of different sizes
 - Need normalized importance scores
 - Publishing results or comparing to papers
 - Analyzing relative importance
 
-**Use Raw Degree** when:
+Use Raw Degree when:
 - Need exact connection counts
 - Implementing custom algorithms
 - Local network analysis
@@ -117,9 +117,9 @@ For directed graphs, use:
 
 ## Properties
 
-- **Fast**: O(V) where V is the number of nodes
-- **Simple**: Easy to interpret and compute
-- **Local**: Only considers immediate neighbors
-- **Normalized**: Scores are comparable across graphs
+- Fast: O(V) where V is the number of nodes
+- Simple: Easy to interpret and compute
+- Local: Only considers immediate neighbors
+- Normalized: Scores are comparable across graphs
 
 Simple, fast, and effective for many applications.

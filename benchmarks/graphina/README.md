@@ -15,7 +15,7 @@ measure the algorithm implementations rather than the binding or interpreter ove
 make bench-rustworkx
 
 # Or directly (from this directory, so the local toolchain pin applies):
-cd benchmarks/rustworkx-compare && cargo run --release
+cd benchmarks/graphina && cargo run --release
 ```
 
 The harness is a detached crate: it is excluded from the graphina workspace and pulls rustworkx-core (and

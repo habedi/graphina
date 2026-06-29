@@ -6,8 +6,8 @@ This example uses a custom struct for node data, which is supported by Graphina'
 
 We'll model a network where:
 
-- **Nodes**: Users with names and ages.
-- **Edges**: Friendships with a "strength" score.
+- Nodes: Users with names and ages.
+- Edges: Friendships with a "strength" score.
 
 ```rust
 use graphina::core::types::Graph;

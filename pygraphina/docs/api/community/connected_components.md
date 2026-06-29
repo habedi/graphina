@@ -10,7 +10,7 @@ pg.community.connected_components(graph: PyGraph) -> Dict[int, int]
 
 ## Parameters
 
-- **graph**: Undirected graph to analyze
+- graph: Undirected graph to analyze
 
 ## Returns
 
@@ -71,9 +71,9 @@ for comp_id, members in sorted(comp_groups.items()):
 
 ## Related Concepts
 
-- **Weakly Connected Components**: For directed graphs (same concept but following edge direction)
-- **Strongly Connected Components**: For directed graphs (nodes that can reach each other)
-- **Biconnected Components**: Subgraphs with no single articulation points
+- Weakly Connected Components: For directed graphs (same concept but following edge direction)
+- Strongly Connected Components: For directed graphs (nodes that can reach each other)
+- Biconnected Components: Subgraphs with no single articulation points
 
 ## Comparison
 
@@ -86,11 +86,11 @@ for comp_id, members in sorted(comp_groups.items()):
 
 ## Advantages
 
-- **Fast**: Linear time complexity O(V + E)
-- **Simple**: Easy to understand and implement
-- **Exact**: Deterministic results
-- **No parameters**: No tuning needed
-- **Fundamental**: Foundation for other algorithms
+- Fast: Linear time complexity O(V + E)
+- Simple: Easy to understand and implement
+- Exact: Deterministic results
+- No parameters: No tuning needed
+- Fundamental: Foundation for other algorithms
 
 ## When to Use
 
@@ -136,10 +136,10 @@ print(f"Number of distinct networks: {max(components.values()) + 1}")
 
 ## Edge Cases
 
-- **Single node**: Component size = 1
-- **Complete graph**: One component with all nodes
-- **Empty graph**: One component per node
-- **Tree structure**: One component if connected, multiple if forest
+- Single node: Component size = 1
+- Complete graph: One component with all nodes
+- Empty graph: One component per node
+- Tree structure: One component if connected, multiple if forest
 
 ## Performance Characteristics
 

@@ -71,7 +71,7 @@ assert node_2 == 2
 
 ### Node Attributes
 
-Each node has a **single integer attribute** associated with it (stored as `i64` internally):
+Each node has a single integer attribute associated with it (stored as `i64` internally):
 
 ```python
 g = pg.PyGraph()
@@ -87,7 +87,7 @@ assert g.get_node_attr(node_id) == 100
 ```
 
 !!! warning "Integer-Only Attributes"
-    Node attributes **must be integers**. The valid range is `-2^63` to `2^63-1` (64-bit signed integer).
+    Node attributes must be integers. The valid range is `-2^63` to `2^63-1` (64-bit signed integer).
 
     - ✅ Integers: `g.add_node(42)`, `g.add_node(-100)`
     - ❌ Floats: `g.add_node(3.14)` → TypeError
@@ -105,7 +105,7 @@ assert g.get_node_attr(node_id) == 100
 
 ### Storing Rich Node Attributes
 
-If you need to store complex attributes (strings, objects, etc.), use an **external dictionary**:
+If you need to store complex attributes (strings, objects, etc.), use an external dictionary:
 
 ```python
 import pygraphina as pg
@@ -323,7 +323,7 @@ result = g.shortest_path(source, target)  # Returns (distance, path) or None
 
 ### Graph Metrics
 
-Graph metrics are available as **instance methods** on graph objects:
+Graph metrics are available as instance methods on graph objects:
 
 ```python
 # Graph-level metrics (instance methods)
@@ -423,11 +423,11 @@ result = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 
 Algorithms return different data types depending on their nature:
 
-- **Dict[int, float]**: Node-to-score mappings (centrality algorithms)
-- **Dict[int, int]**: Node-to-cluster mappings (community detection)
-- **Dict[tuple, float]**: Edge-to-score mappings (link prediction)
-- **List[int]**: Node sequences (paths, traversals)
-- **float**: Single values (density, diameter)
+- Dict[int, float]: Node-to-score mappings (centrality algorithms)
+- Dict[int, int]: Node-to-cluster mappings (community detection)
+- Dict[tuple, float]: Edge-to-score mappings (link prediction)
+- List[int]: Node sequences (paths, traversals)
+- float: Single values (density, diameter)
 
 Example:
 

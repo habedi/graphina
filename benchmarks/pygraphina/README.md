@@ -5,7 +5,7 @@ This directory contains a benchmark harness that compares PyGraphina against
 graph, runs the same set of algorithms through both libraries, reports the median wall time for each, and
 checks that the two libraries produce the same result.
 
-This is the Python counterpart of the [rustworkx-compare](../rustworkx-compare) harness. That one compares
+This is the Python counterpart of the [graphina](../graphina) harness. That one compares
 the core Rust crates and measures the algorithm implementations; this one goes through the Python bindings,
 so the numbers include the binding and interpreter overhead each library adds, which is what a Python user
 actually pays.
@@ -16,7 +16,7 @@ actually pays.
 make bench-pygraphina
 
 # Or directly, once PyGraphina is built into the active environment (make develop-py):
-uv run --with rustworkx python benchmarks/pygraphina-compare/compare.py
+uv run --with rustworkx python benchmarks/pygraphina/compare.py
 ```
 
 The harness imports PyGraphina from the active environment, so `make bench-pygraphina` runs `make develop-py`
@@ -37,7 +37,7 @@ The runs can be configured with these environment variables:
   early when the budget is spent, and a trailing `*` in the table shows the median taken from fewer than the
   requested repetitions
 
-The defaults are smaller than the [Rust harness](../rustworkx-compare)'s 2000 nodes because the slowest
+The defaults are smaller than the [Rust harness](../graphina)'s 2000 nodes because the slowest
 algorithms here (eigenvector's dense eigendecomposition and the per-node closeness) run through the Python
 binding and scale steeply. A default run takes a few minutes, dominated by those two; raise
 `PYGRAPHINA_COMPARE_NODES` for a heavier comparison.
@@ -99,4 +99,4 @@ reported as `DIFF` and not timed; an algorithm that raises is reported as `ERR` 
 > [!NOTE]
 > These numbers measure the full Python stack (binding plus algorithm plus interpreter overhead), not the
 > Rust implementations in isolation. For a Rust-to-Rust comparison of the algorithm implementations, use
-> [rustworkx-compare](../rustworkx-compare).
+> [graphina](../graphina).

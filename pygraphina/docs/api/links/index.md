@@ -102,13 +102,13 @@ Use Preferential Attachment
 
 ## Metrics
 
-- **Precision**: Fraction of predicted links that are correct
-- **Recall**: Fraction of true links that are predicted
-- **AUC**: Area Under Receiver Operating Characteristic curve
-- **Rank**: Position of true link in sorted predictions
+- Precision: Fraction of predicted links that are correct
+- Recall: Fraction of true links that are predicted
+- AUC: Area Under Receiver Operating Characteristic curve
+- Rank: Position of true link in sorted predictions
 
 ## Related Concepts
 
-- **Similarity Metrics**: Measure node resemblance
-- **Graph Clustering**: Find dense subgraphs
-- **Community Detection**: Find natural groupings
+- Similarity Metrics: Measure node resemblance
+- Graph Clustering: Find dense subgraphs
+- Community Detection: Find natural groupings

@@ -66,10 +66,10 @@ for node in nodes:
 
 ## Interpretation
 
-- **Degree**: Number of connections (importance in many contexts)
-- **Clustering**: How densely connected the neighbors are
-- **Triangles**: Participation in cohesive groups
-- **Neighbors**: Direct connections
+- Degree: Number of connections (importance in many contexts)
+- Clustering: How densely connected the neighbors are
+- Triangles: Participation in cohesive groups
+- Neighbors: Direct connections
 
 ## Time Complexity
 

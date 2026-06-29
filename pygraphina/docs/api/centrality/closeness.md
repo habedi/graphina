@@ -10,7 +10,7 @@ pg.centrality.closeness(graph: Union[PyGraph, PyDiGraph]) -> Dict[int, float]
 
 ## Parameters
 
-- **graph**: The graph to analyze
+- graph: The graph to analyze
 
 ## Returns
 
@@ -76,5 +76,5 @@ for node, score in sorted(closeness.items()):
 
 ## Variants
 
-- **Harmonic Centrality**: Handles disconnected graphs better
-- **Normalized Closeness**: Scales by network size
+- Harmonic Centrality: Handles disconnected graphs better
+- Normalized Closeness: Scales by network size

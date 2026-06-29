@@ -92,8 +92,8 @@ let communities = louvain(&graph);
 
 Finds isolated subgraphs where every node is reachable from every other node.
 
-- **Weakly Connected**: Ignoring edge direction.
-- **Strongly Connected**: Respecting edge direction (every node must reach every other node).
+- Weakly Connected: Ignoring edge direction.
+- Strongly Connected: Respecting edge direction (every node must reach every other node).
 
 ```rust
 use graphina::community::connected_components;

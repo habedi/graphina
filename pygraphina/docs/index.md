@@ -12,18 +12,18 @@ Welcome to PyGraphina documentation!
 ## Features
 
 - All algorithms and data structures are implemented in Rust
-- A **large collection of graph algorithms** including:
-    - **Centrality measures**: PageRank, betweenness, closeness, eigenvector, Katz, and more
-    - **Community detection**: Louvain, label propagation, Girvan-Newman, spectral clustering
-    - **Link prediction**: Jaccard coefficient, Adamic-Adar, resource allocation, preferential attachment
-    - **Path algorithms**: Dijkstra, Bellman-Ford, A*, Floyd-Warshall, Johnson's algorithm
-    - **Graph metrics**: Clustering coefficient, transitivity, diameter, assortativity
-    - **Approximation algorithms**: For cliques, vertex cover, independent sets, TSP, and more
-    - **Minimum spanning trees**: Prim's, Kruskal's, and Borůvka's algorithms
-- **Pythonic API**
-- Create **random and structured graphs** (Erdős-Rényi, Barabási-Albert, Watts-Strogatz, etc.)
-- **Read and write graphs in multiple formats** (edge lists, adjacency lists, JSON, and GraphML)
-- **Multi-threaded implementations** of popular graph algorithms like PageRank
+- A large collection of graph algorithms including:
+    - Centrality measures: PageRank, betweenness, closeness, eigenvector, Katz, and more
+    - Community detection: Louvain, label propagation, Girvan-Newman, spectral clustering
+    - Link prediction: Jaccard coefficient, Adamic-Adar, resource allocation, preferential attachment
+    - Path algorithms: Dijkstra, Bellman-Ford, A*, Floyd-Warshall, Johnson's algorithm
+    - Graph metrics: Clustering coefficient, transitivity, diameter, assortativity
+    - Approximation algorithms: For cliques, vertex cover, independent sets, TSP, and more
+    - Minimum spanning trees: Prim's, Kruskal's, and Borůvka's algorithms
+- Pythonic API
+- Create random and structured graphs (Erdős-Rényi, Barabási-Albert, Watts-Strogatz, etc.)
+- Read and write graphs in multiple formats (edge lists, adjacency lists, JSON, and GraphML)
+- Multi-threaded implementations of popular graph algorithms like PageRank
 
 ## Quick Example
 
@@ -57,12 +57,12 @@ print(f"Jaccard coefficients: {jaccard}")
 
 Typical PyGraphina use cases include:
 
-- **Network analysis**: Social networks, collaboration networks, citation networks
-- **Link prediction**: Recommender systems, knowledge graph completion
-- **Community detection**: Finding clusters and groups in networks
-- **Graph metrics**: Analyzing graph properties and structure
-- **Algorithm research**: Fast prototyping of graph algorithms
-- **Data science pipelines**: Integrating graph analysis into typical data science workflows that use Python
+- Network analysis: Social networks, collaboration networks, citation networks
+- Link prediction: Recommender systems, knowledge graph completion
+- Community detection: Finding clusters and groups in networks
+- Graph metrics: Analyzing graph properties and structure
+- Algorithm research: Fast prototyping of graph algorithms
+- Data science pipelines: Integrating graph analysis into typical data science workflows that use Python
 
 ## Comparison with NetworkX
 
@@ -94,9 +94,9 @@ PyGraphina aims to be a drop-in replacement for NetworkX with providing a simila
 
 ## Community and Support
 
-- **GitHub**: [https://github.com/habedi/graphina](https://github.com/habedi/graphina)
-- **Issues**: [Report bugs or request features](https://github.com/habedi/graphina/issues)
-- **Contributing**: See our [Contributing Guide](contributing.md)
+- GitHub: [https://github.com/habedi/graphina](https://github.com/habedi/graphina)
+- Issues: [Report bugs or request features](https://github.com/habedi/graphina/issues)
+- Contributing: See our [Contributing Guide](contributing.md)
 
 ## License
 

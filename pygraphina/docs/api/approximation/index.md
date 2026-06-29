@@ -69,9 +69,9 @@ print(f"Approximate diameter: {diameter_approx}")
 
 Some algorithms have proven approximation ratios:
 
-- **Vertex Cover**: 2-approximation (always within 2x optimal)
-- **TSP (MST-based)**: 2-approximation for metric TSP
-- **Independent Set**: Depends on algorithm
+- Vertex Cover: 2-approximation (always within 2x optimal)
+- TSP (MST-based): 2-approximation for metric TSP
+- Independent Set: Depends on algorithm
 
 Others use heuristics with no proven guarantee but work well in practice.
 

@@ -19,9 +19,9 @@ pg.approximation.local_node_connectivity(
 
 ## Parameters
 
-- **graph**: The undirected graph to analyze
-- **source**: The source node ID
-- **target**: The target node ID
+- graph: The undirected graph to analyze
+- source: The source node ID
+- target: The target node ID
 
 ## Returns
 
@@ -34,8 +34,8 @@ Uses max-flow min-cut theorem:
 - Flow capacity = 1 for each edge
 - Result equals the edge connectivity
 
-**Time Complexity**: O(V · E) using efficient flow algorithms  
-**Space Complexity**: O(V + E)
+Time Complexity: O(V · E) using efficient flow algorithms  
+Space Complexity: O(V + E)
 
 ## Example
 
@@ -94,10 +94,10 @@ print(f"Connectivity in diamond graph (0 → 3): {conn_diamond} paths")
 
 ## Interpretation
 
-**Result Values**:
-- **0**: Nodes are disconnected (no path exists)
-- **1**: Nodes are connected by a single edge or bridge
-- **k ≥ 2**: Multiple disjoint paths exist between nodes (highly connected)
+Result Values:
+- 0: Nodes are disconnected (no path exists)
+- 1: Nodes are connected by a single edge or bridge
+- k ≥ 2: Multiple disjoint paths exist between nodes (highly connected)
 
 ## Time Complexity
 
@@ -112,30 +112,30 @@ O(V + E) for storing the graph and flow network.
 
 ## Use Cases
 
-- **Network Reliability**: How robust is the connection?
-- **Infrastructure Planning**: How many independent routes exist?
-- **Bottleneck Detection**: Which nodes are critical?
-- **Network Design**: Where to add redundant links?
-- **Communication Networks**: Failure tolerance assessment
-- **Supply Chain**: Number of independent suppliers
+- Network Reliability: How robust is the connection?
+- Infrastructure Planning: How many independent routes exist?
+- Bottleneck Detection: Which nodes are critical?
+- Network Design: Where to add redundant links?
+- Communication Networks: Failure tolerance assessment
+- Supply Chain: Number of independent suppliers
 
 ## Applications
 
 | Application | Meaning |
 |-------------|---------|
-| **Transportation** | Number of independent routes between cities |
-| **Communication** | Number of independent channels between nodes |
-| **Power Grid** | Number of independent power lines between stations |
-| **Social Networks** | Strength of connection between influencers |
-| **Supply Chain** | Redundancy in supplier networks |
+| Transportation | Number of independent routes between cities |
+| Communication | Number of independent channels between nodes |
+| Power Grid | Number of independent power lines between stations |
+| Social Networks | Strength of connection between influencers |
+| Supply Chain | Redundancy in supplier networks |
 
 ## Related Concepts
 
-- **Global Node Connectivity**: Minimum connectivity over all pairs
-- **Edge Connectivity**: Same as local node connectivity
-- **Vertex Connectivity**: Minimum vertices to remove to disconnect
-- **Max Flow**: Theoretical basis (max-flow min-cut theorem)
-- **Robustness**: Network resilience measure
+- Global Node Connectivity: Minimum connectivity over all pairs
+- Edge Connectivity: Same as local node connectivity
+- Vertex Connectivity: Minimum vertices to remove to disconnect
+- Max Flow: Theoretical basis (max-flow min-cut theorem)
+- Robustness: Network resilience measure
 
 ## Algorithm Details
 

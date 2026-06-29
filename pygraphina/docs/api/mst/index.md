@@ -7,9 +7,9 @@ weight.
 
 PyGraphina provides three MST algorithms:
 
-- **Prim's Algorithm**: Greedy algorithm that grows the MST one edge at a time
-- **Kruskal's Algorithm**: Greedy algorithm that sorts all edges and adds them if they don't create cycles
-- **Boruvka's Algorithm**: Parallel algorithm that finds MST using component-based approach
+- Prim's Algorithm: Greedy algorithm that grows the MST one edge at a time
+- Kruskal's Algorithm: Greedy algorithm that sorts all edges and adds them if they don't create cycles
+- Boruvka's Algorithm: Parallel algorithm that finds MST using component-based approach
 
 All MST functions are available under the `pg.mst` module.
 
@@ -78,12 +78,12 @@ pg.mst.prim_mst(graph: PyGraph) -> Tuple[float, List[Tuple[int, int, float]]]
 
 Compute the MST using Prim's algorithm.
 
-**Algorithm:** Starts from an arbitrary node and grows the MST by repeatedly adding the minimum-weight edge that
+Algorithm: Starts from an arbitrary node and grows the MST by repeatedly adding the minimum-weight edge that
 connects a node in the MST to a node outside it.
 
-**Best for:** Dense graphs where E is close to V².
+Best for: Dense graphs where E is close to V².
 
-**Example:**
+Example:
 
 ```python
 total, edges = pg.mst.prim_mst(g)
@@ -97,12 +97,12 @@ pg.mst.kruskal_mst(graph: PyGraph) -> Tuple[float, List[Tuple[int, int, float]]]
 
 Compute the MST using Kruskal's algorithm.
 
-**Algorithm:** Sorts all edges by weight and adds them to the MST if they don't create a cycle (using union-find data
+Algorithm: Sorts all edges by weight and adds them to the MST if they don't create a cycle (using union-find data
 structure).
 
-**Best for:** Sparse graphs where E is much smaller than V².
+Best for: Sparse graphs where E is much smaller than V².
 
-**Example:**
+Example:
 
 ```python
 total, edges = pg.mst.kruskal_mst(g)
@@ -116,11 +116,11 @@ pg.mst.boruvka_mst(graph: PyGraph) -> Tuple[float, List[Tuple[int, int, float]]]
 
 Compute the MST using Boruvka's algorithm (parallel).
 
-**Algorithm:** Each component simultaneously selects its minimum-weight outgoing edge, merging components in parallel.
+Algorithm: Each component simultaneously selects its minimum-weight outgoing edge, merging components in parallel.
 
-**Best for:** Large graphs on multi-core systems where parallelism provides speedup.
+Best for: Large graphs on multi-core systems where parallelism provides speedup.
 
-**Example:**
+Example:
 
 ```python
 total, edges = pg.mst.boruvka_mst(g)

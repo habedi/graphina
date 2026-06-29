@@ -11,8 +11,8 @@ pg.PyGraph()
 An undirected graph with integer node attributes and floating-point edge weights.
 
 !!! info "Attribute Types"
-    - **Node attributes:** Must be integers (`i64` range: -2^63 to 2^63-1)
-    - **Edge weights:** Floating-point numbers (`f64`)
+    - Node attributes: Must be integers (`i64` range: -2^63 to 2^63-1)
+    - Edge weights: Floating-point numbers (`f64`)
 
     For complex node attributes (strings, objects), use an external dictionary. See [Basic Concepts](../getting-started/concepts.md#storing-rich-node-attributes).
 
@@ -35,19 +35,19 @@ add_node(attr: int) -> int
 
 Add a node with an integer attribute to the graph.
 
-**Parameters:**
+Parameters:
 
 - `attr` (int): The attribute value for the node (must be an integer in range -2^63 to 2^63-1)
 
-**Returns:**
+Returns:
 
 - `int`: The node ID (a non-negative integer, starts from 0)
 
-**Raises:**
+Raises:
 
 - `TypeError`: If `attr` is not an integer
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -68,16 +68,16 @@ update_node(node: int, new_attr: int) -> bool
 
 Update the attribute of an existing node.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 - `new_attr` (int): The new attribute value
 
-**Returns:**
+Returns:
 
 - `bool`: True if the node exists and was updated, False otherwise
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -93,16 +93,16 @@ try_update_node(node: int, new_attr: int) -> None
 
 Update the attribute of an existing node. Raises an error if the node doesn't exist.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 - `new_attr` (int): The new attribute value
 
-**Raises:**
+Raises:
 
 - `ValueError`: If the node doesn't exist
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -119,15 +119,15 @@ remove_node(node: int) -> Optional[int]
 
 Remove a node from the graph. Also removes all edges incident to this node.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID to remove
 
-**Returns:**
+Returns:
 
 - `Optional[int]`: The node's attribute if it existed, None otherwise
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -143,15 +143,15 @@ try_remove_node(node: int) -> int
 
 Remove a node from the graph. Raises an error if the node doesn't exist.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID to remove
 
-**Returns:**
+Returns:
 
 - `int`: The node's attribute
 
-**Raises:**
+Raises:
 
 - `ValueError`: If the node doesn't exist
 
@@ -163,15 +163,15 @@ get_node_attr(node: int) -> Optional[int]
 
 Get the attribute of a node.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 
-**Returns:**
+Returns:
 
 - `Optional[int]`: The node's attribute if it exists, None otherwise
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -187,15 +187,15 @@ contains_node(node: int) -> bool
 
 Check if a node exists in the graph.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 
-**Returns:**
+Returns:
 
 - `bool`: True if the node exists, False otherwise
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -212,11 +212,11 @@ nodes() -> List[int]
 
 Get a list of all node IDs in the graph.
 
-**Returns:**
+Returns:
 
 - `List[int]`: List of node IDs
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -232,11 +232,11 @@ node_count() -> int
 
 Get the number of nodes in the graph.
 
-**Returns:**
+Returns:
 
 - `int`: The number of nodes
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -255,21 +255,21 @@ add_edge(source: int, target: int, weight: float) -> int
 
 Add a weighted edge between two nodes.
 
-**Parameters:**
+Parameters:
 
 - `source` (int): The source node ID
 - `target` (int): The target node ID
 - `weight` (float): The edge weight
 
-**Returns:**
+Returns:
 
 - `int`: Edge ID (implementation detail)
 
-**Raises:**
+Raises:
 
 - `ValueError`: If either node doesn't exist
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -285,16 +285,16 @@ remove_edge(source: int, target: int) -> bool
 
 Remove an edge from the graph.
 
-**Parameters:**
+Parameters:
 
 - `source` (int): The source node ID
 - `target` (int): The target node ID
 
-**Returns:**
+Returns:
 
 - `bool`: True if the edge existed and was removed, False otherwise
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -311,16 +311,16 @@ contains_edge(source: int, target: int) -> bool
 
 Check if an edge exists between two nodes.
 
-**Parameters:**
+Parameters:
 
 - `source` (int): The source node ID
 - `target` (int): The target node ID
 
-**Returns:**
+Returns:
 
 - `bool`: True if the edge exists, False otherwise
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -338,11 +338,11 @@ edge_count() -> int
 
 Get the number of edges in the graph.
 
-**Returns:**
+Returns:
 
 - `int`: The number of edges
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -362,11 +362,11 @@ is_directed() -> bool
 
 Check if the graph is directed.
 
-**Returns:**
+Returns:
 
 - `bool`: False for PyGraph (always undirected)
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -381,16 +381,16 @@ density() -> float
 
 Calculate the graph density (ratio of existing edges to possible edges).
 
-**Returns:**
+Returns:
 
 - `float`: Graph density (between 0 and 1)
 
-**Formula:**
+Formula:
 
 - For undirected graphs: `2 * E / (V * (V - 1))`
 - Where E is the number of edges and V is the number of nodes
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -409,19 +409,19 @@ neighbors(node: int) -> List[int]
 
 Get the neighbors of a node.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 
-**Returns:**
+Returns:
 
 - `List[int]`: List of neighbor node IDs
 
-**Raises:**
+Raises:
 
 - `ValueError`: If the node doesn't exist
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -441,11 +441,11 @@ Get a degree view object that allows accessing the degree of any node.
 
 The `degree` property returns a `DegreeView` object that supports dictionary-like access to node degrees.
 
-**Returns:**
+Returns:
 
 - `DegreeView`: A view object that maps node IDs to their degrees (number of neighbors)
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()
@@ -480,7 +480,7 @@ clear() -> None
 
 Remove all nodes and edges from the graph.
 
-**Example:**
+Example:
 
 ```python
 g = pg.PyGraph()

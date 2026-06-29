@@ -14,8 +14,8 @@ num_communities: int
 
 ## Parameters
 
-- **graph**: Undirected graph to analyze
-- **num_communities**: Number of communities to find
+- graph: Undirected graph to analyze
+- num_communities: Number of communities to find
 
 ## Returns
 
@@ -101,9 +101,9 @@ print(f"Communities: {dict(groups)}")
 
 The basic algorithm can be modified:
 
-- **Edge weighting**: Weight betweenness by edge strength
-- **Stopping criteria**: Stop when modularity peaks instead of specifying communities
-- **Local optimization**: Improve communities after each removal
+- Edge weighting: Weight betweenness by edge strength
+- Stopping criteria: Stop when modularity peaks instead of specifying communities
+- Local optimization: Improve communities after each removal
 
 ## Comparison with Other Methods
 
@@ -128,7 +128,7 @@ The basic algorithm can be modified:
 - [Spectral Clustering](spectral.md) - Mathematically rigorous approach
 - [Connected Components](connected_components.md) - Trivial case of community detection
 
-- **Hierarchical Clustering**: Generate dendrograms
+- Hierarchical Clustering: Generate dendrograms
 
 ## Comparison
 

@@ -13,8 +13,8 @@ pg.community.spectral_clustering(
 
 ## Parameters
 
-- **graph**: Undirected graph to analyze
-- **k**: Number of communities to find
+- graph: Undirected graph to analyze
+- k: Number of communities to find
 
 ## Returns
 

@@ -101,7 +101,7 @@ members = [
   "pygraphina"
 ]
 exclude = [
-  "benchmarks/rustworkx-compare"
+  "benchmarks/graphina"
 ]
 
 [package.metadata.docs.rs]

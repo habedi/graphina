@@ -11,8 +11,8 @@ pg.PyDiGraph()
 A directed graph with integer node attributes and floating-point edge weights.
 
 !!! info "Attribute Types"
-    - **Node attributes:** Must be integers (`i64` range: -2^63 to 2^63-1)
-    - **Edge weights:** Floating-point numbers (`f64`)
+    - Node attributes: Must be integers (`i64` range: -2^63 to 2^63-1)
+    - Edge weights: Floating-point numbers (`f64`)
 
     For complex node attributes (strings, objects), use an external dictionary. See [Basic Concepts](../getting-started/concepts.md#storing-rich-node-attributes).
 
@@ -29,9 +29,9 @@ dg = pg.PyDiGraph()
 
 `PyDiGraph` has all the same methods as `PyGraph`, but with directed graph semantics:
 
-- **Edges are directional**: An edge from A to B is different from an edge from B to A
-- **Degree operations**: Supports `in_degree(node)` and `out_degree(node)` methods in addition to `degree` property
-- **Neighbors**: `neighbors()` returns outgoing neighbors, `predecessors()` returns incoming neighbors
+- Edges are directional: An edge from A to B is different from an edge from B to A
+- Degree operations: Supports `in_degree(node)` and `out_degree(node)` methods in addition to `degree` property
+- Neighbors: `neighbors()` returns outgoing neighbors, `predecessors()` returns incoming neighbors
 
 ## Additional Methods for Directed Graphs
 
@@ -43,15 +43,15 @@ in_degree(node: int) -> Optional[int]
 
 Get the in-degree (number of incoming edges) of a node.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 
-**Returns:**
+Returns:
 
 - `Optional[int]`: The in-degree if the node exists, None otherwise
 
-**Example:**
+Example:
 
 ```python
 dg = pg.PyDiGraph()
@@ -71,15 +71,15 @@ out_degree(node: int) -> Optional[int]
 
 Get the out-degree (number of outgoing edges) of a node.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 
-**Returns:**
+Returns:
 
 - `Optional[int]`: The out-degree if the node exists, None otherwise
 
-**Example:**
+Example:
 
 ```python
 dg = pg.PyDiGraph()
@@ -99,19 +99,19 @@ predecessors(node: int) -> List[int]
 
 Get the predecessor nodes (nodes with edges pointing to this node).
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 
-**Returns:**
+Returns:
 
 - `List[int]`: List of predecessor node IDs
 
-**Raises:**
+Raises:
 
 - `ValueError`: If the node doesn't exist
 
-**Example:**
+Example:
 
 ```python
 dg = pg.PyDiGraph()
@@ -130,19 +130,19 @@ successors(node: int) -> List[int]
 
 Get the successor nodes (nodes that this node has edges pointing to). Equivalent to `neighbors()` for directed graphs.
 
-**Parameters:**
+Parameters:
 
 - `node` (int): The node ID
 
-**Returns:**
+Returns:
 
 - `List[int]`: List of successor node IDs
 
-**Raises:**
+Raises:
 
 - `ValueError`: If the node doesn't exist
 
-**Example:**
+Example:
 
 ```python
 dg = pg.PyDiGraph()
@@ -213,7 +213,7 @@ print(f"End tasks: {end_tasks}")
 - Order matters (like workflows, dependencies, hierarchies)
 - Asymmetric relationships (A relates to B doesn't mean B relates to A)
 
-**Examples:**
+Examples:
 
 - Web page links
 - Citation networks
@@ -227,7 +227,7 @@ print(f"End tasks: {end_tasks}")
 - Order doesn't matter
 - Bidirectional connections
 
-**Examples:**
+Examples:
 
 - Friendships
 - Road networks (bidirectional roads)

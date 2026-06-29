@@ -4,7 +4,7 @@ Graphina provides a suite of algorithms for finding shortest paths and traversin
 
 ## Dijkstra's Algorithm
 
-Finds the shortest paths from a source node to all other nodes (or a target node) in a graph with **non-negative** edge
+Finds the shortest paths from a source node to all other nodes (or a target node) in a graph with non-negative edge
 weights.
 
 ### Function Signature
@@ -50,7 +50,7 @@ let path = a_star(&graph, start, end, heuristic)?;
 
 ## Bellman-Ford
 
-Computes shortest paths from a single source in graphs that may contain **negative** edge weights.
+Computes shortest paths from a single source in graphs that may contain negative edge weights.
 It can also detect negative cycles.
 
 ```rust
@@ -64,7 +64,7 @@ match bellman_ford(&graph, start_node) {
 
 ## Floyd-Warshall
 
-Computes **all-pairs** shortest paths. Returns a matrix (map of maps) of distances.
+Computes all-pairs shortest paths. Returns a matrix (map of maps) of distances.
 Note: This is $O(V^3)$, so use only on small graphs (< 500-1000 nodes).
 
 ```rust

@@ -16,32 +16,32 @@ pg.approximation.treewidth_min_fill_in(graph: PyGraph) -> Tuple[int, List[int]]
 
 ## Parameters
 
-- **graph**: The undirected graph to analyze
+- graph: The undirected graph to analyze
 
 ## Returns
 
 A tuple containing:
-- **int**: Upper bound on treewidth
-- **List[int]**: Elimination ordering of nodes
+- int: Upper bound on treewidth
+- List[int]: Elimination ordering of nodes
 
 ## Algorithms
 
 ### Min-Degree Heuristic
 Iteratively removes the node with minimum degree. Fast but can produce suboptimal results.
 
-**Time Complexity**: O(n³) with simple implementation  
-**Quality**: Often reasonable, sometimes suboptimal
+Time Complexity: O(n³) with simple implementation  
+Quality: Often reasonable, sometimes suboptimal
 
 ### Min-Fill-In Heuristic
 Removes the node that creates the fewest new edges when eliminated. Slower but often produces better bounds.
 
-**Time Complexity**: O(n⁴) with simple implementation  
-**Quality**: Generally better than min-degree
+Time Complexity: O(n⁴) with simple implementation  
+Quality: Generally better than min-degree
 
 ## Time Complexity
 
-- **Min-Degree**: O(n³)
-- **Min-Fill-In**: O(n⁴)
+- Min-Degree: O(n³)
+- Min-Fill-In: O(n⁴)
 
 Where n is the number of nodes.
 
@@ -94,10 +94,10 @@ print(f"\nTreewidth of a path (tree): {tree_width}")
 
 ## Interpreting Results
 
-- **Treewidth = 1**: Graph is a tree or forest
-- **Treewidth = 2**: Graph is outerplanar
-- **Treewidth = k**: Graph has tree decomposition of width k
-- **Lower is better**: Enables faster algorithms
+- Treewidth = 1: Graph is a tree or forest
+- Treewidth = 2: Graph is outerplanar
+- Treewidth = k: Graph has tree decomposition of width k
+- Lower is better: Enables faster algorithms
 
 ## Significance
 
@@ -110,9 +110,9 @@ Low treewidth enables:
 
 ## Algorithm Selection
 
-- **Use Min-Degree**: When you need fast approximation, large graphs
-- **Use Min-Fill-In**: When you need better bounds, smaller/medium graphs
-- **Compare both**: For important applications to pick the better result
+- Use Min-Degree: When you need fast approximation, large graphs
+- Use Min-Fill-In: When you need better bounds, smaller/medium graphs
+- Compare both: For important applications to pick the better result
 
 ## Applications
 

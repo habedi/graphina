@@ -13,8 +13,8 @@ pg.approximation.densest_subgraph(
 
 ## Parameters
 
-- **graph**: Input undirected graph
-- **iterations**: Maximum number of iterations (optional, defaults to automatic convergence)
+- graph: Input undirected graph
+- iterations: Maximum number of iterations (optional, defaults to automatic convergence)
 
 ## Returns
 
@@ -34,8 +34,8 @@ The algorithm works by:
 
 ## Time Complexity
 
-**Time:** O(k·(V + E)) where k is the number of iterations (typically O(V))  
-**Space:** O(V)
+Time: O(k·(V + E)) where k is the number of iterations (typically O(V))  
+Space: O(V)
 
 ## Example
 
@@ -92,11 +92,11 @@ print(f"Core density: {core_graph.density():.3f}")
 
 ## Use Cases
 
-- **Social Network Analysis**: Finding tightly-knit communities
-- **Biological Networks**: Identifying functional modules in protein interaction networks
-- **Web Graphs**: Finding link farms or densely connected web communities
-- **Recommendation Systems**: Identifying groups with similar preferences
-- **Network Core Identification**: Finding the most important connected subgroup
+- Social Network Analysis: Finding tightly-knit communities
+- Biological Networks: Identifying functional modules in protein interaction networks
+- Web Graphs: Finding link farms or densely connected web communities
+- Recommendation Systems: Identifying groups with similar preferences
+- Network Core Identification: Finding the most important connected subgroup
 
 ## Approximation Quality
 

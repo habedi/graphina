@@ -3,7 +3,7 @@
 Graph metrics characterize properties of the entire graph.
 
 !!! note "API Location"
-    All graph metrics are available as **instance methods** on graph objects (`PyGraph` and `PyDiGraph`).
+    All graph metrics are available as instance methods on graph objects (`PyGraph` and `PyDiGraph`).
 
     Some commonly used metrics are also available as top-level convenience functions:
     ```python
@@ -88,10 +88,10 @@ print(f"Assortativity: {g.assortativity():.4f}")
 
 ## Interpretation
 
-- **Density**: How many edges vs maximum possible
-- **Diameter**: Maximum communication distance
-- **Clustering**: Local transitivity (friend of friend is friend)
-- **Assortativity**: High-degree nodes connect to high-degree (positive) or low-degree (negative) nodes
+- Density: How many edges vs maximum possible
+- Diameter: Maximum communication distance
+- Clustering: Local transitivity (friend of friend is friend)
+- Assortativity: High-degree nodes connect to high-degree (positive) or low-degree (negative) nodes
 
 ## Time Complexity
 

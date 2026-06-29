@@ -69,8 +69,8 @@ let scores = betweenness(&g);
 
 The simplest measure: the number of edges connected to a node.
 
-- For **Directed** graphs: often split into In-Degree and Out-Degree.
-- For **Undirected** graphs: just Degree.
+- For Directed graphs: often split into In-Degree and Out-Degree.
+- For Undirected graphs: just Degree.
 
 ```rust
 use graphina::centrality::degree;

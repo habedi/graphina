@@ -11,10 +11,10 @@ PyGraphina provides several graph traversal algorithms:
 
 | Algorithm | Method | Time | Use Case |
 |-----------|--------|------|----------|
-| **Breadth-First Search** | `g.bfs(start)` | O(V+E) | Level-by-level exploration |
-| **Depth-First Search** | `g.dfs(start)` | O(V+E) | Deep path exploration |
-| **Iterative Deepening DFS** | `g.iddfs(start, target, max_depth)` | O(b^d) | Memory-efficient search |
-| **Bidirectional Search** | `g.bidirectional_search(start, target)` | O(b^(d/2)) | Fast shortest path |
+| Breadth-First Search | `g.bfs(start)` | O(V+E) | Level-by-level exploration |
+| Depth-First Search | `g.dfs(start)` | O(V+E) | Deep path exploration |
+| Iterative Deepening DFS | `g.iddfs(start, target, max_depth)` | O(b^d) | Memory-efficient search |
+| Bidirectional Search | `g.bidirectional_search(start, target)` | O(b^(d/2)) | Fast shortest path |
 
 Where:
 - V = number of nodes
@@ -32,13 +32,13 @@ Explores nodes level by level, visiting all neighbors before going deeper.
 g.bfs(start: int) -> List[int]
 ```
 
-**Parameters:**
+Parameters:
 - `start`: Starting node ID
 
-**Returns:**
+Returns:
 - `List[int]`: Nodes in BFS traversal order
 
-**Raises:**
+Raises:
 - `ValueError`: If start node doesn't exist
 
 ### Example
@@ -90,10 +90,10 @@ Explores as deep as possible along each branch before backtracking.
 g.dfs(start: int) -> List[int]
 ```
 
-**Parameters:**
+Parameters:
 - `start`: Starting node ID
 
-**Returns:**
+Returns:
 - `List[int]`: Nodes in DFS traversal order
 
 ### Example
@@ -121,12 +121,12 @@ Combines advantages of BFS and DFS with limited memory usage.
 g.iddfs(start: int, target: int, max_depth: int) -> Optional[List[int]]
 ```
 
-**Parameters:**
+Parameters:
 - `start`: Starting node ID
 - `target`: Target node ID
 - `max_depth`: Maximum search depth
 
-**Returns:**
+Returns:
 - `Optional[List[int]]`: Path from start to target, or `None` if not found within max_depth
 
 ### Example
@@ -156,11 +156,11 @@ Searches from both start and target simultaneously, meeting in the middle.
 g.bidirectional_search(start: int, target: int) -> Optional[List[int]]
 ```
 
-**Parameters:**
+Parameters:
 - `start`: Starting node ID
 - `target`: Target node ID
 
-**Returns:**
+Returns:
 - `Optional[List[int]]`: Path from start to target, or `None` if no path exists
 
 ### Example
@@ -184,10 +184,10 @@ else:
 
 | Algorithm | Memory | Speed | Path Length | Best For |
 |-----------|--------|-------|-------------|----------|
-| **BFS** | O(V) | Fast | Shortest (unweighted) | Small/medium graphs |
-| **DFS** | O(h) | Fast | Not shortest | Deep searches, cycles |
-| **IDDFS** | O(d) | Medium | Shortest | Memory-limited |
-| **Bidirectional** | O(V) | Very Fast | Shortest | Known target |
+| BFS | O(V) | Fast | Shortest (unweighted) | Small/medium graphs |
+| DFS | O(h) | Fast | Not shortest | Deep searches, cycles |
+| IDDFS | O(d) | Medium | Shortest | Memory-limited |
+| Bidirectional | O(V) | Very Fast | Shortest | Known target |
 
 Where:
 - V = nodes

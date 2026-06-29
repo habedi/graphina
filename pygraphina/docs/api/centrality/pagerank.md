@@ -16,11 +16,11 @@ pg.centrality.pagerank(
 
 ## Parameters
 
-- **graph**: The graph to analyze (directed or undirected)
-- **damping**: Damping factor (probability of following a link vs random jump). Default: 0.85
-- **max_iter**: Maximum number of iterations. Default: 100
-- **tolerance**: Convergence tolerance. Default: 1e-6
-- **nstart** (optional): Starting values for PageRank iteration
+- graph: The graph to analyze (directed or undirected)
+- damping: Damping factor (probability of following a link vs random jump). Default: 0.85
+- max_iter: Maximum number of iterations. Default: 100
+- tolerance: Convergence tolerance. Default: 1e-6
+- nstart (optional): Starting values for PageRank iteration
   - Type: `Dict[int, float]` - Maps node IDs to initial values
   - Default: `None` (uniform distribution)
   - Use case: Provide custom initial values or continue from previous computation
@@ -148,9 +148,9 @@ for rank, (user, score) in enumerate(top_influencers, 1):
 
 ### Damping Factor
 
-- **0.85 (default)**: Standard value used by Google
-- **Higher (0.90-0.95)**: More emphasis on link structure
-- **Lower (0.70-0.80)**: More random jumps, less emphasis on links
+- 0.85 (default): Standard value used by Google
+- Higher (0.90-0.95): More emphasis on link structure
+- Lower (0.70-0.80): More random jumps, less emphasis on links
 
 ```python
 # Compare different damping factors
@@ -227,8 +227,8 @@ for node in g.nodes:
 
 PageRank works on both directed and undirected graphs, but interpretation differs:
 
-- **Directed**: Models link following behavior
-- **Undirected**: All edges are bidirectional
+- Directed: Models link following behavior
+- Undirected: All edges are bidirectional
 
 ### 2. Dangling Nodes
 
@@ -242,9 +242,9 @@ PageRank handles disconnected graphs gracefully due to the random jump mechanism
 
 For large graphs, consider:
 
-1. **Parallel implementation**: Use `pg.parallel.pagerank_parallel()`
-2. **Early stopping**: Use larger `tol` for faster (approximate) results
-3. **Fewer iterations**: Reduce `max_iters` if exact convergence isn't critical
+1. Parallel implementation: Use `pg.parallel.pagerank_parallel()`
+2. Early stopping: Use larger `tol` for faster (approximate) results
+3. Fewer iterations: Reduce `max_iters` if exact convergence isn't critical
 
 ```python
 # For large graphs
@@ -259,12 +259,12 @@ scores = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 
 ## Applications
 
-- **Web search**: Ranking web pages
-- **Social networks**: Finding influential users
-- **Citation networks**: Identifying important papers
-- **Recommendation systems**: Ranking items
-- **Protein networks**: Finding critical proteins
-- **Knowledge graphs**: Entity importance
+- Web search: Ranking web pages
+- Social networks: Finding influential users
+- Citation networks: Identifying important papers
+- Recommendation systems: Ranking items
+- Protein networks: Finding critical proteins
+- Knowledge graphs: Entity importance
 
 ## Personalized PageRank { #personalized }
 

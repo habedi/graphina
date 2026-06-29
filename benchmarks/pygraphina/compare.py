@@ -10,7 +10,7 @@ algorithm the two libraries disagree on are meaningless (a library doing the wro
 amount of work can look faster), so a divergent algorithm is reported as ``DIFF`` and
 not timed.
 
-This is the Python counterpart of the Rust ``rustworkx-compare`` harness. That one
+This is the Python counterpart of the Rust ``graphina`` harness. That one
 compares the core Rust crates and measures the algorithm implementations; this one
 goes through the Python bindings, so the numbers include the binding and interpreter
 overhead each library adds, which is what a Python user actually pays.
@@ -49,7 +49,7 @@ try:
 except ImportError:
     sys.exit(
         "rustworkx is not installed. Run this harness with:\n"
-        "    uv run --with rustworkx python benchmarks/pygraphina-compare/compare.py\n"
+        "    uv run --with rustworkx python benchmarks/pygraphina/compare.py\n"
         "or `make bench-pygraphina`."
     )
 

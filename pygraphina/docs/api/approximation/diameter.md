@@ -48,6 +48,6 @@ print(f"Approximate diameter: {approx_diameter}")
 
 ## Diameter vs Radius
 
-- **Diameter**: Maximum shortest path length
-- **Radius**: Minimum eccentricity (distance to farthest node from a center)
+- Diameter: Maximum shortest path length
+- Radius: Minimum eccentricity (distance to farthest node from a center)
 - Radius ≤ Diameter ≤ 2·Radius

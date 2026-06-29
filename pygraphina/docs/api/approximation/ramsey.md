@@ -12,13 +12,13 @@ pg.approximation.ramsey_r2(
 
 ## Parameters
 
-- **graph**: Input undirected graph
+- graph: Input undirected graph
 
 ## Returns
 
 A tuple `(clique, independent_set)` containing:
-- **clique**: List of node IDs forming a clique (all pairs connected)
-- **independent_set**: List of node IDs forming an independent set (no pairs connected)
+- clique: List of node IDs forming a clique (all pairs connected)
+- independent_set: List of node IDs forming an independent set (no pairs connected)
 
 ## Description
 
@@ -44,8 +44,8 @@ The algorithm uses a greedy approach:
 
 ## Time Complexity
 
-**Time:** O(V²)  
-**Space:** O(V)
+Time: O(V²)  
+Space: O(V)
 
 ## Example
 
@@ -108,11 +108,11 @@ Expected output patterns:
 
 ## Use Cases
 
-- **Graph Coloring**: Finding independent sets helps with vertex coloring
-- **Social Network Analysis**: Identifying groups that are fully connected or completely disconnected
-- **Theoretical Computer Science**: Constructive proofs and algorithm design
-- **Network Robustness**: Finding dense or sparse regions
-- **Bioinformatics**: Identifying protein complexes (cliques) or non-interacting groups
+- Graph Coloring: Finding independent sets helps with vertex coloring
+- Social Network Analysis: Identifying groups that are fully connected or completely disconnected
+- Theoretical Computer Science: Constructive proofs and algorithm design
+- Network Robustness: Finding dense or sparse regions
+- Bioinformatics: Identifying protein complexes (cliques) or non-interacting groups
 
 ## Theoretical Guarantees
 

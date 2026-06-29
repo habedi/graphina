@@ -10,7 +10,7 @@ pg.links.resource_allocation_index(graph: Union[PyGraph, PyDiGraph]) -> Dict[Tup
 
 ## Parameters
 
-- **graph**: The graph to analyze
+- graph: The graph to analyze
 
 ## Returns
 

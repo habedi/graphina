@@ -14,9 +14,9 @@ pg.centrality.eigenvector(
 
 ## Parameters
 
-- **graph**: The graph to analyze (directed or undirected)
-- **max_iter**: Maximum number of iterations. Default: 100
-- **tolerance**: Convergence tolerance (default: 1e-6)
+- graph: The graph to analyze (directed or undirected)
+- max_iter: Maximum number of iterations. Default: 100
+- tolerance: Convergence tolerance (default: 1e-6)
 
 ## Returns
 

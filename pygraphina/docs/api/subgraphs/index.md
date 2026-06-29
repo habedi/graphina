@@ -5,7 +5,7 @@ Subgraph operations extract portions of a graph based on node sets or connectivi
 ## Overview
 
 !!! note "API Location"
-    All subgraph operations are available as **instance methods** on graph objects:
+    All subgraph operations are available as instance methods on graph objects:
     ```python
     # Instance methods (recommended)
     sub = g.subgraph(nodes)
@@ -17,11 +17,11 @@ Subgraph operations extract portions of a graph based on node sets or connectivi
 
 PyGraphina provides several methods to extract subgraphs:
 
-- **Subgraph**: Extract nodes and edges between them
-- **Induced Subgraph**: Extract nodes and all edges between them from the original graph
-- **Ego Graph**: Extract neighborhood around a central node
-- **Connected Component**: Extract a single connected component
-- **K-hop Neighbors**: Find all nodes within k hops of a starting node
+- Subgraph: Extract nodes and edges between them
+- Induced Subgraph: Extract nodes and all edges between them from the original graph
+- Ego Graph: Extract neighborhood around a central node
+- Connected Component: Extract a single connected component
+- K-hop Neighbors: Find all nodes within k hops of a starting node
 
 All subgraph operations are methods on `PyGraph` and `PyDiGraph` objects.
 
@@ -35,15 +35,15 @@ graph.subgraph(nodes: List[int]) -> PyGraph
 
 Extract a subgraph containing only the specified nodes and edges between them.
 
-**Parameters:**
+Parameters:
 
 - `nodes`: List of node IDs to include
 
-**Returns:**
+Returns:
 
 New graph containing specified nodes and their connecting edges.
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg
@@ -71,18 +71,18 @@ graph.induced_subgraph(nodes: List[int]) -> PyGraph
 
 Create an induced subgraph from a set of nodes.
 
-**Parameters:**
+Parameters:
 
 - `nodes`: List of node IDs to include
 
-**Returns:**
+Returns:
 
 Induced subgraph containing specified nodes and all edges between them from the original graph.
 
-**Note:** This is typically the same as `subgraph()` but explicitly guarantee all edges between the selected nodes are
+Note: This is typically the same as `subgraph()` but explicitly guarantee all edges between the selected nodes are
 included.
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg
@@ -109,16 +109,16 @@ graph.ego_graph(center: int, radius: int) -> PyGraph
 
 Extract the ego graph centered at a node within a given radius.
 
-**Parameters:**
+Parameters:
 
 - `center`: Center node ID
 - `radius`: Maximum distance from center
 
-**Returns:**
+Returns:
 
 Subgraph containing the center node and all nodes within the specified radius.
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg
@@ -137,7 +137,7 @@ print(f"Ego graph: {ego.node_count()} nodes")
 # Output: Ego graph: 5 nodes (nodes 3, 4, 5, 6, 7)
 ```
 
-**Use Case:** Analyzing local network structure around important nodes.
+Use Case: Analyzing local network structure around important nodes.
 
 ### k_hop_neighbors
 
@@ -147,16 +147,16 @@ graph.k_hop_neighbors(start: int, k: int) -> List[int]
 
 Find all nodes within k hops of a starting node.
 
-**Parameters:**
+Parameters:
 
 - `start`: Starting node ID
 - `k`: Maximum number of hops
 
-**Returns:**
+Returns:
 
 List of node IDs within k hops of the start node.
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg
@@ -178,7 +178,7 @@ neighbors_2 = g.k_hop_neighbors(nodes[1], 2)
 print(f"2-hop neighbors of node 1: {len(neighbors_2)}")  # node 0 and all others
 ```
 
-**Use Case:** Finding influence radius, recommendation systems.
+Use Case: Finding influence radius, recommendation systems.
 
 ### connected_component
 
@@ -188,15 +188,15 @@ graph.connected_component(start: int) -> List[int]
 
 Get all nodes in the same connected component as the starting node.
 
-**Parameters:**
+Parameters:
 
 - `start`: Starting node ID
 
-**Returns:**
+Returns:
 
 List of all node IDs in the same component.
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg
@@ -228,15 +228,15 @@ graph.component_subgraph(start: int) -> PyGraph
 
 Extract the subgraph of the connected component containing the starting node.
 
-**Parameters:**
+Parameters:
 
 - `start`: Starting node ID
 
-**Returns:**
+Returns:
 
 Subgraph containing the entire connected component.
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg
@@ -266,15 +266,15 @@ graph.filter_nodes(predicate: Callable[[int, int], bool]) -> PyGraph
 
 Create a subgraph containing only nodes that satisfy a predicate.
 
-**Parameters:**
+Parameters:
 
 - `predicate`: Function taking `(node_id, node_attr)` and returning `True` to include the node
 
-**Returns:**
+Returns:
 
 Subgraph with filtered nodes.
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg
@@ -301,15 +301,15 @@ graph.filter_edges(predicate: Callable[[int, int, float], bool]) -> PyGraph
 
 Create a subgraph containing only edges that satisfy a predicate.
 
-**Parameters:**
+Parameters:
 
 - `predicate`: Function taking `(source_id, target_id, weight)` and returning `True` to include the edge
 
-**Returns:**
+Returns:
 
 Subgraph with filtered edges (all original nodes are kept).
 
-**Example:**
+Example:
 
 ```python
 import pygraphina as pg

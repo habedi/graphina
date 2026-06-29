@@ -10,9 +10,9 @@ Memory pooling reuse existing collections to reduce allocation overhead.
 
 ## Pool Types
 
-*   **`NodeSetPool`**: Reuses `HashSet<NodeId>` collections.
-*   **`NodeMapPool`**: Reuses `HashMap<NodeId, T>` collections.
-*   **`NodeQueuePool`**: Reuses `VecDeque<NodeId>` collections.
+*   `NodeSetPool`: Reuses `HashSet<NodeId>` collections.
+*   `NodeMapPool`: Reuses `HashMap<NodeId, T>` collections.
+*   `NodeQueuePool`: Reuses `VecDeque<NodeId>` collections.
 
 ## Explicit Usage
 

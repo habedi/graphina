@@ -11,7 +11,7 @@ pg.approximation.min_weighted_vertex_cover(graph: PyGraph) -> Set[int]
 
 ## Parameters
 
-- **graph**: The graph to analyze
+- graph: The graph to analyze
 
 ## Returns
 

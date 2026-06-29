@@ -13,7 +13,7 @@ pg.approximation.clique_removal(graph: PyGraph) -> List[List[int]]
 
 ## Parameters
 
-- **graph**: The graph to analyze
+- graph: The graph to analyze
 
 ## Returns
 

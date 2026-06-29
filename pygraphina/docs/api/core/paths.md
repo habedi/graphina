@@ -52,19 +52,19 @@ result = g.shortest_path(source: int, target: int) -> Optional[Tuple[float, List
 
 ### Parameters
 
-- **source** (int): The starting node ID
-- **target** (int): The destination node ID
+- source (int): The starting node ID
+- target (int): The destination node ID
 
 ### Returns
 
-- **Optional[Tuple[float, List[int]]]**: A tuple containing:
+- Optional[Tuple[float, List[int]]]: A tuple containing:
   - The total distance/cost (float) as the first element
   - The path as a list of node IDs (in order from source to target) as the second element
   - Returns `None` if no path exists between source and target
 
 ### Raises
 
-- **ValueError**: If source or target node IDs are invalid
+- ValueError: If source or target node IDs are invalid
 
 ### Requirements
 
@@ -132,12 +132,12 @@ distances = g.dijkstra(source: int, cutoff: Optional[float] = None) -> Dict[int,
 
 ### Parameters
 
-- **source** (int): The starting node ID
-- **cutoff** (Optional[float]): Maximum distance to explore (optional). Nodes beyond this distance are not computed.
+- source (int): The starting node ID
+- cutoff (Optional[float]): Maximum distance to explore (optional). Nodes beyond this distance are not computed.
 
 ### Returns
 
-- **Dict[int, Optional[float]]**: Dictionary mapping node IDs to their shortest distances from source
+- Dict[int, Optional[float]]: Dictionary mapping node IDs to their shortest distances from source
   - Distance is `None` if the node is unreachable
 
 ### Example
@@ -175,11 +175,11 @@ result = g.bellman_ford(source: int) -> Optional[Dict[int, Optional[float]]]
 
 ### Parameters
 
-- **source** (int): The starting node ID
+- source (int): The starting node ID
 
 ### Returns
 
-- **Optional[Dict[int, Optional[float]]]**: Dictionary mapping node IDs to shortest distances, or `None` if a negative cycle is detected
+- Optional[Dict[int, Optional[float]]]: Dictionary mapping node IDs to shortest distances, or `None` if a negative cycle is detected
 
 ### Handles
 
@@ -216,7 +216,7 @@ distances = g.floyd_warshall() -> Optional[Dict[int, Dict[int, Optional[float]]]
 
 ### Returns
 
-- **Optional[Dict[int, Dict[int, Optional[float]]]]**: A nested dictionary where `distances[u][v]` is the shortest distance from node u to node v
+- Optional[Dict[int, Dict[int, Optional[float]]]]: A nested dictionary where `distances[u][v]` is the shortest distance from node u to node v
   - Returns `None` if a negative cycle is detected
 
 ### Use Cases
@@ -277,10 +277,10 @@ else:
 
 ## Edge Cases
 
-- **No path exists**: Returns infinity or None
-- **Negative cycles**: Bellman-Ford detects them
-- **Self-loops**: Depend on weight (usually ignored if non-negative)
-- **Large graphs**: Dijkstra preferred over Floyd-Warshall
+- No path exists: Returns infinity or None
+- Negative cycles: Bellman-Ford detects them
+- Self-loops: Depend on weight (usually ignored if non-negative)
+- Large graphs: Dijkstra preferred over Floyd-Warshall
 
 ## Complexity Comparison
 
