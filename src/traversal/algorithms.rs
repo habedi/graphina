@@ -537,17 +537,10 @@ fn get_backward_neighbors<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, node: NodeId) -
 where
     Ty: GraphConstructor<A, W>,
 {
-    if <Ty as GraphConstructor<A, W>>::is_directed() {
-        // For directed graphs, iterate over all edges and select those incoming to `node`.
-        graph
-            .edges()
-            .filter(|(_, tgt, _)| *tgt == node)
-            .map(|(src, _, _)| src)
-            .collect()
-    } else {
-        // For undirected graphs, the neighbors are symmetric.
-        graph.neighbors(node).collect()
-    }
+    // `incoming_neighbors` already returns edge sources for directed graphs and
+    // symmetric neighbors for undirected ones, both via O(degree) adjacency
+    // rather than an O(E) scan over the full edge list.
+    graph.incoming_neighbors(node).collect()
 }
 #[cfg(test)]
 mod tests {

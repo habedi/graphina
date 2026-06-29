@@ -26,9 +26,11 @@ Comprehensive tests for algorithms that don't have dedicated unit tests in sourc
 **Coverage:**
 
 - Approximation algorithms (`average_clustering`, `min_maximal_matching`, `ramsey_r2`, `densest_subgraph`, and `approximate_diameter`)
-- Centrality algorithms (`closeness_centrality`, `harmonic_centrality`, `local_reaching_centrality`, `global_reaching_centrality`, `voterank`, and `laplacian_centrality`)
+- Centrality algorithms (`closeness_centrality`, `harmonic_centrality`, `local_reaching_centrality`, `global_reaching_centrality`, `voterank`, and
+  `laplacian_centrality`)
 - Community detection (`infomap`, `spectral_embeddings`, and `spectral_clustering`)
-- Link prediction (`resource_allocation_index`, `preferential_attachment`, `common_neighbor_centrality`, `cn_soundarajan_hopcroft`, `within_inter_cluster`, and `ra_index_soundarajan_hopcroft`)
+- Link prediction (`resource_allocation_index`, `preferential_attachment`, `common_neighbor_centrality`, `cn_soundarajan_hopcroft`,
+  `within_inter_cluster`, and `ra_index_soundarajan_hopcroft`)
 - Directed graph comparisons
 - Edge cases (empty graphs, self-loops, and parallel edges)
 
@@ -129,19 +131,6 @@ huggingface-cli download habedi/graphina-graphs --repo-type dataset --local-dir 
 ```
 
 Tests that require datasets will skip gracefully if the data is not available.
-
-### Test Statistics
-
-| Test Suite | Test Count | Purpose |
-|------------|------------|---------|
-| Unit tests (src/) | 154 | Module-level unit tests |
-| algorithm_tests.rs | 49 | Algorithm coverage |
-| e2e_tests.rs | 12 | End-to-end pipelines |
-| integration_tests.rs | 29 | Cross-module integration |
-| property_based_tests.rs | 29 | Property-based verification |
-| regression_tests.rs | 25 | Bug regression prevention |
-| Doc tests | 44 | Documentation examples |
-| **Total** | **342** | |
 
 ### Notes
 

@@ -7,8 +7,6 @@
 
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
-use nalgebra::SymmetricEigen;
-use nalgebra::{DMatrix, DVector};
 
 /// Eigenvector centrality: computes the eigenvector corresponding to the largest eigenvalue
 /// of the adjacency matrix.
@@ -60,72 +58,52 @@ where
         node_to_idx.insert(node, idx);
     }
 
-    // Build adjacency matrix
-    let mut adj = DMatrix::<f64>::zeros(n, n);
+    // Store the adjacency as a sparse edge list rather than a dense n x n matrix.
+    // Each entry is (row, col, weight), and the operator product accumulates
+    // `out[row] += weight * x[col]`. This costs O(E) per iteration and O(E)
+    // memory instead of O(n^2). For directed graphs the entry orients so an
+    // incoming edge influences the target (v influences u); for undirected
+    // graphs both orientations are stored to keep the operator symmetric.
+    let directed = graph.is_directed();
+    let mut adj: Vec<(usize, usize, f64)> = Vec::with_capacity(graph.edge_count());
     for (u, v, w) in graph.edges() {
         let ui = node_to_idx[&u];
         let vi = node_to_idx[&v];
         let weight: f64 = (*w).into();
 
-        if graph.is_directed() {
+        if directed {
             // For directed graphs: v influences u (incoming edges)
-            adj[(vi, ui)] += weight;
+            adj.push((vi, ui, weight));
         } else {
-            // For undirected graphs: symmetric
-            adj[(ui, vi)] += weight;
-            adj[(vi, ui)] += weight;
+            // For undirected graphs the operator is symmetric.
+            adj.push((ui, vi, weight));
+            adj.push((vi, ui, weight));
         }
     }
 
-    // For undirected graphs, use a robust symmetric eigensolver to avoid power-iteration
-    // oscillation on bipartite graphs where |lambda_max| ties with |lambda_min|
-    if !graph.is_directed() {
-        // Safety: if adjacency is effectively zero (should be caught above), fall back to uniform
-        // Compute principal eigenvector
-        let se = SymmetricEigen::new(adj.clone());
-        // Clone to avoid moving fields out of `se`
-        let evals = se.eigenvalues.clone();
-        let evecs = se.eigenvectors.clone();
-
-        // Find the index of the largest eigenvalue
-        let mut max_idx = 0usize;
-        let mut max_val = f64::NEG_INFINITY;
-        for (i, &eig) in evals.iter().enumerate() {
-            if eig > max_val {
-                max_val = eig;
-                max_idx = i;
-            }
-        }
-
-        // Extract the corresponding eigenvector (column max_idx)
-        let mut x = evecs.column(max_idx).into_owned();
-        // Make sure non-negative entries (orientation of eigenvectors is arbitrary)
-        for val in x.iter_mut() {
-            *val = val.abs();
-        }
-        // Normalize to sum to number of nodes for consistency
-        let sum: f64 = x.iter().sum();
-        if sum > 0.0 {
-            x *= (n as f64) / sum;
-        }
-
-        let mut centrality = NodeMap::default();
-        for (idx, &val) in x.iter().enumerate() {
-            centrality.insert(node_list[idx], val);
-        }
-        return Ok(centrality);
-    }
-
-    // Power iteration
-    let mut x = DVector::<f64>::from_element(n, 1.0 / (n as f64).sqrt());
+    // Sparse power iteration. For undirected graphs iterate on the shifted
+    // operator (A + I): shifting by the identity moves every eigenvalue up by one
+    // without changing the eigenvectors, which makes the dominant eigenvalue
+    // strictly largest in magnitude and removes the |lambda_max| == |lambda_min|
+    // oscillation that bipartite graphs cause. This replaces the dense symmetric
+    // eigendecomposition the undirected path used before. Directed graphs iterate
+    // on A itself and keep the zero-norm and sign-oscillation guards, since the
+    // shift would make a defective directed operator converge only linearly.
+    let shift = if directed { 0.0 } else { 1.0 };
+    let mut x = vec![1.0 / (n as f64).sqrt(); n];
     let mut converged = false;
 
     for iter in 0..max_iter {
-        let x_new = &adj * &x;
-        let norm = x_new.norm();
+        // y = (A + shift * I) x
+        let mut y: Vec<f64> = x.iter().map(|&xi| shift * xi).collect();
+        for &(row, col, weight) in &adj {
+            y[row] += weight * x[col];
+        }
 
+        let norm: f64 = y.iter().map(|v| v * v).sum::<f64>().sqrt();
         if norm < 1e-10 {
-            // Graph is disconnected or has zero weights, return uniform distribution
+            // Degenerate operator (disconnected, all-zero weights, or a defective
+            // directed structure): fall back to a uniform distribution.
             let mut centrality = NodeMap::default();
             let uniform_value = 1.0 / n as f64;
             for &node in &node_list {
@@ -134,31 +112,30 @@ where
             return Ok(centrality);
         }
 
-        let x_new_normalized = x_new / norm;
-        let diff = (&x_new_normalized - &x).norm();
+        let mut diff_sq = 0.0;
+        let mut diff_neg_sq = 0.0;
+        for (xi, yi) in x.iter().zip(&y) {
+            let normalized = yi / norm;
+            let d = normalized - xi;
+            diff_sq += d * d;
+            let dn = normalized + xi;
+            diff_neg_sq += dn * dn;
+        }
+        for (xi, yi) in x.iter_mut().zip(&y) {
+            *xi = yi / norm;
+        }
 
-        if diff < tolerance {
-            x = x_new_normalized;
+        if diff_sq.sqrt() < tolerance {
             converged = true;
             break;
         }
 
-        // Check for oscillation (negative eigenvalue case)
-        if iter > 10 {
-            let x_neg = -&x;
-            let diff_neg = (&x_new_normalized - &x_neg).norm();
-            if diff_neg < tolerance {
-                // Oscillating - take absolute values
-                x = x_new_normalized;
-                for val in x.iter_mut() {
-                    *val = val.abs();
-                }
-                converged = true;
-                break;
-            }
+        // Directed graphs can oscillate between x and -x on a negative dominant
+        // eigenvalue; detect the sign flip and converge on the magnitudes.
+        if directed && iter > 10 && diff_neg_sq.sqrt() < tolerance {
+            converged = true;
+            break;
         }
-
-        x = x_new_normalized;
     }
 
     if !converged {
@@ -168,21 +145,85 @@ where
         ));
     }
 
-    // Normalize to have values sum to number of nodes for consistency
+    // Normalize so values sum to the number of nodes, matching the prior
+    // convention, and report magnitudes (eigenvector orientation is arbitrary).
     let sum: f64 = x.iter().map(|v| v.abs()).sum();
     if sum > 0.0 {
-        x *= n as f64 / sum;
+        for v in x.iter_mut() {
+            *v = v.abs() * (n as f64) / sum;
+        }
     }
 
     let mut centrality = NodeMap::default();
     for (idx, &val) in x.iter().enumerate() {
-        centrality.insert(node_list[idx], val.abs());
+        centrality.insert(node_list[idx], val);
     }
     Ok(centrality)
 }
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_eigenvector_with_deleted_nodes() {
+        use crate::centrality::eigenvector::eigenvector_centrality;
+        use crate::core::types::Graph;
+
+        let mut graph: Graph<i32, f64> = Graph::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n1, n3, 1.0);
+        graph.add_edge(n1, n4, 1.0);
+        graph.add_edge(n1, n5, 1.0);
+
+        graph.remove_node(n5);
+
+        let eig = eigenvector_centrality(&graph, 100, 1e-6).unwrap();
+
+        assert!(eig[&n1] > eig[&n2]);
+        assert!(eig[&n1] > eig[&n3]);
+        assert!(eig[&n1] > eig[&n4]);
+        assert!(!eig.contains_key(&n5));
+    }
+
+    #[test]
+    fn test_eigenvector_issue_21_regression() {
+        use crate::core::types::Graph;
+        // Regression test for Issue #21: "Using Vec to return centrality might cause error for graph with removed node"
+        // Ensures that creating a "gap" in NodeIds by removing an intermediate node doesn't cause out-of-bounds access.
+        use crate::centrality::eigenvector::eigenvector_centrality;
+
+        let mut g = Graph::<i32, f64>::new();
+
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(4);
+        let n3 = g.add_node(9);
+
+        g.add_edge(n0, n3, 1.0);
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n3, n1, 1.0);
+
+        // Remove an intermediate node (n1) to create a gap if IDs were treated as dense indices
+        g.remove_node(n1);
+
+        // This should not panic
+        let result = eigenvector_centrality(&g, 1000, 1e-6);
+        assert!(result.is_ok());
+
+        let centrality = result.unwrap();
+        // n1 should not be in the result
+        assert!(!centrality.contains_key(&n1));
+        // Remaining nodes should be present
+        assert!(centrality.contains_key(&n0));
+        assert!(centrality.contains_key(&n2));
+        assert!(centrality.contains_key(&n3));
+    }
     use super::eigenvector_centrality;
     use crate::core::types::{Digraph, Graph};
 
@@ -281,5 +322,24 @@ mod tests {
 
         // Should return uniform distribution
         assert!((c[&n1] - c[&n2]).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_eigenvector_bipartite_converges() {
+        // A 4-cycle is bipartite, so the adjacency matrix has eigenvalues +2 and
+        // -2 of equal magnitude. A plain power iteration on A oscillates and never
+        // settles; the sparse iteration on (A + I) breaks the tie and converges.
+        // By symmetry every node on the cycle has equal centrality.
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for i in 0..4 {
+            g.add_edge(nodes[i], nodes[(i + 1) % 4], 1.0);
+        }
+
+        let c = eigenvector_centrality(&g, 1000, 1e-9).unwrap();
+        for &node in &nodes {
+            assert!(c[&node] > 0.0);
+            assert!((c[&node] - c[&nodes[0]]).abs() < 1e-6);
+        }
     }
 }

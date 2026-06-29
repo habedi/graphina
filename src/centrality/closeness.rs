@@ -62,3 +62,41 @@ where
 
     Ok(centralities)
 }
+
+#[cfg(test)]
+mod tests {
+    // Regression: closeness centrality summed reciprocal distances (the harmonic
+    // centrality formula) instead of computing closeness. On the unit-weight path
+    // 0-1-2 the endpoint's closeness is (reachable / sum_dist) * (reachable / (n-1))
+    // = (2/3) * (2/2) = 0.6667, not the harmonic value 1/1 + 1/2 = 1.5.
+    #[test]
+    fn test_closeness_centrality_is_not_harmonic() {
+        use crate::centrality::closeness::closeness_centrality;
+        use crate::core::types::Graph;
+        use ordered_float::OrderedFloat;
+
+        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n0, n1, OrderedFloat(1.0));
+        g.add_edge(n1, n2, OrderedFloat(1.0));
+
+        let cc = closeness_centrality(&g).expect("closeness should succeed");
+        assert!(
+            (cc[&n0] - 2.0 / 3.0).abs() < 1e-9,
+            "expected 0.6667, got {}",
+            cc[&n0]
+        );
+        assert!(
+            (cc[&n1] - 1.0).abs() < 1e-9,
+            "expected 1.0, got {}",
+            cc[&n1]
+        );
+        assert!(
+            (cc[&n2] - 2.0 / 3.0).abs() < 1e-9,
+            "expected 0.6667, got {}",
+            cc[&n2]
+        );
+    }
+}

@@ -257,6 +257,58 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_betweenness_centrality_two_nodes_division_by_zero_fix() {
+        use crate::centrality::betweenness::betweenness_centrality;
+        use crate::core::types::Graph;
+        use ordered_float::OrderedFloat;
+
+        let mut graph = Graph::<i32, OrderedFloat<f64>>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+
+        graph.add_edge(n1, n2, OrderedFloat(1.0));
+
+        let result = betweenness_centrality(&graph, true);
+        assert!(result.is_ok());
+
+        let centrality = result.unwrap();
+        assert_eq!(centrality.len(), 2);
+        assert_eq!(*centrality.get(&n1).unwrap(), 0.0);
+        assert_eq!(*centrality.get(&n2).unwrap(), 0.0);
+    }
+
+    // Regression: unnormalized undirected betweenness did not halve the raw Brandes
+    // count (which accumulates each shortest path from both endpoints), so values
+    // were double the standard definition. On the unit-weight path 0-1-2-3 the
+    // middle nodes have unnormalized betweenness 2.0, not 4.0.
+    #[test]
+    fn test_betweenness_undirected_halving() {
+        use crate::centrality::betweenness::betweenness_centrality;
+        use crate::core::types::Graph;
+        use ordered_float::OrderedFloat;
+
+        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let nodes: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        g.add_edge(nodes[0], nodes[1], OrderedFloat(1.0));
+        g.add_edge(nodes[1], nodes[2], OrderedFloat(1.0));
+        g.add_edge(nodes[2], nodes[3], OrderedFloat(1.0));
+
+        let bc = betweenness_centrality(&g, false).expect("betweenness should succeed");
+        assert!((bc[&nodes[0]] - 0.0).abs() < 1e-9);
+        assert!(
+            (bc[&nodes[1]] - 2.0).abs() < 1e-9,
+            "expected 2.0, got {}",
+            bc[&nodes[1]]
+        );
+        assert!(
+            (bc[&nodes[2]] - 2.0).abs() < 1e-9,
+            "expected 2.0, got {}",
+            bc[&nodes[2]]
+        );
+        assert!((bc[&nodes[3]] - 0.0).abs() < 1e-9);
+    }
     use super::{betweenness_centrality, edge_betweenness_centrality};
     use crate::core::types::Graph;
     use ordered_float::OrderedFloat;

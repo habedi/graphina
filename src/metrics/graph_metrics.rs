@@ -4,7 +4,7 @@
 Graph-level metrics and statistics.
 */
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
@@ -140,6 +140,14 @@ pub fn average_clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeTyp
 pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
 ) -> f64 {
+    // Precompute each node's neighbor set once so the inner adjacency test is an
+    // O(1) hash lookup rather than an O(degree) `contains_edge` call. This keeps
+    // the whole computation at the documented O(V * d²) instead of O(V * d² * degree).
+    let neighbor_sets: HashMap<NodeId, HashSet<NodeId>> = graph
+        .node_ids()
+        .map(|node| (node, graph.neighbors(node).collect()))
+        .collect();
+
     let mut triangles = 0;
     let mut triples = 0;
 
@@ -153,9 +161,10 @@ pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 
         triples += k * (k - 1) / 2;
 
-        for i in 0..neighbors.len() {
-            for j in (i + 1)..neighbors.len() {
-                if graph.contains_edge(neighbors[i], neighbors[j]) {
+        for i in 0..k {
+            let ni = &neighbor_sets[&neighbors[i]];
+            for &other in neighbors.iter().skip(i + 1) {
+                if ni.contains(&other) {
                     triangles += 1;
                 }
             }
@@ -284,6 +293,32 @@ fn bfs_distances<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_assortativity_is_symmetric_newman_coefficient() {
+        use crate::core::types::Graph;
+        // Degree assortativity is the Pearson correlation over the symmetric joint
+        // degree distribution of edge endpoints: each undirected edge contributes
+        // both orderings. A star is perfectly disassortative (a degree-k hub joined
+        // only to degree-1 leaves), so its coefficient is exactly -1.0. The earlier
+        // implementation correlated a single edge ordering, giving the two endpoints
+        // different means; on a star that collapsed the variance to zero and
+        // returned 0.0 instead of -1.0.
+        use crate::metrics::assortativity;
+
+        let mut g: Graph<i32, f64> = Graph::new();
+        let center = g.add_node(0);
+        for i in 1..=4 {
+            let leaf = g.add_node(i);
+            g.add_edge(center, leaf, 1.0);
+        }
+
+        let r = assortativity(&g);
+        assert!(
+            (r - (-1.0)).abs() < 1e-9,
+            "star degree assortativity should be -1.0, got {r}"
+        );
+    }
     use super::*;
     use crate::core::types::Graph;
 
@@ -345,6 +380,27 @@ mod tests {
         g.add_edge(n3, n1, 1.0);
 
         assert!((transitivity(&g) - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_transitivity_fractional() {
+        // A triangle (0, 1, 2) with a pendant edge 2 - 3. There is one triangle,
+        // counted once per apex (nodes 0, 1, and 2), giving 3 closed pairs. The
+        // connected triples are: node 0 -> 1, node 1 -> 1, node 2 -> C(3, 2) = 3,
+        // node 3 -> 0, for 5 total. Transitivity is therefore 3 / 5 = 0.6. This
+        // guards the neighbor-set rewrite against miscounting on a hub node.
+        let mut g = Graph::<i32, f64>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        g.add_edge(n0, n1, 1.0);
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n0, 1.0);
+        g.add_edge(n2, n3, 1.0);
+
+        assert!((transitivity(&g) - 0.6).abs() < 1e-9);
     }
 
     #[test]

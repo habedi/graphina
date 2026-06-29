@@ -96,10 +96,18 @@ where
                     .neighbors(u)
                     .filter(|v| remaining.contains(v))
                     .collect();
+                // Adjacency sets for the candidate's neighbors give an O(1)
+                // "are these two neighbors connected" test, replacing the
+                // O(degree) `.any()` linear scan inside the O(d^2) pair loop.
+                let adj: HashMap<NodeId, HashSet<NodeId>> = neighbors
+                    .iter()
+                    .map(|&v| (v, graph.neighbors(v).collect::<HashSet<_>>()))
+                    .collect();
                 let mut fill_in = 0;
                 for i in 0..neighbors.len() {
-                    for j in i + 1..neighbors.len() {
-                        if !graph.neighbors(neighbors[i]).any(|x| x == neighbors[j]) {
+                    let si = &adj[&neighbors[i]];
+                    for other in &neighbors[i + 1..] {
+                        if !si.contains(other) {
                             fill_in += 1;
                         }
                     }

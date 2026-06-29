@@ -3,6 +3,7 @@
 //! Soundarajan-Hopcroft link prediction algorithms.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
+use std::collections::HashSet;
 
 /// Helper: If no ebunch is provided, generate all unordered pairs of nodes.
 fn default_ebunch<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<(NodeId, NodeId)>
@@ -39,7 +40,7 @@ where
     let mut results = Vec::new();
     for (u, v) in pairs {
         let set_u: Vec<NodeId> = graph.neighbors(u).collect();
-        let set_v: Vec<NodeId> = graph.neighbors(v).collect();
+        let set_v: HashSet<NodeId> = graph.neighbors(v).collect();
         let common: Vec<NodeId> = set_u.into_iter().filter(|w| set_v.contains(w)).collect();
         let score = common
             .into_iter()

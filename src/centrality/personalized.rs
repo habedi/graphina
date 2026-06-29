@@ -38,6 +38,30 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    // Regression: personalized PageRank redistributed the rank mass of dangling
+    // nodes uniformly instead of by the personalization vector. With no edges every
+    // node is dangling, so all mass teleports by personalization and the result must
+    // equal the (normalized) personalization vector exactly.
+    #[test]
+    fn test_personalized_pagerank_dangling_uses_personalization() {
+        use crate::centrality::personalized::personalized_pagerank;
+        use crate::core::types::Graph;
+
+        let mut g = Graph::<i32, f64>::new();
+        let nodes: Vec<_> = (0..3).map(|i| g.add_node(i)).collect();
+
+        let p = vec![0.5, 0.3, 0.2];
+        let pr = personalized_pagerank(&g, Some(p.clone()), 0.85, 1e-12, 2000)
+            .expect("personalized pagerank should succeed");
+        for (i, &want) in p.iter().enumerate() {
+            assert!(
+                (pr[&nodes[i]] - want).abs() < 1e-9,
+                "node {i}: expected {want}, got {}",
+                pr[&nodes[i]]
+            );
+        }
+    }
     use super::*;
     use crate::core::types::Graph;
 

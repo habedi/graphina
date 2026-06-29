@@ -471,7 +471,10 @@ where
     F: Fn(NodeId) -> W,
     NodeId: Ord,
 {
-    let n = graph.node_count();
+    // Buffers are keyed by `NodeId::index()`, which stays stable across node
+    // removal, so they must span the index bound (max live index + 1), not the
+    // node count. Sizing by `node_count()` panics once a node has been removed.
+    let n = index_bound(graph);
     let mut dist = vec![None; n];
     let mut prev = vec![None; n];
     let mut heap = BinaryHeap::new();
@@ -613,11 +616,17 @@ where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord,
     Ty: GraphConstructor<A, W>,
 {
-    let n = graph.node_count();
-    let mut h = vec![W::from(0u8); n];
+    // Potentials `h` and per-source distances `d` are keyed by `NodeId::index()`,
+    // which is stable across node removal, so they span the index bound rather
+    // than the node count. The output matrix `dist[i][j]` stays contiguous, keyed
+    // by position in `nodes`. Mixing the two index spaces (as the previous version
+    // did) is wrong whenever a node has been removed.
+    let bound = index_bound(graph);
+    let node_count = graph.node_count();
+    let mut h = vec![W::from(0u8); bound];
 
-    // Relax edges for n - 1 iterations.
-    for _ in 0..n.saturating_sub(1) {
+    // Relax edges for node_count - 1 iterations.
+    for _ in 0..node_count.saturating_sub(1) {
         let mut updated = false;
         for (u, v, &w) in graph.edges() {
             let ui = u.index();
@@ -640,14 +649,14 @@ where
         }
     }
 
-    // Precompute mapping from contiguous indices to NodeId.
+    // Contiguous list of nodes; `dist[i][j]` is keyed by position here.
     let nodes: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
+    let n = nodes.len();
 
     let mut dist = vec![vec![None; n]; n];
-    for u in 0..n {
-        let start = nodes[u];
-        let mut d = vec![None; n];
-        d[u] = Some(W::from(0u8));
+    for (i, &start) in nodes.iter().enumerate() {
+        let mut d = vec![None; bound];
+        d[start.index()] = Some(W::from(0u8));
         let mut heap = BinaryHeap::new();
         heap.push(Reverse((W::from(0u8), start)));
         while let Some(Reverse((du, current))) = heap.pop() {
@@ -667,9 +676,9 @@ where
                 }
             }
         }
-        for v in 0..n {
-            if let Some(dprime) = d[v] {
-                dist[u][v] = Some(dprime - h[u] + h[v]);
+        for (j, &v) in nodes.iter().enumerate() {
+            if let Some(dprime) = d[v.index()] {
+                dist[i][j] = Some(dprime - h[start.index()] + h[v.index()]);
             }
         }
     }
@@ -687,6 +696,136 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_dijkstra_negative_weights() {
+        use crate::core::paths::dijkstra_path_f64;
+        use crate::core::types::Graph;
+
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+
+        g.add_edge(n1, n2, -5.0);
+
+        let result = dijkstra_path_f64(&g, n1, None);
+        assert!(result.is_err());
+    }
+
+    // Regression: the generic Dijkstra followed only the stored edge orientation,
+    // so on an undirected graph a node reached via an edge stored as (other, node)
+    // could not reach back. Here the edges are stored as (0,1) and (1,2); from node
+    // 2, Dijkstra must still reach node 0 at distance 2.
+    #[test]
+    fn test_dijkstra_undirected_follows_both_directions() {
+        use crate::core::paths::dijkstra;
+        use crate::core::types::Graph;
+
+        let mut g = Graph::<i32, i32>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n0, n1, 1);
+        g.add_edge(n1, n2, 1);
+
+        let dist = dijkstra(&g, n2).expect("dijkstra should succeed");
+        assert_eq!(dist[&n2], Some(0));
+        assert_eq!(dist[&n1], Some(1));
+        assert_eq!(dist[&n0], Some(2), "node 0 must be reachable from node 2");
+    }
+
+    // Regression: bellman_ford relaxed each stored edge in one direction only, so on
+    // an undirected graph it left nodes reachable only against the stored edge
+    // orientation unreachable, disagreeing with dijkstra. It must follow undirected
+    // edges in both directions.
+    #[test]
+    fn test_bellman_ford_undirected_follows_both_directions() {
+        use crate::core::paths::bellman_ford;
+        use crate::core::types::Graph;
+
+        let mut g = Graph::<i32, i32>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n0, n1, 1);
+        g.add_edge(n1, n2, 1);
+
+        let dist = bellman_ford(&g, n2).expect("bellman_ford should succeed");
+        assert_eq!(dist[&n2], Some(0));
+        assert_eq!(dist[&n1], Some(1));
+        assert_eq!(dist[&n0], Some(2), "node 0 must be reachable from node 2");
+    }
+
+    // Regression: floyd_warshall initialized its distance matrix by iterating
+    // graph.edges() and writing only dist[u][v], never dist[v][u]. On an undirected
+    // graph (edges stored once) the all-pairs matrix came out asymmetric and most
+    // pairs unreachable, inconsistent with dijkstra and bellman_ford.
+    #[test]
+    fn test_floyd_warshall_undirected_follows_both_directions() {
+        use crate::core::paths::floyd_warshall;
+        use crate::core::types::Graph;
+
+        let mut g = Graph::<i32, i32>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n0, n1, 1);
+        g.add_edge(n1, n2, 1);
+
+        let matrix = floyd_warshall(&g).expect("floyd_warshall should succeed");
+        assert_eq!(
+            matrix[&n2][&n0],
+            Some(2),
+            "node 0 must be reachable from node 2"
+        );
+        assert_eq!(matrix[&n0][&n2], Some(2), "matrix must be symmetric");
+        assert_eq!(matrix[&n1][&n0], Some(1));
+        assert_eq!(matrix[&n0][&n1], Some(1));
+    }
+
+    #[test]
+    fn test_a_star_after_node_removal_no_panic() {
+        use crate::core::types::Digraph;
+        // `a_star` sized its dense buffers by `node_count()` and indexed them by
+        // `NodeId::index()`. Because `NodeId`s are stable across removal, removing a
+        // node leaves a live index above `node_count()`, so the buffer access panicked
+        // out of bounds. It must size by the index bound instead, like `dijkstra`.
+        use crate::core::paths::a_star;
+
+        let mut g: Digraph<i32, i32> = Digraph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let d = g.add_node(3);
+        g.remove_node(b); // index 3 (d) is now live while node_count() is 3
+        g.add_edge(a, c, 1);
+        g.add_edge(c, d, 1);
+
+        let result = a_star(&g, a, d, |_| 0).unwrap();
+        assert_eq!(result.map(|(cost, _)| cost), Some(2));
+    }
+
+    #[test]
+    fn test_johnson_after_node_removal_no_panic() {
+        use crate::core::types::Digraph;
+        // Same stable-index defect as `a_star`, compounded by `johnson` mixing
+        // contiguous `0..n` indices with `NodeId::index()`.
+        use crate::core::paths::johnson;
+
+        let mut g: Digraph<i32, i32> = Digraph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let d = g.add_node(3);
+        g.remove_node(b);
+        g.add_edge(a, c, 1);
+        g.add_edge(c, d, 1);
+
+        let all_pairs = johnson(&g).unwrap();
+        assert_eq!(all_pairs[&a][&d], Some(2));
+        assert_eq!(all_pairs[&a][&c], Some(1));
+        assert_eq!(all_pairs[&d][&a], None);
+    }
     use super::*;
     use crate::core::types::{Digraph, NodeId};
     use ordered_float::OrderedFloat;

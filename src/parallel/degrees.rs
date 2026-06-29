@@ -46,6 +46,34 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_parallel_vs_sequential_consistency() {
+        use crate::core::types::Graph;
+        use crate::parallel::degrees_parallel;
+
+        let mut g = Graph::<i32, f64>::new();
+        let nodes: Vec<_> = (0..100).map(|i| g.add_node(i)).collect();
+
+        for i in 0..100 {
+            for j in (i + 1)..100 {
+                if (i * j) % 7 == 0 {
+                    g.add_edge(nodes[i], nodes[j], 1.0);
+                }
+            }
+        }
+
+        let parallel_degrees = degrees_parallel(&g);
+
+        let sequential_degrees: std::collections::HashMap<_, _> = g
+            .nodes()
+            .map(|(id, _)| (id, g.degree(id).unwrap()))
+            .collect();
+
+        for (node, deg) in &sequential_degrees {
+            assert_eq!(parallel_degrees.get(node), Some(deg));
+        }
+    }
     use super::*;
     use crate::core::types::Graph;
 

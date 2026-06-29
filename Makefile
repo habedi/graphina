@@ -47,10 +47,31 @@ bench-graphina: ## Run the graphina vs rustworkx-core comparison harness
 	@echo "Running graphina vs rustworkx-core comparison..."
 	@cd benchmarks/graphina && cargo run --release
 
+# Undirected real-world datasets used by the dataset comparison targets. The large
+# directed graphs (stanford_web_graph, dblp_citation_network) are left out by default;
+# pass one explicitly via RUSTWORKX_COMPARE_DATASET / PYGRAPHINA_COMPARE_DATASET to run it.
+COMPARE_DATASETS := wikipedia_chameleon wikipedia_squirrel wikipedia_crocodile facebook_page_page
+
+.PHONY: bench-graphina-datasets
+bench-graphina-datasets: ## Run the graphina vs rustworkx-core comparison on the real-world datasets (run `make testdata` first)
+	@echo "Running graphina vs rustworkx-core comparison on real-world datasets..."
+	@for ds in $(COMPARE_DATASETS); do \
+		echo ""; echo "########## dataset: $$ds ##########"; \
+		(cd benchmarks/graphina && RUSTWORKX_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt cargo run --release) || exit 1; \
+	done
+
 .PHONY: bench-pygraphina
 bench-pygraphina: develop-py ## Run the PyGraphina vs rustworkx comparison harness
 	@echo "Running PyGraphina vs rustworkx comparison..."
 	@uv run --with rustworkx python benchmarks/pygraphina/compare.py
+
+.PHONY: bench-pygraphina-datasets
+bench-pygraphina-datasets: develop-py ## Run the PyGraphina vs rustworkx comparison on the real-world datasets (run `make testdata` first)
+	@echo "Running PyGraphina vs rustworkx comparison on real-world datasets..."
+	@for ds in $(COMPARE_DATASETS); do \
+		echo ""; echo "########## dataset: $$ds ##########"; \
+		PYGRAPHINA_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt uv run --with rustworkx python benchmarks/pygraphina/compare.py || exit 1; \
+	done
 
 .PHONY: build
 build: format ## Build the binary for the current platform

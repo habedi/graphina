@@ -80,14 +80,14 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.3.0-alpha.4"
+graphina = "0.3.0-alpha.3"
 ```
 
 Or enable all features with:
 
 ```toml
 [dependencies]
-graphina = { version = "0.3.0-alpha.4", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "pool"] }
+graphina = { version = "0.3.0-alpha.5", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "pool"] }
 ```
 
 > [!NOTE]
@@ -148,9 +148,9 @@ let g = UndirectedGraphBuilder::<i32, f64>::undirected()
 use graphina::core::generators::{erdos_renyi_graph, barabasi_albert_graph};
 use graphina::core::types::Undirected;
 
-// Use 42 for pseudo-random seed (for deterministic results)
-let er = erdos_renyi_graph::<Undirected>(100, 0.2, 42).unwrap();
-let ba = barabasi_albert_graph::<Undirected>(1000, 3, 42).unwrap();
+// Use 68 for the seed to generate reproducible random graphs
+let er = erdos_renyi_graph::<Undirected>(100, 0.2, 68).unwrap();
+let ba = barabasi_albert_graph::<Undirected>(1000, 3, 68).unwrap();
 ```
 
 ---

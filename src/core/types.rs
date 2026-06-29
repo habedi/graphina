@@ -223,10 +223,11 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             return None;
         }
         if self.is_directed() {
+            // Count incoming edges via petgraph's adjacency (O(in-degree)) rather
+            // than scanning every edge in the graph (O(E)).
             Some(
                 self.inner
-                    .edge_references()
-                    .filter(|edge| edge.target() == node.0)
+                    .edges_directed(node.0, petgraph::Direction::Incoming)
                     .count(),
             )
         } else {
@@ -359,11 +360,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     /// Returns an iterator over incoming neighbors of a node.
     pub fn incoming_neighbors(&self, node: NodeId) -> Box<dyn Iterator<Item = NodeId> + '_> {
         if self.is_directed() {
+            // Walk petgraph's incoming adjacency (O(in-degree)) instead of
+            // filtering every edge in the graph (O(E)).
             Box::new(
                 self.inner
-                    .edge_references()
-                    .filter(move |e| e.target() == node.0)
-                    .map(|e| NodeId::new(e.source())),
+                    .neighbors_directed(node.0, petgraph::Direction::Incoming)
+                    .map(NodeId::new),
             )
         } else {
             Box::new(self.neighbors(node))
@@ -443,20 +445,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     }
     /// Finds and returns the first edge from `source` to `target`.
     pub fn find_edge(&self, source: NodeId, target: NodeId) -> Option<EdgeId> {
-        if <Ty as GraphConstructor<A, W>>::is_directed() {
-            self.inner
-                .edge_references()
-                .find(|edge| edge.source() == source.0 && edge.target() == target.0)
-                .map(|edge| EdgeId::new(edge.id()))
-        } else {
-            self.inner
-                .edge_references()
-                .find(|edge| {
-                    (edge.source() == source.0 && edge.target() == target.0)
-                        || (edge.source() == target.0 && edge.target() == source.0)
-                })
-                .map(|edge| EdgeId::new(edge.id()))
-        }
+        // Delegate to petgraph's adjacency-based lookup, which walks only the
+        // source node's incident edges (O(degree)) rather than scanning every
+        // edge in the graph (O(E)). On an undirected graph this matches an edge
+        // in either orientation; on a directed graph it matches source -> target
+        // only, which preserves the previous semantics.
+        self.inner.find_edge(source.0, target.0).map(EdgeId::new)
     }
     /// Clears all nodes and edges from the graph.
     pub fn clear(&mut self) {
@@ -882,6 +876,116 @@ impl<T> IntoIterator for OrderedNodeMap<T> {
 }
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_undirected_degree_consistency() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+
+        g.add_edge(n1, n2, 5.0);
+
+        assert_eq!(g.degree(n1), Some(1));
+        assert_eq!(g.degree(n2), Some(1));
+        assert_eq!(g.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_self_loop_handling() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+
+        g.add_edge(n1, n1, 1.0);
+
+        assert!(g.degree(n1).unwrap() > 0);
+        assert!(g.contains_edge(n1, n1));
+    }
+
+    #[test]
+    fn test_directed_edge_finding() {
+        use crate::core::types::Digraph;
+        let mut g = Digraph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+
+        g.add_edge(n1, n2, 1.0);
+
+        assert!(g.contains_edge(n1, n2));
+        assert!(!g.contains_edge(n2, n1));
+    }
+
+    #[test]
+    fn test_iterator_safety() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n3, 1.0);
+
+        let nodes: Vec<_> = g.nodes().map(|(id, _)| id).collect();
+
+        for node in nodes {
+            g.remove_node(node);
+        }
+
+        assert_eq!(g.node_count(), 0);
+    }
+
+    #[test]
+    fn test_nodemap_with_deleted_nodes() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        let map = g.to_nodemap(|_, val| *val * 2);
+
+        g.remove_node(n2);
+
+        assert_eq!(map.get(&n1), Some(&2));
+        assert_eq!(map.get(&n3), Some(&6));
+    }
+
+    #[test]
+    fn test_find_edge_semantics_preserved_after_delegation() {
+        use crate::core::types::{Digraph, Graph};
+        // `find_edge` was reimplemented as an O(degree) adjacency lookup (delegating
+        // to petgraph) instead of an O(E) scan over every edge, which inflated every
+        // `contains_edge` caller (transitivity, clustering, triangles). This guards
+        // that the delegation keeps the original semantics: undirected matches in
+        // either orientation, directed matches source -> target only, and lookups
+        // stay correct after node removal.
+        let mut ug: Graph<i32, f64> = Graph::new();
+        let a = ug.add_node(0);
+        let b = ug.add_node(1);
+        let c = ug.add_node(2);
+        ug.add_edge(a, b, 1.0);
+
+        // Undirected: present in both directions, absent pair reports absent.
+        assert!(ug.find_edge(a, b).is_some());
+        assert!(ug.find_edge(b, a).is_some());
+        assert!(ug.contains_edge(a, b) && ug.contains_edge(b, a));
+        assert!(ug.find_edge(a, c).is_none());
+
+        // Lookup stays correct after a node removal (NodeId stability).
+        ug.remove_node(c);
+        assert!(ug.find_edge(a, b).is_some());
+
+        // Directed: matches source -> target only, not the reverse.
+        let mut dg: Digraph<i32, f64> = Digraph::new();
+        let x = dg.add_node(0);
+        let y = dg.add_node(1);
+        dg.add_edge(x, y, 1.0);
+        assert!(dg.find_edge(x, y).is_some());
+        assert!(dg.find_edge(y, x).is_none());
+        assert!(dg.contains_edge(x, y) && !dg.contains_edge(y, x));
+    }
     use super::*;
     #[test]
     fn test_digraph() {

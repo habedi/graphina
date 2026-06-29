@@ -3,7 +3,7 @@ Parallel triangle counting algorithms
 */
 
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
@@ -37,6 +37,14 @@ where
 {
     let nodes: Vec<NodeId> = graph.node_ids().collect();
 
+    // Precompute every node's neighbor set once (O(V + E)) and share it read-only
+    // across the rayon tasks, so the inner adjacency test is an O(1) hash lookup
+    // instead of an O(degree) `contains_edge` scan.
+    let adjacency: HashMap<NodeId, HashSet<NodeId>> = nodes
+        .iter()
+        .map(|&node| (node, graph.neighbors(node).collect()))
+        .collect();
+
     nodes
         .par_iter()
         .map(|&node| {
@@ -44,8 +52,9 @@ where
             let mut count = 0;
 
             for i in 0..neighbors.len() {
-                for j in (i + 1)..neighbors.len() {
-                    if graph.contains_edge(neighbors[i], neighbors[j]) {
+                let si = &adjacency[&neighbors[i]];
+                for other in &neighbors[i + 1..] {
+                    if si.contains(other) {
                         count += 1;
                     }
                 }

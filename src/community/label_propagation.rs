@@ -55,6 +55,18 @@ where
     for (i, &nid) in node_list.iter().enumerate() {
         node_to_idx.insert(nid, i);
     }
+    // Build an adjacency list once (O(E)). The previous version scanned every
+    // edge for every node on every iteration (O(max_iter * n * E)). Treat the
+    // graph as undirected: edge (src, tgt) makes each endpoint a neighbor of the
+    // other, matching the original both-endpoints counting.
+    let mut adjacency: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for (src, tgt, _w) in graph.edges() {
+        let si = node_to_idx[&src];
+        let ti = node_to_idx[&tgt];
+        adjacency[si].push(ti);
+        adjacency[ti].push(si);
+    }
+
     let mut labels: Vec<usize> = (0..n).collect();
     let mut rng = create_rng(seed);
     let mut iter = 0;
@@ -66,15 +78,8 @@ where
         for &i in &nodes {
             let mut freq: StdHashMap<usize, usize> = StdHashMap::new();
             // Count labels among neighbors (treated as undirected).
-            for (src, tgt, _w) in graph.edges() {
-                let si = node_to_idx[&src];
-                let ti = node_to_idx[&tgt];
-                if si == i {
-                    *freq.entry(labels[ti]).or_insert(0) += 1;
-                }
-                if ti == i {
-                    *freq.entry(labels[si]).or_insert(0) += 1;
-                }
+            for &nbr in &adjacency[i] {
+                *freq.entry(labels[nbr]).or_insert(0) += 1;
             }
             if let Some((&best_label, _)) = freq.iter().max_by_key(|&(_, count)| count) {
                 if best_label != labels[i] {
@@ -89,4 +94,34 @@ where
         }
     }
     Ok(labels)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_label_propagation_stability() {
+        use crate::community::label_propagation::label_propagation;
+        use crate::core::types::Graph;
+
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..10).map(|i| g.add_node(i)).collect();
+
+        for i in 0..4 {
+            for j in (i + 1)..5 {
+                g.add_edge(nodes[i], nodes[j], 1.0);
+            }
+        }
+
+        for i in 5..9 {
+            for j in (i + 1)..10 {
+                g.add_edge(nodes[i], nodes[j], 1.0);
+            }
+        }
+
+        g.add_edge(nodes[2], nodes[7], 0.1);
+
+        let communities = label_propagation(&g, 100, Some(42)).unwrap();
+        assert!(!communities.is_empty());
+        assert!(communities.len() <= 10);
+    }
 }

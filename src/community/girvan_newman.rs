@@ -171,3 +171,37 @@ fn compute_edge_betweenness(
     }
     edge_btwn
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_girvan_newman_with_deleted_nodes() {
+        use crate::community::girvan_newman::girvan_newman;
+        use crate::core::types::Graph;
+        use crate::core::types::NodeId;
+
+        let mut g: Graph<i32, f64> = Graph::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+        let n4 = g.add_node(4);
+
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n3, 1.0);
+
+        g.remove_node(n2);
+
+        let communities = girvan_newman(&g, 2).unwrap();
+
+        let mut seen = std::collections::HashSet::<NodeId>::new();
+        for c in &communities {
+            for &nid in c {
+                seen.insert(nid);
+            }
+        }
+
+        assert!(!seen.contains(&n2));
+        assert!(seen.contains(&n1));
+        assert!(seen.contains(&n4));
+    }
+}

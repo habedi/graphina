@@ -421,6 +421,26 @@ pub fn validate_is_dag<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_dag_validation() {
+        use crate::core::types::Digraph;
+        use crate::core::validation::is_dag;
+
+        let mut g = Digraph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n3, 1.0);
+
+        assert!(is_dag(&g));
+
+        g.add_edge(n3, n1, 1.0);
+
+        assert!(!is_dag(&g));
+    }
     use super::*;
     use crate::core::types::{Digraph, Graph};
 
