@@ -112,15 +112,15 @@ bench: ## Run benchmarks
 	@echo "Running benchmarks..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench --features all
 
-.PHONY: bench-rustworkx
-bench-rustworkx: ## Run the graphina vs rustworkx-core comparison harness
+.PHONY: bench-graphina
+bench-graphina: ## Run the graphina vs rustworkx-core comparison harness
 	@echo "Running graphina vs rustworkx-core comparison..."
-	@cd benchmarks/rustworkx-compare && cargo run --release
+	@cd benchmarks/graphina && cargo run --release
 
 .PHONY: bench-pygraphina
 bench-pygraphina: develop-py ## Run the PyGraphina vs rustworkx comparison harness
 	@echo "Running PyGraphina vs rustworkx comparison..."
-	@uv run --with rustworkx python benchmarks/pygraphina-compare/compare.py
+	@uv run --with rustworkx python benchmarks/pygraphina/compare.py
 
 .PHONY: audit
 audit: ## Run security audit on Rust dependencies
