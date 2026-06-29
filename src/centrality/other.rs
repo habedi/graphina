@@ -177,15 +177,24 @@ where
     W: Copy + PartialOrd + Into<f64>,
     Ty: GraphConstructor<A, W>,
 {
+    // Precompute every node's degree once (O(E) total) so the neighbor-degree
+    // sum below is O(1) per neighbor. The previous version recomputed each
+    // neighbor's degree with `neighbors(neighbor).count()` inside the inner loop,
+    // making the whole function roughly O(sum of degree^2).
+    let degrees: HashMap<NodeId, f64> = graph
+        .nodes()
+        .map(|(node, _)| (node, graph.neighbors(node).count() as f64))
+        .collect();
+
     let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
-        let degree = graph.neighbors(node).count() as f64;
+        let degree = degrees[&node];
         // Unnormalized Laplacian centrality (Qi et al.): the drop in Laplacian
         // energy when the node is removed. For an unweighted graph this is
         // d^2 + d + 2 * sum of neighbor degrees.
         let mut sum = degree * degree + degree;
         for neighbor in graph.neighbors(node) {
-            sum += 2.0 * graph.neighbors(neighbor).count() as f64;
+            sum += 2.0 * degrees[&neighbor];
         }
         centrality.insert(node, sum);
     }

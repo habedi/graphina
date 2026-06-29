@@ -70,7 +70,7 @@ where
     let mut results = Vec::new();
     for (u, v) in pairs {
         let set_u: Vec<NodeId> = graph.neighbors(u).collect();
-        let set_v: Vec<NodeId> = graph.neighbors(v).collect();
+        let set_v: HashSet<NodeId> = graph.neighbors(v).collect();
         let common: Vec<NodeId> = set_u.into_iter().filter(|w| set_v.contains(w)).collect();
         let score: f64 = common
             .into_iter()

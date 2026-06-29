@@ -3,7 +3,7 @@
 //! This module provides Infomap for community detection.
 
 use crate::core::error::{GraphinaError, Result};
-use crate::core::types::{BaseGraph, GraphConstructor};
+use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use rand::prelude::*;
 use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashMap;
@@ -46,6 +46,26 @@ where
     if max_iter == 0 {
         return Err(GraphinaError::invalid_graph("Infomap: max_iter=0"));
     }
+    // Map nodes to contiguous indices and build a weighted adjacency list once
+    // (O(E)). The previous version scanned every edge for every node on every
+    // iteration (O(max_iter * n * E)) and indexed by `NodeId::index()`, which
+    // also broke after a node removal. Mirror the original both-endpoints
+    // accumulation: edge (src, tgt) contributes to src's view of tgt and tgt's
+    // view of src.
+    let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
+    let mut index_of: HashMap<NodeId, usize> = HashMap::with_capacity(n);
+    for (i, &node) in node_list.iter().enumerate() {
+        index_of.insert(node, i);
+    }
+    let mut adjacency: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
+    for (src, tgt, &w) in graph.edges() {
+        let s = index_of[&src];
+        let t = index_of[&tgt];
+        let weight: f64 = w.into();
+        adjacency[s].push((t, weight));
+        adjacency[t].push((s, weight));
+    }
+
     let mut modules: Vec<usize> = (0..n).collect();
     let mut rng = create_rng(seed);
     let mut iter = 0;
@@ -57,18 +77,10 @@ where
         for &i in &nodes {
             let mut flow: HashMap<usize, f64> = HashMap::new();
             let mut total_flow = 0.0;
-            for (src, tgt, &w) in graph.edges() {
-                let weight: f64 = w.into();
-                if src.index() == i {
-                    let module = modules[tgt.index()];
-                    *flow.entry(module).or_insert(0.0) += weight;
-                    total_flow += weight;
-                }
-                if tgt.index() == i {
-                    let module = modules[src.index()];
-                    *flow.entry(module).or_insert(0.0) += weight;
-                    total_flow += weight;
-                }
+            for &(nbr, weight) in &adjacency[i] {
+                let module = modules[nbr];
+                *flow.entry(module).or_insert(0.0) += weight;
+                total_flow += weight;
             }
             if total_flow > 0.0 {
                 for val in flow.values_mut() {

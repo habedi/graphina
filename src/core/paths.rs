@@ -471,7 +471,10 @@ where
     F: Fn(NodeId) -> W,
     NodeId: Ord,
 {
-    let n = graph.node_count();
+    // Buffers are keyed by `NodeId::index()`, which stays stable across node
+    // removal, so they must span the index bound (max live index + 1), not the
+    // node count. Sizing by `node_count()` panics once a node has been removed.
+    let n = index_bound(graph);
     let mut dist = vec![None; n];
     let mut prev = vec![None; n];
     let mut heap = BinaryHeap::new();
@@ -613,11 +616,17 @@ where
     W: Copy + PartialOrd + Add<Output = W> + Sub<Output = W> + From<u8> + Ord,
     Ty: GraphConstructor<A, W>,
 {
-    let n = graph.node_count();
-    let mut h = vec![W::from(0u8); n];
+    // Potentials `h` and per-source distances `d` are keyed by `NodeId::index()`,
+    // which is stable across node removal, so they span the index bound rather
+    // than the node count. The output matrix `dist[i][j]` stays contiguous, keyed
+    // by position in `nodes`. Mixing the two index spaces (as the previous version
+    // did) is wrong whenever a node has been removed.
+    let bound = index_bound(graph);
+    let node_count = graph.node_count();
+    let mut h = vec![W::from(0u8); bound];
 
-    // Relax edges for n - 1 iterations.
-    for _ in 0..n.saturating_sub(1) {
+    // Relax edges for node_count - 1 iterations.
+    for _ in 0..node_count.saturating_sub(1) {
         let mut updated = false;
         for (u, v, &w) in graph.edges() {
             let ui = u.index();
@@ -640,14 +649,14 @@ where
         }
     }
 
-    // Precompute mapping from contiguous indices to NodeId.
+    // Contiguous list of nodes; `dist[i][j]` is keyed by position here.
     let nodes: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
+    let n = nodes.len();
 
     let mut dist = vec![vec![None; n]; n];
-    for u in 0..n {
-        let start = nodes[u];
-        let mut d = vec![None; n];
-        d[u] = Some(W::from(0u8));
+    for (i, &start) in nodes.iter().enumerate() {
+        let mut d = vec![None; bound];
+        d[start.index()] = Some(W::from(0u8));
         let mut heap = BinaryHeap::new();
         heap.push(Reverse((W::from(0u8), start)));
         while let Some(Reverse((du, current))) = heap.pop() {
@@ -667,9 +676,9 @@ where
                 }
             }
         }
-        for v in 0..n {
-            if let Some(dprime) = d[v] {
-                dist[u][v] = Some(dprime - h[u] + h[v]);
+        for (j, &v) in nodes.iter().enumerate() {
+            if let Some(dprime) = d[v.index()] {
+                dist[i][j] = Some(dprime - h[start.index()] + h[v.index()]);
             }
         }
     }

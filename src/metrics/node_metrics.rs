@@ -6,6 +6,25 @@ Node-level metrics for network analysis.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
+use std::collections::{HashMap, HashSet};
+
+/// Builds, for each distinct neighbor of `node`, the set of its adjacent nodes.
+/// This turns the inner adjacency test in the triangle loops into an O(1) hash
+/// lookup instead of an O(degree) `contains_edge` call. Membership in
+/// `adj[&a]` matches `graph.contains_edge(a, b)`: for undirected graphs the
+/// neighbor set is symmetric, and for directed graphs it holds the outgoing
+/// neighbors, exactly what `contains_edge(a, b)` tests.
+fn neighbor_adjacency<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+    neighbors: &[NodeId],
+) -> HashMap<NodeId, HashSet<NodeId>> {
+    let mut adj: HashMap<NodeId, HashSet<NodeId>> = HashMap::new();
+    for &nb in neighbors {
+        adj.entry(nb)
+            .or_insert_with(|| graph.neighbors(nb).collect());
+    }
+    adj
+}
 
 /// Computes the local clustering coefficient for a specific node.
 ///
@@ -24,10 +43,12 @@ pub fn clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
         return 0.0;
     }
 
+    let adj = neighbor_adjacency(graph, &neighbors);
     let mut triangles = 0;
-    for i in 0..neighbors.len() {
-        for j in (i + 1)..neighbors.len() {
-            if graph.contains_edge(neighbors[i], neighbors[j]) {
+    for i in 0..k {
+        let si = &adj[&neighbors[i]];
+        for other in &neighbors[i + 1..] {
+            if si.contains(other) {
                 triangles += 1;
             }
         }
@@ -46,11 +67,17 @@ pub fn triangles<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     node: NodeId,
 ) -> usize {
     let neighbors: Vec<NodeId> = graph.neighbors(node).collect();
-    let mut count = 0;
+    let k = neighbors.len();
+    if k < 2 {
+        return 0;
+    }
 
-    for i in 0..neighbors.len() {
-        for j in (i + 1)..neighbors.len() {
-            if graph.contains_edge(neighbors[i], neighbors[j]) {
+    let adj = neighbor_adjacency(graph, &neighbors);
+    let mut count = 0;
+    for i in 0..k {
+        let si = &adj[&neighbors[i]];
+        for other in &neighbors[i + 1..] {
+            if si.contains(other) {
                 count += 1;
             }
         }

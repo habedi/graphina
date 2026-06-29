@@ -58,21 +58,23 @@ where
     for (idx, &node) in node_list.iter().enumerate() {
         node_to_idx.insert(node, idx);
     }
-    let mut adj = DMatrix::<f64>::zeros(n, n);
+    // Build the unnormalized Laplacian L = D - A directly in a single dense
+    // matrix. Each edge subtracts its weight from the symmetric off-diagonal
+    // entries and adds it to both endpoints' diagonal (degree) entries. This
+    // accumulates degrees in O(E) and avoids the separate degree matrix, the
+    // O(n^2) row-sum scan, and the full O(n^2) matrix subtraction the previous
+    // version used. The O(n^3) symmetric eigendecomposition below is inherent to
+    // the dense spectral method.
+    let mut lap = DMatrix::<f64>::zeros(n, n);
     for (u, v, &w) in graph.edges() {
         let ui = node_to_idx[&u];
         let vi = node_to_idx[&v];
         let weight: f64 = w.into();
-        // Symmetric for undirected spectral methods
-        adj[(ui, vi)] += weight;
-        adj[(vi, ui)] += weight;
+        lap[(ui, vi)] -= weight;
+        lap[(vi, ui)] -= weight;
+        lap[(ui, ui)] += weight;
+        lap[(vi, vi)] += weight;
     }
-    let mut deg = DMatrix::<f64>::zeros(n, n);
-    for i in 0..n {
-        let d: f64 = (0..n).map(|j| adj[(i, j)]).sum();
-        deg[(i, i)] = d;
-    }
-    let lap = &deg - &adj;
     let eig = lap.symmetric_eigen();
     let mut embedding = vec![vec![0.0; k]; n];
     for (i, row) in embedding.iter_mut().enumerate() {

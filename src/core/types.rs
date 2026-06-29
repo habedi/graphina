@@ -223,10 +223,11 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             return None;
         }
         if self.is_directed() {
+            // Count incoming edges via petgraph's adjacency (O(in-degree)) rather
+            // than scanning every edge in the graph (O(E)).
             Some(
                 self.inner
-                    .edge_references()
-                    .filter(|edge| edge.target() == node.0)
+                    .edges_directed(node.0, petgraph::Direction::Incoming)
                     .count(),
             )
         } else {
@@ -359,11 +360,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     /// Returns an iterator over incoming neighbors of a node.
     pub fn incoming_neighbors(&self, node: NodeId) -> Box<dyn Iterator<Item = NodeId> + '_> {
         if self.is_directed() {
+            // Walk petgraph's incoming adjacency (O(in-degree)) instead of
+            // filtering every edge in the graph (O(E)).
             Box::new(
                 self.inner
-                    .edge_references()
-                    .filter(move |e| e.target() == node.0)
-                    .map(|e| NodeId::new(e.source())),
+                    .neighbors_directed(node.0, petgraph::Direction::Incoming)
+                    .map(NodeId::new),
             )
         } else {
             Box::new(self.neighbors(node))

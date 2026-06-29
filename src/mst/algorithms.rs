@@ -309,45 +309,42 @@ where
         ));
     }
 
-    let n = graph.node_count();
     let mut mst_edges = Vec::new();
     let mut total_weight = W::from(0u8);
-    let mut in_tree = vec![false; n];
+    let mut in_tree: std::collections::HashSet<NodeId> = std::collections::HashSet::new();
+
+    // Build an undirected incident-edge adjacency once (O(E)). The previous
+    // version filtered the full edge list for every node added to the tree, which
+    // was O(V * E); this makes expansion O(degree) per node. Each edge is stored
+    // from both endpoints to mirror the original both-directions seeding.
+    let mut adjacency: std::collections::HashMap<NodeId, Vec<(NodeId, W)>> =
+        std::collections::HashMap::new();
+    for (u, v, w) in graph.edges() {
+        adjacency.entry(u).or_default().push((v, *w));
+        adjacency.entry(v).or_default().push((u, *w));
+    }
+    let empty: Vec<(NodeId, W)> = Vec::new();
 
     // Process each connected component.
     for start in graph.nodes().map(|(node, _)| node) {
-        if in_tree[start.index()] {
+        if in_tree.contains(&start) {
             continue;
         }
-        in_tree[start.index()] = true;
+        in_tree.insert(start);
         let mut heap = std::collections::BinaryHeap::new();
 
-        // Add all edges incident to the starting node. The graph may be
-        // undirected, so an incident edge can be stored with the start node as
-        // either endpoint; seed both directions to mirror the expansion below.
-        for (_, v, weight) in graph
-            .edges()
-            .filter(|(u, _v, _w)| *u == start)
-            .map(|(u, v, w)| (u, v, *w))
-        {
-            heap.push(std::cmp::Reverse((weight, start, v)));
-        }
-        for (u, _, weight) in graph
-            .edges()
-            .filter(|(_u, v, _w)| *v == start)
-            .map(|(u, v, w)| (u, v, *w))
-        {
-            heap.push(std::cmp::Reverse((weight, start, u)));
+        for &(neighbor, weight) in adjacency.get(&start).unwrap_or(&empty) {
+            heap.push(std::cmp::Reverse((weight, start, neighbor)));
         }
 
         while let Some(std::cmp::Reverse((w, u, v))) = heap.pop() {
             // Skip if both endpoints are already in the MST.
-            if in_tree[u.index()] && in_tree[v.index()] {
+            if in_tree.contains(&u) && in_tree.contains(&v) {
                 continue;
             }
-            let (from, to) = if in_tree[u.index()] { (u, v) } else { (v, u) };
-            if !in_tree[to.index()] {
-                in_tree[to.index()] = true;
+            let (from, to) = if in_tree.contains(&u) { (u, v) } else { (v, u) };
+            if !in_tree.contains(&to) {
+                in_tree.insert(to);
                 mst_edges.push(MstEdge {
                     u: from,
                     v: to,
@@ -355,23 +352,8 @@ where
                 });
                 total_weight += w;
                 // Add all edges incident to the newly added node.
-                for (_, neighbor, weight) in graph
-                    .edges()
-                    .filter(|(x, _y, _w)| *x == to)
-                    .map(|(x, y, w)| (x, y, *w))
-                {
-                    if !in_tree[neighbor.index()] {
-                        heap.push(std::cmp::Reverse((weight, to, neighbor)));
-                    }
-                }
-                // Also add edges where 'to' is the target; here the neighbor is
-                // the edge source, not the target.
-                for (neighbor, _, weight) in graph
-                    .edges()
-                    .filter(|(_x, y, _w)| *y == to)
-                    .map(|(x, y, w)| (x, y, *w))
-                {
-                    if !in_tree[neighbor.index()] {
+                for &(neighbor, weight) in adjacency.get(&to).unwrap_or(&empty) {
+                    if !in_tree.contains(&neighbor) {
                         heap.push(std::cmp::Reverse((weight, to, neighbor)));
                     }
                 }

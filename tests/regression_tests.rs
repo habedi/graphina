@@ -931,6 +931,48 @@ fn test_assortativity_is_symmetric_newman_coefficient() {
 }
 
 #[test]
+fn test_a_star_after_node_removal_no_panic() {
+    // `a_star` sized its dense buffers by `node_count()` and indexed them by
+    // `NodeId::index()`. Because `NodeId`s are stable across removal, removing a
+    // node leaves a live index above `node_count()`, so the buffer access panicked
+    // out of bounds. It must size by the index bound instead, like `dijkstra`.
+    use graphina::core::paths::a_star;
+
+    let mut g: Digraph<i32, i32> = Digraph::new();
+    let a = g.add_node(0);
+    let b = g.add_node(1);
+    let c = g.add_node(2);
+    let d = g.add_node(3);
+    g.remove_node(b); // index 3 (d) is now live while node_count() is 3
+    g.add_edge(a, c, 1);
+    g.add_edge(c, d, 1);
+
+    let result = a_star(&g, a, d, |_| 0).unwrap();
+    assert_eq!(result.map(|(cost, _)| cost), Some(2));
+}
+
+#[test]
+fn test_johnson_after_node_removal_no_panic() {
+    // Same stable-index defect as `a_star`, compounded by `johnson` mixing
+    // contiguous `0..n` indices with `NodeId::index()`.
+    use graphina::core::paths::johnson;
+
+    let mut g: Digraph<i32, i32> = Digraph::new();
+    let a = g.add_node(0);
+    let b = g.add_node(1);
+    let c = g.add_node(2);
+    let d = g.add_node(3);
+    g.remove_node(b);
+    g.add_edge(a, c, 1);
+    g.add_edge(c, d, 1);
+
+    let all_pairs = johnson(&g).unwrap();
+    assert_eq!(all_pairs[&a][&d], Some(2));
+    assert_eq!(all_pairs[&a][&c], Some(1));
+    assert_eq!(all_pairs[&d][&a], None);
+}
+
+#[test]
 fn test_find_edge_semantics_preserved_after_delegation() {
     // `find_edge` was reimplemented as an O(degree) adjacency lookup (delegating
     // to petgraph) instead of an O(E) scan over every edge, which inflated every

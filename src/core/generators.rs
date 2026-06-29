@@ -401,6 +401,18 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
 
     let mut rng = StdRng::seed_from_u64(seed);
 
+    // Maintain a running degree cache (parallel to `nodes`) and its sum, updated
+    // on every edge addition. The previous version recomputed the full degree sum
+    // (and walked every node calling `degree`) on every sampling attempt, which is
+    // O(n) per attempt and up to O(n^3) over the whole generation. The cache makes
+    // each attempt's weighted draw use O(1) sum lookups while drawing the exact
+    // same random values, so the generated graph is unchanged.
+    let mut deg: Vec<usize> = nodes
+        .iter()
+        .map(|&u| graph.degree(u).unwrap_or(0))
+        .collect();
+    let mut total_degree: usize = deg.iter().sum();
+
     // Preferential attachment for remaining nodes.
     for i in m..n {
         let new_node = graph.add_node(i as u32);
@@ -414,9 +426,8 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
         while attached < m && chosen_indices.len() < nodes.len() {
             attempts += 1;
 
-            // Compute a fresh total degree for weighted sampling
-            let current_total_degree: usize =
-                nodes.iter().map(|&u| graph.degree(u).unwrap_or(0)).sum();
+            // Running total degree for weighted sampling (kept in sync below).
+            let current_total_degree: usize = total_degree;
 
             // Fallback path if degrees are all zero (e.g., degenerate cases)
             let candidate_idx = if current_total_degree == 0 {
@@ -425,8 +436,8 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
                 let r = rng.random_range(0..current_total_degree);
                 let mut cumulative = 0usize;
                 let mut idx = 0usize;
-                for (j, &u) in nodes.iter().enumerate() {
-                    cumulative += graph.degree(u).unwrap_or(0);
+                for (j, &d) in deg.iter().enumerate() {
+                    cumulative += d;
                     if r < cumulative {
                         idx = j;
                         break;
@@ -447,6 +458,10 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
             if graph.find_edge(new_node, target).is_none() {
                 graph.add_edge(new_node, target, 1.0);
                 attached += 1;
+                // The target gained one incident edge; mirror it in the cache so
+                // the running sum matches `graph.degree` for the next attempt.
+                deg[candidate_idx] += 1;
+                total_degree += 1;
             }
 
             if attempts >= max_attempts {
@@ -466,11 +481,17 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
                 if graph.find_edge(new_node, u).is_none() {
                     graph.add_edge(new_node, u, 1.0);
                     attached += 1;
+                    deg[idx] += 1;
+                    total_degree += 1;
                 }
             }
         }
 
+        // The new node enters `nodes` with `attached` incident edges; record its
+        // degree so future rounds sample over it too.
         nodes.push(new_node);
+        deg.push(attached);
+        total_degree += attached;
     }
 
     Ok(graph)
