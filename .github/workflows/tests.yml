@@ -20,8 +20,6 @@ on:
       - '**.md'
       - 'docs/**'
       - 'pygraphina/**'
-    tags:
-      - 'v*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
