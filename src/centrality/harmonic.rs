@@ -40,3 +40,31 @@ where
     }
     Ok(centrality)
 }
+
+#[cfg(test)]
+mod tests {
+    // Regression: harmonic centrality summed reciprocal distances over all nodes
+    // including the source itself, whose distance is 0, yielding 1/0 = infinity for
+    // every node. In a unit-weight triangle each node's harmonic centrality is
+    // 1/1 + 1/1 = 2.
+    #[test]
+    fn test_harmonic_centrality_excludes_source() {
+        use crate::centrality::harmonic::harmonic_centrality;
+        use crate::core::types::Graph;
+        use ordered_float::OrderedFloat;
+
+        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n0, n1, OrderedFloat(1.0));
+        g.add_edge(n1, n2, OrderedFloat(1.0));
+        g.add_edge(n2, n0, OrderedFloat(1.0));
+
+        let hc = harmonic_centrality(&g).expect("harmonic should succeed");
+        for n in [n0, n1, n2] {
+            assert!(hc[&n].is_finite(), "harmonic centrality must be finite");
+            assert!((hc[&n] - 2.0).abs() < 1e-9, "expected 2.0, got {}", hc[&n]);
+        }
+    }
+}

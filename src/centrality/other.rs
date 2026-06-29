@@ -200,3 +200,65 @@ where
     }
     Ok(centrality)
 }
+
+#[cfg(test)]
+mod tests {
+    // Regression: Laplacian centrality used the formula d^2 + sum(neighbor degrees),
+    // missing the +d term and the factor of 2 on the neighbor-degree sum. The
+    // unnormalized Laplacian centrality of a node in an unweighted graph is
+    // d^2 + d + 2 * sum(neighbor degrees). In a triangle each node has degree 2 and
+    // two neighbors of degree 2, so the value is 4 + 2 + 2*4 = 14, not 8.
+    #[test]
+    fn test_laplacian_centrality_formula() {
+        use crate::centrality::other::laplacian_centrality;
+        use crate::core::types::Graph;
+        use ordered_float::OrderedFloat;
+
+        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n0, n1, OrderedFloat(1.0));
+        g.add_edge(n1, n2, OrderedFloat(1.0));
+        g.add_edge(n2, n0, OrderedFloat(1.0));
+
+        let lc = laplacian_centrality(&g).expect("laplacian should succeed");
+        for n in [n0, n1, n2] {
+            assert!(
+                (lc[&n] - 14.0).abs() < 1e-9,
+                "expected 14.0, got {}",
+                lc[&n]
+            );
+        }
+    }
+    // Regression: VoteRank previously iterated a HashSet (non-deterministic output),
+    // kept a dead `votes` array, and never reduced neighbors' voting ability or
+    // stopped when no votes remained, so it elected spurious extra seeds. On a star
+    // the center is elected first; afterward every leaf's voting ability is spent,
+    // so the standard algorithm stops, electing exactly one node even when more are
+    // requested. The result must also be deterministic across runs.
+    #[test]
+    fn test_voterank_stops_and_is_deterministic() {
+        use crate::centrality::other::voterank;
+        use crate::core::types::Graph;
+
+        let mut g = Graph::<i32, f64>::new();
+        let center = g.add_node(0);
+        let leaves: Vec<_> = (1..=4).map(|i| g.add_node(i)).collect();
+        for &leaf in &leaves {
+            g.add_edge(center, leaf, 1.0);
+        }
+
+        let first = voterank(&g, 4);
+        assert_eq!(
+            first,
+            vec![center],
+            "star elects only the center, then stops"
+        );
+
+        // Deterministic: repeated calls give the same election.
+        for _ in 0..5 {
+            assert_eq!(voterank(&g, 4), first);
+        }
+    }
+}

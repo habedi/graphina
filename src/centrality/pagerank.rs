@@ -137,6 +137,35 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_pagerank_with_deleted_nodes() {
+        use crate::centrality::pagerank::pagerank;
+        use crate::core::types::Digraph;
+
+        let mut graph: Digraph<i32, f64> = Digraph::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+        graph.add_edge(n4, n1, 1.0);
+
+        graph.remove_node(n2);
+
+        let pr = pagerank(&graph, 0.85, 100, 1e-6, None).unwrap();
+
+        assert!(!pr.contains_key(&n2));
+        assert!(pr.contains_key(&n1));
+        assert!(pr.contains_key(&n3));
+        assert!(pr.contains_key(&n4));
+
+        let sum: f64 = pr.values().sum();
+        assert!((sum - 1.0).abs() < 1e-4);
+    }
     use super::*;
     use crate::core::types::{Digraph, Graph};
 

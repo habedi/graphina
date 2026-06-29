@@ -384,6 +384,22 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_serialization_special_values() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+
+        g.add_edge(n1, n2, 0.0);
+
+        let json = g.to_serializable();
+        let json_str = serde_json::to_string(&json).unwrap();
+
+        assert!(!json_str.contains("NaN"));
+        assert!(!json_str.contains("Infinity"));
+    }
     use super::*;
     use crate::core::types::{Digraph, Graph};
     use std::fs;

@@ -876,6 +876,116 @@ impl<T> IntoIterator for OrderedNodeMap<T> {
 }
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_undirected_degree_consistency() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+
+        g.add_edge(n1, n2, 5.0);
+
+        assert_eq!(g.degree(n1), Some(1));
+        assert_eq!(g.degree(n2), Some(1));
+        assert_eq!(g.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_self_loop_handling() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+
+        g.add_edge(n1, n1, 1.0);
+
+        assert!(g.degree(n1).unwrap() > 0);
+        assert!(g.contains_edge(n1, n1));
+    }
+
+    #[test]
+    fn test_directed_edge_finding() {
+        use crate::core::types::Digraph;
+        let mut g = Digraph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+
+        g.add_edge(n1, n2, 1.0);
+
+        assert!(g.contains_edge(n1, n2));
+        assert!(!g.contains_edge(n2, n1));
+    }
+
+    #[test]
+    fn test_iterator_safety() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n3, 1.0);
+
+        let nodes: Vec<_> = g.nodes().map(|(id, _)| id).collect();
+
+        for node in nodes {
+            g.remove_node(node);
+        }
+
+        assert_eq!(g.node_count(), 0);
+    }
+
+    #[test]
+    fn test_nodemap_with_deleted_nodes() {
+        use crate::core::types::Graph;
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        let map = g.to_nodemap(|_, val| *val * 2);
+
+        g.remove_node(n2);
+
+        assert_eq!(map.get(&n1), Some(&2));
+        assert_eq!(map.get(&n3), Some(&6));
+    }
+
+    #[test]
+    fn test_find_edge_semantics_preserved_after_delegation() {
+        use crate::core::types::{Digraph, Graph};
+        // `find_edge` was reimplemented as an O(degree) adjacency lookup (delegating
+        // to petgraph) instead of an O(E) scan over every edge, which inflated every
+        // `contains_edge` caller (transitivity, clustering, triangles). This guards
+        // that the delegation keeps the original semantics: undirected matches in
+        // either orientation, directed matches source -> target only, and lookups
+        // stay correct after node removal.
+        let mut ug: Graph<i32, f64> = Graph::new();
+        let a = ug.add_node(0);
+        let b = ug.add_node(1);
+        let c = ug.add_node(2);
+        ug.add_edge(a, b, 1.0);
+
+        // Undirected: present in both directions, absent pair reports absent.
+        assert!(ug.find_edge(a, b).is_some());
+        assert!(ug.find_edge(b, a).is_some());
+        assert!(ug.contains_edge(a, b) && ug.contains_edge(b, a));
+        assert!(ug.find_edge(a, c).is_none());
+
+        // Lookup stays correct after a node removal (NodeId stability).
+        ug.remove_node(c);
+        assert!(ug.find_edge(a, b).is_some());
+
+        // Directed: matches source -> target only, not the reverse.
+        let mut dg: Digraph<i32, f64> = Digraph::new();
+        let x = dg.add_node(0);
+        let y = dg.add_node(1);
+        dg.add_edge(x, y, 1.0);
+        assert!(dg.find_edge(x, y).is_some());
+        assert!(dg.find_edge(y, x).is_none());
+        assert!(dg.contains_edge(x, y) && !dg.contains_edge(y, x));
+    }
     use super::*;
     #[test]
     fn test_digraph() {

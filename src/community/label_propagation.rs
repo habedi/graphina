@@ -95,3 +95,33 @@ where
     }
     Ok(labels)
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_label_propagation_stability() {
+        use crate::community::label_propagation::label_propagation;
+        use crate::core::types::Graph;
+
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..10).map(|i| g.add_node(i)).collect();
+
+        for i in 0..4 {
+            for j in (i + 1)..5 {
+                g.add_edge(nodes[i], nodes[j], 1.0);
+            }
+        }
+
+        for i in 5..9 {
+            for j in (i + 1)..10 {
+                g.add_edge(nodes[i], nodes[j], 1.0);
+            }
+        }
+
+        g.add_edge(nodes[2], nodes[7], 0.1);
+
+        let communities = label_propagation(&g, 100, Some(42)).unwrap();
+        assert!(!communities.is_empty());
+        assert!(communities.len() <= 10);
+    }
+}

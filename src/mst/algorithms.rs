@@ -366,6 +366,104 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    // Regression: prim_mst dropped edges incident to a freshly added node when the
+    // edge was stored with that node as the target. On a connected graph it
+    // returned a partial tree (here 2 edges instead of 5). The spanning tree of
+    // this connected, 6-node graph must have 5 edges and total weight 19.
+    #[test]
+    fn test_prim_mst_undirected_target_edges() {
+        use crate::core::types::Graph;
+        use crate::mst::{kruskal_mst, prim_mst};
+        use ordered_float::OrderedFloat;
+
+        let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let nodes: Vec<_> = (0..6).map(|i| g.add_node(i)).collect();
+        for (u, v, w) in [
+            (0, 4, 5.0),
+            (0, 5, 2.0),
+            (1, 5, 1.0),
+            (2, 4, 10.0),
+            (3, 4, 1.0),
+        ] {
+            g.add_edge(nodes[u], nodes[v], OrderedFloat(w));
+        }
+
+        let (prim_edges, prim_weight) = prim_mst(&g).unwrap();
+        assert_eq!(prim_edges.len(), 5);
+        assert_eq!(prim_weight, OrderedFloat(19.0));
+
+        let (kruskal_edges, kruskal_weight) = kruskal_mst(&g).unwrap();
+        assert_eq!(prim_edges.len(), kruskal_edges.len());
+        assert_eq!(prim_weight, kruskal_weight);
+    }
+
+    // Regression: boruvka_mst used the raw union-find parent pointer instead of the
+    // canonical root to group nodes by component. After the first round the parent
+    // array is not path-compressed, so cheapest-edge selection mis-grouped nodes,
+    // missed valid merges, and returned a forest with too few edges (here 9 instead
+    // of 10). This connected, 11-node graph must yield a spanning tree of 10 edges
+    // and total weight 25.
+    #[test]
+    fn test_boruvka_mst_canonical_root_grouping() {
+        use crate::core::types::Graph;
+        use crate::mst::{boruvka_mst, kruskal_mst};
+        use ordered_float::OrderedFloat;
+
+        let edges = [
+            (0, 2, 4.0),
+            (0, 3, 1.0),
+            (0, 4, 4.0),
+            (0, 5, 4.0),
+            (0, 6, 3.0),
+            (1, 2, 8.0),
+            (1, 3, 6.0),
+            (1, 4, 5.0),
+            (1, 5, 4.0),
+            (1, 6, 10.0),
+            (1, 7, 1.0),
+            (1, 8, 7.0),
+            (2, 3, 7.0),
+            (2, 4, 7.0),
+            (2, 5, 9.0),
+            (2, 8, 8.0),
+            (2, 9, 1.0),
+            (2, 10, 3.0),
+            (3, 4, 9.0),
+            (3, 5, 10.0),
+            (3, 10, 5.0),
+            (4, 6, 5.0),
+            (4, 9, 7.0),
+            (4, 10, 5.0),
+            (5, 6, 7.0),
+            (5, 7, 7.0),
+            (5, 8, 5.0),
+            (5, 9, 4.0),
+            (5, 10, 5.0),
+            (6, 7, 6.0),
+            (6, 8, 2.0),
+            (6, 9, 5.0),
+            (6, 10, 4.0),
+            (7, 9, 2.0),
+            (7, 10, 9.0),
+            (8, 10, 9.0),
+            (9, 10, 10.0),
+        ];
+
+        let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let nodes: Vec<_> = (0..11).map(|i| g.add_node(i)).collect();
+        for (u, v, w) in edges {
+            g.add_edge(nodes[u], nodes[v], OrderedFloat(w));
+        }
+
+        let (boruvka_edges, boruvka_weight) = boruvka_mst(&g).unwrap();
+        assert_eq!(boruvka_edges.len(), 10);
+        assert_eq!(boruvka_weight, OrderedFloat(25.0));
+
+        let (kruskal_edges, kruskal_weight) = kruskal_mst(&g).unwrap();
+        assert_eq!(boruvka_edges.len(), kruskal_edges.len());
+        assert_eq!(boruvka_weight, kruskal_weight);
+    }
     use super::*;
     use crate::core::types::Graph;
     use ordered_float::OrderedFloat;

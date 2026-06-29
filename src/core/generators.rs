@@ -499,6 +499,70 @@ pub fn barabasi_albert_graph<Ty: GraphConstructor<u32, f32>>(
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_barabasi_albert_large_graph_completes_and_counts() {
+        use crate::core::generators::barabasi_albert_graph;
+        use crate::core::types::Undirected;
+
+        let n = 200;
+        let m = 3;
+        let seed = 12345;
+        let g =
+            barabasi_albert_graph::<Undirected>(n, m, seed).expect("BA generator should succeed");
+
+        assert_eq!(g.node_count(), n);
+
+        let expected_edges = (m * (m - 1) / 2) + (n - m) * m;
+        assert_eq!(g.edge_count(), expected_edges);
+    }
+
+    #[test]
+    fn test_watts_strogatz_edge_count_is_reasonable() {
+        use crate::core::generators::watts_strogatz_graph;
+        use crate::core::types::Undirected;
+
+        let n = 100;
+        let k = 6;
+        let beta = 0.2;
+        let seed = 7;
+
+        let g = watts_strogatz_graph::<Undirected>(n, k, beta, seed)
+            .expect("WS generator should succeed");
+
+        assert_eq!(g.node_count(), n);
+        assert_eq!(g.edge_count(), n * k / 2);
+    }
+
+    #[test]
+    fn test_erdos_renyi_with_zero_probability() {
+        use crate::core::generators::erdos_renyi_graph;
+        use crate::core::types::Undirected;
+
+        let n = 50;
+        let p = 0.0;
+        let seed = 123;
+
+        let g = erdos_renyi_graph::<Undirected>(n, p, seed).expect("ER generator should succeed");
+
+        assert_eq!(g.node_count(), n);
+        assert_eq!(g.edge_count(), 0);
+    }
+
+    #[test]
+    fn test_erdos_renyi_with_full_probability() {
+        use crate::core::generators::erdos_renyi_graph;
+        use crate::core::types::Undirected;
+
+        let n = 20;
+        let p = 1.0;
+        let seed = 456;
+
+        let g = erdos_renyi_graph::<Undirected>(n, p, seed).expect("ER generator should succeed");
+
+        assert_eq!(g.node_count(), n);
+        assert_eq!(g.edge_count(), n * (n - 1) / 2);
+    }
     use super::*;
     use crate::core::types::{Directed, Undirected};
 

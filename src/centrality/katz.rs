@@ -107,6 +107,68 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_katz_with_deleted_nodes() {
+        use crate::centrality::katz::katz_centrality;
+        use crate::core::types::Digraph;
+
+        let mut graph: Digraph<i32, f64> = Digraph::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+
+        graph.remove_node(n2);
+
+        let katz = katz_centrality(&graph, 0.1, None, 100, 1e-6).unwrap();
+
+        assert!(katz.contains_key(&n1));
+        assert!(!katz.contains_key(&n2));
+        assert!(katz.contains_key(&n3));
+        assert!(katz.contains_key(&n4));
+    }
+
+    // Regression: Katz centrality built a directed-only adjacency matrix, so on an
+    // undirected graph it was asymmetric and broke the graph's symmetry. Here nodes
+    // 1 and 3 are symmetric, as are 0 and 4, so their Katz centralities must be
+    // equal.
+    #[test]
+    fn test_katz_centrality_symmetric_on_undirected() {
+        use crate::centrality::katz::katz_centrality;
+        use crate::core::types::Graph;
+        use ordered_float::OrderedFloat;
+
+        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let ids: Vec<_> = (0..5).map(|i| g.add_node(i)).collect();
+        for (u, v, w) in [
+            (0, 1, 1.0),
+            (1, 2, 1.0),
+            (2, 3, 1.0),
+            (1, 3, 2.0),
+            (3, 4, 1.0),
+        ] {
+            g.add_edge(ids[u], ids[v], OrderedFloat(w));
+        }
+
+        let kc = katz_centrality(&g, 0.1, None, 2000, 1e-9).expect("katz should succeed");
+        assert!(
+            (kc[&ids[1]] - kc[&ids[3]]).abs() < 1e-9,
+            "symmetric nodes 1 and 3 must be equal: {} vs {}",
+            kc[&ids[1]],
+            kc[&ids[3]]
+        );
+        assert!(
+            (kc[&ids[0]] - kc[&ids[4]]).abs() < 1e-9,
+            "symmetric nodes 0 and 4 must be equal: {} vs {}",
+            kc[&ids[0]],
+            kc[&ids[4]]
+        );
+    }
     use super::*;
     use crate::core::types::{Digraph, Graph};
 

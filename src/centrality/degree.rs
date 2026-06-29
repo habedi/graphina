@@ -141,6 +141,19 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_centrality_empty_graph() {
+        use crate::centrality::degree::degree_centrality;
+        use crate::core::types::Graph;
+
+        let g = Graph::<i32, f64>::new();
+        let result = degree_centrality(&g);
+
+        assert!(result.is_ok());
+        let centrality = result.unwrap();
+        assert_eq!(centrality.len(), 0);
+    }
     use super::*;
     use crate::core::types::{Digraph, Graph};
     #[test]
