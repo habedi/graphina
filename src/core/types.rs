@@ -443,20 +443,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     }
     /// Finds and returns the first edge from `source` to `target`.
     pub fn find_edge(&self, source: NodeId, target: NodeId) -> Option<EdgeId> {
-        if <Ty as GraphConstructor<A, W>>::is_directed() {
-            self.inner
-                .edge_references()
-                .find(|edge| edge.source() == source.0 && edge.target() == target.0)
-                .map(|edge| EdgeId::new(edge.id()))
-        } else {
-            self.inner
-                .edge_references()
-                .find(|edge| {
-                    (edge.source() == source.0 && edge.target() == target.0)
-                        || (edge.source() == target.0 && edge.target() == source.0)
-                })
-                .map(|edge| EdgeId::new(edge.id()))
-        }
+        // Delegate to petgraph's adjacency-based lookup, which walks only the
+        // source node's incident edges (O(degree)) rather than scanning every
+        // edge in the graph (O(E)). On an undirected graph this matches an edge
+        // in either orientation; on a directed graph it matches source -> target
+        // only, which preserves the previous semantics.
+        self.inner.find_edge(source.0, target.0).map(EdgeId::new)
     }
     /// Clears all nodes and edges from the graph.
     pub fn clear(&mut self) {

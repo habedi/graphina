@@ -929,3 +929,37 @@ fn test_assortativity_is_symmetric_newman_coefficient() {
         "star degree assortativity should be -1.0, got {r}"
     );
 }
+
+#[test]
+fn test_find_edge_semantics_preserved_after_delegation() {
+    // `find_edge` was reimplemented as an O(degree) adjacency lookup (delegating
+    // to petgraph) instead of an O(E) scan over every edge, which inflated every
+    // `contains_edge` caller (transitivity, clustering, triangles). This guards
+    // that the delegation keeps the original semantics: undirected matches in
+    // either orientation, directed matches source -> target only, and lookups
+    // stay correct after node removal.
+    let mut ug: Graph<i32, f64> = Graph::new();
+    let a = ug.add_node(0);
+    let b = ug.add_node(1);
+    let c = ug.add_node(2);
+    ug.add_edge(a, b, 1.0);
+
+    // Undirected: present in both directions, absent pair reports absent.
+    assert!(ug.find_edge(a, b).is_some());
+    assert!(ug.find_edge(b, a).is_some());
+    assert!(ug.contains_edge(a, b) && ug.contains_edge(b, a));
+    assert!(ug.find_edge(a, c).is_none());
+
+    // Lookup stays correct after a node removal (NodeId stability).
+    ug.remove_node(c);
+    assert!(ug.find_edge(a, b).is_some());
+
+    // Directed: matches source -> target only, not the reverse.
+    let mut dg: Digraph<i32, f64> = Digraph::new();
+    let x = dg.add_node(0);
+    let y = dg.add_node(1);
+    dg.add_edge(x, y, 1.0);
+    assert!(dg.find_edge(x, y).is_some());
+    assert!(dg.find_edge(y, x).is_none());
+    assert!(dg.contains_edge(x, y) && !dg.contains_edge(y, x));
+}

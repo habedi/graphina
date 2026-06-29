@@ -7,7 +7,6 @@
 
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
-use nalgebra::{DMatrix, DVector};
 
 /// Katz centrality: computes the relative influence of a node within a network
 /// by measuring the number of walks of length k between a pair of nodes.
@@ -50,39 +49,46 @@ where
         node_to_idx.insert(node, idx);
     }
 
-    // Build adjacency matrix with proper indexing. For undirected graphs each
-    // edge is stored once, so the reverse entry is added explicitly to keep the
-    // matrix symmetric; otherwise Katz centrality would not respect the graph's
+    // Store the adjacency as a sparse edge list rather than a dense n x n matrix.
+    // The Katz iteration only needs the matrix-vector product `adj * x`, which
+    // costs O(E) over this representation instead of O(n^2) over a dense matrix,
+    // and uses O(E) memory instead of O(n^2). For undirected graphs each edge is
+    // stored once, so the reverse contribution is added explicitly to keep the
+    // operator symmetric; otherwise Katz centrality would not respect the graph's
     // symmetry.
     let directed = graph.is_directed();
-    let mut adj = DMatrix::<f64>::zeros(n, n);
+    let mut edges: Vec<(usize, usize, f64)> = Vec::with_capacity(graph.edge_count());
     for (u, v, w) in graph.edges() {
         let ui = node_to_idx[&u];
         let vi = node_to_idx[&v];
         let weight: f64 = (*w).into();
-        adj[(ui, vi)] += weight;
+        edges.push((ui, vi, weight));
         if !directed && ui != vi {
-            adj[(vi, ui)] += weight;
+            edges.push((vi, ui, weight));
         }
     }
 
     // Initial vector
-    let mut x = DVector::<f64>::from_element(n, 0.0);
-    let beta_vec = if let Some(b) = beta {
-        DVector::from_fn(n, |idx, _| b(node_list[idx]))
+    let mut x = vec![0.0_f64; n];
+    let beta_vec: Vec<f64> = if let Some(b) = beta {
+        node_list.iter().map(|&node| b(node)).collect()
     } else {
-        DVector::from_element(n, 1.0)
+        vec![1.0; n]
     };
 
     let mut converged = false;
     for _ in 0..max_iter {
-        let x_new = alpha * &adj * &x + &beta_vec;
-        if (&x_new - &x).norm() < tolerance {
-            x = x_new;
+        // x_new = alpha * (adj * x) + beta
+        let mut x_new = beta_vec.clone();
+        for &(ui, vi, weight) in &edges {
+            x_new[ui] += alpha * weight * x[vi];
+        }
+        let diff_sq: f64 = x_new.iter().zip(&x).map(|(a, b)| (a - b) * (a - b)).sum();
+        x = x_new;
+        if diff_sq.sqrt() < tolerance {
             converged = true;
             break;
         }
-        x = x_new;
     }
 
     if !converged {
@@ -146,5 +152,22 @@ mod tests {
 
         // Node with higher beta should have higher centrality
         assert!(katz[&n1] > katz[&n2]);
+    }
+
+    #[test]
+    fn test_katz_undirected_path_symmetry() {
+        // On an undirected path 0 - 1 - 2 the sparse operator must stay symmetric,
+        // so the two endpoints get equal Katz centrality and the middle node, with
+        // two neighbors, scores strictly higher.
+        let mut graph: Graph<i32, f64> = Graph::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        graph.add_edge(n0, n1, 1.0);
+        graph.add_edge(n1, n2, 1.0);
+
+        let katz = katz_centrality(&graph, 0.1, None, 1000, 1e-9).unwrap();
+        assert!((katz[&n0] - katz[&n2]).abs() < 1e-9);
+        assert!(katz[&n1] > katz[&n0]);
     }
 }
