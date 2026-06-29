@@ -148,9 +148,9 @@ let g = UndirectedGraphBuilder::<i32, f64>::undirected()
 use graphina::core::generators::{erdos_renyi_graph, barabasi_albert_graph};
 use graphina::core::types::Undirected;
 
-// Use 42 for pseudo-random seed (for deterministic results)
-let er = erdos_renyi_graph::<Undirected>(100, 0.2, 42).unwrap();
-let ba = barabasi_albert_graph::<Undirected>(1000, 3, 42).unwrap();
+// Use 68 for the seed to generate reproducible random graphs
+let er = erdos_renyi_graph::<Undirected>(100, 0.2, 68).unwrap();
+let ba = barabasi_albert_graph::<Undirected>(1000, 3, 68).unwrap();
 ```
 
 ---
