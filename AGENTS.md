@@ -353,19 +353,28 @@ Guidelines:
 
 - One logical behavior per cycle. Add edge cases (empty graphs, disconnected components, self-loops,
   negative weights) as separate red-green steps rather than in a single large test.
-- For bug fixes, the regression test in `tests/regression_tests.rs` is the red step: it must fail on the
-  current code and pass after the fix.
-- Put the test where the behavior lives: `#[cfg(test)]` modules for unit-level logic, `tests/` for
-  user-facing behavior, and `property_based_tests.rs` for algorithmic invariants.
+- For bug fixes, write the regression test first as the red step: it must fail on the current code and
+  pass after the fix. A regression test is a unit test that happens to pin a fixed bug, so it lives in the
+  `#[cfg(test)]` module of the source file it exercises, next to that function's other unit tests. Only a
+  regression that spans several algorithms or modules (a cross-cutting consistency check) belongs in
+  `tests/regression_tests.rs`.
+- Put the test where the behavior lives: `#[cfg(test)]` modules for logic that belongs to one function or
+  module (including single-module bug regressions), `tests/` for user-facing and cross-module behavior, and
+  `property_based_tests.rs` for algorithmic invariants.
 
 ## Testing Expectations
 
-- Unit tests live in each module's source files using `#[cfg(test)]` modules.
+- Unit tests live in each module's source files using `#[cfg(test)]` modules. This includes regression
+  tests for bugs whose fix lives in a single function or module: co-locate them with that module's other
+  unit tests, not in `tests/`.
 - Workspace-level tests live in `tests/`: `integration_tests.rs`, `e2e_tests.rs`, `regression_tests.rs`,
-  and `property_based_tests.rs` (proptest).
+  and `property_based_tests.rs` (proptest). `regression_tests.rs` holds only cross-cutting regressions, such
+  as consistency checks across several algorithms (for example, that Kruskal, Prim, and Boruvka agree, or
+  that Dijkstra and Bellman-Ford agree).
 - Some integration tests reference public datasets; run `make testdata` to fetch them first.
 - Property-based tests cover algorithmic invariants; add cases when changing numerical behavior.
-- Regression tests exist for fixed bugs; add one for every bug fix.
+- Regression tests exist for fixed bugs; add one for every bug fix, co-located with the code it covers
+  unless it is cross-cutting.
 - No public API change is complete without a corresponding test.
 - PyGraphina has its own tests under `pygraphina/tests/`, run with `make test-py`.
 
