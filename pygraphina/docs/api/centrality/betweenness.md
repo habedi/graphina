@@ -10,7 +10,7 @@ pg.centrality.betweenness(graph: Union[PyGraph, PyDiGraph]) -> Dict[int, float]
 
 ## Parameters
 
-- **graph**: The graph to analyze
+- graph: The graph to analyze
 
 ## Returns
 

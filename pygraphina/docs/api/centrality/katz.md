@@ -16,11 +16,11 @@ pg.centrality.katz(
 
 ## Parameters
 
-- **graph**: The graph to analyze
-- **alpha**: Attenuation factor (controls path weight decay), default 0.1
-- **beta**: Bias parameter (self-loop strength), default 1.0
-- **max_iter**: Maximum iterations, default 100
-- **tolerance**: Convergence tolerance, default 1e-6
+- graph: The graph to analyze
+- alpha: Attenuation factor (controls path weight decay), default 0.1
+- beta: Bias parameter (self-loop strength), default 1.0
+- max_iter: Maximum iterations, default 100
+- tolerance: Convergence tolerance, default 1e-6
 
 ## Returns
 
@@ -42,10 +42,10 @@ O(k·(V + E)) where k is number of iterations
 
 ## Parameters
 
-- **alpha**: Smaller values = less weight on longer paths
+- alpha: Smaller values = less weight on longer paths
     - Typical range: 0.01 to 0.3
     - Default 0.1 works well
-- **max_iters**: Usually converges in 10-50 iterations
+- max_iters: Usually converges in 10-50 iterations
 
 ## Example
 

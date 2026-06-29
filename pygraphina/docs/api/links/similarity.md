@@ -78,7 +78,7 @@ print(f"Common neighbors (0,3): {common.get(key, 'N/A')}")
 | Jaccard          | O(d²)       | [0, 1] | Normalized        | All non-adj pairs   |
 | Adamic-Adar      | O(d² log V) | [0, ∞) | Low-degree aware  | All non-adj pairs   |
 
-**Note:** `d` represents the average degree of nodes. Common neighbors computes for a specific pair in O(d) time, while Jaccard and Adamic-Adar compute for all non-adjacent pairs.
+Note: `d` represents the average degree of nodes. Common neighbors computes for a specific pair in O(d) time, while Jaccard and Adamic-Adar compute for all non-adjacent pairs.
 
 ## Use Cases
 

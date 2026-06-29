@@ -10,7 +10,7 @@ pg.centrality.harmonic(graph: Union[PyGraph, PyDiGraph]) -> Dict[int, float]
 
 ## Parameters
 
-- **graph**: The graph to analyze (directed or undirected)
+- graph: The graph to analyze (directed or undirected)
 
 ## Returns
 

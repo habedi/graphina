@@ -14,8 +14,8 @@ num_samples: int = 1000
 
 ## Parameters
 
-- **graph**: The graph to analyze
-- **num_samples**: Number of nodes to sample (default: 1000)
+- graph: The graph to analyze
+- num_samples: Number of nodes to sample (default: 1000)
 
 ## Returns
 
@@ -75,5 +75,5 @@ print(f"Error: {abs(clustering - exact):.4f}")
 
 ## Related Metrics
 
-- **Local Clustering**: Per-node clustering coefficient
-- **Transitivity**: Global clustering (ratio of triangles to triples)
+- Local Clustering: Per-node clustering coefficient
+- Transitivity: Global clustering (ratio of triangles to triples)

@@ -15,9 +15,9 @@ pg.community.label_propagation(
 
 ## Parameters
 
-- **graph**: Undirected graph to analyze
-- **max_iter**: Maximum number of iterations
-- **seed**: Optional random seed for reproducibility (default: None)
+- graph: Undirected graph to analyze
+- max_iter: Maximum number of iterations
+- seed: Optional random seed for reproducibility (default: None)
 
 ## Returns
 

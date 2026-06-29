@@ -46,6 +46,6 @@ All generators accept a `seed` parameter (u64). Using the same seed guarantees t
 
 ## Common Use Cases
 
-*   **Benchmarking**: Test algorithm performance on graphs of increasing size.
-*   **Null Models**: Compare properties of real-world networks against random baselines (e.g., "Is this community structure significant compared to an ER graph?").
-*   **Simulations**: Model disease spread or information diffusion on realistic topologies (BA or WS).
+*   Benchmarking: Test algorithm performance on graphs of increasing size.
+*   Null Models: Compare properties of real-world networks against random baselines (e.g., "Is this community structure significant compared to an ER graph?").
+*   Simulations: Model disease spread or information diffusion on realistic topologies (BA or WS).

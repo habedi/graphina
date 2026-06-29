@@ -11,7 +11,7 @@ pg.centrality.global_reaching(graph: PyGraph) -> Dict[int, float]
 
 ## Parameters
 
-- **graph**: The graph to analyze
+- graph: The graph to analyze
 
 ## Returns
 
@@ -21,8 +21,8 @@ Dictionary mapping node IDs to reaching centrality scores.
 
 Reaching centrality counts nodes reachable within a distance threshold:
 
-- **Local Reaching**: Limited to immediate neighborhood
-- **Global Reaching**: All reachable nodes in connected component
+- Local Reaching: Limited to immediate neighborhood
+- Global Reaching: All reachable nodes in connected component
 
 ## Time Complexity
 

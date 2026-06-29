@@ -6,12 +6,12 @@ Thank you for contributing to PyGraphina! Get started here.
 
 There are many ways to contribute to PyGraphina:
 
-- **Report bugs**: Found a bug? [Open an issue](https://github.com/habedi/graphina/issues)
-- **Suggest features**: Have an idea? Share it in the issues
-- **Improve documentation**: Fix typos, add examples, clarify explanations
-- **Write code**: Fix bugs, add features, optimize algorithms
-- **Add tests**: Improve test coverage
-- **Share your work**: Write blog posts, create tutorials, give talks
+- Report bugs: Found a bug? [Open an issue](https://github.com/habedi/graphina/issues)
+- Suggest features: Have an idea? Share it in the issues
+- Improve documentation: Fix typos, add examples, clarify explanations
+- Write code: Fix bugs, add features, optimize algorithms
+- Add tests: Improve test coverage
+- Share your work: Write blog posts, create tutorials, give talks
 
 ## Getting Started
 
@@ -109,8 +109,8 @@ Then go to GitHub and create a pull request.
 
 PyGraphina uses:
 
-- **Ruff** for linting and formatting
-- **mypy** for type checking
+- Ruff for linting and formatting
+- mypy for type checking
 
 Run before committing:
 
@@ -311,11 +311,11 @@ Use clear headings, code examples, and explanations.
 
 Include in your PR description:
 
-1. **What**: What does this PR do?
-2. **Why**: Why is this change needed?
-3. **How**: How does it work?
-4. **Testing**: How was it tested?
-5. **Breaking changes**: Any breaking changes?
+1. What: What does this PR do?
+2. Why: Why is this change needed?
+3. How: How does it work?
+4. Testing: How was it tested?
+5. Breaking changes: Any breaking changes?
 
 Example:
 
@@ -356,9 +356,9 @@ None. This is backward compatible.
 
 ### Communication
 
-- **GitHub Issues**: Bug reports, feature requests
-- **Pull Requests**: Code contributions
-- **Discussions**: General questions, ideas
+- GitHub Issues: Bug reports, feature requests
+- Pull Requests: Code contributions
+- Discussions: General questions, ideas
 
 ### Getting Help
 

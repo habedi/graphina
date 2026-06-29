@@ -12,8 +12,8 @@ graph.bidirectional_search(start: int, target: int) -> Optional[List[int]]
 
 ## Parameters
 
-- **start**: Starting node ID
-- **target**: Target node ID (for bidirectional search)
+- start: Starting node ID
+- target: Target node ID (for bidirectional search)
 
 ## Returns
 
@@ -23,15 +23,15 @@ List of node IDs in traversal or search order.
 
 Explores nodes level by level, one distance at a time.
 
-**Data Structure**: Queue (FIFO)
+Data Structure: Queue (FIFO)
 
-**Properties**:
+Properties:
 
 - Finds shortest path in unweighted graphs
 - Level-order exploration
 - Memory-intensive for wide graphs
 
-**Example**:
+Example:
 
 ```python
 import pygraphina as pg
@@ -58,15 +58,15 @@ print(f"BFS: {bfs}")
 
 Explores as deep as possible before backtracking.
 
-**Data Structure**: Stack (LIFO) or Recursion
+Data Structure: Stack (LIFO) or Recursion
 
-**Properties**:
+Properties:
 
 - Memory-efficient for deep graphs
 - Useful for cycle detection
 - Useful for topological sorting
 
-**Example**:
+Example:
 
 ```python
 import pygraphina as pg
@@ -92,12 +92,12 @@ print(f"DFS: {dfs}")
 
 Search from both start and target, meeting in the middle.
 
-**Advantages**:
+Advantages:
 
 - Faster than single-direction for some cases
 - Effective for point-to-point queries
 
-**Example**:
+Example:
 
 ```python
 # Find shortest path using bidirectional search
@@ -148,7 +148,7 @@ graph.iddfs(start: int, target: int, max_depth: int) -> Optional[List[int]]
 
 Perform DFS with increasing depth limits until target found.
 
-**Best for**:
+Best for:
 
 - Unknown search depth
 - Memory-constrained environments

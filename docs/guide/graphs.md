@@ -9,10 +9,10 @@ Graphina focuses on simple graphs to maximize performance. Multiple edges betwee
 
 ### `Graph<A, W>` (Undirected)
 
-`Graph` represents an **undirected graph**.
+`Graph` represents an undirected graph.
 
-- **Edges**: Bidirectional. Adding an edge from `a` to `b` implies a connection `b` to `a`.
-- **Use Cases**: Social networks, road networks, molecular structures.
+- Edges: Bidirectional. Adding an edge from `a` to `b` implies a connection `b` to `a`.
+- Use Cases: Social networks, road networks, molecular structures.
 
 ```rust
 use graphina::core::types::Graph;
@@ -23,10 +23,10 @@ let mut g = Graph::<&str, f64>::new();
 
 ### `Digraph<A, W>` (Directed)
 
-`Digraph` represents a **directed graph**.
+`Digraph` represents a directed graph.
 
-- **Edges**: Directional. An edge from `a` to `b` does not imply `b` to `a`.
-- **Use Cases**: Web pages, citation networks, dependency graphs.
+- Edges: Directional. An edge from `a` to `b` does not imply `b` to `a`.
+- Use Cases: Web pages, citation networks, dependency graphs.
 
 ```rust
 use graphina::core::types::Digraph;
@@ -38,9 +38,9 @@ let mut dg = Digraph::<&str, f64>::new();
 
 Graphina uses a `StableGraph` backend from `petgraph`.
 
-1. **Vector-backed storage**: Nodes and edges use `Vec` structures.
-2. **Stable Indices**: Removing a node does **not** shift other indices. Safely retain `NodeId`s.
-3. **Cache Locality**: Contiguous memory usage improves iteration performance.
+1. Vector-backed storage: Nodes and edges use `Vec` structures.
+2. Stable Indices: Removing a node does not shift other indices. Safely retain `NodeId`s.
+3. Cache Locality: Contiguous memory usage improves iteration performance.
 
 ## NodeId vs Node Values
 
@@ -61,7 +61,7 @@ let bob_id = graph.add_node("Bob");
 graph.add_edge(alice_id, bob_id, 1.0);
 ```
 
-This design separates **topology** from **data**, enabling optimized integer-based algorithms.
+This design separates topology from data, enabling optimized integer-based algorithms.
 
 ## Density
 

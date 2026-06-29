@@ -6,8 +6,8 @@ Graphina is designed to be fast, memory-efficient, and easy to use, but coming f
 
 Graphina provides two primary graph structures, both of which are generic over node attributes (`A`) and edge weights (`W`).
 
-*   **`Graph<A, W>`**: An **undirected** graph. Edges have no direction; `add_edge(a, b, w)` effectively connects $a \leftrightarrow b$.
-*   **`Digraph<A, W>`**: A **directed** graph. Edges go from source to target. `neighbors(u)` returns only outgoing neighbors (successors).
+*   `Graph<A, W>`: An undirected graph. Edges have no direction; `add_edge(a, b, w)` effectively connects $a \leftrightarrow b$.
+*   `Digraph<A, W>`: A directed graph. Edges go from source to target. `neighbors(u)` returns only outgoing neighbors (successors).
 
 ## Strongly Typed Data
 
@@ -26,7 +26,7 @@ This design allows Graphina to optimize memory layout and guarantee data consist
 ## References via NodeId
 
 In NetworkX, the node *value* (like "Alice") is often the identifier.
-In Graphina, adding a node transfers ownership of the data to the graph and returns a **`NodeId`**.
+In Graphina, adding a node transfers ownership of the data to the graph and returns a `NodeId`.
 
 ```rust
 let id = graph.add_node("Data");
@@ -52,5 +52,5 @@ Use the `try_` variants or `Option/Result` returning methods for robustness:
 
 Graphina wraps `petgraph`'s `StableGraph`, meaning:
 
-*   **Fast Lookups**: Nodes and edges are stored in vectors.
-*   **Stability**: Removing a node does not invalidate the `NodeId`s of other nodes.
+*   Fast Lookups: Nodes and edges are stored in vectors.
+*   Stability: Removing a node does not invalidate the `NodeId`s of other nodes.

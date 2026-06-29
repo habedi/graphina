@@ -18,9 +18,9 @@ pg.links.common_neighbor_centrality(
 
 ## Parameters
 
-- **graph**: The graph to analyze
-- **alpha**: Weighting parameter for centrality contribution (typically 0.0 to 1.0)
-- **ebunch**: Optional list of edges to evaluate. If None, evaluates all non-existing edges
+- graph: The graph to analyze
+- alpha: Weighting parameter for centrality contribution (typically 0.0 to 1.0)
+- ebunch: Optional list of edges to evaluate. If None, evaluates all non-existing edges
 
 ## Returns
 
@@ -107,10 +107,10 @@ print(f"\nScores for candidate edges: {scores}")
 
 ## Parameter Tuning
 
-- **alpha = 0.0**: Pure common neighbor count (ignores centrality)
-- **alpha = 0.5**: Balanced common neighbor and centrality
-- **alpha = 1.0**: Strong centrality weighting
-- **alpha > 1.0**: Very strong centrality emphasis
+- alpha = 0.0: Pure common neighbor count (ignores centrality)
+- alpha = 0.5: Balanced common neighbor and centrality
+- alpha = 1.0: Strong centrality weighting
+- alpha > 1.0: Very strong centrality emphasis
 
 ## Comparison with Other Methods
 

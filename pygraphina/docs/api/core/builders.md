@@ -119,15 +119,15 @@ print(f"Network size: {network.node_count()} users, {network.edge_count()} frien
 
 ## Efficiency Tips
 
-1. **Bulk operations faster than single operations**
+1. Bulk operations faster than single operations
     - Use `add_nodes_from()` instead of multiple `add_node()` calls
     - Use `add_edges_from()` instead of multiple `add_edge()` calls
 
-2. **Pre-allocate if possible**
+2. Pre-allocate if possible
     - Building graph incrementally is fine
     - Batch similar operations together
 
-3. **Avoid repeated lookups**
+3. Avoid repeated lookups
     - Store node IDs returned from `add_node()`
     - Don't re-add same nodes
 

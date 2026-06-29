@@ -6,14 +6,14 @@ Centrality measures identify the most important nodes in a graph based on variou
 
 PyGraphina provides multiple centrality algorithms, each capturing different notions of "importance":
 
-- **Degree**: Based on number of connections
-- **Betweenness**: Based on being on shortest paths
-- **Closeness**: Based on distance to other nodes
-- **Eigenvector**: Based on connections to important nodes
-- **PageRank**: Based on random walk probability
-- **Katz**: Based on weighted path counts
-- **Harmonic**: Based on reciprocal distances
-- **Reaching**: Based on reachability
+- Degree: Based on number of connections
+- Betweenness: Based on being on shortest paths
+- Closeness: Based on distance to other nodes
+- Eigenvector: Based on connections to important nodes
+- PageRank: Based on random walk probability
+- Katz: Based on weighted path counts
+- Harmonic: Based on reciprocal distances
+- Reaching: Based on reachability
 
 All centrality functions are available under the `pg.centrality` module.
 
@@ -123,27 +123,27 @@ Based on reciprocal distances. Handles disconnected graphs better than closeness
 
 ### For Social Networks
 
-- **Influencers**: PageRank, Eigenvector
-- **Connectors**: Betweenness
-- **Popular users**: Degree
+- Influencers: PageRank, Eigenvector
+- Connectors: Betweenness
+- Popular users: Degree
 
 ### For Transportation Networks
 
-- **Central hubs**: Closeness, Harmonic
-- **Critical junctions**: Betweenness
-- **Well-connected stations**: Degree
+- Central hubs: Closeness, Harmonic
+- Critical junctions: Betweenness
+- Well-connected stations: Degree
 
 ### For Citation Networks
 
-- **Important papers**: PageRank, Eigenvector
-- **Foundational work**: Betweenness
-- **Highly cited**: Degree
+- Important papers: PageRank, Eigenvector
+- Foundational work: Betweenness
+- Highly cited: Degree
 
 ### For Biological Networks
 
-- **Critical proteins**: Betweenness
-- **Regulatory hubs**: Degree
-- **Central pathways**: Closeness
+- Critical proteins: Betweenness
+- Regulatory hubs: Degree
+- Central pathways: Closeness
 
 ## See Individual Pages
 
@@ -189,10 +189,10 @@ for node in nodes:
 
 ## Performance Tips
 
-1. **Use parallel implementations** for large graphs (see [Parallel module](../parallel/index.md))
-2. **Approximate algorithms** are faster for very large graphs
-3. **Degree centrality** is fastest for quick analysis
-4. **Adjust iteration limits** to balance speed vs accuracy
+1. Use parallel implementations for large graphs (see [Parallel module](../parallel/index.md))
+2. Approximate algorithms are faster for very large graphs
+3. Degree centrality is fastest for quick analysis
+4. Adjust iteration limits to balance speed vs accuracy
 
 ## Related
 

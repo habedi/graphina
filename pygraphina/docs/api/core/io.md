@@ -127,7 +127,7 @@ g3.load_edge_list("graph.tsv", sep="\t")
 
 ## Tips
 
-1. **Use edge list for portability** - Works with most tools
-2. **Use binary for speed** - Fastest I/O for large graphs
-3. **Use JSON for interchange** - Inspect and modify easily
-4. **Use GraphML for visualization** - Standard format for graph tools
+1. Use edge list for portability - Works with most tools
+2. Use binary for speed - Fastest I/O for large graphs
+3. Use JSON for interchange - Inspect and modify easily
+4. Use GraphML for visualization - Standard format for graph tools

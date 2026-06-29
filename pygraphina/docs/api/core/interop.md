@@ -25,19 +25,19 @@ print(nx_graph.nodes[n1]['attr'])  # 10
 print(nx_graph[n1][n2]['weight'])  # 1.5
 ```
 
-**Parameters:**
+Parameters:
 
 | Parameter | Type                     | Description                     |
 |-----------|--------------------------|---------------------------------|
 | `graph`   | `PyGraph` or `PyDiGraph` | The pygraphina graph to convert |
 
-**Returns:**
+Returns:
 
 | Type                                   | Description                                                      |
 |----------------------------------------|------------------------------------------------------------------|
 | `networkx.Graph` or `networkx.DiGraph` | A NetworkX graph with preserved node attributes and edge weights |
 
-**Notes:**
+Notes:
 
 - Node attributes are stored under the `'attr'` key
 - Edge weights are stored under the `'weight'` key
@@ -66,19 +66,19 @@ print(g.node_count())  # 2
 print(g.get_node_attr(0))  # 100
 ```
 
-**Parameters:**
+Parameters:
 
 | Parameter  | Type                                   | Description                   |
 |------------|----------------------------------------|-------------------------------|
 | `nx_graph` | `networkx.Graph` or `networkx.DiGraph` | The NetworkX graph to convert |
 
-**Returns:**
+Returns:
 
 | Type                     | Description                                          |
 |--------------------------|------------------------------------------------------|
 | `PyGraph` or `PyDiGraph` | A pygraphina graph (type matches input directedness) |
 
-**Notes:**
+Notes:
 
 - Reads `'attr'` from node data (defaults to 0 if not present)
 - Reads `'weight'` from edge data (defaults to 1.0 if not present)
@@ -108,19 +108,19 @@ print(df)
 # 2        2   300
 ```
 
-**Parameters:**
+Parameters:
 
 | Parameter | Type                     | Description         |
 |-----------|--------------------------|---------------------|
 | `graph`   | `PyGraph` or `PyDiGraph` | The graph to export |
 
-**Returns:**
+Returns:
 
 | Type               | Description                                             |
 |--------------------|---------------------------------------------------------|
 | `pandas.DataFrame` | DataFrame with columns `node_id` (int) and `attr` (int) |
 
-**Notes:**
+Notes:
 
 - Requires pandas to be installed
 - Each row represents one node
@@ -148,19 +148,19 @@ print(df)
 # 1       1       2     2.0
 ```
 
-**Parameters:**
+Parameters:
 
 | Parameter | Type                     | Description         |
 |-----------|--------------------------|---------------------|
 | `graph`   | `PyGraph` or `PyDiGraph` | The graph to export |
 
-**Returns:**
+Returns:
 
 | Type               | Description                                                           |
 |--------------------|-----------------------------------------------------------------------|
 | `pandas.DataFrame` | DataFrame with columns `source`, `target` (int), and `weight` (float) |
 
-**Notes:**
+Notes:
 
 - Requires pandas to be installed
 - For directed graphs, edge direction is preserved

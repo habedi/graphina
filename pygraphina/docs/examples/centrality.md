@@ -337,12 +337,12 @@ for (n1, s1), (n2, s2) in zip(top_5_seq, top_5_par):
 
 ### 1. Choose the Right Centrality
 
-- **Degree**: Quick, simple, good for initial analysis
-- **PageRank**: General-purpose, handles directed graphs well
-- **Betweenness**: Find bridges and bottlenecks (slower)
-- **Closeness**: Find central nodes (requires connected graph)
-- **Eigenvector**: Connections to important nodes matter
-- **Katz**: Tunable influence propagation
+- Degree: Quick, simple, good for initial analysis
+- PageRank: General-purpose, handles directed graphs well
+- Betweenness: Find bridges and bottlenecks (slower)
+- Closeness: Find central nodes (requires connected graph)
+- Eigenvector: Connections to important nodes matter
+- Katz: Tunable influence propagation
 
 ### 2. Parameter Tuning
 

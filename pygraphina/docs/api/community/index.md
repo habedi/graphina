@@ -59,9 +59,9 @@ Use Connected Components or Label Propagation
 
 After detecting communities, evaluate results using:
 
-- **Modularity**: How well communities are separated
-- **Density**: Internal edge density per community
-- **Conductance**: Cut quality between communities
+- Modularity: How well communities are separated
+- Density: Internal edge density per community
+- Conductance: Cut quality between communities
 
 ## References
 

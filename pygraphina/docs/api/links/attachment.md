@@ -10,7 +10,7 @@ pg.links.preferential_attachment(graph: Union[PyGraph, PyDiGraph]) -> Dict[Tuple
 
 ## Parameters
 
-- **graph**: The graph to analyze
+- graph: The graph to analyze
 
 ## Returns
 

@@ -44,11 +44,11 @@ The `TopologyBuilder` provides convenience methods for creating standard graph s
 
 ### Supported Topologies
 
-*   **Complete Graph**: Every node is connected to every other node.
-*   **Cycle Graph**: Nodes connected in a closed loop.
-*   **Path Graph**: Nodes connected in a linear chain.
-*   **Star Graph**: One central node connected to all other peripheral nodes.
-*   **Grid Graph**: Nodes arranged in a grid lattice.
+*   Complete Graph: Every node is connected to every other node.
+*   Cycle Graph: Nodes connected in a closed loop.
+*   Path Graph: Nodes connected in a linear chain.
+*   Star Graph: One central node connected to all other peripheral nodes.
+*   Grid Graph: Nodes arranged in a grid lattice.
 
 ### Examples
 

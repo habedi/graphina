@@ -29,7 +29,7 @@ fn main() {
 
 ### Complex Example: Flight Network
 
-This example demonstrates using **custom edge types** and a custom **cost evaluation function**. Imagine a flight network where edges have both a price and an aircraft type.
+This example demonstrates using custom edge types and a custom cost evaluation function. Imagine a flight network where edges have both a price and an aircraft type.
 
 ```rust
 use graphina::core::types::Digraph;

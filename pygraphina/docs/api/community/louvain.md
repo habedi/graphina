@@ -13,8 +13,8 @@ pg.community.louvain(
 
 ## Parameters
 
-- **graph**: Undirected graph to analyze
-- **seed**: Random seed for reproducibility (optional)
+- graph: Undirected graph to analyze
+- seed: Random seed for reproducibility (optional)
 
 ## Returns
 
@@ -86,8 +86,8 @@ for comm_id, members in enumerate(communities):
 
 The seed parameter controls randomness:
 
-- **None**: Non-deterministic behavior (different results each run)
-- **Integer**: Reproducible results with same seed value
+- None: Non-deterministic behavior (different results each run)
+- Integer: Reproducible results with same seed value
 
 Use a seed when you need:
 

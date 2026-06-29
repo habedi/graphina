@@ -15,7 +15,7 @@ pg.approximation.maximum_independent_set(graph: PyGraph) -> List[int]
 
 ## Parameters
 
-- **graph**: The undirected graph to analyze
+- graph: The undirected graph to analyze
 
 ## Returns
 
@@ -28,9 +28,9 @@ Uses a greedy approximation:
 2. Repeatedly add the vertex with minimum degree (not connected to current set)
 3. Continue until no vertices can be added
 
-**Time Complexity**: O(V² + E)  
-**Space Complexity**: O(V)  
-**Approximation Ratio**: O(log V) in worst case, often much better in practice
+Time Complexity: O(V² + E)  
+Space Complexity: O(V)  
+Approximation Ratio: O(log V) in worst case, often much better in practice
 
 ## Example
 
@@ -84,19 +84,19 @@ print(f"Maximum parallelism level: {len(parallel_tasks)}")
 
 ## Use Cases
 
-- **Task Scheduling**: Find non-conflicting tasks that can run in parallel
-- **Register Allocation**: Allocate registers to variables with non-overlapping lifetimes
-- **Frequency Assignment**: Assign frequencies to stations without interference
-- **Set Packing**: Maximize selection of non-overlapping sets
-- **Maximal Matching**: Lower bound for maximum matching
-- **Graph Coloring**: Related to chromatic number
+- Task Scheduling: Find non-conflicting tasks that can run in parallel
+- Register Allocation: Allocate registers to variables with non-overlapping lifetimes
+- Frequency Assignment: Assign frequencies to stations without interference
+- Set Packing: Maximize selection of non-overlapping sets
+- Maximal Matching: Lower bound for maximum matching
+- Graph Coloring: Related to chromatic number
 
 ## Quality Assessment
 
 The greedy algorithm produces:
-- **Optimal solution**: For trees and bipartite graphs
-- **Good approximation**: For sparse graphs
-- **Reasonable bound**: For dense graphs (always within O(log n) of optimal)
+- Optimal solution: For trees and bipartite graphs
+- Good approximation: For sparse graphs
+- Reasonable bound: For dense graphs (always within O(log n) of optimal)
 
 ## Complexity Analysis
 
@@ -124,10 +124,10 @@ The greedy algorithm produces:
 
 ## Relationship to Other Problems
 
-- **Vertex Cover**: Complement of Independent Set
-- **Maximum Independent Set**: |IS| + |VC| = |V| (for bipartite graphs)
-- **Clique**: Maximum clique in complement graph
-- **Coloring**: Independent set partitions for proper coloring
+- Vertex Cover: Complement of Independent Set
+- Maximum Independent Set: |IS| + |VC| = |V| (for bipartite graphs)
+- Clique: Maximum clique in complement graph
+- Coloring: Independent set partitions for proper coloring
 
 ## Tips for Better Results
 
