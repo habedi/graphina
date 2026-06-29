@@ -27,8 +27,9 @@
 //! budget, and the scale sweep come from environment variables; see
 //! `Config::from_env` for the knobs and their defaults.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::Infallible;
+use std::panic::AssertUnwindSafe;
 use std::time::{Duration, Instant};
 
 use ordered_float::OrderedFloat;
@@ -89,6 +90,13 @@ struct Config {
     /// Time budget per algorithm per library; repetitions stop early once it is
     /// spent (at least one timed repetition always runs).
     budget: Duration,
+    /// When set, an edge-list file to load instead of generating a synthetic graph.
+    /// In this mode the synthetic knobs (nodes, edges, skew, sweep) are ignored.
+    dataset: Option<String>,
+    /// Node-count ceiling above which the superlinear algorithms (all-pairs,
+    /// betweenness, closeness, dense eigendecomposition) are skipped. Applied only in
+    /// dataset mode; synthetic runs are never gated, so their behavior is unchanged.
+    max_dense_nodes: u64,
 }
 
 impl Config {
@@ -110,6 +118,9 @@ impl Config {
         let edges = var("RUSTWORKX_COMPARE_EDGES", 10_000);
         let reps = var("RUSTWORKX_COMPARE_REPS", 10) as usize;
         let sweep = var("RUSTWORKX_COMPARE_SWEEP", 0) != 0;
+        let dataset = std::env::var("RUSTWORKX_COMPARE_DATASET")
+            .ok()
+            .filter(|s| !s.is_empty());
         assert!(nodes > 0, "RUSTWORKX_COMPARE_NODES must be at least 1");
         assert!(
             edges == 0 || nodes > 1,
@@ -117,7 +128,7 @@ impl Config {
              (edges are distinct non-self-loop pairs)"
         );
         assert!(reps > 0, "RUSTWORKX_COMPARE_REPS must be at least 1");
-        if sweep {
+        if sweep && dataset.is_none() {
             let base_nodes = nodes / SWEEP_STEP;
             assert!(
                 base_nodes > 0,
@@ -133,6 +144,8 @@ impl Config {
             skew,
             sweep,
             budget: Duration::from_secs(var("RUSTWORKX_COMPARE_BUDGET_SECS", 30)),
+            dataset,
+            max_dense_nodes: var("RUSTWORKX_COMPARE_MAX_DENSE_NODES", 4_000),
         }
     }
 }
@@ -222,6 +235,64 @@ fn generate(nodes: u64, edges: u64, skew: Skew) -> Dataset {
         out.push((a as u32, b as u32));
     }
     Dataset { nodes, edges: out }
+}
+
+/// Interns a raw node id into a contiguous `0..n` range, assigning ids in first-seen
+/// order so the loaded graph matches the dense node numbering `generate` produces.
+fn intern(raw: u64, remap: &mut HashMap<u64, u32>, next_id: &mut u32) -> u32 {
+    *remap.entry(raw).or_insert_with(|| {
+        let id = *next_id;
+        *next_id += 1;
+        id
+    })
+}
+
+/// Loads an undirected simple graph from an edge-list file. Each non-empty line holds
+/// one edge as two node ids separated by a comma or whitespace; a leading `#` marks a
+/// comment, and a non-numeric line (such as a CSV header) is skipped. Node ids are
+/// remapped to a contiguous `0..n` range, self-loops are dropped, and parallel edges
+/// are deduplicated, so the result has the same contract as `generate`.
+fn load_dataset(path: &str) -> Dataset {
+    let content = std::fs::read_to_string(path)
+        .unwrap_or_else(|e| panic!("failed to read dataset {path}: {e}"));
+    let mut remap: HashMap<u64, u32> = HashMap::new();
+    let mut next_id: u32 = 0;
+    let mut seen: HashSet<(u32, u32)> = HashSet::new();
+    let mut edges: Vec<(u32, u32)> = Vec::new();
+
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let mut fields = line
+            .split(|c: char| c == ',' || c.is_whitespace())
+            .filter(|s| !s.is_empty());
+        let (Some(a), Some(b)) = (fields.next(), fields.next()) else {
+            continue;
+        };
+        let (Ok(a), Ok(b)) = (a.parse::<u64>(), b.parse::<u64>()) else {
+            continue;
+        };
+        let a = intern(a, &mut remap, &mut next_id);
+        let b = intern(b, &mut remap, &mut next_id);
+        if a == b {
+            continue;
+        }
+        let (lo, hi) = if a < b { (a, b) } else { (b, a) };
+        if seen.insert((lo, hi)) {
+            edges.push((lo, hi));
+        }
+    }
+
+    assert!(
+        next_id > 0,
+        "dataset {path} contains no edges; check the file path and format"
+    );
+    Dataset {
+        nodes: next_id as u64,
+        edges,
+    }
 }
 
 /// Highest-degree node, the source for the single-source traversals (dijkstra
@@ -420,6 +491,24 @@ fn bench(warmups: usize, reps: usize, budget: Duration, mut f: impl FnMut()) -> 
 enum Diff {
     Match,
     Mismatch,
+    /// Not run because the dataset exceeds the dense-algorithm node ceiling.
+    Skipped,
+    /// One side panicked (for example an iterative method that fails to converge on
+    /// a real dataset); reported rather than aborting the whole comparison.
+    Errored,
+}
+
+/// Runs `f`, catching a panic and returning `None` instead of unwinding through the
+/// whole comparison. The default panic hook is suppressed for the duration so an
+/// expected failure (an algorithm that does not converge on a real graph) does not
+/// dump a backtrace into the results table. Runs single-threaded, so swapping the
+/// process-wide hook is safe here.
+fn catch<T>(f: impl FnOnce() -> T) -> Option<T> {
+    let prev = std::panic::take_hook();
+    std::panic::set_hook(Box::new(|_| {}));
+    let result = std::panic::catch_unwind(AssertUnwindSafe(f));
+    std::panic::set_hook(prev);
+    result.ok()
 }
 
 struct Row {
@@ -427,6 +516,16 @@ struct Row {
     graphina: Option<BenchStat>,
     rustworkx: Option<BenchStat>,
     diff: Diff,
+}
+
+/// Records a superlinear algorithm skipped because the dataset is too large.
+fn skipped(rows: &mut Vec<Row>, name: &'static str) {
+    rows.push(Row {
+        name,
+        graphina: None,
+        rustworkx: None,
+        diff: Diff::Skipped,
+    });
 }
 
 /// Two normalized result vectors agree when they have the same length and no
@@ -453,8 +552,15 @@ fn diff_and_bench<GN, RN>(
     mut r_run: impl FnMut() -> RN,
     r_norm: impl Fn(&RN) -> Vec<f64>,
 ) {
-    let g_native = g_run();
-    let r_native = r_run();
+    let (Some(g_native), Some(r_native)) = (catch(&mut g_run), catch(&mut r_run)) else {
+        rows.push(Row {
+            name,
+            graphina: None,
+            rustworkx: None,
+            diff: Diff::Errored,
+        });
+        return;
+    };
     let diff = if within_tolerance(&g_norm(&g_native), &r_norm(&r_native), eps) {
         Diff::Match
     } else {
@@ -482,22 +588,58 @@ fn diff_and_bench<GN, RN>(
     });
 }
 
+/// Estimates the spectral radius (largest eigenvalue magnitude) of the adjacency
+/// matrix by power iteration on the edge list. Katz centrality converges only for an
+/// attenuation factor below `1 / spectral_radius`, and real graphs have a much larger
+/// spectral radius than the small synthetic default, so the Katz `alpha` is derived
+/// from this estimate rather than fixed. Returns at least `1.0`.
+fn spectral_radius(data: &Dataset) -> f64 {
+    let n = data.nodes as usize;
+    if n == 0 || data.edges.is_empty() {
+        return 1.0;
+    }
+    let mut x = vec![1.0f64; n];
+    let mut y = vec![0.0f64; n];
+    let mut lambda = 1.0;
+    for _ in 0..50 {
+        for v in y.iter_mut() {
+            *v = 0.0;
+        }
+        for &(a, b) in &data.edges {
+            y[a as usize] += x[b as usize];
+            y[b as usize] += x[a as usize];
+        }
+        let norm = y.iter().map(|v| v * v).sum::<f64>().sqrt();
+        if norm <= f64::MIN_POSITIVE {
+            break;
+        }
+        for (xi, yi) in x.iter_mut().zip(&y) {
+            *xi = yi / norm;
+        }
+        lambda = norm;
+    }
+    lambda.max(1.0)
+}
+
 /// Loads both libraries at the given size, runs the workload, prints the result
 /// table, and returns the per-algorithm timings for the sweep summary.
-fn run_at(cfg: &Config, nodes: u64, edges: u64) -> Vec<Row> {
+fn run_at(cfg: &Config, data: &Dataset, source: &str, max_dense: u64) -> Vec<Row> {
     println!(
-        "dataset: {nodes} nodes, {edges} edges ({} skew); {} reps ({} warmups) per algorithm\n",
-        cfg.skew.as_str(),
-        cfg.reps,
-        cfg.warmups
+        "{source}; {} reps ({} warmups) per algorithm\n",
+        cfg.reps, cfg.warmups
     );
 
-    let data = generate(nodes, edges, cfg.skew);
     let n = data.nodes as usize;
-    let hub = hub_node(&data);
+    // Superlinear algorithms run only when the graph is small enough; in synthetic mode
+    // `max_dense` is `u64::MAX`, so they always run and behavior is unchanged.
+    let dense_ok = data.nodes <= max_dense;
+    // Katz needs alpha below the reciprocal of the spectral radius to converge; derive
+    // it from an estimate so the same alpha works on both the synthetic and real graphs.
+    let katz_alpha = 0.85 / spectral_radius(data);
+    let hub = hub_node(data);
 
-    let gg = build_graphina(&data);
-    let (pg, pidx) = build_petgraph(&data);
+    let gg = build_graphina(data);
+    let (pg, pidx) = build_petgraph(data);
     let g_src = gg.ids[hub];
     let p_src = pidx[hub];
     // A fixed target for the point-to-point search, deterministic and distinct
@@ -543,32 +685,42 @@ fn run_at(cfg: &Config, nodes: u64, edges: u64) -> Vec<Row> {
     );
 
     // Bellman-Ford single-source shortest path (unit weights, no negative cycle).
-    diff_and_bench(
-        "bellman_ford (SSSP)",
-        cfg,
-        &mut rows,
-        0.5,
-        || graphina::core::paths::bellman_ford(&gg.int, g_src).expect("graphina bellman_ford"),
-        |m| {
-            let mut v = vec![-1.0; n];
-            for (id, dist) in m {
-                v[id.index()] = dist.map(|d| d as f64).unwrap_or(-1.0);
-            }
-            v
-        },
-        || {
-            rwx_bellman_ford::<_, _, i64, Infallible, Vec<Option<i64>>>(&pg, p_src, |_| Ok(1), None)
+    // O(V*E), so skipped on large datasets.
+    if dense_ok {
+        diff_and_bench(
+            "bellman_ford (SSSP)",
+            cfg,
+            &mut rows,
+            0.5,
+            || graphina::core::paths::bellman_ford(&gg.int, g_src).expect("graphina bellman_ford"),
+            |m| {
+                let mut v = vec![-1.0; n];
+                for (id, dist) in m {
+                    v[id.index()] = dist.map(|d| d as f64).unwrap_or(-1.0);
+                }
+                v
+            },
+            || {
+                rwx_bellman_ford::<_, _, i64, Infallible, Vec<Option<i64>>>(
+                    &pg,
+                    p_src,
+                    |_| Ok(1),
+                    None,
+                )
                 .expect("rustworkx bellman_ford")
                 .expect("no negative cycle")
-        },
-        |dist| {
-            let mut v = vec![-1.0; n];
-            for (i, slot) in dist.iter().enumerate().take(n) {
-                v[i] = slot.map(|d| d as f64).unwrap_or(-1.0);
-            }
-            v
-        },
-    );
+            },
+            |dist| {
+                let mut v = vec![-1.0; n];
+                for (i, slot) in dist.iter().enumerate().take(n) {
+                    v[i] = slot.map(|d| d as f64).unwrap_or(-1.0);
+                }
+                v
+            },
+        );
+    } else {
+        skipped(&mut rows, "bellman_ford (SSSP)");
+    }
 
     // A* point-to-point shortest path with a zero heuristic (unit weights), so
     // both libraries return the same path cost. Only the cost is compared, since
@@ -598,30 +750,35 @@ fn run_at(cfg: &Config, nodes: u64, edges: u64) -> Vec<Row> {
 
     // All-pairs shortest path: graphina's Johnson against rustworkx's BFS-based
     // distance matrix. Both are flattened in row-major (source-major) order.
-    diff_and_bench(
-        "all-pairs (johnson)",
-        cfg,
-        &mut rows,
-        0.5,
-        || graphina::core::paths::johnson(&gg.int).expect("graphina johnson"),
-        |outer| {
-            let mut v = Vec::with_capacity(n * n);
-            for i in 0..n {
-                let inner = outer.get(&gg.ids[i]);
-                for j in 0..n {
-                    let d = inner
-                        .and_then(|m| m.get(&gg.ids[j]))
-                        .and_then(|d| *d)
-                        .map(|d| d as f64)
-                        .unwrap_or(-1.0);
-                    v.push(d);
+    // O(V*E*logV) plus an O(V^2) result, so skipped on large datasets.
+    if dense_ok {
+        diff_and_bench(
+            "all-pairs (johnson)",
+            cfg,
+            &mut rows,
+            0.5,
+            || graphina::core::paths::johnson(&gg.int).expect("graphina johnson"),
+            |outer| {
+                let mut v = Vec::with_capacity(n * n);
+                for i in 0..n {
+                    let inner = outer.get(&gg.ids[i]);
+                    for j in 0..n {
+                        let d = inner
+                            .and_then(|m| m.get(&gg.ids[j]))
+                            .and_then(|d| *d)
+                            .map(|d| d as f64)
+                            .unwrap_or(-1.0);
+                        v.push(d);
+                    }
                 }
-            }
-            v
-        },
-        || rwx_distance_matrix(&pg, usize::MAX, false, -1.0),
-        |mat| mat.iter().copied().collect(),
-    );
+                v
+            },
+            || rwx_distance_matrix(&pg, usize::MAX, false, -1.0),
+            |mat| mat.iter().copied().collect(),
+        );
+    } else {
+        skipped(&mut rows, "all-pairs (johnson)");
+    }
 
     // BFS reachability from the hub, compared as the set of reached nodes
     // (visitation order can differ by internal adjacency ordering).
@@ -693,142 +850,182 @@ fn run_at(cfg: &Config, nodes: u64, edges: u64) -> Vec<Row> {
     );
 
     // Betweenness centrality, unnormalized (raw shortest-path dependency sums).
-    diff_and_bench(
-        "betweenness",
-        cfg,
-        &mut rows,
-        1e-3,
-        || {
-            graphina::centrality::betweenness::betweenness_centrality(&gg.of, false)
-                .expect("graphina betweenness")
-        },
-        |m| map_to_vec(m, n),
-        || rwx_betweenness(&pg, false, false, usize::MAX),
-        |v| opt_vec(v, n),
-    );
+    // O(V*E), so skipped on large datasets.
+    if dense_ok {
+        diff_and_bench(
+            "betweenness",
+            cfg,
+            &mut rows,
+            1e-3,
+            || {
+                graphina::centrality::betweenness::betweenness_centrality(&gg.of, false)
+                    .expect("graphina betweenness")
+            },
+            |m| map_to_vec(m, n),
+            || rwx_betweenness(&pg, false, false, usize::MAX),
+            |v| opt_vec(v, n),
+        );
+    } else {
+        skipped(&mut rows, "betweenness");
+    }
 
     // Edge betweenness, unnormalized. Both sides are aligned to the generated
     // edge order: rustworkx returns a vector indexed by edge id, and graphina a
     // map keyed by the endpoint pair (stored in both directions).
-    diff_and_bench(
-        "edge_betweenness",
-        cfg,
-        &mut rows,
-        1e-3,
-        || {
-            graphina::centrality::betweenness::edge_betweenness_centrality(&gg.of, false)
-                .expect("graphina edge_betweenness")
-        },
-        |m| {
-            data.edges
-                .iter()
-                .map(|&(a, b)| {
-                    let (u, v) = (gg.ids[a as usize], gg.ids[b as usize]);
-                    *m.get(&(u, v)).or_else(|| m.get(&(v, u))).unwrap_or(&0.0)
-                })
-                .collect()
-        },
-        || rwx_edge_betweenness(&pg, false, usize::MAX),
-        |v| {
-            (0..data.edges.len())
-                .map(|i| v.get(i).and_then(|x| *x).unwrap_or(0.0))
-                .collect()
-        },
-    );
+    // O(V*E), so skipped on large datasets.
+    if dense_ok {
+        diff_and_bench(
+            "edge_betweenness",
+            cfg,
+            &mut rows,
+            1e-3,
+            || {
+                graphina::centrality::betweenness::edge_betweenness_centrality(&gg.of, false)
+                    .expect("graphina edge_betweenness")
+            },
+            |m| {
+                data.edges
+                    .iter()
+                    .map(|&(a, b)| {
+                        let (u, v) = (gg.ids[a as usize], gg.ids[b as usize]);
+                        *m.get(&(u, v)).or_else(|| m.get(&(v, u))).unwrap_or(&0.0)
+                    })
+                    .collect()
+            },
+            || rwx_edge_betweenness(&pg, false, usize::MAX),
+            |v| {
+                (0..data.edges.len())
+                    .map(|i| v.get(i).and_then(|x| *x).unwrap_or(0.0))
+                    .collect()
+            },
+        );
+    } else {
+        skipped(&mut rows, "edge_betweenness");
+    }
 
     // Closeness centrality (Wasserman-Faust correction on both sides).
-    diff_and_bench(
-        "closeness",
-        cfg,
-        &mut rows,
-        1e-4,
-        || {
-            graphina::centrality::closeness::closeness_centrality(&gg.of)
-                .expect("graphina closeness")
-        },
-        |m| map_to_vec(m, n),
-        || rwx_closeness(&pg, true, usize::MAX),
-        |v| opt_vec(v, n),
-    );
+    // O(V*E), so skipped on large datasets.
+    if dense_ok {
+        diff_and_bench(
+            "closeness",
+            cfg,
+            &mut rows,
+            1e-4,
+            || {
+                graphina::centrality::closeness::closeness_centrality(&gg.of)
+                    .expect("graphina closeness")
+            },
+            |m| map_to_vec(m, n),
+            || rwx_closeness(&pg, true, usize::MAX),
+            |v| opt_vec(v, n),
+        );
+    } else {
+        skipped(&mut rows, "closeness");
+    }
 
     // Eigenvector centrality, compared after L2 + sign normalization (the two
-    // libraries use different scaling and sign conventions).
-    diff_and_bench(
-        "eigenvector",
-        cfg,
-        &mut rows,
-        1e-3,
-        || {
-            graphina::centrality::eigenvector::eigenvector_centrality(&gg.f64, 1000, 1e-9)
-                .expect("graphina eigenvector")
-        },
-        |m| {
-            let mut v = map_to_vec(m, n);
-            l2_sign_normalize(&mut v);
-            v
-        },
-        || {
-            rwx_eigenvector(
-                &pg,
-                |e| Ok::<f64, Infallible>(*e.weight()),
-                Some(1000),
-                Some(1e-9),
-            )
-            .expect("rustworkx eigenvector")
-        },
-        |opt| {
-            let mut v = opt.clone().unwrap_or_default();
-            l2_sign_normalize(&mut v);
-            v
-        },
-    );
+    // libraries use different scaling and sign conventions). graphina uses a dense
+    // symmetric eigendecomposition for undirected graphs (O(V^3)), so it is skipped
+    // on large datasets.
+    if dense_ok {
+        diff_and_bench(
+            "eigenvector",
+            cfg,
+            &mut rows,
+            1e-3,
+            || {
+                graphina::centrality::eigenvector::eigenvector_centrality(&gg.f64, 1000, 1e-9)
+                    .expect("graphina eigenvector")
+            },
+            |m| {
+                let mut v = map_to_vec(m, n);
+                l2_sign_normalize(&mut v);
+                v
+            },
+            || {
+                rwx_eigenvector(
+                    &pg,
+                    |e| Ok::<f64, Infallible>(*e.weight()),
+                    Some(1000),
+                    Some(1e-9),
+                )
+                .expect("rustworkx eigenvector")
+            },
+            |opt| {
+                let mut v = opt.clone().unwrap_or_default();
+                l2_sign_normalize(&mut v);
+                v
+            },
+        );
+    } else {
+        skipped(&mut rows, "eigenvector");
+    }
 
     // Katz centrality, compared after L2 + sign normalization (graphina does not
-    // normalize, rustworkx L2-normalizes). A small alpha keeps both convergent.
-    diff_and_bench(
-        "katz_centrality",
-        cfg,
-        &mut rows,
-        1e-3,
-        || {
-            graphina::centrality::katz::katz_centrality(&gg.f64, 0.01, Some(&|_| 1.0), 1000, 1e-9)
+    // normalize, rustworkx L2-normalizes). The attenuation factor is derived from the
+    // estimated spectral radius so both libraries converge. graphina builds a dense
+    // adjacency matrix and runs O(V^2) matrix-vector products per iteration, so it is
+    // skipped on large datasets (the dense matrix is infeasible to allocate there).
+    if dense_ok {
+        diff_and_bench(
+            "katz_centrality",
+            cfg,
+            &mut rows,
+            1e-3,
+            || {
+                graphina::centrality::katz::katz_centrality(
+                    &gg.f64,
+                    katz_alpha,
+                    Some(&|_| 1.0),
+                    1000,
+                    1e-9,
+                )
                 .expect("graphina katz")
-        },
-        |m| {
-            let mut v = map_to_vec(m, n);
-            l2_sign_normalize(&mut v);
-            v
-        },
-        || {
-            rwx_katz(
-                &pg,
-                |_| Ok::<f64, Infallible>(1.0),
-                Some(0.01),
-                None,
-                Some(1.0),
-                Some(1000),
-                Some(1e-9),
-            )
-            .expect("rustworkx katz")
-        },
-        |opt| {
-            let mut v = opt.clone().unwrap_or_default();
-            l2_sign_normalize(&mut v);
-            v
-        },
-    );
+            },
+            |m| {
+                let mut v = map_to_vec(m, n);
+                l2_sign_normalize(&mut v);
+                v
+            },
+            || {
+                rwx_katz(
+                    &pg,
+                    |_| Ok::<f64, Infallible>(1.0),
+                    Some(katz_alpha),
+                    None,
+                    Some(1.0),
+                    Some(1000),
+                    Some(1e-9),
+                )
+                .expect("rustworkx katz")
+            },
+            |opt| {
+                let mut v = opt.clone().unwrap_or_default();
+                l2_sign_normalize(&mut v);
+                v
+            },
+        );
+    } else {
+        skipped(&mut rows, "katz_centrality");
+    }
 
-    // Transitivity (global clustering), a single scalar.
-    diff_and_bench(
-        "transitivity",
-        cfg,
-        &mut rows,
-        1e-6,
-        || graphina::metrics::transitivity(&gg.f64),
-        |x| vec![*x],
-        || rwx_transitivity(&pg),
-        |x| vec![*x],
-    );
+    // Transitivity (global clustering), a single scalar. graphina checks each pair of
+    // a node's neighbors with an O(degree) `contains_edge`, so on a skewed real graph
+    // this is O(sum_v deg^3) in the worst case; skipped on large datasets.
+    if dense_ok {
+        diff_and_bench(
+            "transitivity",
+            cfg,
+            &mut rows,
+            1e-6,
+            || graphina::metrics::transitivity(&gg.f64),
+            |x| vec![*x],
+            || rwx_transitivity(&pg),
+            |x| vec![*x],
+        );
+    } else {
+        skipped(&mut rows, "transitivity");
+    }
 
     print_table(cfg, &rows);
     rows
@@ -909,6 +1106,18 @@ fn print_table(cfg: &Config, rows: &[Row]) {
                     ratio
                 );
             }
+            (Diff::Skipped, _, _) => {
+                println!(
+                    "{:<22} {:>16} {:>16} {:>14}  skipped (dataset too large)",
+                    row.name, "-", "-", "-"
+                );
+            }
+            (Diff::Errored, _, _) => {
+                println!(
+                    "{:<22} {:>16} {:>16} {:>14}  ERR (not timed)",
+                    row.name, "-", "-", "-"
+                );
+            }
             _ => {
                 println!(
                     "{:<22} {:>16} {:>16} {:>14}  DIFF (not timed)",
@@ -924,8 +1133,30 @@ fn main() {
     let cfg = Config::from_env();
     println!("graphina vs rustworkx-core algorithm comparison\n");
 
+    // Dataset mode: load a real-world edge list instead of generating a synthetic graph.
+    // Superlinear algorithms are gated by the dense-node ceiling; the sweep is disabled.
+    if let Some(path) = &cfg.dataset {
+        let data = load_dataset(path);
+        let source = format!(
+            "dataset {path}: {} nodes, {} edges \
+             (superlinear algorithms skipped above {} nodes)",
+            data.nodes,
+            data.edges.len(),
+            cfg.max_dense_nodes
+        );
+        run_at(&cfg, &data, &source, cfg.max_dense_nodes);
+        return;
+    }
+
     if !cfg.sweep {
-        run_at(&cfg, cfg.nodes, cfg.edges);
+        let data = generate(cfg.nodes, cfg.edges, cfg.skew);
+        let source = format!(
+            "dataset: {} nodes, {} edges ({} skew)",
+            cfg.nodes,
+            cfg.edges,
+            cfg.skew.as_str()
+        );
+        run_at(&cfg, &data, &source, u64::MAX);
         return;
     }
 
@@ -940,7 +1171,14 @@ fn main() {
     let mut all = Vec::new();
     for (i, &(n, m)) in sizes.iter().enumerate() {
         println!("==== sweep size {} of {} ====", i + 1, sizes.len());
-        all.push(run_at(&cfg, n, m));
+        let data = generate(n, m, cfg.skew);
+        let source = format!(
+            "dataset: {} nodes, {} edges ({} skew)",
+            n,
+            m,
+            cfg.skew.as_str()
+        );
+        all.push(run_at(&cfg, &data, &source, u64::MAX));
     }
 
     println!("==== scaling (median ratio between consecutive {SWEEP_STEP}x sizes) ====");

@@ -82,6 +82,8 @@ class Config:
     skew: str
     sweep: bool
     budget_secs: float
+    dataset: str | None
+    max_dense_nodes: int
 
     @staticmethod
     def from_env() -> "Config":
@@ -108,6 +110,11 @@ class Config:
         warmups = var("PYGRAPHINA_COMPARE_WARMUPS", 1)
         sweep = var("PYGRAPHINA_COMPARE_SWEEP", 0) != 0
         budget = float(os.environ.get("PYGRAPHINA_COMPARE_BUDGET_SECS", "20"))
+        dataset = os.environ.get("PYGRAPHINA_COMPARE_DATASET") or None
+        # Node-count ceiling above which the superlinear algorithms (betweenness,
+        # closeness, dense eigendecomposition) are skipped. Applied only in dataset
+        # mode; synthetic runs use an unbounded ceiling, so their behavior is unchanged.
+        max_dense_nodes = var("PYGRAPHINA_COMPARE_MAX_DENSE_NODES", 4_000)
 
         if nodes < 1:
             sys.exit("PYGRAPHINA_COMPARE_NODES must be at least 1")
@@ -116,7 +123,9 @@ class Config:
         if reps < 1:
             sys.exit("PYGRAPHINA_COMPARE_REPS must be at least 1")
 
-        return Config(nodes, edges, reps, warmups, skew, sweep, budget)
+        return Config(
+            nodes, edges, reps, warmups, skew, sweep, budget, dataset, max_dense_nodes
+        )
 
 
 class Lcg:
@@ -194,6 +203,41 @@ def generate(nodes: int, edges: int, skew: str) -> Dataset:
         seen.add((a, b))
         out.append((a, b))
     return Dataset(nodes, out)
+
+
+def load_dataset(path: str) -> Dataset:
+    """Load an undirected simple graph from an edge-list file. Each non-empty line holds
+    one edge as two node ids separated by a comma or whitespace; a leading ``#`` marks a
+    comment, and a non-numeric line (such as a CSV header) is skipped. Node ids are
+    remapped to a contiguous ``0..n`` range in first-seen order, self-loops are dropped,
+    and parallel edges are deduplicated, so the result matches the contract of
+    ``generate``."""
+    remap: dict[int, int] = {}
+    seen: set[tuple[int, int]] = set()
+    edges: list[tuple[int, int]] = []
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.replace(",", " ").split()
+            if len(parts) < 2:
+                continue
+            try:
+                a_raw, b_raw = int(parts[0]), int(parts[1])
+            except ValueError:
+                continue  # header or other non-numeric line
+            a = remap.setdefault(a_raw, len(remap))
+            b = remap.setdefault(b_raw, len(remap))
+            if a == b:
+                continue
+            key = (a, b) if a < b else (b, a)
+            if key not in seen:
+                seen.add(key)
+                edges.append(key)
+    if not remap:
+        sys.exit(f"dataset {path} contains no edges; check the file path and format")
+    return Dataset(len(remap), edges)
 
 
 def hub_node(data: Dataset) -> int:
@@ -349,17 +393,21 @@ def diff_and_bench(
     return Row(name, pyg, rwx, "ok")
 
 
-def run_at(cfg: Config, nodes: int, edges: int) -> list[Row]:
-    data = generate(nodes, edges, cfg.skew)
+def skipped_row(name: str) -> Row:
+    """A row for a superlinear algorithm skipped because the dataset is too large."""
+    return Row(name, None, None, "skipped")
+
+
+def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]:
     n = data.nodes
+    # Superlinear algorithms run only when the graph is small enough; in synthetic mode
+    # max_dense is effectively unbounded, so they always run and behavior is unchanged.
+    dense_ok = n <= max_dense
     hub = hub_node(data)
     pyg_g = build_pygraphina(data)
     rwx_g = build_rustworkx(data)
 
-    print(
-        f"\n=== nodes={n} edges={len(data.edges)} skew={cfg.skew} "
-        f"reps={cfg.reps} warmups={cfg.warmups} ==="
-    )
+    print(f"\n=== {source} reps={cfg.reps} warmups={cfg.warmups} ===")
 
     rows: list[Row] = []
 
@@ -430,46 +478,58 @@ def run_at(cfg: Config, nodes: int, edges: int) -> list[Row]:
         )
 
     # Betweenness, unnormalized. Force rustworkx onto its sequential path.
-    rows.append(
-        diff_and_bench(
-            cfg,
-            "betweenness",
-            lambda: pygraphina.centrality.betweenness(pyg_g, False),
-            lambda: rustworkx.betweenness_centrality(
-                rwx_g, normalized=False, parallel_threshold=SEQUENTIAL_THRESHOLD
-            ),
-            lambda r: canon_map(r, n),
-            lambda r: canon_map(r, n),
-            1e-6,
+    # O(V*E), so skipped on large datasets.
+    if dense_ok:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "betweenness",
+                lambda: pygraphina.centrality.betweenness(pyg_g, False),
+                lambda: rustworkx.betweenness_centrality(
+                    rwx_g, normalized=False, parallel_threshold=SEQUENTIAL_THRESHOLD
+                ),
+                lambda r: canon_map(r, n),
+                lambda r: canon_map(r, n),
+                1e-6,
+            )
         )
-    )
+    else:
+        rows.append(skipped_row("betweenness"))
 
-    # Closeness centrality (Wasserman-Faust on both sides).
-    rows.append(
-        diff_and_bench(
-            cfg,
-            "closeness",
-            lambda: pygraphina.centrality.closeness(pyg_g),
-            lambda: rustworkx.closeness_centrality(rwx_g, wf_improved=True),
-            lambda r: canon_map(r, n),
-            lambda r: canon_map(r, n),
-            1e-6,
+    # Closeness centrality (Wasserman-Faust on both sides). O(V*E), so skipped on
+    # large datasets.
+    if dense_ok:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "closeness",
+                lambda: pygraphina.centrality.closeness(pyg_g),
+                lambda: rustworkx.closeness_centrality(rwx_g, wf_improved=True),
+                lambda r: canon_map(r, n),
+                lambda r: canon_map(r, n),
+                1e-6,
+            )
         )
-    )
+    else:
+        rows.append(skipped_row("closeness"))
 
     # Eigenvector centrality: different scaling and sign conventions, so L2-normalize
-    # and sign-fix both vectors before comparison.
-    rows.append(
-        diff_and_bench(
-            cfg,
-            "eigenvector",
-            lambda: pygraphina.centrality.eigenvector(pyg_g, 100, 1e-6),
-            lambda: rustworkx.eigenvector_centrality(rwx_g),
-            lambda r: l2_sign_normalize(canon_map(r, n)),
-            lambda r: l2_sign_normalize(canon_map(r, n)),
-            1e-3,
+    # and sign-fix both vectors before comparison. PyGraphina uses a dense
+    # eigendecomposition for undirected graphs, so it is skipped on large datasets.
+    if dense_ok:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "eigenvector",
+                lambda: pygraphina.centrality.eigenvector(pyg_g, 100, 1e-6),
+                lambda: rustworkx.eigenvector_centrality(rwx_g),
+                lambda r: l2_sign_normalize(canon_map(r, n)),
+                lambda r: l2_sign_normalize(canon_map(r, n)),
+                1e-3,
+            )
         )
-    )
+    else:
+        rows.append(skipped_row("eigenvector"))
 
     # PageRank: both sum to 1.0; compare the distributions within tolerance. rustworkx
     # PageRank takes a directed graph only, so the rustworkx side runs on a bidirected
@@ -525,8 +585,21 @@ def main() -> None:
     cfg = Config.from_env()
     print(f"pygraphina vs rustworkx {getattr(rustworkx, '__version__', '?')} comparison harness")
 
+    # Dataset mode: load a real-world edge list instead of generating a synthetic graph.
+    # Superlinear algorithms are gated by the dense-node ceiling; the sweep is disabled.
+    if cfg.dataset:
+        data = load_dataset(cfg.dataset)
+        source = (
+            f"dataset={cfg.dataset} nodes={data.nodes} edges={len(data.edges)} "
+            f"(superlinear algorithms skipped above {cfg.max_dense_nodes} nodes)"
+        )
+        run_at(cfg, data, source, cfg.max_dense_nodes)
+        return
+
     if not cfg.sweep:
-        run_at(cfg, cfg.nodes, cfg.edges)
+        data = generate(cfg.nodes, cfg.edges, cfg.skew)
+        source = f"nodes={cfg.nodes} edges={cfg.edges} skew={cfg.skew}"
+        run_at(cfg, data, source, sys.maxsize)
         return
 
     sizes = [
@@ -534,7 +607,10 @@ def main() -> None:
         (cfg.nodes, cfg.edges),
         (cfg.nodes * SWEEP_STEP, cfg.edges * SWEEP_STEP),
     ]
-    all_rows = [run_at(cfg, n, e) for n, e in sizes]
+    all_rows = [
+        run_at(cfg, generate(n, e, cfg.skew), f"nodes={n} edges={e} skew={cfg.skew}", sys.maxsize)
+        for n, e in sizes
+    ]
     print_sweep(sizes, all_rows)
 
 

@@ -17,6 +17,13 @@ make bench-pygraphina
 
 # Or directly, once PyGraphina is built into the active environment (make develop-py):
 uv run --with rustworkx python benchmarks/pygraphina/compare.py
+
+# Against the real-world datasets (run `make testdata` first to download them):
+make bench-pygraphina-datasets
+
+# Or one dataset directly:
+PYGRAPHINA_COMPARE_DATASET=tests/testdata/graphina-graphs/wikipedia_chameleon.txt \
+    uv run --with rustworkx python benchmarks/pygraphina/compare.py
 ```
 
 The harness imports PyGraphina from the active environment, so `make bench-pygraphina` runs `make develop-py`
@@ -36,6 +43,10 @@ The runs can be configured with these environment variables:
 - `PYGRAPHINA_COMPARE_BUDGET_SECS`: time budget per algorithm per library (default: 20s); repetitions stop
   early when the budget is spent, and a trailing `*` in the table shows the median taken from fewer than the
   requested repetitions
+- `PYGRAPHINA_COMPARE_DATASET`: path to an edge-list file to load instead of generating a synthetic graph;
+  when set, the synthetic knobs (nodes, edges, skew, sweep) are ignored
+- `PYGRAPHINA_COMPARE_MAX_DENSE_NODES`: in dataset mode, the node-count ceiling above which the superlinear
+  algorithms are skipped (default: 4000); synthetic runs are never gated
 
 The defaults are smaller than the [Rust harness](../graphina)'s 2000 nodes because the slowest
 algorithms here (eigenvector's dense eigendecomposition and the per-node closeness) run through the Python
@@ -51,6 +62,24 @@ with `PYGRAPHINA_COMPARE_SKEW=zipf`, which produces hub nodes as in real graphs 
 algorithms. The single-source traversals start from the highest-degree node so the traversal is non-trivial
 under both distributions. Both libraries receive nodes in the same order, so node ids `0..n` align and a
 result keyed by node id compares without a remap.
+
+### Real-World Datasets
+
+With `PYGRAPHINA_COMPARE_DATASET` set (or via `make bench-pygraphina-datasets`), the harness loads a
+real-world graph from an edge-list file instead of generating one. The loader accepts comma- or
+whitespace-separated edges, one per line, skips a leading header and `#` comments, remaps node ids to a
+contiguous range, treats the graph as undirected, drops self-loops, and deduplicates parallel edges. The
+[graphina-graphs](https://huggingface.co/datasets/habedi/graphina-graphs) datasets downloaded by
+`make testdata` are in this format.
+
+Real graphs are far larger and more skewed than the synthetic default, so the superlinear algorithms
+(betweenness, closeness, and eigenvector) are skipped above `PYGRAPHINA_COMPARE_MAX_DENSE_NODES` nodes
+(default 4000) and reported as `skipped`. Only the near-linear algorithms (single-source shortest paths,
+connected components, degree centrality, and PageRank) run on every dataset. The smallest dataset
+(`wikipedia_chameleon`, about 2300 nodes) runs the full suite; the larger ones run the near-linear subset.
+`make bench-pygraphina-datasets` covers the undirected datasets; the large directed graphs
+(`stanford_web_graph`, `dblp_citation_network`) are excluded by default but can be run by pointing
+`PYGRAPHINA_COMPARE_DATASET` at them.
 
 ### Algorithms
 
