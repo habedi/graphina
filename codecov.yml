@@ -1,3 +1,5 @@
 ignore:
-  - "examples/*"
+  - "benchmarks/*"
   - "benches/*"
+  - "tests/*"
+  - "pygraphina/tests/*"
