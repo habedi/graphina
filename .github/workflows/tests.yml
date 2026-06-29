@@ -20,12 +20,10 @@ on:
       - '**.md'
       - 'docs/**'
       - 'pygraphina/**'
-    tags:
-      - 'v*'
 
-#concurrency:
-#  group: ${{ github.workflow }}-${{ github.ref }}
-#  cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
