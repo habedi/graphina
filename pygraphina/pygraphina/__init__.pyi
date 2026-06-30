@@ -43,10 +43,6 @@ __all__ = [
     "min_weighted_vertex_cover",
     "average_clustering_approx",
     "ramsey_r2",
-    "diameter",
-    "radius",
-    "transitivity",
-    "average_clustering",
     "prim_mst",
     "kruskal_mst",
     "boruvka_mst",
@@ -101,22 +97,9 @@ class PyGraph:
         """
         ...
 
-    def update_node(self, py_node: int, new_attr: int) -> bool:
+    def update_node(self, py_node: int, new_attr: int) -> None:
         """
         Update the attribute of an existing node.
-
-        Args:
-            node: The node ID
-            new_attr: The new attribute value
-
-        Returns:
-            True if the node exists and was updated, False otherwise
-        """
-        ...
-
-    def try_update_node(self, py_node: int, new_attr: int) -> None:
-        """
-        Update a node's attribute, raising an error if the node doesn't exist.
 
         Args:
             node: The node ID
@@ -144,23 +127,11 @@ class PyGraph:
         """
         ...
 
-    def remove_node(self, py_node: int) -> Optional[int]:
-        """
-        Remove a node from the graph.
-
-        Removes all edges incident to this node as well.
-
-        Args:
-            node: The node ID to remove
-
-        Returns:
-            The node's attribute if it existed, None otherwise
-        """
-        ...
-
-    def try_remove_node(self, py_node: int) -> int:
+    def remove_node(self, py_node: int) -> int:
         """
         Remove a node from the graph, raising an error if it doesn't exist.
+
+        Removes all edges incident to this node as well.
 
         Args:
             node: The node ID to remove
@@ -173,25 +144,9 @@ class PyGraph:
         """
         ...
 
-    def remove_edge(self, source: int, target: int) -> bool:
+    def remove_edge(self, source: int, target: int) -> None:
         """
-        Remove an edge between two nodes.
-
-        Args:
-            source: The source node ID
-            target: The target node ID
-
-        Returns:
-            True if the edge was removed, False if it didn't exist
-
-        Raises:
-            ValueError: If either node doesn't exist
-        """
-        ...
-
-    def try_remove_edge(self, source: int, target: int) -> None:
-        """
-        Remove an edge, raising an error if it doesn't exist.
+        Remove an edge between two nodes, raising an error if it doesn't exist.
 
         Args:
             source: The source node ID
@@ -218,12 +173,8 @@ class PyGraph:
         """
         ...
 
-    def update_edge_weight(self, source: int, target: int, new_weight: float) -> bool:
-        """Update the weight of an existing edge."""
-        ...
-
-    def try_update_edge_weight(self, source: int, target: int, new_weight: float) -> None:
-        """Update edge weight, raising an error if the edge doesn't exist."""
+    def update_edge_weight(self, source: int, target: int, new_weight: float) -> None:
+        """Update the weight of an existing edge, raising an error if the edge doesn't exist."""
         ...
 
     def node_count(self) -> int:
@@ -387,20 +338,18 @@ class PyGraph:
         """Return a new graph keeping only edges for which predicate(u, v, weight) is true."""
         ...
 
-    def iddfs(self, start: int, target: int, max_depth: int) -> Optional[List[int]]:
-        """Find a path from start to target using iterative deepening DFS, or None if none exists within max_depth."""
+    def iddfs(self, start: int, target: int, max_depth: int) -> List[int]:
+        """Find a path from start to target using iterative deepening DFS.
+
+        Raises ValueError if either node doesn't exist or no path is found within max_depth.
+        """
         ...
 
-    def try_iddfs(self, start: int, target: int, max_depth: int) -> List[int]:
-        """Like iddfs, but raise an error if no path exists within max_depth."""
-        ...
+    def bidirectional_search(self, start: int, target: int) -> List[int]:
+        """Find the unweighted shortest path from start to target using bidirectional BFS.
 
-    def bidirectional_search(self, start: int, target: int) -> Optional[List[int]]:
-        """Find the unweighted shortest path from start to target using bidirectional BFS, or None if none exists."""
-        ...
-
-    def try_bidirectional_search(self, start: int, target: int) -> List[int]:
-        """Like bidirectional_search, but raise an error if no path exists."""
+        Raises ValueError if either node doesn't exist or no path is found.
+        """
         ...
 
     def diameter(self) -> Optional[int]:
@@ -486,12 +435,12 @@ class PyDiGraph:
         """Add a directed edge from source to target with a weight."""
         ...
 
-    def remove_node(self, py_node: int) -> Optional[int]:
-        """Remove a node and all its incident edges."""
+    def remove_node(self, py_node: int) -> int:
+        """Remove a node and all its incident edges, raising an error if it doesn't exist; returns its attribute."""
         ...
 
-    def remove_edge(self, source: int, target: int) -> bool:
-        """Remove a directed edge from source to target."""
+    def remove_edge(self, source: int, target: int) -> None:
+        """Remove a directed edge from source to target, raising an error if it doesn't exist."""
         ...
 
     def in_degree(self, py_node: int) -> Optional[int]:
@@ -522,28 +471,12 @@ class PyDiGraph:
         """Check if the graph is directed (always True for PyDiGraph)."""
         ...
 
-    def update_node(self, py_node: int, new_attr: int) -> bool:
-        """Update the attribute of an existing node. Returns True if the node exists."""
-        ...
-
-    def try_update_node(self, py_node: int, new_attr: int) -> None:
+    def update_node(self, py_node: int, new_attr: int) -> None:
         """Update a node's attribute, raising an error if the node doesn't exist."""
         ...
 
-    def try_remove_node(self, py_node: int) -> int:
-        """Remove a node, raising an error if it doesn't exist; returns its attribute."""
-        ...
-
-    def try_remove_edge(self, source: int, target: int) -> None:
-        """Remove an edge, raising an error if it doesn't exist."""
-        ...
-
-    def update_edge_weight(self, source: int, target: int, new_weight: float) -> bool:
-        """Update the weight of an existing edge. Returns True if the edge exists."""
-        ...
-
-    def try_update_edge_weight(self, source: int, target: int, new_weight: float) -> None:
-        """Update edge weight, raising an error if the edge doesn't exist."""
+    def update_edge_weight(self, source: int, target: int, new_weight: float) -> None:
+        """Update the weight of an existing edge, raising an error if the edge doesn't exist."""
         ...
 
     def get_edge_weight(self, source: int, target: int) -> Optional[float]:
@@ -658,20 +591,18 @@ class PyDiGraph:
         """Perform depth-first search from a starting node."""
         ...
 
-    def iddfs(self, start: int, target: int, max_depth: int) -> Optional[List[int]]:
-        """Find a path from start to target using iterative deepening DFS, or None if none exists within max_depth."""
+    def iddfs(self, start: int, target: int, max_depth: int) -> List[int]:
+        """Find a path from start to target using iterative deepening DFS.
+
+        Raises ValueError if either node doesn't exist or no path is found within max_depth.
+        """
         ...
 
-    def try_iddfs(self, start: int, target: int, max_depth: int) -> List[int]:
-        """Like iddfs, but raise an error if no path exists within max_depth."""
-        ...
+    def bidirectional_search(self, start: int, target: int) -> List[int]:
+        """Find the unweighted shortest path from start to target using bidirectional BFS.
 
-    def bidirectional_search(self, start: int, target: int) -> Optional[List[int]]:
-        """Find the unweighted shortest path from start to target using bidirectional BFS, or None if none exists."""
-        ...
-
-    def try_bidirectional_search(self, start: int, target: int) -> List[int]:
-        """Like bidirectional_search, but raise an error if no path exists."""
+        Raises ValueError if either node doesn't exist or no path is found.
+        """
         ...
 
     def subgraph(self, nodes: List[int]) -> "PyDiGraph":
@@ -959,22 +890,6 @@ def watts_strogatz(n: int, k: int, beta: float, seed: int) -> PyGraph:
 
 def bipartite(n1: int, n2: int, p: float, seed: int) -> PyGraph:
     """Generate a random bipartite graph with parts of size n1 and n2."""
-    ...
-
-def diameter(graph: PyGraph) -> Optional[int]:
-    """Compute the diameter of the graph. None if the graph is empty or disconnected."""
-    ...
-
-def radius(graph: PyGraph) -> Optional[int]:
-    """Compute the radius of the graph. None if the graph is empty or disconnected."""
-    ...
-
-def transitivity(graph: PyGraph) -> float:
-    """Compute the transitivity (global clustering coefficient) of the graph."""
-    ...
-
-def average_clustering(graph: PyGraph) -> float:
-    """Compute the average clustering coefficient of the graph."""
     ...
 
 def prim_mst(graph: PyGraph) -> Tuple[float, List[Tuple[int, int, float]]]:

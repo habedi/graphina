@@ -69,28 +69,11 @@ impl PyGraph {
     /// new_attr : int
     ///     The new attribute value
     ///
-    /// Returns
-    /// -------
-    /// bool
-    ///     True if the node exists and was updated, False otherwise
-    pub fn update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<bool> {
-        self.update_node_impl(py_node, new_attr)
-    }
-
-    /// Update a node's attribute, raising an error if the node doesn't exist.
-    ///
-    /// Parameters
-    /// ----------
-    /// py_node : int
-    ///     The node ID
-    /// new_attr : int
-    ///     The new attribute value
-    ///
     /// Raises
     /// ------
     /// ValueError
     ///     If the node doesn't exist
-    pub fn try_update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
+    pub fn update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
         self.try_update_node_impl(py_node, new_attr)
     }
 
@@ -118,24 +101,9 @@ impl PyGraph {
         self.add_edge_impl(source, target, weight)
     }
 
-    /// Remove a node from the graph.
+    /// Remove a node from the graph, raising an error if it doesn't exist.
     ///
     /// Removes all edges incident to this node as well.
-    ///
-    /// Parameters
-    /// ----------
-    /// py_node : int
-    ///     The node ID to remove
-    ///
-    /// Returns
-    /// -------
-    /// int or None
-    ///     The node's attribute if it existed, None otherwise
-    pub fn remove_node(&mut self, py_node: usize) -> PyResult<Option<i64>> {
-        self.remove_node_impl(py_node)
-    }
-
-    /// Remove a node from the graph, raising an error if it doesn't exist.
     ///
     /// Parameters
     /// ----------
@@ -151,7 +119,7 @@ impl PyGraph {
     /// ------
     /// ValueError
     ///     If the node doesn't exist
-    pub fn try_remove_node(&mut self, py_node: usize) -> PyResult<i64> {
+    pub fn remove_node(&mut self, py_node: usize) -> PyResult<i64> {
         self.try_remove_node_impl(py_node)
     }
 
@@ -322,33 +290,11 @@ impl PyGraph {
     /// target : int
     ///     The target node ID
     ///
-    /// Returns
-    /// -------
-    /// bool
-    ///     True if the edge was removed, False if it didn't exist
-    ///
-    /// Raises
-    /// ------
-    /// ValueError
-    ///     If either node doesn't exist
-    pub fn remove_edge(&mut self, source: usize, target: usize) -> PyResult<bool> {
-        self.remove_edge_impl(source, target)
-    }
-
-    /// Remove an edge, raising an error if it doesn't exist.
-    ///
-    /// Parameters
-    /// ----------
-    /// source : int
-    ///     The source node ID
-    /// target : int
-    ///     The target node ID
-    ///
     /// Raises
     /// ------
     /// ValueError
     ///     If either node doesn't exist or the edge doesn't exist
-    pub fn try_remove_edge(&mut self, source: usize, target: usize) -> PyResult<()> {
+    pub fn remove_edge(&mut self, source: usize, target: usize) -> PyResult<()> {
         self.try_remove_edge_impl(source, target)
     }
 
@@ -385,40 +331,11 @@ impl PyGraph {
     /// new_weight : float
     ///     The new edge weight
     ///
-    /// Returns
-    /// -------
-    /// bool
-    ///     True if the edge was updated, False if it didn't exist
-    ///
-    /// Raises
-    /// ------
-    /// ValueError
-    ///     If either node doesn't exist
-    pub fn update_edge_weight(
-        &mut self,
-        source: usize,
-        target: usize,
-        new_weight: f64,
-    ) -> PyResult<bool> {
-        self.update_edge_weight_impl(source, target, new_weight)
-    }
-
-    /// Update edge weight, raising an error if the edge doesn't exist.
-    ///
-    /// Parameters
-    /// ----------
-    /// source : int
-    ///     The source node ID
-    /// target : int
-    ///     The target node ID
-    /// new_weight : float
-    ///     The new edge weight
-    ///
     /// Raises
     /// ------
     /// ValueError
     ///     If either node doesn't exist or the edge doesn't exist
-    pub fn try_update_edge_weight(
+    pub fn update_edge_weight(
         &mut self,
         source: usize,
         target: usize,
@@ -467,25 +384,18 @@ impl PyGraph {
     pub fn dfs(&self, start: usize) -> PyResult<Vec<usize>> {
         self.dfs_impl(start)
     }
-    pub fn iddfs(
-        &self,
-        start: usize,
-        target: usize,
-        max_depth: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        self.iddfs_impl(start, target, max_depth)
-    }
-    pub fn try_iddfs(&self, start: usize, target: usize, max_depth: usize) -> PyResult<Vec<usize>> {
+    /// Find a path from start to target using iterative deepening DFS.
+    ///
+    /// Raises ValueError if either node doesn't exist or no path is found
+    /// within max_depth.
+    pub fn iddfs(&self, start: usize, target: usize, max_depth: usize) -> PyResult<Vec<usize>> {
         self.try_iddfs_impl(start, target, max_depth)
     }
-    pub fn bidirectional_search(
-        &self,
-        start: usize,
-        target: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        self.bidirectional_search_impl(start, target)
-    }
-    pub fn try_bidirectional_search(&self, start: usize, target: usize) -> PyResult<Vec<usize>> {
+    /// Find the unweighted shortest path from start to target using
+    /// bidirectional BFS.
+    ///
+    /// Raises ValueError if either node doesn't exist or no path is found.
+    pub fn bidirectional_search(&self, start: usize, target: usize) -> PyResult<Vec<usize>> {
         self.try_bidirectional_search_impl(start, target)
     }
 

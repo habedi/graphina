@@ -49,7 +49,7 @@ def test_vertex_cover_and_diameter():
     g, nodes = make_line(6)
     cover = pygraphina.min_weighted_vertex_cover(g)
     assert isinstance(cover, list)
-    d = pygraphina.diameter(g)
+    d = g.diameter()
     assert d >= 0.0
 
 

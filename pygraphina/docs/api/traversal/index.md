@@ -118,7 +118,7 @@ Combines advantages of BFS and DFS with limited memory usage.
 ### Method
 
 ```python
-g.iddfs(start: int, target: int, max_depth: int) -> Optional[List[int]]
+g.iddfs(start: int, target: int, max_depth: int) -> List[int]
 ```
 
 Parameters:
@@ -127,16 +127,16 @@ Parameters:
 - `max_depth`: Maximum search depth
 
 Returns:
-- `Optional[List[int]]`: Path from start to target, or `None` if not found within max_depth
+- `List[int]`: Path from start to target. Raises `ValueError` if no path is found within max_depth.
 
 ### Example
 
 ```python
-path = g.iddfs(nodes[0], nodes[6], max_depth=10)
-if path:
+try:
+    path = g.iddfs(nodes[0], nodes[6], max_depth=10)
     print(f"Path found: {path}")
     print(f"Length: {len(path) - 1}")
-else:
+except ValueError:
     print("No path found within depth limit")
 ```
 
@@ -153,7 +153,7 @@ Searches from both start and target simultaneously, meeting in the middle.
 ### Method
 
 ```python
-g.bidirectional_search(start: int, target: int) -> Optional[List[int]]
+g.bidirectional_search(start: int, target: int) -> List[int]
 ```
 
 Parameters:
@@ -161,16 +161,16 @@ Parameters:
 - `target`: Target node ID
 
 Returns:
-- `Optional[List[int]]`: Path from start to target, or `None` if no path exists
+- `List[int]`: Path from start to target. Raises `ValueError` if no path exists.
 
 ### Example
 
 ```python
-path = g.bidirectional_search(nodes[0], nodes[6])
-if path:
+try:
+    path = g.bidirectional_search(nodes[0], nodes[6])
     print(f"Shortest path: {path}")
     print(f"Distance: {len(path) - 1}")
-else:
+except ValueError:
     print("No path exists")
 ```
 

@@ -10,15 +10,6 @@ impl PyGraph {
         self.mapper.add(internal_id)
     }
 
-    /// Update a node's attribute. Returns true if updated, false if node doesn't exist.
-    pub fn update_node_impl(&mut self, py_node: usize, new_attr: i64) -> PyResult<bool> {
-        if let Some(internal_id) = self.mapper.get_internal(py_node) {
-            Ok(self.graph.update_node(internal_id, new_attr))
-        } else {
-            Ok(false)
-        }
-    }
-
     /// Try to update a node's attribute. Raises ValueError if node doesn't exist.
     pub fn try_update_node_impl(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
         let internal_id = self
@@ -51,19 +42,6 @@ impl PyGraph {
             .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
         let edge_id = self.graph.add_edge(src_id, tgt_id, weight);
         Ok(edge_id.index())
-    }
-
-    /// Remove a node and return its attribute if it exists.
-    pub fn remove_node_impl(&mut self, py_node: usize) -> PyResult<Option<i64>> {
-        if let Some(internal_id) = self.mapper.get_internal(py_node) {
-            let attr = self.graph.remove_node(internal_id);
-            if attr.is_some() {
-                self.mapper.remove_by_py_id(py_node);
-            }
-            Ok(attr)
-        } else {
-            Ok(None)
-        }
     }
 
     /// Try to remove a node. Raises ValueError if node doesn't exist.
@@ -140,26 +118,6 @@ impl PyGraph {
         self.mapper.clear();
     }
 
-    /// Remove an edge between two nodes. Returns true if edge was removed, false if not found.
-    pub fn remove_edge_impl(&mut self, source: usize, target: usize) -> PyResult<bool> {
-        let src_id = self
-            .mapper
-            .get_internal(source)
-            .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = self
-            .mapper
-            .get_internal(target)
-            .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
-
-        // Find the edge first
-        if let Some(edge_id) = self.graph.find_edge(src_id, tgt_id) {
-            self.graph.remove_edge(edge_id);
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
     /// Try to remove an edge. Raises ValueError if edge doesn't exist.
     pub fn try_remove_edge_impl(&mut self, source: usize, target: usize) -> PyResult<()> {
         let src_id = self
@@ -198,43 +156,6 @@ impl PyGraph {
             Ok(self.graph.edge_weight(edge_id).copied())
         } else {
             Ok(None)
-        }
-    }
-
-    /// Update the weight of an existing edge. Returns true if updated, false if edge not found.
-    pub fn update_edge_weight_impl(
-        &mut self,
-        source: usize,
-        target: usize,
-        new_weight: f64,
-    ) -> PyResult<bool> {
-        // Validate weight is finite
-        if !new_weight.is_finite() {
-            return Err(PyValueError::new_err(format!(
-                "Edge weight must be finite, got: {}",
-                new_weight
-            )));
-        }
-
-        let src_id = self
-            .mapper
-            .get_internal(source)
-            .ok_or_else(|| PyValueError::new_err(format!("Invalid source node id: {}", source)))?;
-        let tgt_id = self
-            .mapper
-            .get_internal(target)
-            .ok_or_else(|| PyValueError::new_err(format!("Invalid target node id: {}", target)))?;
-
-        // Find the edge first
-        if let Some(edge_id) = self.graph.find_edge(src_id, tgt_id) {
-            if let Some(weight_ref) = self.graph.edge_weight_mut(edge_id) {
-                *weight_ref = new_weight;
-                Ok(true)
-            } else {
-                Ok(false)
-            }
-        } else {
-            Ok(false)
         }
     }
 

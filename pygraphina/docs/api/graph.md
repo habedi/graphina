@@ -63,32 +63,7 @@ node_data[node_c] = {"name": "Alice", "age": 30}  # Store rich data externally
 ### update_node
 
 ```python
-update_node(node: int, new_attr: int) -> bool
-```
-
-Update the attribute of an existing node.
-
-Parameters:
-
-- `node` (int): The node ID
-- `new_attr` (int): The new attribute value
-
-Returns:
-
-- `bool`: True if the node exists and was updated, False otherwise
-
-Example:
-
-```python
-g = pg.PyGraph()
-node = g.add_node(100)
-success = g.update_node(node, 200)  # Returns True
-```
-
-### try_update_node
-
-```python
-try_update_node(node: int, new_attr: int) -> None
+update_node(node: int, new_attr: int) -> None
 ```
 
 Update the attribute of an existing node. Raises an error if the node doesn't exist.
@@ -107,17 +82,17 @@ Example:
 ```python
 g = pg.PyGraph()
 node = g.add_node(100)
-g.try_update_node(node, 200)  # Updates successfully
-# g.try_update_node(999, 300)  # Would raise ValueError
+g.update_node(node, 200)  # Updates successfully
+# g.update_node(999, 300)  # Would raise ValueError
 ```
 
 ### remove_node
 
 ```python
-remove_node(node: int) -> Optional[int]
+remove_node(node: int) -> int
 ```
 
-Remove a node from the graph. Also removes all edges incident to this node.
+Remove a node from the graph, raising an error if it doesn't exist. Also removes all edges incident to this node.
 
 Parameters:
 
@@ -125,7 +100,11 @@ Parameters:
 
 Returns:
 
-- `Optional[int]`: The node's attribute if it existed, None otherwise
+- `int`: The removed node's attribute
+
+Raises:
+
+- `ValueError`: If the node doesn't exist
 
 Example:
 
@@ -134,26 +113,6 @@ g = pg.PyGraph()
 node = g.add_node(100)
 attr = g.remove_node(node)  # Returns 100
 ```
-
-### try_remove_node
-
-```python
-try_remove_node(node: int) -> int
-```
-
-Remove a node from the graph. Raises an error if the node doesn't exist.
-
-Parameters:
-
-- `node` (int): The node ID to remove
-
-Returns:
-
-- `int`: The node's attribute
-
-Raises:
-
-- `ValueError`: If the node doesn't exist
 
 ### get_node_attr
 
@@ -280,19 +239,19 @@ g.add_edge(a, b, 2.5)
 ### remove_edge
 
 ```python
-remove_edge(source: int, target: int) -> bool
+remove_edge(source: int, target: int) -> None
 ```
 
-Remove an edge from the graph.
+Remove an edge from the graph, raising an error if it doesn't exist.
 
 Parameters:
 
 - `source` (int): The source node ID
 - `target` (int): The target node ID
 
-Returns:
+Raises:
 
-- `bool`: True if the edge existed and was removed, False otherwise
+- `ValueError`: If either node doesn't exist or the edge doesn't exist
 
 Example:
 
@@ -300,7 +259,7 @@ Example:
 g = pg.PyGraph()
 a, b = g.add_node(1), g.add_node(2)
 g.add_edge(a, b, 1.0)
-removed = g.remove_edge(a, b)  # True
+g.remove_edge(a, b)
 ```
 
 ### contains_edge
