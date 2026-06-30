@@ -21,7 +21,6 @@ use graphina::centrality::degree::degree_centrality;
 use graphina::centrality::harmonic::harmonic_centrality;
 use graphina::centrality::pagerank::pagerank;
 use graphina::core::types::{Graph, NodeId};
-use ordered_float::OrderedFloat;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -60,14 +59,13 @@ fn load_corpus() -> Corpus {
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("failed to parse centrality oracle: {e}"))
 }
 
-/// Build an `OrderedFloat`-weighted undirected graph from a case (centrality
-/// functions take `OrderedFloat<f64>` or a generic weight; `OrderedFloat` works
-/// for all of them).
-fn build_graph(case: &Case) -> (Graph<i32, OrderedFloat<f64>>, Vec<NodeId>) {
-    let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+/// Build an `f64`-weighted undirected graph from a case. Every centrality
+/// function under test accepts an `f64`-weighted graph.
+fn build_graph(case: &Case) -> (Graph<i32, f64>, Vec<NodeId>) {
+    let mut g: Graph<i32, f64> = Graph::new();
     let ids: Vec<NodeId> = (0..case.n).map(|i| g.add_node(i as i32)).collect();
     for (e, &w) in case.edges.iter().zip(&case.weights) {
-        g.add_edge(ids[e[0]], ids[e[1]], OrderedFloat(w));
+        g.add_edge(ids[e[0]], ids[e[1]], w);
     }
     (g, ids)
 }

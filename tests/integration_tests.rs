@@ -4,7 +4,7 @@ mod common;
 
 use common::{
     load_undirected_graph_f32 as load_graph_dataset, load_undirected_graph_f64 as load_graph_f64,
-    skip_if_no_datasets,
+    load_undirected_graph_plain_f64 as load_graph_plain_f64, skip_if_no_datasets,
 };
 use graphina::core::io::read_edge_list;
 use graphina::core::types::{Digraph, Graph, NodeId};
@@ -345,7 +345,7 @@ fn test_cross_paths_and_centrality() {
 
     println!("\nTesting Paths + Centrality Integration...\n");
 
-    let graph = match load_graph_f64("wikipedia_chameleon.txt") {
+    let graph = match load_graph_plain_f64("wikipedia_chameleon.txt") {
         Ok(g) => g,
         Err(_) => return,
     };
@@ -355,7 +355,7 @@ fn test_cross_paths_and_centrality() {
     }
 
     use graphina::centrality::closeness::closeness_centrality;
-    use graphina::core::paths::dijkstra;
+    use graphina::core::paths::dijkstra_path_f64;
 
     let closeness = closeness_centrality(&graph).expect("Closeness should work");
 
@@ -365,7 +365,8 @@ fn test_cross_paths_and_centrality() {
         .map(|(node, _)| *node);
 
     if let Some(central_node) = most_central {
-        let distances = dijkstra(&graph, central_node).expect("Dijkstra should work");
+        let (distances, _) =
+            dijkstra_path_f64(&graph, central_node, None).expect("Dijkstra should work");
         let reachable = distances.values().filter(|d| d.is_some()).count();
 
         println!("Most central node reaches {} nodes", reachable);

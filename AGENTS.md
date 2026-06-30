@@ -126,9 +126,10 @@ deliberately or keep it private.
   collections instead: `voterank` (`Vec<NodeId>`), `connected_components`, `weakly_connected_components`, `strongly_connected_components` (
   `Vec<Vec<NodeId>>`), and `connected_components_map` (`NodeMap<usize>`). Some metrics return `Option` (`diameter`, `radius`, `average_path_length`
   return `None` for an empty or disconnected graph).
-- Weight totality: algorithms that need a total order over weights take `OrderedFloat<f64>` rather than `f64` (for example `betweenness_centrality`,
-  `harmonic_centrality`, the `approximation` connectivity and diameter functions, and `boruvka_mst`). Wrap `f64` weights in
-  `ordered_float::OrderedFloat` for these.
+- Weight totality: a few algorithms still need a total order over weights and take `OrderedFloat<f64>` rather than `f64` (for example the
+  `approximation` connectivity and diameter functions, and `boruvka_mst`). Wrap `f64` weights in `ordered_float::OrderedFloat` for these. The
+  `centrality` functions all accept a plain `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`) ignore
+  weights, and the path-based ones (`harmonic_centrality`, `closeness_centrality`) order distances internally.
 - Negative weights: `dijkstra` and `a_star` return an error on a negative weight; `bellman_ford`, `floyd_warshall`, and `johnson` accept negatives and
   return `None` on a negative cycle. Pathfinding assumes a non-empty graph; validate with `core::validation` first.
 - Fixed attribute types in IO and generators: `core::io` reads and writes graphs with `i32` node attributes and `f32` edge weights; `core::generators`
@@ -172,8 +173,8 @@ looping forever.
 
 - `degree_centrality`, `in_degree_centrality`, `out_degree_centrality`: raw counts, not normalized; a self-loop counts as 2 on undirected graphs.
   Succeed on an empty graph with an empty map.
-- `betweenness_centrality` and `edge_betweenness_centrality`: take a `normalized: bool` and an `OrderedFloat<f64>`-weighted graph; Brandes' algorithm;
-  error on an empty graph. Edge betweenness stores both `(u, v)` and `(v, u)` for undirected graphs.
+- `betweenness_centrality` and `edge_betweenness_centrality`: take a `normalized: bool` and an `f64`-weighted graph; Brandes' algorithm over BFS, so
+  edge weights are ignored; error on an empty graph. Edge betweenness stores both `(u, v)` and `(v, u)` for undirected graphs.
 - `closeness_centrality`: Wasserman-Faust correction for disconnected graphs; a node with no reachable neighbors scores `0.0`.
 - `eigenvector_centrality`: power iteration for directed graphs, symmetric eigendecomposition for undirected (avoids bipartite oscillation); values
   normalized to sum to `n`; isolated or zero-weight graphs yield a uniform distribution.

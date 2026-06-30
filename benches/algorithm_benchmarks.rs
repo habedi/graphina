@@ -65,15 +65,15 @@ fn bench_centrality_algorithms(c: &mut Criterion) {
             },
         );
 
-        // Convert to OrderedFloat for betweenness
-        let mut graph_ordered = Graph::<u32, OrderedFloat<f64>>::new();
+        // Build an f64-weighted copy for the centrality benchmarks.
+        let mut graph_ordered = Graph::<u32, f64>::new();
         let node_map: std::collections::HashMap<_, _> = graph
             .nodes()
             .map(|(nid, &attr)| (nid, graph_ordered.add_node(attr)))
             .collect();
 
         for (src, tgt, &weight) in graph.edges() {
-            graph_ordered.add_edge(node_map[&src], node_map[&tgt], OrderedFloat(weight as f64));
+            graph_ordered.add_edge(node_map[&src], node_map[&tgt], weight as f64);
         }
 
         group.bench_with_input(

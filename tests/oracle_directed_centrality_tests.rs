@@ -23,7 +23,6 @@ use graphina::centrality::degree::{
 use graphina::centrality::harmonic::harmonic_centrality;
 use graphina::centrality::pagerank::pagerank;
 use graphina::core::types::{Digraph, NodeId};
-use ordered_float::OrderedFloat;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -66,11 +65,11 @@ fn load_corpus() -> Corpus {
         .unwrap_or_else(|e| panic!("failed to parse directed centrality: {e}"))
 }
 
-fn build_graph(case: &Case) -> (Digraph<i32, OrderedFloat<f64>>, Vec<NodeId>) {
-    let mut g: Digraph<i32, OrderedFloat<f64>> = Digraph::new();
+fn build_graph(case: &Case) -> (Digraph<i32, f64>, Vec<NodeId>) {
+    let mut g: Digraph<i32, f64> = Digraph::new();
     let ids: Vec<NodeId> = (0..case.n).map(|i| g.add_node(i as i32)).collect();
     for (e, &w) in case.edges.iter().zip(&case.weights) {
-        g.add_edge(ids[e[0]], ids[e[1]], OrderedFloat(w));
+        g.add_edge(ids[e[0]], ids[e[1]], w);
     }
     (g, ids)
 }
