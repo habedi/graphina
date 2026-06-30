@@ -4,7 +4,7 @@ Type stubs for PyGraphina - Python bindings for Graphina graph library.
 This file provides type hints for IDEs and type checkers.
 """
 
-from typing import Optional, Dict, List, Tuple, Union, Any, Iterator, final
+from typing import Optional, Dict, List, Tuple, Union, Any, Callable, Iterator, final
 
 # Re-export submodules so `import pygraphina.centrality` and attribute access
 # (pygraphina.centrality) both resolve as modules for type checkers.
@@ -379,11 +379,11 @@ class PyGraph:
         """Extract the subgraph for the connected component containing the start node."""
         ...
 
-    def filter_nodes(self, predicate: Any) -> "PyGraph":
+    def filter_nodes(self, predicate: Callable[[int, int], bool]) -> "PyGraph":
         """Return a new graph keeping only nodes for which predicate(node_id, attr) is true."""
         ...
 
-    def filter_edges(self, predicate: Any) -> "PyGraph":
+    def filter_edges(self, predicate: Callable[[int, int, float], bool]) -> "PyGraph":
         """Return a new graph keeping only edges for which predicate(u, v, weight) is true."""
         ...
 
@@ -456,6 +456,14 @@ class PyGraph:
 
     def __contains__(self, node: int, /) -> bool:
         """Check if a node exists in the graph."""
+        ...
+
+    def __iter__(self) -> Iterator[int]:
+        """Iterate over the node IDs in the graph."""
+        ...
+
+    def __repr__(self) -> str:
+        """Return a string representation of the graph."""
         ...
 
 @final
@@ -690,11 +698,11 @@ class PyDiGraph:
         """Extract the subgraph for the weakly connected component containing the start node."""
         ...
 
-    def filter_nodes(self, predicate: Any) -> "PyDiGraph":
+    def filter_nodes(self, predicate: Callable[[int, int], bool]) -> "PyDiGraph":
         """Return a new graph keeping only nodes for which predicate(node_id, attr) is true."""
         ...
 
-    def filter_edges(self, predicate: Any) -> "PyDiGraph":
+    def filter_edges(self, predicate: Callable[[int, int, float], bool]) -> "PyDiGraph":
         """Return a new graph keeping only edges for which predicate(u, v, weight) is true."""
         ...
 
@@ -743,6 +751,22 @@ class PyDiGraph:
     @property
     def edges(self) -> "EdgeView":
         """Get a view of all edges in the graph as (source, target, weight) tuples."""
+        ...
+
+    def __len__(self) -> int:
+        """Return the number of nodes in the graph."""
+        ...
+
+    def __contains__(self, node: int, /) -> bool:
+        """Check if a node exists in the graph."""
+        ...
+
+    def __iter__(self) -> Iterator[int]:
+        """Iterate over the node IDs in the graph."""
+        ...
+
+    def __repr__(self) -> str:
+        """Return a string representation of the graph."""
         ...
 
 @final
