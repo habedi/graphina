@@ -6,36 +6,6 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use ordered_float::OrderedFloat;
 use std::collections::HashSet;
 
-/// Approximate a solution to the TSP using Christofides' algorithm (placeholder).
-pub fn christofides<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> Result<(Vec<NodeId>, f64)>
-where
-    A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
-{
-    let start_node = graph
-        .nodes()
-        .next()
-        .map(|(u, _)| u)
-        .ok_or_else(|| GraphinaError::invalid_graph("Cannot run TSP on an empty graph."))?;
-    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start_node)
-}
-
-/// Approximate the TSP solution using a greedy algorithm.
-pub fn traveling_salesman_problem<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
-) -> Result<(Vec<NodeId>, f64)>
-where
-    A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
-{
-    let start_node = graph
-        .nodes()
-        .next()
-        .map(|(u, _)| u)
-        .ok_or_else(|| GraphinaError::invalid_graph("Cannot run TSP on an empty graph."))?;
-    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start_node)
-}
-
 /// Greedy TSP approximation.
 pub fn greedy_tsp<A, Ty>(
     graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
@@ -121,30 +91,6 @@ where
     }
 
     Ok((tour, total_cost.into_inner()))
-}
-
-/// Helper to compute a simplified TSP with a naive nearest-neighbor approach.
-pub fn nearest_neighbor<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
-    start: NodeId,
-) -> Result<(Vec<NodeId>, f64)>
-where
-    A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
-{
-    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start)
-}
-
-/// Helper to compute a simplified TSP with a greedy nearest-neighbor approach.
-pub fn greedy_nearest_neighbor<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
-    start: NodeId,
-) -> Result<(Vec<NodeId>, f64)>
-where
-    A: Clone,
-    Ty: GraphConstructor<A, f64> + GraphConstructor<A, OrderedFloat<f64>>,
-{
-    greedy_tsp(&graph.convert::<OrderedFloat<f64>>(), start)
 }
 
 fn tour_cost<A, Ty>(

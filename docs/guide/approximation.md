@@ -73,16 +73,6 @@ use graphina::approximation::connectivity::local_node_connectivity;
 let conn = local_node_connectivity(&graph, source, target);
 ```
 
-### Diameter Lower Bound
-
-Approximates the diameter of the graph by sampling.
-
-```rust
-use graphina::approximation::diameter::approximate_diameter;
-
-let diameter = approximate_diameter(&graph).unwrap();
-```
-
 ### Minimum Maximal Matching
 
 Greedy approximation for minimum maximal matching.
@@ -110,7 +100,7 @@ Finds a subgraph with maximum average degree using a greedy peeling strategy.
 ```rust
 use graphina::approximation::subgraph::densest_subgraph;
 
-let nodes = densest_subgraph(&graph, None);
+let nodes = densest_subgraph(&graph);
 ```
 
 ### Treewidth

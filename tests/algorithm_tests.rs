@@ -122,7 +122,7 @@ mod approximation_tests {
     #[test]
     fn test_densest_subgraph_empty_graph() {
         let graph: Graph<i32, f64> = Graph::new();
-        let result = densest_subgraph(&graph, None);
+        let result = densest_subgraph(&graph);
         assert!(result.is_empty());
     }
 
@@ -136,7 +136,7 @@ mod approximation_tests {
             }
         }
 
-        let result = densest_subgraph(&graph, None);
+        let result = densest_subgraph(&graph);
         // Complete graph is its own densest subgraph
         assert!(!result.is_empty());
     }
@@ -163,7 +163,7 @@ mod approximation_tests {
         // Connect cliques
         graph.add_edge(clique1[0], clique2[0], 1.0);
 
-        let result = densest_subgraph(&graph, None);
+        let result = densest_subgraph(&graph);
         // Should find a non-empty subgraph
         assert!(!result.is_empty());
     }
@@ -679,36 +679,7 @@ mod directed_graph_tests {
 
 mod edge_case_tests {
     use super::*;
-    use graphina::approximation::diameter::approximate_diameter;
     use graphina::community::infomap::infomap;
-
-    #[test]
-    fn test_approximate_diameter_empty() {
-        let graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
-        let result = approximate_diameter(&graph).unwrap();
-        assert_eq!(result, 0.0);
-    }
-
-    #[test]
-    fn test_approximate_diameter_single_node() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
-        graph.add_node(1);
-        let result = approximate_diameter(&graph).unwrap();
-        assert_eq!(result, 0.0);
-    }
-
-    #[test]
-    fn test_approximate_diameter_path() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
-        let nodes: Vec<_> = (0..5).map(|i| graph.add_node(i)).collect();
-        for i in 0..4 {
-            graph.add_edge(nodes[i], nodes[i + 1], OrderedFloat(1.0));
-        }
-
-        let result = approximate_diameter(&graph).unwrap();
-        // Path of 5 nodes has diameter 4
-        assert_eq!(result, 4.0);
-    }
 
     #[test]
     fn test_infomap_deterministic_with_seed() {

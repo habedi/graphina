@@ -62,7 +62,7 @@ Quick examples:
 ## Repository Layout
 
 - `src/core/`: Always-enabled core library. Basic graph types, builders, IO, serialization, shortest paths,
-  validation, generators, and experimental memory pooling.
+  validation, and generators.
 - `src/centrality/`, `src/community/`, `src/links/`, `src/metrics/`, `src/mst/`, `src/traversal/`,
   `src/approximation/`, `src/parallel/`, `src/subgraphs/`: Optional extensions, each
   behind a Cargo feature of the same name. The `all` feature enables them together.
@@ -84,8 +84,7 @@ The crate is split into a core library and a set of independent extensions.
 - `core` is always compiled and contains everything the extensions build on: graph `Types` (directed and
   undirected, weighted and unweighted, with `NodeId`/`EdgeId` wrappers and `NodeMap`/`EdgeMap` aliases),
   `Builders`, `IO` (edge and adjacency lists), `Serialization` (JSON, binary, and GraphML), `Paths`
-  (Dijkstra, Bellman-Ford, Floyd-Warshall, Johnson, A*, and IDA*), `Generators`, `Validation`, and an
-  experimental `pool` module.
+  (Dijkstra, Bellman-Ford, Floyd-Warshall, Johnson, A*, and IDA*), `Generators`, and `Validation`.
 - Extensions are feature-gated modules outside `core` for higher-level tasks: centrality, community
   detection, link prediction, metrics, minimum spanning trees, traversal, approximation of NP-hard problems,
   parallel algorithms, and subgraph extraction.
@@ -100,7 +99,6 @@ The crate is split into a core library and a set of independent extensions.
   algorithms return `Result` rather than panicking.
 - Feature gating: each extension is optional. `default = []` enables only `core`; downstream users opt in to
   what they need, and `all` turns everything on for development and testing.
-- The `pool` feature is experimental and its API may change. Gate usage with `cfg(feature = "pool")`.
 - Public re-exports and facades give consistent entry points (for example, the personalized PageRank vector
   and `NodeMap` facade APIs).
 - PyGraphina is a thin binding layer over the core crate, built as a separate workspace member so the Rust
@@ -128,8 +126,7 @@ reachable. The deliberate public contract is narrower: the graph types and alias
 `EdgeId`, `Graph`, `Digraph`, `NodeMap`, `EdgeMap`, `Directed`, `Undirected`), the `core::error` types
 (`GraphinaError`, `Result`), the builders, the IO and serialization entry points, the path algorithms, the
 generators, and the validation helpers. Treat the rest as internal: the `pub(crate)` inner fields of `NodeId`
-and `EdgeId`, the `pool` module (experimental, gate with `cfg(feature = "pool")`), and the deprecated
-`edge_attr`/`edge_attr_mut` methods. Do not add a re-export "just for now" to reach an internal item from an
+and `EdgeId`. Do not add a re-export "just for now" to reach an internal item from an
 extension; promote it to the contract deliberately or keep it private.
 
 ### Cross-Cutting Invariants
@@ -284,14 +281,10 @@ Heuristics for NP-hard problems. Set-returning functions (`min_weighted_vertex_c
 `maximum_independent_set`, `max_clique`, `min_maximal_matching`, `densest_subgraph`) return `HashSet`/`Vec`
 with no `Result`; TSP functions return `Result<(Vec<NodeId>, f64)>`.
 
-- TSP: `traveling_salesman_problem`, `nearest_neighbor`/`greedy_nearest_neighbor`, and `greedy_tsp` are all
-  greedy nearest-neighbor; `christofides` is currently a placeholder that delegates to the greedy tour. The
-  returned tour is a cycle (`tour[0] == tour[last]`).
-- `min_weighted_vertex_cover` is a greedy 2-approximation; its `weight` argument is currently ignored.
-- `approximate_diameter` computes the exact diameter (Dijkstra from every node) despite the name.
-- `local_node_connectivity`, `approximate_diameter` take `OrderedFloat<f64>` weights.
-- Several functions accept a placeholder parameter that is currently unused (`densest_subgraph`'s
-  `iterations`, `min_weighted_vertex_cover`'s `weight`); do not rely on them having an effect.
+- TSP: `greedy_tsp(graph, start)` is a greedy nearest-neighbor heuristic over `OrderedFloat<f64>` weights.
+  The returned tour is a cycle (`tour[0] == tour[last]`).
+- `min_weighted_vertex_cover` is a greedy 2-approximation.
+- `local_node_connectivity` takes `OrderedFloat<f64>` weights.
 
 ### `parallel`
 

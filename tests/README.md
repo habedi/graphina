@@ -25,7 +25,7 @@ Comprehensive tests for algorithms that don't have dedicated unit tests in sourc
 
 **Coverage:**
 
-- Approximation algorithms (`average_clustering`, `min_maximal_matching`, `ramsey_r2`, `densest_subgraph`, and `approximate_diameter`)
+- Approximation algorithms (`average_clustering`, `min_maximal_matching`, `ramsey_r2`, and `densest_subgraph`)
 - Centrality algorithms (`closeness_centrality`, `harmonic_centrality`, `local_reaching_centrality`, `global_reaching_centrality`, `voterank`, and
   `laplacian_centrality`)
 - Community detection (`infomap`, `spectral_embeddings`, and `spectral_clustering`)

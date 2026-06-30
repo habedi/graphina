@@ -1,7 +1,6 @@
 pub mod clique;
 pub mod clustering;
 pub mod connectivity;
-pub mod diameter;
 pub mod independent_set;
 pub mod matching;
 pub mod ramsey;
