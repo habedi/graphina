@@ -241,8 +241,11 @@ testdata: ## Download the datasets used in tests
 .PHONY: develop-py
 develop-py: ## Build and install PyGraphina in the current Python environment
 	@echo "Building and installing PyGraphina..."
-	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set
-	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && maturin develop)
+	# Install into the root .venv (the canonical environment that test-py,
+	# stubtest, and rundoc use). Honor an already-active VIRTUAL_ENV in CI.
+	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set.
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
+		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop)
 
 .PHONY: docs-build
 docs-build: ## Generate Graphina MkDocs documentation
@@ -307,8 +310,8 @@ test-py: develop-py ## Run Python tests
 .PHONY: stubtest
 stubtest: develop-py ## Check the PyGraphina type stubs against the built module
 	@echo "Checking type stubs with stubtest..."
-	@(cd $(PYGRAPHINA_DIR) && $(PY_DEP_MNGR) run --no-sync --with mypy python -m mypy.stubtest pygraphina \
-		--allowlist stubtest_allowlist.txt)
+	@$(PY_DEP_MNGR) run --no-sync --with mypy python -m mypy.stubtest pygraphina \
+		--allowlist $(PYGRAPHINA_DIR)/stubtest_allowlist.txt
 
 .PHONY: wheel
 wheel: ## Build the wheel file for PyGraphina
