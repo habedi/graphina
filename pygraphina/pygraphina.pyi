@@ -193,6 +193,78 @@ class PyGraph:
         """Remove all nodes and edges from the graph."""
         ...
 
+    def add_nodes_from(self, attrs: List[int]) -> List[int]:
+        """Add several nodes at once and return their node IDs in order."""
+        ...
+
+    def add_edges_from(self, edges: List[Tuple[int, int, Optional[float]]]) -> List[int]:
+        """Add several edges at once as (source, target, weight) triples (weight defaults to 1.0 if None); returns the edge IDs."""
+        ...
+
+    def nodes_with_attrs(self) -> List[Tuple[int, int]]:
+        """Return a list of (node_id, attr) pairs for every node."""
+        ...
+
+    def is_empty(self) -> bool:
+        """Check whether the graph has no nodes."""
+        ...
+
+    def is_connected(self) -> bool:
+        """Check whether the graph is connected."""
+        ...
+
+    def is_bipartite(self) -> bool:
+        """Check whether the graph is bipartite."""
+        ...
+
+    def has_negative_weights(self) -> bool:
+        """Check whether any edge has a negative weight."""
+        ...
+
+    def has_self_loops(self) -> bool:
+        """Check whether any node has an edge to itself."""
+        ...
+
+    def count_components(self) -> int:
+        """Count the number of connected components."""
+        ...
+
+    def bellman_ford(self, start: int) -> Optional[Dict[int, Optional[float]]]:
+        """Compute shortest-path distances from start using Bellman-Ford, mapping each node to its distance (None if unreachable). Returns None on a negative cycle."""
+        ...
+
+    def floyd_warshall(self) -> Optional[Dict[int, Dict[int, Optional[float]]]]:
+        """Compute all-pairs shortest-path distances using Floyd-Warshall. Returns None on a negative cycle."""
+        ...
+
+    def save_json(self, path: str) -> None:
+        """Serialize the graph to JSON at the given path."""
+        ...
+
+    def load_json(self, path: str) -> None:
+        """Load the graph from a JSON file at the given path."""
+        ...
+
+    def save_binary(self, path: str) -> None:
+        """Serialize the graph to a binary file at the given path."""
+        ...
+
+    def load_binary(self, path: str) -> None:
+        """Load the graph from a binary file at the given path."""
+        ...
+
+    def save_graphml(self, path: str) -> None:
+        """Serialize the graph to GraphML at the given path."""
+        ...
+
+    def save_edge_list(self, path: str, sep: str = " ") -> None:
+        """Write the graph as an edge list to the given path, using sep as the field separator."""
+        ...
+
+    def load_edge_list(self, path: str, sep: str = " ") -> Tuple[int, int]:
+        """Load the graph from an edge list at the given path; returns the (node_count, edge_count) read."""
+        ...
+
     def bfs(self, start: int) -> List[int]:
         """Perform breadth-first search from a starting node."""
         ...
@@ -304,6 +376,11 @@ class PyGraph:
         """Get a view for accessing node degrees via bracket notation."""
         ...
 
+    @property
+    def edges(self) -> "EdgeView":
+        """Get a view of all edges in the graph as (source, target, weight) tuples."""
+        ...
+
     def __len__(self) -> int:
         """Return the number of nodes in the graph."""
         ...
@@ -366,6 +443,134 @@ class PyDiGraph:
 
     def is_directed(self) -> bool:
         """Check if the graph is directed (always True for PyDiGraph)."""
+        ...
+
+    def update_node(self, py_node: int, new_attr: int) -> bool:
+        """Update the attribute of an existing node. Returns True if the node exists."""
+        ...
+
+    def try_update_node(self, py_node: int, new_attr: int) -> None:
+        """Update a node's attribute, raising an error if the node doesn't exist."""
+        ...
+
+    def try_remove_node(self, py_node: int) -> int:
+        """Remove a node, raising an error if it doesn't exist; returns its attribute."""
+        ...
+
+    def try_remove_edge(self, source: int, target: int) -> None:
+        """Remove an edge, raising an error if it doesn't exist."""
+        ...
+
+    def update_edge_weight(self, source: int, target: int, new_weight: float) -> bool:
+        """Update the weight of an existing edge. Returns True if the edge exists."""
+        ...
+
+    def try_update_edge_weight(self, source: int, target: int, new_weight: float) -> None:
+        """Update edge weight, raising an error if the edge doesn't exist."""
+        ...
+
+    def get_edge_weight(self, source: int, target: int) -> Optional[float]:
+        """Get the weight of an edge, or None if it doesn't exist."""
+        ...
+
+    def get_node_attr(self, py_node: int) -> Optional[int]:
+        """Get the attribute value of a node."""
+        ...
+
+    def contains_node(self, py_node: int) -> bool:
+        """Check if a node exists in the graph."""
+        ...
+
+    def contains_edge(self, source: int, target: int) -> bool:
+        """Check if a directed edge exists from source to target."""
+        ...
+
+    def neighbors(self, py_node: int) -> List[int]:
+        """Get the neighbors of a node."""
+        ...
+
+    def density(self) -> float:
+        """Calculate the density of the graph."""
+        ...
+
+    def clear(self) -> None:
+        """Remove all nodes and edges from the graph."""
+        ...
+
+    def add_nodes_from(self, attrs: List[int]) -> List[int]:
+        """Add several nodes at once and return their node IDs in order."""
+        ...
+
+    def add_edges_from(self, edges: List[Tuple[int, int, Optional[float]]]) -> List[int]:
+        """Add several edges at once as (source, target, weight) triples (weight defaults to 1.0 if None); returns the edge IDs."""
+        ...
+
+    def is_empty(self) -> bool:
+        """Check whether the graph has no nodes."""
+        ...
+
+    def is_connected(self) -> bool:
+        """Check whether the graph is connected."""
+        ...
+
+    def is_bipartite(self) -> bool:
+        """Check whether the graph is bipartite."""
+        ...
+
+    def has_negative_weights(self) -> bool:
+        """Check whether any edge has a negative weight."""
+        ...
+
+    def has_self_loops(self) -> bool:
+        """Check whether any node has an edge to itself."""
+        ...
+
+    def count_components(self) -> int:
+        """Count the number of weakly connected components."""
+        ...
+
+    def dijkstra(self, start: int, cutoff: Optional[float] = None) -> Dict[int, Optional[float]]:
+        """Compute shortest paths from start using Dijkstra's algorithm, mapping each node to its distance (None if unreachable)."""
+        ...
+
+    def shortest_path(self, start: int, target: int) -> Optional[Tuple[float, List[int]]]:
+        """Find the shortest path between two nodes using Dijkstra's algorithm. Returns (distance, path) or None."""
+        ...
+
+    def bellman_ford(self, start: int) -> Optional[Dict[int, Optional[float]]]:
+        """Compute shortest-path distances from start using Bellman-Ford, mapping each node to its distance (None if unreachable). Returns None on a negative cycle."""
+        ...
+
+    def floyd_warshall(self) -> Optional[Dict[int, Dict[int, Optional[float]]]]:
+        """Compute all-pairs shortest-path distances using Floyd-Warshall. Returns None on a negative cycle."""
+        ...
+
+    def save_json(self, path: str) -> None:
+        """Serialize the graph to JSON at the given path."""
+        ...
+
+    def load_json(self, path: str) -> None:
+        """Load the graph from a JSON file at the given path."""
+        ...
+
+    def save_binary(self, path: str) -> None:
+        """Serialize the graph to a binary file at the given path."""
+        ...
+
+    def load_binary(self, path: str) -> None:
+        """Load the graph from a binary file at the given path."""
+        ...
+
+    def save_graphml(self, path: str) -> None:
+        """Serialize the graph to GraphML at the given path."""
+        ...
+
+    def save_edge_list(self, path: str, sep: str = " ") -> None:
+        """Write the graph as an edge list to the given path, using sep as the field separator."""
+        ...
+
+    def load_edge_list(self, path: str, sep: str = " ") -> Tuple[int, int]:
+        """Load the graph from an edge list at the given path; returns the (node_count, edge_count) read."""
         ...
 
     def bfs(self, start: int) -> List[int]:
@@ -464,6 +669,11 @@ class PyDiGraph:
     @property
     def degree(self) -> "DegreeView":
         """Get a view for accessing total node degrees (in + out)."""
+        ...
+
+    @property
+    def edges(self) -> "EdgeView":
+        """Get a view of all edges in the graph as (source, target, weight) tuples."""
         ...
 
 
