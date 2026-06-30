@@ -69,7 +69,8 @@ Quick examples:
 - `src/lib.rs`: Crate root with module declarations, crate-level docs, and API conventions.
 - `src/settings.rs`: Runtime settings (such as the `DEBUG_GRAPHINA` toggle).
 - `pygraphina/`: PyGraphina, the Python bindings crate built with maturin and published to PyPI as
-  `pygraphina`. Contains its own `Cargo.toml`, `src/`, `tests/`, type stubs (`pygraphina.pyi`), and docs.
+  `pygraphina`. Contains its own `Cargo.toml`, `src/`, `tests/`, a `pygraphina/` type-stub package
+  (`__init__.pyi` plus one `.pyi` per submodule, with `py.typed`), and docs.
 - `benches/`: Criterion benchmarks (`graph_benchmarks`, `algorithm_benchmarks`, `project_benchmarks`).
 - `tests/`: Workspace integration, end-to-end, regression, and property-based tests, plus
   `tests/testdata/` (downloaded via `make testdata`).

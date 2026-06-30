@@ -195,6 +195,27 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
     links::register_links(&links_mod)?;
     m.add_submodule(&links_mod)?;
 
+    // Register the submodules in sys.modules so they can be imported directly,
+    // for example `import pygraphina.centrality` or `from pygraphina.mst import
+    // kruskal_mst`. add_submodule only attaches them as attributes, so without
+    // this they are reachable as `pygraphina.centrality` but not importable.
+    let sys_modules = PyModule::import(m.py(), "sys")?.getattr("modules")?;
+    for (name, submodule) in [
+        ("pygraphina.core", &core_mod),
+        ("pygraphina.metrics", &metrics_mod),
+        ("pygraphina.mst", &mst_mod),
+        ("pygraphina.traversal", &traversal_mod),
+        ("pygraphina.subgraphs", &subgraphs_mod),
+        ("pygraphina.parallel", &parallel_mod),
+        ("pygraphina.centrality", &centrality_mod),
+        ("pygraphina.approximation", &approximation_mod),
+        ("pygraphina.community", &community_mod),
+        ("pygraphina.links", &links_mod),
+    ] {
+        submodule.setattr("__name__", name)?;
+        sys_modules.set_item(name, submodule)?;
+    }
+
     #[cfg(feature = "networkx")]
     {
         m.add_function(wrap_pyfunction!(to_networkx, m)?)?;
