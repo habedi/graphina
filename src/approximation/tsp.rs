@@ -1,19 +1,17 @@
 //! Approximation algorithms for traveling salesman problems.
 
 use crate::core::error::{GraphinaError, Result};
-use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
-use ordered_float::OrderedFloat;
+use crate::core::paths::dijkstra_path_f64;
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId};
 use std::collections::HashSet;
+use std::fmt::Debug;
 
 /// Greedy TSP approximation.
-pub fn greedy_tsp<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
-    start: NodeId,
-) -> Result<(Vec<NodeId>, f64)>
+pub fn greedy_tsp<A, Ty>(graph: &BaseGraph<A, f64, Ty>, start: NodeId) -> Result<(Vec<NodeId>, f64)>
 where
-    A: Clone,
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    A: Debug,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     if graph.is_empty() {
         return Err(GraphinaError::invalid_graph(
@@ -42,9 +40,9 @@ where
 
     // Visit all remaining nodes
     while !unvisited.is_empty() {
-        if let Ok(distance_map) = dijkstra(graph, current) {
+        if let Ok((distance_map, _)) = dijkstra_path_f64(graph, current, None) {
             let mut nearest = None;
-            let mut min_dist = OrderedFloat(f64::INFINITY);
+            let mut min_dist = f64::INFINITY;
 
             for &candidate in &unvisited {
                 if candidate == current {
@@ -90,19 +88,17 @@ where
         ));
     }
 
-    Ok((tour, total_cost.into_inner()))
+    Ok((tour, total_cost))
 }
 
-fn tour_cost<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
-    tour: &[NodeId],
-) -> Result<OrderedFloat<f64>>
+fn tour_cost<A, Ty>(graph: &BaseGraph<A, f64, Ty>, tour: &[NodeId]) -> Result<f64>
 where
-    A: Clone,
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    A: Debug,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     if tour.len() < 2 {
-        return Ok(OrderedFloat(0.0));
+        return Ok(0.0);
     }
 
     let mut total_cost = 0.0;
@@ -113,19 +109,19 @@ where
         let v = tour[i + 1];
 
         // Find shortest path distance from u to v
-        if let Ok(dist_map) = dijkstra(graph, u) {
+        if let Ok((dist_map, _)) = dijkstra_path_f64(graph, u, None) {
             if let Some(Some(d)) = dist_map.get(&v) {
-                total_cost += d.into_inner();
+                total_cost += *d;
             } else {
                 // No path from u to v - graph is disconnected
-                return Ok(OrderedFloat(f64::INFINITY));
+                return Ok(f64::INFINITY);
             }
         } else {
-            return Ok(OrderedFloat(f64::INFINITY));
+            return Ok(f64::INFINITY);
         }
     }
 
-    Ok(OrderedFloat(total_cost))
+    Ok(total_cost)
 }
 
 #[cfg(test)]
@@ -133,7 +129,6 @@ mod tests {
     // Bring required items into scope for tests
     use super::{greedy_tsp, tour_cost};
     use crate::core::types::Graph;
-    use ordered_float::OrderedFloat;
 
     #[test]
     fn greedy_tsp_on_square_graph() {
@@ -148,8 +143,7 @@ mod tests {
         g.add_edge(n2, n3, 1.0);
         g.add_edge(n3, n0, 1.0);
 
-        let g_ord = g.convert::<OrderedFloat<f64>>();
-        let (tour, cost) = greedy_tsp(&g_ord, n0).expect("greedy tsp should succeed");
+        let (tour, cost) = greedy_tsp(&g, n0).expect("greedy tsp should succeed");
         assert!(tour.len() >= 5); // include return to source
         assert!((cost - 4.0).abs() < 1e-9);
         assert_eq!(*tour.first().unwrap(), n0);
@@ -160,11 +154,10 @@ mod tests {
     fn tour_cost_handles_short_tour() {
         let mut g: Graph<i32, f64> = Graph::new();
         let n0 = g.add_node(0);
-        let g_ord = g.convert::<OrderedFloat<f64>>();
         // empty tour
-        assert_eq!(tour_cost(&g_ord, &[]).unwrap(), 0.0);
+        assert_eq!(tour_cost(&g, &[]).unwrap(), 0.0);
         // single node tour
-        assert_eq!(tour_cost(&g_ord, &[n0]).unwrap(), 0.0);
+        assert_eq!(tour_cost(&g, &[n0]).unwrap(), 0.0);
     }
 
     #[test]
@@ -173,8 +166,7 @@ mod tests {
         let n0 = g.add_node(0);
         let _n1 = g.add_node(1);
         // no edges, disconnected
-        let g_ord = g.convert::<OrderedFloat<f64>>();
-        let err = greedy_tsp(&g_ord, n0).unwrap_err();
+        let err = greedy_tsp(&g, n0).unwrap_err();
         assert!(format!("{}", err).contains("Could not find a path"));
     }
 }

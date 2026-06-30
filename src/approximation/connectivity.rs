@@ -3,19 +3,18 @@
 //! Approximation algorithms for connectivity problems.
 
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
-use ordered_float::OrderedFloat;
 use std::collections::{HashSet, VecDeque};
 
 /// -------------------------------
 /// Helper: Find a path from `source` to `target` avoiding nodes in `blocked` using BFS.
 fn find_path<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
+    graph: &BaseGraph<A, f64, Ty>,
     source: NodeId,
     target: NodeId,
     blocked: &HashSet<NodeId>,
 ) -> Option<Vec<NodeId>>
 where
-    Ty: crate::core::types::GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: crate::core::types::GraphConstructor<A, f64>,
 {
     let n = graph.node_count();
     let mut prev: Vec<Option<NodeId>> = vec![None; n];
@@ -49,12 +48,12 @@ where
 /// Compute an approximate local node connectivity between source and target by
 /// repeatedly finding vertex-disjoint paths using BFS.
 pub fn local_node_connectivity<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
+    graph: &BaseGraph<A, f64, Ty>,
     source: NodeId,
     target: NodeId,
 ) -> usize
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: GraphConstructor<A, f64>,
 {
     // Quick check: if source equals target, return 0
     if source == target {
@@ -107,7 +106,7 @@ mod tests {
         let mut g = Graph::new();
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
-        g.add_edge(n1, n2, OrderedFloat(1.0));
+        g.add_edge(n1, n2, 1.0);
 
         // Direct edge should return 1 without hanging
         let conn = local_node_connectivity(&g, n1, n2);
@@ -121,8 +120,8 @@ mod tests {
         let n2 = g.add_node(2);
         let n3 = g.add_node(3);
 
-        g.add_edge(n1, n2, OrderedFloat(1.0));
-        g.add_edge(n2, n3, OrderedFloat(1.0));
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n3, 1.0);
 
         let conn = local_node_connectivity(&g, n1, n3);
         assert!(conn >= 1);

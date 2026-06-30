@@ -126,10 +126,10 @@ deliberately or keep it private.
   collections instead: `voterank` (`Vec<NodeId>`), `connected_components`, `weakly_connected_components`, `strongly_connected_components` (
   `Vec<Vec<NodeId>>`), and `connected_components_map` (`NodeMap<usize>`). Some metrics return `Option` (`diameter`, `radius`, `average_path_length`
   return `None` for an empty or disconnected graph).
-- Weight totality: a few algorithms still need a total order over weights and take `OrderedFloat<f64>` rather than `f64` (for example the
-  `approximation` connectivity and diameter functions, and `boruvka_mst`). Wrap `f64` weights in `ordered_float::OrderedFloat` for these. The
-  `centrality` functions all accept a plain `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`) ignore
-  weights, and the path-based ones (`harmonic_centrality`, `closeness_centrality`) order distances internally.
+- Weight totality: the `mst` family (`kruskal_mst`, `prim_mst`, `boruvka_mst`) is generic over a totally-ordered weight `W: Ord`, so floating-point
+  callers wrap weights in `ordered_float::OrderedFloat`. The `centrality` and `approximation` functions, by contrast, all accept a plain
+  `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`, `local_node_connectivity`) ignore weights, and the
+  path-based ones (`harmonic_centrality`, `closeness_centrality`, `greedy_tsp`) order distances internally.
 - Negative weights: `dijkstra` and `a_star` return an error on a negative weight; `bellman_ford`, `floyd_warshall`, and `johnson` accept negatives and
   return `None` on a negative cycle. Pathfinding assumes a non-empty graph; validate with `core::validation` first.
 - Fixed attribute types in IO and generators: `core::io` reads and writes graphs with `i32` node attributes and `f32` edge weights; `core::generators`
@@ -245,10 +245,10 @@ order (use `OrderedFloat<f64>` for floats); `boruvka_mst` additionally requires 
 Heuristics for NP-hard problems. Set-returning functions (`min_weighted_vertex_cover`, `maximum_independent_set`, `max_clique`,
 `min_maximal_matching`, `densest_subgraph`) return `HashSet`/`Vec` with no `Result`; TSP functions return `Result<(Vec<NodeId>, f64)>`.
 
-- TSP: `greedy_tsp(graph, start)` is a greedy nearest-neighbor heuristic over `OrderedFloat<f64>` weights. The returned tour is a cycle (
+- TSP: `greedy_tsp(graph, start)` is a greedy nearest-neighbor heuristic over `f64` weights. The returned tour is a cycle (
   `tour[0] == tour[last]`).
 - `min_weighted_vertex_cover` is a greedy 2-approximation.
-- `local_node_connectivity` takes `OrderedFloat<f64>` weights.
+- `local_node_connectivity` takes an `f64`-weighted graph and finds vertex-disjoint paths by BFS, so edge weights are ignored.
 
 ### `parallel`
 
