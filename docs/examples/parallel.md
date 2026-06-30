@@ -27,12 +27,8 @@ fn main() {
     }
 
     // Arguments: graph, damping, iteration, tolerance, nstart
-    match pagerank_parallel(&graph, 0.85, 100, 1e-6, None) {
-        Ok(scores) => {
-            println!("Computed {} ranks.", scores.len());
-        },
-        Err(e) => println!("Error: {}", e),
-    }
+    let scores = pagerank_parallel(&graph, 0.85, 100, 1e-6, None);
+    println!("Computed {} ranks.", scores.len());
 }
 ```
 
@@ -52,8 +48,8 @@ fn main() {
 
     let start_nodes = vec![n1];
 
-    // visited is a HashSet of all nodes reachable from ANY start node
-    let visited = bfs_parallel(&graph, start_nodes);
-    println!("Total reachable nodes: {}", visited.len());
+    // visited is a Vec<Vec<NodeId>> containing search order for each starting node
+    let visited = bfs_parallel(&graph, &start_nodes);
+    println!("Reachable nodes from starting nodes: {:?}", visited);
 }
 ```

@@ -109,15 +109,14 @@ Based on the average shortest path distance to all other nodes.
 ```rust
 use graphina::centrality::closeness::closeness_centrality;
 use graphina::core::types::Graph;
-use ordered_float::OrderedFloat;
 
 fn main() {
-    let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+    let mut graph: Graph<i32, f64> = Graph::new();
     let nodes = (0..5).map(|i| graph.add_node(i)).collect::<Vec<_>>();
     let edges = [
-        (0, 1, OrderedFloat(1.0)),
-        (0, 2, OrderedFloat(1.0)),
-        (1, 3, OrderedFloat(1.0))
+        (0, 1, 1.0),
+        (0, 2, 1.0),
+        (1, 3, 1.0)
     ];
 
     for (s, d, w) in edges {

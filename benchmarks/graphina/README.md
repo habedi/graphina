@@ -119,9 +119,9 @@ dense-node ceiling is reported as `skipped`.
   optimizer cannot elide the work and report a near-zero time.
 - Floating-point results are compared within a small tolerance rather than by exact equality, since
   summation order differs between the two implementations.
-- The graph weight type differs by algorithm because of the graphina signatures: `betweenness_centrality`
-  and `closeness_centrality` take `OrderedFloat<f64>`, the generic `dijkstra` takes an integer weight, and
-  the rest take `f64`. The harness builds one graph per weight type from the same edge list.
+- The graph weight type differs by algorithm because of the graphina signatures: the generic `dijkstra` takes
+  an integer weight, and the rest (including `betweenness_centrality` and `closeness_centrality`) take `f64`.
+  The harness builds one graph per weight type from the same edge list.
 
 > [!NOTE]
 > The harness covers only algorithms that both libraries implement over their core Rust APIs with directly

@@ -9,7 +9,7 @@ The parallel feature must be enabled in your `Cargo.toml` (if not enabled by def
 
 ```toml
 [dependencies]
-graphina = { version = "0.3.0-alpha.4", features = ["parallel"] }
+graphina = { version = "0.4.0-alpha.1", features = ["parallel"] }
 ```
 
 ## Available Algorithms
@@ -38,9 +38,9 @@ let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
 Finds connected components in parallel.
 
 ```rust
-use graphina::parallel::components::connected_components_parallel;
+use graphina::parallel::connected_components_parallel;
 
-let components = connected_components_parallel(&graph);
+let components = connected_components_parallel(&g);
 ```
 
 ### Parallel Breadth-First Search (BFS)
@@ -48,11 +48,16 @@ let components = connected_components_parallel(&graph);
 Performing BFS from multiple sources concurrently.
 
 ```rust
-use graphina::parallel::bfs::bfs_parallel;
+use graphina::core::types::Digraph;
+use graphina::parallel::bfs_parallel;
 
-let mut g = Digraph::<i32, f64>::new();
+let mut g = Digraph::<&str, f64>::new();
+let n1 = g.add_node("A");
+let n2 = g.add_node("B");
+
 let start_nodes = vec![n1, n2];
-let visited = bfs_parallel(&g, start_nodes);
+// Returns a Vec<Vec<NodeId>> containing the traversal order from each source
+let visited = bfs_parallel(&g, &start_nodes);
 ```
 
 ## When to use Parallelism?

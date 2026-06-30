@@ -26,9 +26,9 @@ if let Ok((tour, cost)) = greedy_tsp(&g_ord, start_node) {
 Finds a subset of nodes such that every edge in the graph is incident to at least one node in the subset.
 
 ```rust
-use graphina::approximation::vertex_cover::min_vertex_cover;
+use graphina::approximation::vertex_cover::min_weighted_vertex_cover;
 
-let cover = min_vertex_cover(&graph);
+let cover = min_weighted_vertex_cover(&graph);
 ```
 
 ## Maximum Independent Set
