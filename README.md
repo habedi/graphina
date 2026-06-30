@@ -26,10 +26,6 @@ Rust.
 Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
 Check out [pygraphina](pygraphina/README.md) directory for more details.
 
-> [!IMPORTANT]
-> This project is in early development, so bugs and breaking changes are expected.
-> Please use the [issues page](https://github.com/habedi/graphina/issues) to report bugs or request features.
-
 ---
 
 ### Structure
