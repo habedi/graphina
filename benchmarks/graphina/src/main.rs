@@ -1068,12 +1068,12 @@ fn opt_vec(v: &[Option<f64>], n: usize) -> Vec<f64> {
 fn print_table(cfg: &Config, rows: &[Row]) {
     println!(
         "{:<22} {:>16} {:>16} {:>14}  diff",
-        "algorithm", "graphina", "rustworkx-core", "speedup"
+        "algorithm", "graphina", "rustworkx-core", "ratio"
     );
     println!(
         "(median±h, h = half-width of the 95% bootstrap CI over {} timed rounds; \
-         a trailing * marks fewer rounds because the budget ran out;\n speedup = \
-         rustworkx / graphina, so >1 means graphina is faster)\n",
+         a trailing * marks fewer rounds because the budget ran out;\n ratio = \
+         graphina / rustworkx, so >1 means rustworkx is faster)\n",
         cfg.reps
     );
     let fmt = |b: &BenchStat| {
@@ -1090,7 +1090,7 @@ fn print_table(cfg: &Config, rows: &[Row]) {
     for row in rows {
         match (row.diff, &row.graphina, &row.rustworkx) {
             (Diff::Match, Some(g), Some(r)) => {
-                let ratio = r.median.as_secs_f64() / g.median.as_secs_f64().max(f64::MIN_POSITIVE);
+                let ratio = g.median.as_secs_f64() / r.median.as_secs_f64().max(f64::MIN_POSITIVE);
                 println!(
                     "{:<22} {:>16} {:>16} {:>13.2}x  ok",
                     row.name,
