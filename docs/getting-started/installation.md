@@ -10,7 +10,7 @@ Or manually add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.4.0-alpha.1"
+graphina = "0.4.0-alpha.2"
 ```
 
 ## Feature Flags
