@@ -10,6 +10,13 @@ if TYPE_CHECKING:
     from pygraphina import PyGraph, PyDiGraph
 
 
+__all__ = [
+    "prim_mst",
+    "kruskal_mst",
+    "boruvka_mst",
+]
+
+
 def prim_mst(graph: PyGraph) -> Tuple[float, List[Tuple[int, int, float]]]:
     """Compute the minimum spanning tree using Prim's algorithm."""
     ...

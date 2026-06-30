@@ -20,7 +20,13 @@ import pygraphina as pg
 
 # Create a graph
 g = pg.PyGraph()
-a, b, c = [g.add_node(i) for i in range(3)]
+
+# add_node(attr) stores an integer attribute and returns the new node's id
+a = g.add_node(10)
+b = g.add_node(20)
+c = g.add_node(30)
+
+# add_edge(source, target, weight) connects two nodes by their ids
 g.add_edge(a, b, 1.0)
 g.add_edge(b, c, 1.0)
 

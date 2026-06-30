@@ -1,0 +1,8 @@
+# Stubtest allowlist for PyGraphina.
+#
+# The compiled extension module is imported as `pygraphina.pygraphina` and
+# re-exported into the package namespace by `from .pygraphina import *` in
+# __init__.py. Its public surface is fully described by the package stubs
+# (__init__.pyi and the per-submodule .pyi files), so the inner module itself
+# is intentionally left unstubbed.
+pygraphina.pygraphina

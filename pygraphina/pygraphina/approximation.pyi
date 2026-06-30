@@ -9,6 +9,21 @@ if TYPE_CHECKING:
     from pygraphina import PyGraph, PyDiGraph
 
 
+__all__ = [
+    "max_clique",
+    "clique_removal",
+    "large_clique_size",
+    "min_weighted_vertex_cover",
+    "maximum_independent_set",
+    "densest_subgraph",
+    "average_clustering_approx",
+    "local_node_connectivity",
+    "treewidth_min_degree",
+    "treewidth_min_fill_in",
+    "ramsey_r2",
+]
+
+
 def max_clique(py_graph: PyGraph) -> List[int]:
     """Find a large clique using a greedy heuristic."""
     ...

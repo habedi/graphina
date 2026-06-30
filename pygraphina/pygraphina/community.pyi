@@ -6,6 +6,15 @@ if TYPE_CHECKING:
     from pygraphina import PyGraph, PyDiGraph
 
 
+__all__ = [
+    "connected_components",
+    "label_propagation",
+    "louvain",
+    "girvan_newman",
+    "spectral_clustering",
+]
+
+
 def label_propagation(py_graph: PyGraph, max_iter: int, seed: Optional[int] = None) -> Dict[int, int]:
     """Detect communities using the label propagation algorithm."""
     ...

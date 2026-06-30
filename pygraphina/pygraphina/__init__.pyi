@@ -19,6 +19,62 @@ from . import parallel as parallel
 from . import subgraphs as subgraphs
 from . import traversal as traversal
 
+__all__ = [
+    "PyGraph",
+    "PyDiGraph",
+    "Graph",
+    "DiGraph",
+    "GraphinaError",
+    "ConvergenceError",
+    "NodeNotFoundError",
+    "erdos_renyi",
+    "complete_graph",
+    "bipartite",
+    "star_graph",
+    "cycle_graph",
+    "watts_strogatz",
+    "barabasi_albert",
+    "bfs_parallel",
+    "degrees_parallel",
+    "connected_components_parallel",
+    "max_clique",
+    "clique_removal",
+    "large_clique_size",
+    "min_weighted_vertex_cover",
+    "average_clustering_approx",
+    "ramsey_r2",
+    "diameter",
+    "radius",
+    "transitivity",
+    "average_clustering",
+    "prim_mst",
+    "kruskal_mst",
+    "boruvka_mst",
+    "core",
+    "metrics",
+    "mst",
+    "traversal",
+    "subgraphs",
+    "parallel",
+    "centrality",
+    "approximation",
+    "community",
+    "links",
+    "to_networkx",
+    "from_networkx",
+    "to_node_dataframe",
+    "to_edge_dataframe",
+    "NodeView",
+    "NodeDataView",
+    "NodeDataIterator",
+    "EdgeView",
+    "EdgeDataView",
+    "EdgeIterator",
+    "EdgeDataIterator",
+    "DegreeView",
+    "DegreeIterator",
+]
+
 @final
 class PyGraph:
     """
@@ -709,6 +765,10 @@ class NodeView:
         """Get node data as a dictionary."""
         ...
 
+    def data(self, data: Any = None, default: Any = None) -> "NodeDataView":
+        """Get a view over node data, optionally selecting a single attribute."""
+        ...
+
 @final
 class DegreeView:
     """A view for accessing node degrees."""
@@ -725,6 +785,10 @@ class DegreeView:
         """Get the number of nodes."""
         ...
 
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Return degrees, optionally for a subset of nodes."""
+        ...
+
 @final
 class EdgeView:
     """A view for iterating over graph edges."""
@@ -735,6 +799,82 @@ class EdgeView:
 
     def __len__(self) -> int:
         """Get the number of edges."""
+        ...
+
+    def __contains__(self, key: Any, /) -> bool:
+        """Check if an edge exists."""
+        ...
+
+    def __getitem__(self, key: Any, /) -> Any:
+        """Get edge data."""
+        ...
+
+    def data(self, data: Any = None, default: Any = None) -> "EdgeDataView":
+        """Get a view over edge data, optionally selecting a single attribute."""
+        ...
+
+@final
+class NodeDataView:
+    """A view over node data, returned by NodeView.data()."""
+
+    def __iter__(self) -> Iterator[Tuple[int, Any]]:
+        """Iterate over (node, data) pairs."""
+        ...
+
+    def __len__(self) -> int:
+        """Get the number of nodes."""
+        ...
+
+@final
+class NodeDataIterator:
+    """An iterator over node data."""
+
+    def __iter__(self) -> "NodeDataIterator":
+        ...
+
+    def __next__(self) -> Tuple[int, Any]:
+        ...
+
+@final
+class EdgeDataView:
+    """A view over edge data, returned by EdgeView.data()."""
+
+    def __iter__(self) -> Iterator[Tuple[int, int, Any]]:
+        """Iterate over (source, target, data) tuples."""
+        ...
+
+    def __len__(self) -> int:
+        """Get the number of edges."""
+        ...
+
+@final
+class EdgeDataIterator:
+    """An iterator over edge data."""
+
+    def __iter__(self) -> "EdgeDataIterator":
+        ...
+
+    def __next__(self) -> Tuple[int, int, Any]:
+        ...
+
+@final
+class DegreeIterator:
+    """An iterator over (node, degree) pairs."""
+
+    def __iter__(self) -> "DegreeIterator":
+        ...
+
+    def __next__(self) -> Tuple[int, int]:
+        ...
+
+@final
+class EdgeIterator:
+    """An iterator over (source, target, weight) tuples."""
+
+    def __iter__(self) -> "EdgeIterator":
+        ...
+
+    def __next__(self) -> Tuple[int, int, float]:
         ...
 
 def from_networkx(nx_graph: Any) -> Union[PyGraph, PyDiGraph]:

@@ -117,7 +117,7 @@ clean: ## Remove generated and temporary files
 	@echo "Cleaning up..."
 	@cargo clean
 	@rm -rf $(WHEEL_DIR) dist/ $(PYGRAPHINA_DIR)/$(WHEEL_DIR)
-	@rm -f $(PYGRAPHINA_DIR)/*.so
+	@rm -f $(PYGRAPHINA_DIR)/*.so $(PYGRAPHINA_DIR)/$(PYGRAPHINA_DIR)/*.so
 
 .PHONY: coverage
 coverage: format doctest ## Generate test coverage report (excludes the pygraphina cdylib crate)
@@ -303,6 +303,12 @@ rundoc: develop-py ## Test all code examples in PyGraphina documentation using r
 test-py: develop-py ## Run Python tests
 	@echo "Running Python tests..."
 	@$(PY_DEP_MNGR) run pytest
+
+.PHONY: stubtest
+stubtest: develop-py ## Check the PyGraphina type stubs against the built module
+	@echo "Checking type stubs with stubtest..."
+	@(cd $(PYGRAPHINA_DIR) && $(PY_DEP_MNGR) run --no-sync --with mypy python -m mypy.stubtest pygraphina \
+		--allowlist stubtest_allowlist.txt)
 
 .PHONY: wheel
 wheel: ## Build the wheel file for PyGraphina

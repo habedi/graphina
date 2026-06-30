@@ -6,6 +6,17 @@ if TYPE_CHECKING:
     from pygraphina import PyGraph, PyDiGraph
 
 
+__all__ = [
+    "bfs_parallel",
+    "degrees_parallel",
+    "connected_components_parallel",
+    "pagerank_parallel",
+    "triangles_parallel",
+    "clustering_coefficients_parallel",
+    "shortest_paths_parallel",
+]
+
+
 def bfs_parallel(graph: Union[PyGraph, PyDiGraph], starts: List[int]) -> List[List[int]]:
     """Run BFS from multiple starting nodes in parallel, one visit-order list per start."""
     ...
