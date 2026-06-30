@@ -7,7 +7,7 @@ BFS and DFS are fundamental graph traversal algorithms for exploring nodes syste
 ```python
 graph.bfs(start: int) -> List[int]
 graph.dfs(start: int) -> List[int]
-graph.bidirectional_search(start: int, target: int) -> Optional[List[int]]
+graph.bidirectional_search(start: int, target: int) -> List[int]
 ```
 
 ## Parameters
@@ -143,10 +143,10 @@ else:
 Combine DFS memory efficiency with BFS completeness:
 
 ```python
-graph.iddfs(start: int, target: int, max_depth: int) -> Optional[List[int]]
+graph.iddfs(start: int, target: int, max_depth: int) -> List[int]
 ```
 
-Perform DFS with increasing depth limits until target found.
+Perform DFS with increasing depth limits until target found. Raises `ValueError` if no path is found within `max_depth`.
 
 Best for:
 

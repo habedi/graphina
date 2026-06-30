@@ -26,9 +26,9 @@ if let Ok((tour, cost)) = greedy_tsp(&g_ord, start_node) {
 Finds a subset of nodes such that every edge in the graph is incident to at least one node in the subset.
 
 ```rust
-use graphina::approximation::vertex_cover::min_vertex_cover;
+use graphina::approximation::vertex_cover::min_weighted_vertex_cover;
 
-let cover = min_vertex_cover(&graph);
+let cover = min_weighted_vertex_cover(&graph);
 ```
 
 ## Maximum Independent Set
@@ -73,16 +73,6 @@ use graphina::approximation::connectivity::local_node_connectivity;
 let conn = local_node_connectivity(&graph, source, target);
 ```
 
-### Diameter Lower Bound
-
-Approximates the diameter of the graph by sampling.
-
-```rust
-use graphina::approximation::diameter::approximate_diameter;
-
-let diameter = approximate_diameter(&graph).unwrap();
-```
-
 ### Minimum Maximal Matching
 
 Greedy approximation for minimum maximal matching.
@@ -110,7 +100,7 @@ Finds a subgraph with maximum average degree using a greedy peeling strategy.
 ```rust
 use graphina::approximation::subgraph::densest_subgraph;
 
-let nodes = densest_subgraph(&graph, None);
+let nodes = densest_subgraph(&graph);
 ```
 
 ### Treewidth

@@ -332,10 +332,6 @@ radius = g.radius()
 avg_clustering = g.average_clustering()
 transitivity = g.transitivity()
 
-# Or use top-level convenience functions
-diameter = pg.diameter(g)
-radius = pg.radius(g)
-
 # Node-level metrics (instance methods)
 clustering = g.clustering_of(node)
 triangles = g.triangles_of(node)

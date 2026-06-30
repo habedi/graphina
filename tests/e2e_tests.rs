@@ -232,7 +232,7 @@ fn test_integration_centrality_algorithms() {
         return;
     }
 
-    let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+    let mut graph: Graph<i32, f64> = Graph::new();
     let mut node_map = HashMap::new();
 
     for (node, attr) in graph_f32.nodes() {
@@ -241,7 +241,7 @@ fn test_integration_centrality_algorithms() {
     }
 
     for (u, v, &w) in graph_f32.edges() {
-        graph.add_edge(node_map[&u], node_map[&v], OrderedFloat(w as f64));
+        graph.add_edge(node_map[&u], node_map[&v], w as f64);
     }
 
     use graphina::centrality::degree::degree_centrality;

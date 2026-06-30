@@ -11,15 +11,11 @@ use std::collections::HashSet;
 /// # Arguments
 ///
 /// * `graph` - A reference to the graph whose vertex cover is being approximated.
-/// * `weight` - An optional function that maps a node to its weight (defaults to 1.0 for all nodes).
 ///
 /// # Returns
 ///
 /// A `HashSet<NodeId>` containing the nodes in the approximated vertex cover.
-pub fn min_weighted_vertex_cover<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
-    _weight: Option<&dyn Fn(NodeId) -> f64>,
-) -> HashSet<NodeId>
+pub fn min_weighted_vertex_cover<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> HashSet<NodeId>
 where
     Ty: GraphConstructor<A, f64>,
 {
@@ -64,7 +60,7 @@ mod tests {
         graph.add_edge(n1, n2, 1.0);
         graph.add_edge(n2, n3, 1.0);
         graph.add_edge(n3, n4, 1.0);
-        let cover = min_weighted_vertex_cover(&graph, None);
+        let cover = min_weighted_vertex_cover(&graph);
         assert!(!cover.is_empty());
         assert!(cover.len() <= graph.node_count());
     }

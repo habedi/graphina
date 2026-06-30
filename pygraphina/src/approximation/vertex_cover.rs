@@ -8,7 +8,7 @@ use graphina::core::types::NodeId;
 
 #[pyfunction]
 pub fn min_weighted_vertex_cover(py_graph: &PyGraph) -> PyResult<Vec<usize>> {
-    let cover: HashSet<NodeId> = min_weighted_vertex_cover_core(&py_graph.graph, None);
+    let cover: HashSet<NodeId> = min_weighted_vertex_cover_core(&py_graph.graph);
     let mut out: Vec<usize> = Vec::with_capacity(cover.len());
     for nid in cover.into_iter() {
         let pyid = py_graph

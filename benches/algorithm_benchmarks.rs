@@ -1,7 +1,6 @@
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use graphina::core::generators::{barabasi_albert_graph, erdos_renyi_graph, watts_strogatz_graph};
 use graphina::core::types::{Graph, Undirected};
-use ordered_float::OrderedFloat;
 use std::hint::black_box;
 
 #[cfg(feature = "centrality")]
@@ -65,15 +64,15 @@ fn bench_centrality_algorithms(c: &mut Criterion) {
             },
         );
 
-        // Convert to OrderedFloat for betweenness
-        let mut graph_ordered = Graph::<u32, OrderedFloat<f64>>::new();
+        // Build an f64-weighted copy for the centrality benchmarks.
+        let mut graph_ordered = Graph::<u32, f64>::new();
         let node_map: std::collections::HashMap<_, _> = graph
             .nodes()
             .map(|(nid, &attr)| (nid, graph_ordered.add_node(attr)))
             .collect();
 
         for (src, tgt, &weight) in graph.edges() {
-            graph_ordered.add_edge(node_map[&src], node_map[&tgt], OrderedFloat(weight as f64));
+            graph_ordered.add_edge(node_map[&src], node_map[&tgt], weight as f64);
         }
 
         group.bench_with_input(
@@ -198,12 +197,12 @@ fn bench_approximation_algorithms(c: &mut Criterion) {
     let mut group = c.benchmark_group("approximation");
 
     for size in [50, 100, 200].iter() {
-        let mut graph = Graph::<u32, OrderedFloat<f64>>::new();
+        let mut graph = Graph::<u32, f64>::new();
         let nodes: Vec<_> = (0..*size).map(|i| graph.add_node(i)).collect();
 
         // Create a connected graph
         for i in 0..(nodes.len() - 1) {
-            graph.add_edge(nodes[i], nodes[i + 1], OrderedFloat(1.0));
+            graph.add_edge(nodes[i], nodes[i + 1], 1.0);
         }
 
         group.throughput(Throughput::Elements(*size as u64));

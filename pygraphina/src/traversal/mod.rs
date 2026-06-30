@@ -1,9 +1,7 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-use graphina::traversal::algorithms::{
-    bfs, bidis, dfs, iddfs, try_bidirectional_search, try_iddfs,
-};
+use graphina::traversal::algorithms::{bfs, dfs, try_bidirectional_search, try_iddfs};
 
 use crate::{PyDiGraph, PyGraph};
 
@@ -37,31 +35,7 @@ impl PyGraph {
     }
 
     /// Iterative Deepening DFS path from start to target up to max_depth.
-    pub fn iddfs_impl(
-        &self,
-        start: usize,
-        target: usize,
-        max_depth: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        let start_id = *self
-            .mapper
-            .py_to_internal
-            .get(&start)
-            .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
-        let target_id = *self
-            .mapper
-            .py_to_internal
-            .get(&target)
-            .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
-        let path_opt = iddfs(&self.graph, start_id, target_id, max_depth);
-        Ok(path_opt.map(|path| {
-            path.into_iter()
-                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
-                .collect()
-        }))
-    }
-
-    /// Like iddfs(), but raises ValueError if no path exists within depth.
+    /// Raises ValueError if either node doesn't exist or no path is found.
     pub fn try_iddfs_impl(
         &self,
         start: usize,
@@ -86,31 +60,8 @@ impl PyGraph {
             .collect())
     }
 
-    /// Bidirectional BFS shortest path from start to target, or None if not found.
-    pub fn bidirectional_search_impl(
-        &self,
-        start: usize,
-        target: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        let start_id = *self
-            .mapper
-            .py_to_internal
-            .get(&start)
-            .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
-        let target_id = *self
-            .mapper
-            .py_to_internal
-            .get(&target)
-            .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
-        let path_opt = bidis(&self.graph, start_id, target_id);
-        Ok(path_opt.map(|path| {
-            path.into_iter()
-                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
-                .collect()
-        }))
-    }
-
-    /// Like bidirectional_search(), but raises ValueError if no path exists.
+    /// Bidirectional BFS shortest path from start to target.
+    /// Raises ValueError if either node doesn't exist or no path is found.
     pub fn try_bidirectional_search_impl(
         &self,
         start: usize,
@@ -165,31 +116,7 @@ impl PyDiGraph {
     }
 
     /// Iterative Deepening DFS path from start to target up to max_depth.
-    pub fn iddfs_impl(
-        &self,
-        start: usize,
-        target: usize,
-        max_depth: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        let start_id = *self
-            .mapper
-            .py_to_internal
-            .get(&start)
-            .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
-        let target_id = *self
-            .mapper
-            .py_to_internal
-            .get(&target)
-            .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
-        let path_opt = iddfs(&self.graph, start_id, target_id, max_depth);
-        Ok(path_opt.map(|path| {
-            path.into_iter()
-                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
-                .collect()
-        }))
-    }
-
-    /// Like iddfs(), but raises ValueError if no path exists within depth.
+    /// Raises ValueError if either node doesn't exist or no path is found.
     pub fn try_iddfs_impl(
         &self,
         start: usize,
@@ -214,31 +141,8 @@ impl PyDiGraph {
             .collect())
     }
 
-    /// Bidirectional BFS shortest path from start to target, or None if not found.
-    pub fn bidirectional_search_impl(
-        &self,
-        start: usize,
-        target: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        let start_id = *self
-            .mapper
-            .py_to_internal
-            .get(&start)
-            .ok_or_else(|| PyValueError::new_err("Invalid start node id"))?;
-        let target_id = *self
-            .mapper
-            .py_to_internal
-            .get(&target)
-            .ok_or_else(|| PyValueError::new_err("Invalid target node id"))?;
-        let path_opt = bidis(&self.graph, start_id, target_id);
-        Ok(path_opt.map(|path| {
-            path.into_iter()
-                .filter_map(|nid| self.mapper.internal_to_py.get(&nid).copied())
-                .collect()
-        }))
-    }
-
-    /// Like bidirectional_search(), but raises ValueError if no path exists.
+    /// Bidirectional BFS shortest path from start to target.
+    /// Raises ValueError if either node doesn't exist or no path is found.
     pub fn try_bidirectional_search_impl(
         &self,
         start: usize,

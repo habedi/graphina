@@ -42,16 +42,12 @@ impl PyDiGraph {
         let nid = self.graph.add_node(attr);
         self.mapper.add(nid)
     }
-    pub fn update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<bool> {
-        self.update_node_impl(py_node, new_attr)
-    }
-    pub fn try_update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
+    /// Update a node's attribute, raising ValueError if the node doesn't exist.
+    pub fn update_node(&mut self, py_node: usize, new_attr: i64) -> PyResult<()> {
         self.try_update_node_impl(py_node, new_attr)
     }
-    pub fn remove_node(&mut self, py_node: usize) -> PyResult<Option<i64>> {
-        self.remove_node_impl(py_node)
-    }
-    pub fn try_remove_node(&mut self, py_node: usize) -> PyResult<i64> {
+    /// Remove a node, raising ValueError if it doesn't exist.
+    pub fn remove_node(&mut self, py_node: usize) -> PyResult<i64> {
         self.try_remove_node_impl(py_node)
     }
     pub fn get_node_attr(&self, py_node: usize) -> Option<i64> {
@@ -85,11 +81,8 @@ impl PyDiGraph {
         Ok(self.graph.add_edge(src, dst, weight).index())
     }
 
-    pub fn remove_edge(&mut self, source: usize, target: usize) -> PyResult<bool> {
-        self.remove_edge_impl(source, target)
-    }
-
-    pub fn try_remove_edge(&mut self, source: usize, target: usize) -> PyResult<()> {
+    /// Remove an edge, raising ValueError if either node or the edge doesn't exist.
+    pub fn remove_edge(&mut self, source: usize, target: usize) -> PyResult<()> {
         self.try_remove_edge_impl(source, target)
     }
 
@@ -97,16 +90,8 @@ impl PyDiGraph {
         self.get_edge_weight_impl(source, target)
     }
 
+    /// Update edge weight, raising ValueError if either node or the edge doesn't exist.
     pub fn update_edge_weight(
-        &mut self,
-        source: usize,
-        target: usize,
-        new_weight: f64,
-    ) -> PyResult<bool> {
-        self.update_edge_weight_impl(source, target, new_weight)
-    }
-
-    pub fn try_update_edge_weight(
         &mut self,
         source: usize,
         target: usize,
@@ -221,25 +206,18 @@ impl PyDiGraph {
     pub fn dfs(&self, start: usize) -> PyResult<Vec<usize>> {
         self.dfs_impl(start)
     }
-    pub fn iddfs(
-        &self,
-        start: usize,
-        target: usize,
-        max_depth: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        self.iddfs_impl(start, target, max_depth)
-    }
-    pub fn try_iddfs(&self, start: usize, target: usize, max_depth: usize) -> PyResult<Vec<usize>> {
+    /// Find a path from start to target using iterative deepening DFS.
+    ///
+    /// Raises ValueError if either node doesn't exist or no path is found
+    /// within max_depth.
+    pub fn iddfs(&self, start: usize, target: usize, max_depth: usize) -> PyResult<Vec<usize>> {
         self.try_iddfs_impl(start, target, max_depth)
     }
-    pub fn bidirectional_search(
-        &self,
-        start: usize,
-        target: usize,
-    ) -> PyResult<Option<Vec<usize>>> {
-        self.bidirectional_search_impl(start, target)
-    }
-    pub fn try_bidirectional_search(&self, start: usize, target: usize) -> PyResult<Vec<usize>> {
+    /// Find the unweighted shortest path from start to target using
+    /// bidirectional BFS.
+    ///
+    /// Raises ValueError if either node doesn't exist or no path is found.
+    pub fn bidirectional_search(&self, start: usize, target: usize) -> PyResult<Vec<usize>> {
         self.try_bidirectional_search_impl(start, target)
     }
 

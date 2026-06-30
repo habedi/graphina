@@ -30,8 +30,9 @@ fn main() {
     }
 
     // Average steps between any two nodes
-    let avg = average_path_length(&graph);
-    println!("Average Path Length: {:.2}", avg);
+    if let Some(avg) = average_path_length(&graph) {
+        println!("Average Path Length: {:.2}", avg);
+    }
 }
 ```
 

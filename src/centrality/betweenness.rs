@@ -7,7 +7,6 @@
 
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
-use ordered_float::OrderedFloat;
 use std::collections::{HashMap, VecDeque};
 
 /// Returns an upper bound on node indices, for sizing dense `Vec`s indexed by
@@ -40,11 +39,11 @@ where
 ///
 /// Returns an error if the graph is empty.
 pub fn betweenness_centrality<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
+    graph: &BaseGraph<A, f64, Ty>,
     normalized: bool,
 ) -> Result<NodeMap<f64>>
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: GraphConstructor<A, f64>,
 {
     let n = graph.node_count();
     if n == 0 {
@@ -159,11 +158,11 @@ where
 ///
 /// Returns an error if the graph is empty.
 pub fn edge_betweenness_centrality<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
+    graph: &BaseGraph<A, f64, Ty>,
     normalized: bool,
 ) -> Result<HashMap<(NodeId, NodeId), f64>>
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    Ty: GraphConstructor<A, f64>,
 {
     let n = graph.node_count();
     if n == 0 {
@@ -262,13 +261,12 @@ mod tests {
     fn test_betweenness_centrality_two_nodes_division_by_zero_fix() {
         use crate::centrality::betweenness::betweenness_centrality;
         use crate::core::types::Graph;
-        use ordered_float::OrderedFloat;
 
-        let mut graph = Graph::<i32, OrderedFloat<f64>>::new();
+        let mut graph = Graph::<i32, f64>::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
 
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, 1.0);
 
         let result = betweenness_centrality(&graph, true);
         assert!(result.is_ok());
@@ -287,13 +285,12 @@ mod tests {
     fn test_betweenness_undirected_halving() {
         use crate::centrality::betweenness::betweenness_centrality;
         use crate::core::types::Graph;
-        use ordered_float::OrderedFloat;
 
-        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let mut g = Graph::<i32, f64>::new();
         let nodes: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
-        g.add_edge(nodes[0], nodes[1], OrderedFloat(1.0));
-        g.add_edge(nodes[1], nodes[2], OrderedFloat(1.0));
-        g.add_edge(nodes[2], nodes[3], OrderedFloat(1.0));
+        g.add_edge(nodes[0], nodes[1], 1.0);
+        g.add_edge(nodes[1], nodes[2], 1.0);
+        g.add_edge(nodes[2], nodes[3], 1.0);
 
         let bc = betweenness_centrality(&g, false).expect("betweenness should succeed");
         assert!((bc[&nodes[0]] - 0.0).abs() < 1e-9);
@@ -311,17 +308,16 @@ mod tests {
     }
     use super::{betweenness_centrality, edge_betweenness_centrality};
     use crate::core::types::Graph;
-    use ordered_float::OrderedFloat;
 
     #[test]
     fn test_betweenness_centrality_simple() {
-        let mut graph = Graph::new();
+        let mut graph = Graph::<i32, f64>::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
 
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
-        graph.add_edge(n2, n3, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
 
         let result = betweenness_centrality(&graph, false);
         assert!(result.is_ok());
@@ -334,20 +330,20 @@ mod tests {
 
     #[test]
     fn test_betweenness_centrality_empty_graph() {
-        let graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let graph: Graph<i32, f64> = Graph::new();
         let result = betweenness_centrality(&graph, false);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_edge_betweenness_centrality() {
-        let mut graph = Graph::new();
+        let mut graph = Graph::<i32, f64>::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
 
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
-        graph.add_edge(n2, n3, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
 
         let result = edge_betweenness_centrality(&graph, false);
         assert!(result.is_ok());

@@ -6,22 +6,16 @@
 //!
 
 use crate::core::error::{GraphinaError, Result};
-use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeMap};
+use crate::core::paths::dijkstra_path_f64;
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeMap};
+use std::fmt::Debug;
 
 /// Compute closeness centrality for all nodes.
-pub fn closeness_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMap<f64>>
+pub fn closeness_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> Result<NodeMap<f64>>
 where
-    A: Clone,
-    W: Copy
-        + std::cmp::PartialOrd
-        + std::ops::Add<Output = W>
-        + std::ops::Sub<Output = W>
-        + From<u8>
-        + Ord
-        + std::fmt::Debug
-        + Into<f64>,
-    Ty: GraphConstructor<A, W>,
+    A: Debug,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     if graph.node_count() == 0 {
         return Err(GraphinaError::invalid_graph("Empty graph"));
@@ -31,7 +25,7 @@ where
     let mut centralities = NodeMap::default();
 
     for (node, _) in graph.nodes() {
-        let dist_map = dijkstra(graph, node)?;
+        let (dist_map, _) = dijkstra_path_f64(graph, node, None)?;
         // Sum of shortest path distances to reachable nodes, and how many are
         // reachable. Closeness is the reciprocal of the mean distance.
         let mut sum_dist = 0.0;
@@ -40,10 +34,9 @@ where
         // other node. Summation is order-independent, so iteration order is fine.
         for (&other_node, dist_opt) in &dist_map {
             if node != other_node {
-                if let Some(d) = dist_opt {
-                    let dist_f64: f64 = (*d).into();
-                    if dist_f64 > 0.0 && dist_f64.is_finite() {
-                        sum_dist += dist_f64;
+                if let Some(dist_f64) = dist_opt {
+                    if *dist_f64 > 0.0 && dist_f64.is_finite() {
+                        sum_dist += *dist_f64;
                         reachable += 1;
                     }
                 }
@@ -73,14 +66,13 @@ mod tests {
     fn test_closeness_centrality_is_not_harmonic() {
         use crate::centrality::closeness::closeness_centrality;
         use crate::core::types::Graph;
-        use ordered_float::OrderedFloat;
 
-        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let mut g = Graph::<i32, f64>::new();
         let n0 = g.add_node(0);
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
-        g.add_edge(n0, n1, OrderedFloat(1.0));
-        g.add_edge(n1, n2, OrderedFloat(1.0));
+        g.add_edge(n0, n1, 1.0);
+        g.add_edge(n1, n2, 1.0);
 
         let cc = closeness_centrality(&g).expect("closeness should succeed");
         assert!(

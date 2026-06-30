@@ -47,7 +47,7 @@ Find the smallest set of nodes that "covers" (touches) every edge in the graph.
 
 ```rust
 use graphina::core::types::Graph;
-use graphina::approximation::vertex_cover::min_vertex_cover;
+use graphina::approximation::vertex_cover::min_weighted_vertex_cover;
 
 fn main() {
     let mut graph = Graph::<i32, f64>::new();
@@ -55,7 +55,7 @@ fn main() {
     let n2 = graph.add_node(2);
     graph.add_edge(n1, n2, 1.0);
 
-    let cover = min_vertex_cover(&graph);
+    let cover = min_weighted_vertex_cover(&graph);
     println!("Vertex cover size: {}", cover.len());
     println!("Nodes in cover: {:?}", cover);
 }

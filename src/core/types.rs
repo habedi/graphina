@@ -387,22 +387,6 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn edge_weight_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
         self.inner.edge_weight_mut(edge.0)
     }
-    /// Alias for `edge_weight` to maintain backward compatibility.
-    #[deprecated(
-        since = "0.4.0",
-        note = "Use `edge_weight` instead for consistent naming"
-    )]
-    pub fn edge_attr(&self, edge: EdgeId) -> Option<&W> {
-        self.edge_weight(edge)
-    }
-    /// Alias for `edge_weight_mut` to maintain backward compatibility.
-    #[deprecated(
-        since = "0.4.0",
-        note = "Use `edge_weight_mut` instead for consistent naming"
-    )]
-    pub fn edge_attr_mut(&mut self, edge: EdgeId) -> Option<&mut W> {
-        self.edge_weight_mut(edge)
-    }
     /// Returns an iterator over all nodes and their attributes.
     pub fn nodes(&self) -> impl Iterator<Item = (NodeId, &A)> + '_ {
         self.inner

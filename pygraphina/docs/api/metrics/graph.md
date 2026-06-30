@@ -3,15 +3,9 @@
 Graph metrics characterize properties of the entire graph.
 
 !!! note "API Location"
-    All graph metrics are available as instance methods on graph objects (`PyGraph` and `PyDiGraph`).
-
-    Some commonly used metrics are also available as top-level convenience functions:
+    All graph metrics are available as instance methods on graph objects (`PyGraph` and `PyDiGraph`):
     ```python
-    # Instance method (recommended)
     diameter = g.diameter()
-
-    # Top-level function (also works)
-    diameter = pg.diameter(g)
     ```
 
 ## Available Metrics

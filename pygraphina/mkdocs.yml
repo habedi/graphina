@@ -93,7 +93,6 @@ nav:
               - Clique: api/approximation/clique.md
               - Clustering: api/approximation/clustering.md
               - Connectivity: api/approximation/connectivity.md
-              - Diameter: api/approximation/diameter.md
               - Independent Set: api/approximation/independent_set.md
               - Vertex Cover: api/approximation/vertex_cover.md
               - Treewidth: api/approximation/treewidth.md

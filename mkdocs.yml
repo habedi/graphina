@@ -62,7 +62,6 @@ nav:
           - Graph Generators: guide/generators.md
           - Graph I/O: guide/io.md
           - Graph Validation: guide/validation.md
-          - Memory Pooling: guide/pool.md
       - Extensions:
           - Traversal: guide/traversal.md
           - Subgraphs and Views: guide/subgraphs.md
@@ -79,7 +78,6 @@ nav:
       - Generators: examples/generators.md
       - I/O: examples/io.md
       - Graph Validation: examples/validation.md
-      - Memory Pooling: examples/pool.md
       - Centrality: examples/centrality.md
       - Community Detection: examples/community.md
       - Link Prediction: examples/links.md

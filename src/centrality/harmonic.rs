@@ -6,9 +6,9 @@
 //! path-computation errors and improve observability.
 
 use crate::core::error::Result;
-use crate::core::paths::dijkstra;
-use crate::core::types::{BaseGraph, GraphConstructor, NodeMap};
-use ordered_float::OrderedFloat;
+use crate::core::paths::dijkstra_path_f64;
+use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeMap};
+use std::fmt::Debug;
 
 /// Harmonic centrality: a variant of closeness centrality, summing the reciprocals of distances.
 /// It is more robust for disconnected graphs.
@@ -20,21 +20,21 @@ use ordered_float::OrderedFloat;
 /// # Returns
 ///
 /// [`NodeMap`] of `f64` representing harmonic centralities of each node in the graph.
-pub fn harmonic_centrality<A, Ty>(
-    graph: &BaseGraph<A, OrderedFloat<f64>, Ty>,
-) -> Result<NodeMap<f64>>
+pub fn harmonic_centrality<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> Result<NodeMap<f64>>
 where
-    Ty: GraphConstructor<A, OrderedFloat<f64>>,
+    A: Debug,
+    Ty: GraphConstructor<A, f64>,
+    BaseGraph<A, f64, Ty>: GraphinaGraph<A, f64>,
 {
     let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
-        let distances = dijkstra(graph, node)?;
+        let (distances, _) = dijkstra_path_f64(graph, node, None)?;
         // Exclude the node itself: its distance is 0, and 1 / 0 is infinite.
         // Harmonic centrality sums reciprocal distances over the other nodes.
         let sum: f64 = distances
             .into_iter()
             .filter(|(other, _)| *other != node)
-            .filter_map(|(_, d)| d.map(|od| 1.0 / od.0))
+            .filter_map(|(_, d)| d.map(|dist| 1.0 / dist))
             .sum();
         centrality.insert(node, sum);
     }
@@ -51,15 +51,14 @@ mod tests {
     fn test_harmonic_centrality_excludes_source() {
         use crate::centrality::harmonic::harmonic_centrality;
         use crate::core::types::Graph;
-        use ordered_float::OrderedFloat;
 
-        let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+        let mut g = Graph::<i32, f64>::new();
         let n0 = g.add_node(0);
         let n1 = g.add_node(1);
         let n2 = g.add_node(2);
-        g.add_edge(n0, n1, OrderedFloat(1.0));
-        g.add_edge(n1, n2, OrderedFloat(1.0));
-        g.add_edge(n2, n0, OrderedFloat(1.0));
+        g.add_edge(n0, n1, 1.0);
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n0, 1.0);
 
         let hc = harmonic_centrality(&g).expect("harmonic should succeed");
         for n in [n0, n1, n2] {

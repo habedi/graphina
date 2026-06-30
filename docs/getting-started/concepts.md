@@ -39,14 +39,14 @@ You use this ID for all subsequent graph operations:
 *   Querying neighbors (`graph.neighbors(id1)`)
 *   Algorithms (`pagerank(&graph, ...)`)
 
-## The `try_` API vs Panicking API
+## The `try_` API vs Option/Result Returning Methods
 
-Graphina offers two styles of interaction:
+Graphina offers two styles of interaction for mutative operations:
 
 Use the `try_` variants or `Option/Result` returning methods for robustness:
 
-*   `graph.add_node(...)` -> matches `NetworkX` behavior (panics or updates).
-*   `graph.try_add_node(...)` -> Returns `Result.<_, GraphinaError>`. Recommended for production applications where you need to handle missing nodes or invalid operations gracefully.
+*   `graph.remove_node(...)` -> Returns `Option<A>`.
+*   `graph.try_remove_node(...)` -> Returns `Result<A, GraphinaError>`. Recommended for production applications where you need to handle errors or propagate them via `?`.
 
 ## Performance
 

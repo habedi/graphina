@@ -4,7 +4,6 @@
 //! in the source files, improving overall test coverage.
 
 use graphina::core::types::{Digraph, Graph};
-use ordered_float::OrderedFloat;
 
 // =============================================================================
 // APPROXIMATION ALGORITHM TESTS
@@ -122,7 +121,7 @@ mod approximation_tests {
     #[test]
     fn test_densest_subgraph_empty_graph() {
         let graph: Graph<i32, f64> = Graph::new();
-        let result = densest_subgraph(&graph, None);
+        let result = densest_subgraph(&graph);
         assert!(result.is_empty());
     }
 
@@ -136,7 +135,7 @@ mod approximation_tests {
             }
         }
 
-        let result = densest_subgraph(&graph, None);
+        let result = densest_subgraph(&graph);
         // Complete graph is its own densest subgraph
         assert!(!result.is_empty());
     }
@@ -163,7 +162,7 @@ mod approximation_tests {
         // Connect cliques
         graph.add_edge(clique1[0], clique2[0], 1.0);
 
-        let result = densest_subgraph(&graph, None);
+        let result = densest_subgraph(&graph);
         // Should find a non-empty subgraph
         assert!(!result.is_empty());
     }
@@ -183,13 +182,13 @@ mod centrality_tests {
 
     #[test]
     fn test_closeness_centrality_triangle() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let mut graph: Graph<i32, f64> = Graph::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
-        graph.add_edge(n2, n3, OrderedFloat(1.0));
-        graph.add_edge(n3, n1, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n1, 1.0);
 
         let result = closeness_centrality(&graph).unwrap();
         assert_eq!(result.len(), 3);
@@ -201,18 +200,18 @@ mod centrality_tests {
 
     #[test]
     fn test_closeness_centrality_empty_graph() {
-        let graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let graph: Graph<i32, f64> = Graph::new();
         let result = closeness_centrality(&graph);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_closeness_centrality_star() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let mut graph: Graph<i32, f64> = Graph::new();
         let center = graph.add_node(0);
         let leaves: Vec<_> = (1..=4).map(|i| graph.add_node(i)).collect();
         for leaf in &leaves {
-            graph.add_edge(center, *leaf, OrderedFloat(1.0));
+            graph.add_edge(center, *leaf, 1.0);
         }
 
         let result = closeness_centrality(&graph).unwrap();
@@ -225,13 +224,13 @@ mod centrality_tests {
 
     #[test]
     fn test_harmonic_centrality_triangle() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let mut graph: Graph<i32, f64> = Graph::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
-        graph.add_edge(n2, n3, OrderedFloat(1.0));
-        graph.add_edge(n3, n1, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n1, 1.0);
 
         let result = harmonic_centrality(&graph).unwrap();
         assert_eq!(result.len(), 3);
@@ -243,12 +242,12 @@ mod centrality_tests {
 
     #[test]
     fn test_harmonic_centrality_disconnected() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let mut graph: Graph<i32, f64> = Graph::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         let _n3 = graph.add_node(3);
         // Only connect n1-n2, n3 is isolated
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, 1.0);
 
         let result = harmonic_centrality(&graph).unwrap();
         // All should have some value (harmonic handles disconnected graphs)
@@ -641,13 +640,13 @@ mod directed_graph_tests {
 
     #[test]
     fn test_closeness_centrality_directed() {
-        let mut graph: Digraph<i32, OrderedFloat<f64>> = Digraph::new();
+        let mut graph: Digraph<i32, f64> = Digraph::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
         // n1 -> n2 -> n3 (one-way)
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
-        graph.add_edge(n2, n3, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
 
         let result = closeness_centrality(&graph).unwrap();
         assert_eq!(result.len(), 3);
@@ -657,13 +656,13 @@ mod directed_graph_tests {
 
     #[test]
     fn test_harmonic_centrality_directed() {
-        let mut graph: Digraph<i32, OrderedFloat<f64>> = Digraph::new();
+        let mut graph: Digraph<i32, f64> = Digraph::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
-        graph.add_edge(n1, n2, OrderedFloat(1.0));
-        graph.add_edge(n2, n3, OrderedFloat(1.0));
-        graph.add_edge(n3, n1, OrderedFloat(1.0)); // Cycle
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n1, 1.0); // Cycle
 
         let result = harmonic_centrality(&graph).unwrap();
         assert_eq!(result.len(), 3);
@@ -679,36 +678,7 @@ mod directed_graph_tests {
 
 mod edge_case_tests {
     use super::*;
-    use graphina::approximation::diameter::approximate_diameter;
     use graphina::community::infomap::infomap;
-
-    #[test]
-    fn test_approximate_diameter_empty() {
-        let graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
-        let result = approximate_diameter(&graph).unwrap();
-        assert_eq!(result, 0.0);
-    }
-
-    #[test]
-    fn test_approximate_diameter_single_node() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
-        graph.add_node(1);
-        let result = approximate_diameter(&graph).unwrap();
-        assert_eq!(result, 0.0);
-    }
-
-    #[test]
-    fn test_approximate_diameter_path() {
-        let mut graph: Graph<i32, OrderedFloat<f64>> = Graph::new();
-        let nodes: Vec<_> = (0..5).map(|i| graph.add_node(i)).collect();
-        for i in 0..4 {
-            graph.add_edge(nodes[i], nodes[i + 1], OrderedFloat(1.0));
-        }
-
-        let result = approximate_diameter(&graph).unwrap();
-        // Path of 5 nodes has diameter 4
-        assert_eq!(result, 4.0);
-    }
 
     #[test]
     fn test_infomap_deterministic_with_seed() {

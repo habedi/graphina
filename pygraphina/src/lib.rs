@@ -25,76 +25,6 @@ mod parallel;
 mod subgraphs;
 mod traversal;
 
-/// Compute the diameter of the graph.
-///
-/// The diameter is the maximum eccentricity, or the length of the longest shortest path.
-///
-/// Parameters
-/// ----------
-/// graph : PyGraph
-///     The input graph.
-///
-/// Returns
-/// -------
-/// int or None
-///     The diameter of the graph, or None if the graph is not connected.
-#[pyfunction]
-fn diameter(graph: &PyGraph) -> Option<usize> {
-    graph.diameter()
-}
-
-/// Compute the radius of the graph.
-///
-/// The radius is the minimum eccentricity.
-///
-/// Parameters
-/// ----------
-/// graph : PyGraph
-///     The input graph.
-///
-/// Returns
-/// -------
-/// int or None
-///     The radius of the graph, or None if the graph is not connected.
-#[pyfunction]
-fn radius(graph: &PyGraph) -> Option<usize> {
-    graph.radius()
-}
-
-/// Compute the transitivity of the graph.
-///
-/// Transitivity is the fraction of all possible triangles which are in fact triangles.
-///
-/// Parameters
-/// ----------
-/// graph : PyGraph
-///     The input graph.
-///
-/// Returns
-/// -------
-/// float
-///     The transitivity of the graph.
-#[pyfunction]
-fn transitivity(graph: &PyGraph) -> f64 {
-    graph.transitivity()
-}
-
-/// Compute the average clustering coefficient of the graph.
-///
-/// Parameters
-/// ----------
-/// graph : PyGraph
-///     The input graph.
-///
-/// Returns
-/// -------
-/// float
-///     The average clustering coefficient.
-#[pyfunction]
-fn average_clustering(graph: &PyGraph) -> f64 {
-    graph.average_clustering()
-}
-
 /// The Python module declaration.
 #[pymodule]
 fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -139,12 +69,6 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m
     )?)?;
     m.add_function(wrap_pyfunction!(approximation::ramsey::ramsey_r2, m)?)?;
-
-    // Metrics convenience
-    m.add_function(wrap_pyfunction!(diameter, m)?)?;
-    m.add_function(wrap_pyfunction!(radius, m)?)?;
-    m.add_function(wrap_pyfunction!(transitivity, m)?)?;
-    m.add_function(wrap_pyfunction!(average_clustering, m)?)?;
 
     // MST algorithms
     m.add_function(wrap_pyfunction!(mst::prim_mst, m)?)?;
@@ -194,6 +118,27 @@ fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let links_mod = PyModule::new(m.py(), "links")?;
     links::register_links(&links_mod)?;
     m.add_submodule(&links_mod)?;
+
+    // Register the submodules in sys.modules so they can be imported directly,
+    // for example `import pygraphina.centrality` or `from pygraphina.mst import
+    // kruskal_mst`. add_submodule only attaches them as attributes, so without
+    // this they are reachable as `pygraphina.centrality` but not importable.
+    let sys_modules = PyModule::import(m.py(), "sys")?.getattr("modules")?;
+    for (name, submodule) in [
+        ("pygraphina.core", &core_mod),
+        ("pygraphina.metrics", &metrics_mod),
+        ("pygraphina.mst", &mst_mod),
+        ("pygraphina.traversal", &traversal_mod),
+        ("pygraphina.subgraphs", &subgraphs_mod),
+        ("pygraphina.parallel", &parallel_mod),
+        ("pygraphina.centrality", &centrality_mod),
+        ("pygraphina.approximation", &approximation_mod),
+        ("pygraphina.community", &community_mod),
+        ("pygraphina.links", &links_mod),
+    ] {
+        submodule.setattr("__name__", name)?;
+        sys_modules.set_item(name, submodule)?;
+    }
 
     #[cfg(feature = "networkx")]
     {

@@ -7,10 +7,7 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 
 /// Approximate the densest subgraph using a greedy peeling algorithm.
 /// Uses a min-heap (with OrderedFloat) for efficiency.
-pub fn densest_subgraph<A, Ty>(
-    graph: &BaseGraph<A, f64, Ty>,
-    _iterations: Option<usize>,
-) -> HashSet<NodeId>
+pub fn densest_subgraph<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> HashSet<NodeId>
 where
     Ty: GraphConstructor<A, f64>,
 {

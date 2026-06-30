@@ -23,9 +23,8 @@ pub fn pagerank<A, W, Ty>(
 
 ```rust
 use graphina::core::types::Digraph;
-use graphina::centrality::pagerank;
-use graphina::centrality::degree_centrality; // Added for degree_centrality
-use graphina::centrality::DegreeDirection; // Added for DegreeDirection
+use graphina::centrality::pagerank::pagerank;
+use graphina::centrality::degree::degree_centrality;
 
 let mut g = Digraph::<&str, f64>::new();
 let n1 = g.add_node("A");
@@ -46,8 +45,8 @@ for (node, score) in scores {
 }
 
 // Calculate Degree Centrality for the same graph
-let degree_scores = degree_centrality(&g, DegreeDirection::Successors);
-println!("Degree Centrality (Successors): {:?}", degree_scores);
+let degree_scores = degree_centrality(&g).unwrap();
+println!("Degree Centrality: {:?}", degree_scores);
 ```
 
 ## Betweenness Centrality
@@ -60,9 +59,9 @@ It counts the fraction of shortest paths that pass through a node.
 Finding bridges or bottlenecks in a network (for example, a critical router in a network topology).
 
 ```rust
-use graphina::centrality::betweenness;
+use graphina::centrality::betweenness::betweenness_centrality;
 
-let scores = betweenness(&g);
+let scores = betweenness_centrality(&g, true).unwrap();
 ```
 
 ## Degree Centrality
@@ -73,9 +72,9 @@ The simplest measure: the number of edges connected to a node.
 - For Undirected graphs: just Degree.
 
 ```rust
-use graphina::centrality::degree;
+use graphina::centrality::degree::degree_centrality;
 
-let scores = degree(&g);
+let scores = degree_centrality(&g).unwrap();
 ```
 
 ## Eigenvector Centrality
@@ -84,19 +83,19 @@ Determines importance based on connections to other high-scoring nodes. It is si
 damping factor/random jump.
 
 ```rust
-use graphina::centrality::eigenvector;
+use graphina::centrality::eigenvector::eigenvector_centrality;
 
 // (graph, max_iterations, tolerance)
-let scores = eigenvector(&g, 100, 1e-6);
+let scores = eigenvector_centrality(&g, 100, 1e-6).unwrap();
 ```
 
 ## Closeness Centrality
 
-node is central if it is close to all other nodes. It is defined as the reciprocal of the sum of shortest path
+A node is central if it is close to all other nodes. It is defined as the reciprocal of the sum of shortest path
 distances.
 
 ```rust
-use graphina::centrality::closeness;
+use graphina::centrality::closeness::closeness_centrality;
 
-let scores = closeness(&g);
+let scores = closeness_centrality(&g).unwrap();
 ```

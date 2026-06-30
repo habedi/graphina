@@ -5,16 +5,12 @@ Find an approximately densest subgraph using iterative vertex removal.
 ## Function Signature
 
 ```python
-pg.approximation.densest_subgraph(
-    graph: PyGraph,
-    iterations: Optional[int] = None
-) -> List[int]
+pg.approximation.densest_subgraph(graph: PyGraph) -> List[int]
 ```
 
 ## Parameters
 
 - graph: Input undirected graph
-- iterations: Maximum number of iterations (optional, defaults to automatic convergence)
 
 ## Returns
 
@@ -79,7 +75,7 @@ import pygraphina as pg
 g = pg.core.barabasi_albert(200, 5, 42)
 
 # Find the densest subgraph (most tightly connected group)
-core = pg.approximation.densest_subgraph(g, iterations=100)
+core = pg.approximation.densest_subgraph(g)
 
 print(f"Found dense core with {len(core)} members")
 

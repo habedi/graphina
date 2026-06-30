@@ -26,10 +26,6 @@ Rust.
 Additionally, [PyGraphina](https://pypi.org/project/pygraphina/) Python library allows users to use Graphina in Python.
 Check out [pygraphina](pygraphina/README.md) directory for more details.
 
-> [!IMPORTANT]
-> This project is in early development, so bugs and breaking changes are expected.
-> Please use the [issues page](https://github.com/habedi/graphina/issues) to report bugs or request features.
-
 ---
 
 ### Structure
@@ -54,7 +50,6 @@ To use an extension, you must enable it in your `Cargo.toml` file as a feature (
 | [**Generators**](src/core/generators.rs)       | <ul><li>Erd&odblac;s–R&eacute;nyi graph</li><li>Watts–Strogatz graph</li><li>Barabási–Albert graph</li><li>Complete graph (directed and undirected)</li><li>Bipartite graph</li><li>Star graph</li><li>Cycle graph</li><li>Path graph</li><li>Random tree</li></ul> | Graph generators for random and structured graphs         |
 | [**Paths**](src/core/paths.rs)                 | <ul><li>Dijkstra's algorithm</li><li>Bellman-Ford algorithm</li><li>Floyd-Warshall algorithm</li><li>Johnson's algorithm</li><li>A* search algorithm</li><li>Iterative deepening A* (IDA*)</li></ul>                                                                | Shortest paths algorithms                                 |
 | [**Validation**](src/core/validation.rs)       | <ul><li>Graph connectivity check</li><li>DAG validation</li><li>Bipartite check</li><li>Negative weights detection</li><li>Self-loops detection</li><li>Component counting</li><li>Algorithm precondition validators</li></ul>                                      | Graph property validation utilities                       |
-| [**Pool**](src/core/pool.rs)                   | <ul><li>NodeSet pool</li><li>NodeMap pool</li><li>NodeQueue pool</li><li>Thread-local default pools</li></ul>                                                                                                                                                       | Experimental memory pooling utilities                     |
 
 #### Extensions
 
@@ -67,7 +62,7 @@ To use an extension, you must enable it in your `Cargo.toml` file as a feature (
 | [**Subgraphs**](src/subgraphs/)         | <ul><li>Subgraph extraction</li><li>Induced subgraph</li><li>Ego graph</li><li>K-hop neighbors</li><li>Filter nodes or edges</li><li>Connected component extraction</li><li>Component subgraph</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                           | Subgraph operations and filtering                    |
 | [**Links**](src/links/)                 | <ul><li>Resource allocation index</li><li>Jaccard coefficient</li><li>Adamic-Adar index</li><li>Preferential attachment</li><li>Common neighbors</li><li>CN Soundarajan-Hopcroft</li><li>RA index Soundarajan-Hopcroft</li><li>Within-inter-cluster ratio</li><li>Common neighbor centrality</li></ul>                                                                                                                                                                                                                                                                                                             | Link prediction algorithms                           |
 | [**Community**](src/community/)         | <ul><li>Label propagation</li><li>Louvain method</li><li>Girvan-Newman algorithm</li><li>Spectral clustering</li><li>Personalized PageRank</li><li>Infomap</li><li>Connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                  | Community detection and clustering algorithms        |
-| [**Approximation**](src/approximation/) | <ul><li>Node connectivity (BFS-based)</li><li>Maximum independent set (greedy)</li><li>Maximum clique (greedy heuristic)</li><li>Clique removal</li><li>Large clique size</li><li>Average clustering coefficient (approximate)</li><li>Densest subgraph (greedy peeling)</li><li>Diameter lower bound</li><li>Minimum weighted vertex cover (greedy)</li><li>Minimum maximal matching (greedy)</li><li>Ramsey number R(2,t) approximation</li><li>TSP approximations (greedy, simulated annealing, threshold accepting, and Christofides)</li><li>Treewidth decompositions (min degree, and min fill-in)</li></ul> | Approximation algorithms for NP-hard problems        |
+| [**Approximation**](src/approximation/) | <ul><li>Node connectivity (BFS-based)</li><li>Maximum independent set (greedy)</li><li>Maximum clique (greedy heuristic)</li><li>Clique removal</li><li>Large clique size</li><li>Average clustering coefficient (approximate)</li><li>Densest subgraph (greedy peeling)</li><li>Minimum weighted vertex cover (greedy)</li><li>Minimum maximal matching (greedy)</li><li>Ramsey number R(2,t) approximation</li><li>TSP approximation (greedy nearest-neighbor)</li><li>Treewidth decompositions (min degree, and min fill-in)</li></ul> | Approximation algorithms for NP-hard problems        |
 | [**Parallel**](src/parallel/)           | <ul><li>Parallel BFS</li><li>Parallel degree computation</li><li>Parallel clustering coefficients</li><li>Parallel triangles counting</li><li>Parallel PageRank</li><li>Parallel shortest paths</li><li>Parallel connected components</li></ul>                                                                                                                                                                                                                                                                                                                                                                    | Parallel implementations of popular graph algorithms |
 
 ### Installation
@@ -80,14 +75,14 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.3.0-alpha.3"
+graphina = "0.4.0-alpha.1"
 ```
 
 Or enable all features with:
 
 ```toml
 [dependencies]
-graphina = { version = "0.3.0-alpha.5", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "pool"] }
+graphina = { version = "0.4.0-alpha.1", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel"] }
 ```
 
 > [!NOTE]

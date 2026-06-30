@@ -12,9 +12,10 @@ def test_add_nodes():
 def test_update_nodes():
     g = pygraphina.PyGraph()
     n0 = g.add_node(10)
-    success = g.update_node(n0, 15)
-    assert success is True, 'update_node should return True on success'
-    g.try_update_node(n0, 25)
+    g.update_node(n0, 15)
+    g.update_node(n0, 25)
+    with pytest.raises(ValueError):
+        g.update_node(999, 1)  # updating a missing node raises
 
 
 def test_add_edge_and_neighbors():
@@ -39,8 +40,8 @@ def test_remove_node():
     assert g.node_count() == 1, 'Expected 1 node after removal'
 
 
-def test_try_remove_node_error():
+def test_remove_node_error():
     g = pygraphina.PyGraph()
     g.add_node(10)
     with pytest.raises(ValueError):
-        g.try_remove_node(999)
+        g.remove_node(999)

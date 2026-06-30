@@ -1,6 +1,6 @@
 [package]
 name = "graphina"
-version = "0.3.0-alpha.5"
+version = "0.4.0-alpha.1"
 description = "A graph data science library for Rust"
 repository = "https://github.com/habedi/graphina"
 license = "MIT OR Apache-2.0"
@@ -40,7 +40,6 @@ metrics = []
 mst = []
 traversal = []
 subgraphs = []
-pool = []
 all = ["centrality", "community", "links", "approximation", "parallel", "metrics", "mst", "traversal", "subgraphs"]
 
 [dependencies]

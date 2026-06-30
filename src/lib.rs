@@ -16,7 +16,6 @@ A graph data science library that provides common graph types, algorithms, and d
 * `approximation` *(feature: approximation)* – Heuristics for NP-hard problems.
 * `parallel` *(feature: parallel)* – Parallel implementations for selected algorithms.
 * `subgraphs` *(feature: subgraphs)* – Induced subgraph and ego network utilities.
-* `core::pool` *(feature: pool)* – Experimental memory pooling utilities.
 
 ## API Conventions
 
@@ -24,10 +23,6 @@ Algorithms return `Result<_, graphina::core::error::GraphinaError>` for error ha
 Selector-style helpers that pick nodes (like `voterank`) may return plain collections.
 
 Enable only required features to minimize size and compile time.
-
-## Stability Notes
-
-The `pool` feature is experimental; API subject to change. Gate usage with `cfg(feature = "pool")`.
 */
 
 /// Approximation algorithms for NP-hard problems.

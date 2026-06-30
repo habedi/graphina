@@ -32,7 +32,6 @@ use std::convert::Infallible;
 use std::panic::AssertUnwindSafe;
 use std::time::{Duration, Instant};
 
-use ordered_float::OrderedFloat;
 
 use graphina::core::types::{Graph, NodeId, NodeMap};
 
@@ -312,13 +311,11 @@ fn hub_node(data: &Dataset) -> usize {
         .unwrap_or(0)
 }
 
-/// The three graphina graph instances. The weight type is forced by the
-/// algorithms: `betweenness_centrality` requires `OrderedFloat<f64>`, the
-/// generic `dijkstra` requires an integer weight (`Ord + From<u8>`), and the
+/// The graphina graph instances. The weight type is forced by the algorithms:
+/// the generic `dijkstra` requires an integer weight (`Ord + From<u8>`), and the
 /// remaining algorithms accept plain `f64`.
 struct GraphinaGraphs {
     f64: Graph<(), f64>,
-    of: Graph<(), OrderedFloat<f64>>,
     int: Graph<(), i64>,
     /// `NodeId`s in insertion order, so index `i` maps to the node built from id `i`.
     ids: Vec<NodeId>,
@@ -326,24 +323,20 @@ struct GraphinaGraphs {
 
 fn build_graphina(data: &Dataset) -> GraphinaGraphs {
     let mut g_f64 = Graph::<(), f64>::new();
-    let mut g_of = Graph::<(), OrderedFloat<f64>>::new();
     let mut g_int = Graph::<(), i64>::new();
     let mut ids = Vec::with_capacity(data.nodes as usize);
     for _ in 0..data.nodes {
         let id = g_f64.add_node(());
-        g_of.add_node(());
         g_int.add_node(());
         ids.push(id);
     }
     for &(a, b) in &data.edges {
         let (a, b) = (a as usize, b as usize);
         g_f64.add_edge(ids[a], ids[b], 1.0);
-        g_of.add_edge(ids[a], ids[b], OrderedFloat(1.0));
         g_int.add_edge(ids[a], ids[b], 1);
     }
     GraphinaGraphs {
         f64: g_f64,
-        of: g_of,
         int: g_int,
         ids,
     }
@@ -858,7 +851,7 @@ fn run_at(cfg: &Config, data: &Dataset, source: &str, max_dense: u64) -> Vec<Row
             &mut rows,
             1e-3,
             || {
-                graphina::centrality::betweenness::betweenness_centrality(&gg.of, false)
+                graphina::centrality::betweenness::betweenness_centrality(&gg.f64, false)
                     .expect("graphina betweenness")
             },
             |m| map_to_vec(m, n),
@@ -880,7 +873,7 @@ fn run_at(cfg: &Config, data: &Dataset, source: &str, max_dense: u64) -> Vec<Row
             &mut rows,
             1e-3,
             || {
-                graphina::centrality::betweenness::edge_betweenness_centrality(&gg.of, false)
+                graphina::centrality::betweenness::edge_betweenness_centrality(&gg.f64, false)
                     .expect("graphina edge_betweenness")
             },
             |m| {
@@ -912,7 +905,7 @@ fn run_at(cfg: &Config, data: &Dataset, source: &str, max_dense: u64) -> Vec<Row
             &mut rows,
             1e-4,
             || {
-                graphina::centrality::closeness::closeness_centrality(&gg.of)
+                graphina::centrality::closeness::closeness_centrality(&gg.f64)
                     .expect("graphina closeness")
             },
             |m| map_to_vec(m, n),
@@ -1075,12 +1068,12 @@ fn opt_vec(v: &[Option<f64>], n: usize) -> Vec<f64> {
 fn print_table(cfg: &Config, rows: &[Row]) {
     println!(
         "{:<22} {:>16} {:>16} {:>14}  diff",
-        "algorithm", "graphina", "rustworkx-core", "speedup"
+        "algorithm", "graphina", "rustworkx-core", "ratio"
     );
     println!(
         "(median±h, h = half-width of the 95% bootstrap CI over {} timed rounds; \
-         a trailing * marks fewer rounds because the budget ran out;\n speedup = \
-         rustworkx / graphina, so >1 means graphina is faster)\n",
+         a trailing * marks fewer rounds because the budget ran out;\n ratio = \
+         graphina / rustworkx, so >1 means rustworkx is faster)\n",
         cfg.reps
     );
     let fmt = |b: &BenchStat| {
@@ -1097,7 +1090,7 @@ fn print_table(cfg: &Config, rows: &[Row]) {
     for row in rows {
         match (row.diff, &row.graphina, &row.rustworkx) {
             (Diff::Match, Some(g), Some(r)) => {
-                let ratio = r.median.as_secs_f64() / g.median.as_secs_f64().max(f64::MIN_POSITIVE);
+                let ratio = g.median.as_secs_f64() / r.median.as_secs_f64().max(f64::MIN_POSITIVE);
                 println!(
                     "{:<22} {:>16} {:>16} {:>13.2}x  ok",
                     row.name,

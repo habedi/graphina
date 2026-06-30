@@ -17,12 +17,10 @@ def test_max_clique_and_size():
     assert size >= 1
 
 
-def test_vertex_cover_and_diameter():
+def test_vertex_cover():
     g, nodes = make_line(6)
     cover = pygraphina.approximation.min_weighted_vertex_cover(g)
     assert isinstance(cover, list)
-    d = pygraphina.approximation.diameter(g)
-    assert d >= 0.0
 
 
 def test_clique_removal():

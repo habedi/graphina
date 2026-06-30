@@ -127,10 +127,10 @@ class TestNodeMappingConsistency:
         assert g.contains_node(n0)
         assert g.contains_node(n2)
 
-    def test_try_remove_node_cleans_mapping(self):
+    def test_remove_single_node_cleans_mapping(self):
         g = pg.PyGraph()
         n0 = g.add_node(10)
-        attr = g.try_remove_node(n0)
+        attr = g.remove_node(n0)
         assert attr == 10
         assert not g.contains_node(n0)
         assert g.node_count() == 0

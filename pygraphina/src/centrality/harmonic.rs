@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-use crate::centrality::utils::{to_ordered_digraph, to_ordered_graph};
+use crate::centrality::utils::{to_f64_digraph, to_f64_graph};
 use crate::{PyDiGraph, PyGraph};
 use graphina::centrality::harmonic::harmonic_centrality;
 use graphina::core::types::NodeId;
@@ -27,7 +27,7 @@ use graphina::core::types::NodeId;
 #[pyfunction]
 pub fn harmonic(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, f64>> {
     if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
-        let (og, old_to_new) = to_ordered_graph(&py_graph);
+        let (og, old_to_new) = to_f64_graph(&py_graph);
         let mut new_to_old: std::collections::HashMap<NodeId, NodeId> =
             std::collections::HashMap::new();
         for (old, new) in old_to_new.iter() {
@@ -54,7 +54,7 @@ pub fn harmonic(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, f64>> {
             ))),
         }
     } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
-        let (og, old_to_new) = to_ordered_digraph(&py_graph);
+        let (og, old_to_new) = to_f64_digraph(&py_graph);
         let mut new_to_old: std::collections::HashMap<NodeId, NodeId> =
             std::collections::HashMap::new();
         for (old, new) in old_to_new.iter() {
