@@ -110,6 +110,7 @@ class Config:
     max_networkx_nodes: int
     max_networkx_dense_nodes: int
     max_fill_nodes: int
+    max_clique_nodes: int
 
     @staticmethod
     def from_env() -> "Config":
@@ -148,11 +149,15 @@ class Config:
         max_networkx_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_NODES", 5_000)
         max_networkx_dense_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_DENSE_NODES", 1_500)
         # The minimum fill-in treewidth heuristic densifies the graph as it runs, so it
-        # is superlinear on both libraries (pygraphina near O(V^3), networkx more).
-        # It is gated by its own ceiling that applies in every mode so very large runs
-        # stay bounded; the default matches the networkx dense ceiling, since above that
-        # the networkx side of the row is skipped anyway.
-        max_fill_nodes = var("PYGRAPHINA_COMPARE_MAX_FILL_NODES", 1_500)
+        # is superlinear on both libraries (networkx is tens of seconds at 1000 nodes).
+        # The whole row is gated by its own ceiling that applies in every mode.
+        max_fill_nodes = var("PYGRAPHINA_COMPARE_MAX_FILL_NODES", 600)
+        # The networkx clique-family approximations (max_clique, maximum_independent_set,
+        # clique_removal) recurse through the Ramsey routine and cost over a minute at
+        # 1000 nodes, and a single call cannot be interrupted by the time budget. Their
+        # networkx side is gated by a low ceiling; the pygraphina side is microseconds
+        # and always runs.
+        max_clique_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_CLIQUE_NODES", 400)
 
         if nodes < 1:
             sys.exit("PYGRAPHINA_COMPARE_NODES must be at least 1")
@@ -174,6 +179,7 @@ class Config:
             max_networkx_nodes,
             max_networkx_dense_nodes,
             max_fill_nodes,
+            max_clique_nodes,
         )
 
 
@@ -1161,6 +1167,13 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     def when_nx_approx(fn: Callable[[], object]) -> Callable[[], object] | None:
         return fn if have_nx_approx else None
 
+    # The clique-family networkx approximations are far more expensive than the rest of
+    # the approximation module, so they get their own, lower ceiling.
+    have_nx_clique = have_nx_approx and n <= cfg.max_clique_nodes
+
+    def when_nx_clique(fn: Callable[[], object]) -> Callable[[], object] | None:
+        return fn if have_nx_clique else None
+
     rows.append(
         diff_and_bench(
             cfg,
@@ -1183,7 +1196,7 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             lambda r: [1.0 if is_independent_set(adj, r) else 0.0],
             None,
             0.0,
-            nx_run=when_nx_approx(lambda: nx.approximation.maximum_independent_set(nx_g)),
+            nx_run=when_nx_clique(lambda: nx.approximation.maximum_independent_set(nx_g)),
             nx_canon=lambda r: [1.0 if is_independent_set(adj, r) else 0.0],
         )
     )
@@ -1196,7 +1209,7 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             lambda r: [1.0 if is_clique(adj, r) else 0.0],
             None,
             0.0,
-            nx_run=when_nx_approx(lambda: nx.approximation.max_clique(nx_g)),
+            nx_run=when_nx_clique(lambda: nx.approximation.max_clique(nx_g)),
             nx_canon=lambda r: [1.0 if is_clique(adj, r) else 0.0],
         )
     )
@@ -1217,7 +1230,7 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             clique_removal_pyg,
             None,
             0.0,
-            nx_run=when_nx_approx(lambda: nx.approximation.clique_removal(nx_g)),
+            nx_run=when_nx_clique(lambda: nx.approximation.clique_removal(nx_g)),
             nx_canon=clique_removal_nx,
         )
     )
