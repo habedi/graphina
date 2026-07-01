@@ -1,14 +1,29 @@
 #!/usr/bin/env python3
-"""Comparison harness running the same graph algorithms through pygraphina and rustworkx.
+"""Comparison harness running the same graph algorithms through pygraphina, rustworkx,
+and networkx.
 
-Both libraries receive the same synthetic graph, built from one deterministic edge
-list into a pygraphina ``PyGraph`` and a rustworkx ``PyGraph``. Each algorithm runs
-on both, and the harness reports the median wall time per library, so it doubles as a
-differential correctness check: the result of each algorithm is normalized to a
-canonical, library-independent form and compared before timing. Medians for an
-algorithm the two libraries disagree on are meaningless (a library doing the wrong
-amount of work can look faster), so a divergent algorithm is reported as ``DIFF`` and
-not timed.
+Every library receives the same synthetic graph, built from one deterministic edge
+list. Each algorithm runs on each library that offers it, and the harness reports the
+median wall time per library, so it doubles as a differential correctness check: the
+result of each algorithm is normalized to a canonical, library-independent form and
+compared before timing. Medians for an algorithm the libraries disagree on are
+meaningless (a library doing the wrong amount of work can look faster), so a divergent
+algorithm is reported as ``DIFF`` and not timed.
+
+The comparison covers most of the pygraphina surface. rustworkx-core has no equivalent
+for several families (link prediction, MST from Python, the approximation heuristics),
+so those rows compare against networkx only; a handful (spectral clustering, densest
+subgraph, pygraphina's own common-neighbor centrality) have no comparable counterpart
+in either library and are timed on their own.
+
+Deterministic algorithms (centrality, metrics, shortest paths, connected components,
+MST total weight, link prediction) are checked element-wise. Heuristic and
+non-deterministic algorithms (community detection and the approximation family) will
+not reproduce networkx bit for bit, so they are checked by a quality invariant
+instead: either the returned solution is validated (a vertex cover really covers, a
+clique is really a clique) or a scalar objective (modularity, an estimated size, a
+tree width) is compared within a loose quality tolerance. See ``within_tolerance`` and
+the helpers below it for details.
 
 This is the Python counterpart of the Rust ``graphina`` harness. That one
 compares the core Rust crates and measures the algorithm implementations; this one
@@ -353,6 +368,91 @@ def within_tolerance(a: list[float], b: list[float], eps: float) -> bool:
     return all(abs(x - y) <= eps + eps * max(abs(x), abs(y)) for x, y in zip(a, b))
 
 
+# Comparison strategy by algorithm class:
+#
+# * Deterministic algorithms (centrality, metrics, shortest paths, connected
+#   components, MST total weight, link prediction) are checked element-wise against
+#   a canonical vector, so a divergent result is reported as DIFF and not timed.
+# * Heuristic and non-deterministic algorithms (community detection, the
+#   approximation family) will not reproduce networkx bit for bit, so an
+#   element-wise check would spuriously flag every row. Those are checked by a
+#   quality invariant instead: either the solution is validated (a vertex cover
+#   really covers, a clique is really a clique, an independent set is really
+#   independent) or a scalar objective (modularity, an estimated size, a width) is
+#   compared within a loose quality tolerance. A passing heuristic row means both
+#   libraries produced a comparable-quality answer, not an identical one.
+
+
+def build_adjacency(data: Dataset) -> list[set[int]]:
+    """Adjacency sets over node ids, used by the solution validators below."""
+    adj: list[set[int]] = [set() for _ in range(data.nodes)]
+    for a, b in data.edges:
+        adj[a].add(b)
+        adj[b].add(a)
+    return adj
+
+
+def to_communities(result: object) -> list[list[int]]:
+    """Normalize a community-detection result to a list of node-id lists. Accepts a
+    ``{node: label}`` mapping (pygraphina label propagation) or an iterable of
+    node-id iterables (pygraphina louvain, networkx community sets).
+    """
+    if isinstance(result, dict):
+        groups: dict[int, list[int]] = {}
+        for node, label in result.items():
+            groups.setdefault(int(label), []).append(int(node))
+        return list(groups.values())
+    return [[int(x) for x in comm] for comm in result]
+
+
+def modularity(data: Dataset, communities: list[list[int]]) -> float:
+    """Newman modularity of a partition: ``sum_c (L_c / m - (D_c / 2m)^2)`` where
+    ``L_c`` is the intra-community edge count and ``D_c`` the community degree sum.
+    Returns ``0.0`` for an edgeless graph. Both libraries score the same partition
+    formula, so a comparable modularity means comparable partition quality.
+    """
+    m = len(data.edges)
+    if m == 0:
+        return 0.0
+    degree = [0] * data.nodes
+    for a, b in data.edges:
+        degree[a] += 1
+        degree[b] += 1
+    comm_of = [-1] * data.nodes
+    for cid, comm in enumerate(communities):
+        for v in comm:
+            comm_of[v] = cid
+    intra: dict[int, int] = {}
+    degsum: dict[int, int] = {}
+    for v in range(data.nodes):
+        c = comm_of[v]
+        if c >= 0:
+            degsum[c] = degsum.get(c, 0) + degree[v]
+    for a, b in data.edges:
+        if comm_of[a] >= 0 and comm_of[a] == comm_of[b]:
+            intra[comm_of[a]] = intra.get(comm_of[a], 0) + 1
+    two_m = 2.0 * m
+    return sum(
+        intra.get(c, 0) / m - (degsum[c] / two_m) ** 2 for c in degsum
+    )
+
+
+def is_clique(adj: list[set[int]], nodes: object) -> bool:
+    ns = [int(x) for x in nodes]
+    return all(ns[j] in adj[ns[i]] for i in range(len(ns)) for j in range(i + 1, len(ns)))
+
+
+def is_independent_set(adj: list[set[int]], nodes: object) -> bool:
+    ns = [int(x) for x in nodes]
+    members = set(ns)
+    return all(not (adj[v] & members) for v in ns)
+
+
+def is_vertex_cover(data: Dataset, nodes: object) -> bool:
+    cover = {int(x) for x in nodes}
+    return all(a in cover or b in cover for a, b in data.edges)
+
+
 @dataclass
 class BenchStat:
     median: float
@@ -472,6 +572,14 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     nx_ok = n <= cfg.max_networkx_nodes
     nx_dense_ok = nx_ok and n <= cfg.max_networkx_dense_nodes
     nx_g = build_networkx(data) if nx_ok else None
+
+    # Adjacency for the approximation validators; the eccentricity metrics
+    # (diameter, radius, average path length) are defined only on a connected
+    # graph, so networkx raises on a disconnected one. Gate them on connectivity.
+    adj = build_adjacency(data)
+    connected = pyg_g.is_connected()
+    # Girvan-Newman is O(V * E^2); cap it hard so it never dominates a run.
+    gn_ok = n <= 200
 
     print(f"\n=== {source} reps={cfg.reps} warmups={cfg.warmups} ===")
 
@@ -721,6 +829,580 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 nx_canon=link_nx_canon,
             )
         )
+
+    # Common-neighbor centrality is pygraphina's |N(u) ∩ N(v)|^alpha, which is a
+    # different quantity from networkx's CCPA function of the same name, so it has no
+    # comparable networkx counterpart and is timed on its own.
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "common_neighbor_centrality",
+            (lambda: pygraphina.links.common_neighbor_centrality(pyg_g, 0.8, ebunch)),
+            None,
+            link_pyg_canon,
+            None,
+            1e-6,
+        )
+    )
+
+    # --- Traversal --------------------------------------------------------------
+    # BFS and DFS visit the source's connected component; visitation order differs
+    # between libraries, so the differential check compares the set of reached
+    # nodes, which both must agree on.
+    def reach_canon(order: object) -> list[float]:
+        vec = [0.0] * n
+        for node in order:
+            vec[int(node)] = 1.0
+        return vec
+
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "bfs",
+            lambda: pyg_g.bfs(hub),
+            None,
+            reach_canon,
+            None,
+            0.0,
+            nx_run=(lambda: nx.bfs_tree(nx_g, hub)) if nx_g is not None else None,
+            nx_canon=reach_canon,
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "dfs",
+            lambda: pyg_g.dfs(hub),
+            None,
+            reach_canon,
+            None,
+            0.0,
+            nx_run=(lambda: nx.dfs_tree(nx_g, hub)) if nx_g is not None else None,
+            nx_canon=reach_canon,
+        )
+    )
+
+    # A reachable target for the two-endpoint searches; defined only when the graph
+    # is connected so a path is guaranteed.
+    target: int | None = None
+    if connected and n > 1:
+        target = (hub + n // 2) % n
+        if target == hub:
+            target = (hub + 1) % n
+
+    if target is not None:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "bidirectional_search",
+                lambda: pyg_g.bidirectional_search(hub, target),
+                None,
+                lambda path: [float(len(path) - 1)],
+                None,
+                0.0,
+                nx_run=(lambda: nx.shortest_path_length(nx_g, hub, target))
+                if nx_g is not None
+                else None,
+                nx_canon=lambda d: [float(d)],
+            )
+        )
+    else:
+        rows.append(skipped_row("bidirectional_search"))
+
+    # --- Centrality (remaining) -------------------------------------------------
+    # Harmonic centrality: unnormalized sum of reciprocal distances on both sides.
+    # O(V*(V+E)), so gated by the dense-node ceiling.
+    if dense_ok:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "harmonic",
+                lambda: pygraphina.centrality.harmonic(pyg_g),
+                None,
+                lambda r: canon_map(r, n),
+                None,
+                1e-6,
+                nx_run=(lambda: nx.harmonic_centrality(nx_g)) if nx_dense_ok else None,
+                nx_canon=lambda r: canon_map(r, n),
+            )
+        )
+    else:
+        rows.append(skipped_row("harmonic"))
+
+    # Edge betweenness. pygraphina stores both (u, v) and (v, u) for undirected
+    # graphs, so both sides are deduplicated by the unordered pair key before
+    # comparison. O(V*E), gated by the dense-node ceiling.
+    def edge_bet_canon(r: object) -> list[float]:
+        seen: dict[tuple[int, int], float] = {}
+        for (u, v), val in r.items():
+            seen[tuple(sorted((int(u), int(v))))] = float(val)
+        return [val for _, val in sorted(seen.items())]
+
+    if dense_ok:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "edge_betweenness",
+                lambda: pygraphina.centrality.edge_betweenness(pyg_g, False),
+                None,
+                edge_bet_canon,
+                None,
+                1e-6,
+                nx_run=(lambda: nx.edge_betweenness_centrality(nx_g, normalized=False))
+                if nx_dense_ok
+                else None,
+                nx_canon=edge_bet_canon,
+            )
+        )
+    else:
+        rows.append(skipped_row("edge_betweenness"))
+
+    # Katz centrality: pygraphina does not normalize, networkx L2-normalizes, so the
+    # direction is compared after L2 and sign normalization. alpha stays below the
+    # reciprocal of the largest eigenvalue so both converge.
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "katz",
+            lambda: pygraphina.centrality.katz(pyg_g, 0.05, 1000, 1e-6),
+            None,
+            lambda r: l2_sign_normalize(canon_map(r, n)),
+            None,
+            1e-2,
+            nx_run=(lambda: nx.katz_centrality(nx_g, alpha=0.05, max_iter=1000, tol=1e-6))
+            if nx_g is not None
+            else None,
+            nx_canon=lambda r: l2_sign_normalize(canon_map(r, n)),
+        )
+    )
+
+    # Personalized PageRank concentrated on the hub. pygraphina takes a
+    # personalization vector aligned to node order; networkx takes a {node: weight}
+    # mapping. Both distributions sum to 1.
+    perso_vec = [1.0 if i == hub else 0.0 for i in range(n)]
+    perso_dict = {i: (1.0 if i == hub else 0.0) for i in range(n)}
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "personalized_pagerank",
+            lambda: pygraphina.centrality.personalized_pagerank(pyg_g, perso_vec),
+            None,
+            lambda r: canon_map(r, n),
+            None,
+            1e-4,
+            nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85, personalization=perso_dict))
+            if nx_g is not None
+            else None,
+            nx_canon=lambda r: canon_map(r, n),
+        )
+    )
+
+    # --- Metrics ----------------------------------------------------------------
+    # Ratio metrics are always defined; the eccentricity metrics require a connected
+    # graph, so networkx raises on a disconnected one and they are gated on both
+    # connectivity and the dense-node ceiling.
+    for mname, pfn, nfn, meps in (
+        ("transitivity", lambda: pyg_g.transitivity(), lambda: nx.transitivity(nx_g), 1e-9),
+        (
+            "average_clustering",
+            lambda: pyg_g.average_clustering(),
+            lambda: nx.average_clustering(nx_g),
+            1e-9,
+        ),
+        (
+            "assortativity",
+            lambda: pyg_g.assortativity(),
+            lambda: nx.degree_assortativity_coefficient(nx_g),
+            1e-6,
+        ),
+    ):
+        rows.append(
+            diff_and_bench(
+                cfg,
+                mname,
+                pfn,
+                None,
+                lambda r: [float(r)],
+                None,
+                meps,
+                nx_run=nfn if nx_g is not None else None,
+                nx_canon=lambda r: [float(r)],
+            )
+        )
+
+    if dense_ok and connected:
+        for mname, pfn, nfn, meps in (
+            ("diameter", lambda: pyg_g.diameter(), lambda: nx.diameter(nx_g), 0.0),
+            ("radius", lambda: pyg_g.radius(), lambda: nx.radius(nx_g), 0.0),
+            (
+                "average_path_length",
+                lambda: pyg_g.average_path_length(),
+                lambda: nx.average_shortest_path_length(nx_g),
+                1e-6,
+            ),
+        ):
+            rows.append(
+                diff_and_bench(
+                    cfg,
+                    mname,
+                    pfn,
+                    None,
+                    lambda r: [float(r)],
+                    None,
+                    meps,
+                    nx_run=nfn if nx_dense_ok else None,
+                    nx_canon=lambda r: [float(r)],
+                )
+            )
+    else:
+        for mname in ("diameter", "radius", "average_path_length"):
+            rows.append(skipped_row(mname))
+
+    # --- Community detection (heuristic: compare partition modularity) ----------
+    have_nx_community = nx_g is not None and hasattr(nx, "community")
+
+    def mod_canon(r: object) -> list[float]:
+        return [modularity(data, to_communities(r))]
+
+    louvain_nx = (
+        (lambda: nx.community.louvain_communities(nx_g, seed=0))
+        if have_nx_community and hasattr(nx.community, "louvain_communities")
+        else None
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "louvain",
+            lambda: pygraphina.community.louvain(pyg_g, 0),
+            None,
+            mod_canon,
+            None,
+            0.05,
+            nx_run=louvain_nx,
+            nx_canon=mod_canon,
+        )
+    )
+
+    lpa_nx = (
+        (lambda: list(nx.community.label_propagation_communities(nx_g)))
+        if have_nx_community and hasattr(nx.community, "label_propagation_communities")
+        else None
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "label_propagation",
+            lambda: pygraphina.community.label_propagation(pyg_g, 100),
+            None,
+            mod_canon,
+            None,
+            0.1,
+            nx_run=lpa_nx,
+            nx_canon=mod_canon,
+        )
+    )
+
+    # Girvan-Newman is O(V * E^2); it runs only on very small graphs. Both sides are
+    # advanced to a four-community split and compared by modularity.
+    if gn_ok:
+        def gn_nx() -> object:
+            comm_iter = nx.community.girvan_newman(nx_g)
+            best = next(comm_iter)
+            for part in comm_iter:
+                best = part
+                if len(part) >= 4:
+                    break
+            return [set(c) for c in best]
+
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "girvan_newman",
+                lambda: pygraphina.community.girvan_newman(pyg_g, 4),
+                None,
+                mod_canon,
+                None,
+                0.15,
+                nx_run=gn_nx if have_nx_community else None,
+                nx_canon=mod_canon,
+            )
+        )
+    else:
+        rows.append(skipped_row("girvan_newman"))
+
+    # Spectral clustering has no networkx-core equivalent, so it is timed on its
+    # own. Its unnormalized-Laplacian eigendecomposition is O(V^3), so it is gated.
+    if dense_ok:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "spectral_clustering",
+                lambda: pygraphina.community.spectral_clustering(pyg_g, 4, 0),
+                None,
+                lambda r: [0.0],
+                None,
+                0.0,
+            )
+        )
+    else:
+        rows.append(skipped_row("spectral_clustering"))
+
+    # --- Approximation (heuristic: validate the solution or a scalar objective) --
+    have_nx_approx = nx_ok and hasattr(nx, "approximation")
+
+    def when_nx_approx(fn: Callable[[], object]) -> Callable[[], object] | None:
+        return fn if have_nx_approx else None
+
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "min_weighted_vertex_cover",
+            lambda: pygraphina.approximation.min_weighted_vertex_cover(pyg_g),
+            None,
+            lambda r: [1.0 if is_vertex_cover(data, r) else 0.0],
+            None,
+            0.0,
+            nx_run=when_nx_approx(lambda: nx.approximation.min_weighted_vertex_cover(nx_g)),
+            nx_canon=lambda r: [1.0 if is_vertex_cover(data, r) else 0.0],
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "maximum_independent_set",
+            lambda: pygraphina.approximation.maximum_independent_set(pyg_g),
+            None,
+            lambda r: [1.0 if is_independent_set(adj, r) else 0.0],
+            None,
+            0.0,
+            nx_run=when_nx_approx(lambda: nx.approximation.maximum_independent_set(nx_g)),
+            nx_canon=lambda r: [1.0 if is_independent_set(adj, r) else 0.0],
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "max_clique",
+            lambda: pygraphina.approximation.max_clique(pyg_g),
+            None,
+            lambda r: [1.0 if is_clique(adj, r) else 0.0],
+            None,
+            0.0,
+            nx_run=when_nx_approx(lambda: nx.approximation.max_clique(nx_g)),
+            nx_canon=lambda r: [1.0 if is_clique(adj, r) else 0.0],
+        )
+    )
+
+    def clique_removal_pyg(r: object) -> list[float]:
+        return [1.0 if all(is_clique(adj, c) for c in r) else 0.0]
+
+    def clique_removal_nx(r: object) -> list[float]:
+        _indep, cliques = r
+        return [1.0 if all(is_clique(adj, c) for c in cliques) else 0.0]
+
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "clique_removal",
+            lambda: pygraphina.approximation.clique_removal(pyg_g),
+            None,
+            clique_removal_pyg,
+            None,
+            0.0,
+            nx_run=when_nx_approx(lambda: nx.approximation.clique_removal(nx_g)),
+            nx_canon=clique_removal_nx,
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "large_clique_size",
+            lambda: pygraphina.approximation.large_clique_size(pyg_g),
+            None,
+            lambda r: [float(r)],
+            None,
+            0.34,
+            nx_run=when_nx_approx(lambda: nx.approximation.large_clique_size(nx_g)),
+            nx_canon=lambda r: [float(r)],
+        )
+    )
+
+    def ramsey_valid(r: object) -> list[float]:
+        clique, indep = r
+        return [1.0 if (is_clique(adj, clique) and is_independent_set(adj, indep)) else 0.0]
+
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "ramsey_r2",
+            lambda: pygraphina.approximation.ramsey_r2(pyg_g),
+            None,
+            ramsey_valid,
+            None,
+            0.0,
+            nx_run=when_nx_approx(lambda: nx.approximation.ramsey_R2(nx_g)),
+            nx_canon=ramsey_valid,
+        )
+    )
+
+    if target is not None:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "local_node_connectivity",
+                lambda: pygraphina.approximation.local_node_connectivity(pyg_g, hub, target),
+                None,
+                lambda r: [float(r)],
+                None,
+                0.0,
+                nx_run=when_nx_approx(
+                    lambda: nx.approximation.local_node_connectivity(nx_g, hub, target)
+                ),
+                nx_canon=lambda r: [float(r)],
+            )
+        )
+    else:
+        rows.append(skipped_row("local_node_connectivity"))
+
+    # Treewidth heuristics: compare the reported width within a loose quality
+    # tolerance. O(V^2) or more, so the networkx side is gated by the dense ceiling.
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "treewidth_min_degree",
+            lambda: pygraphina.approximation.treewidth_min_degree(pyg_g),
+            None,
+            lambda r: [float(r[0])],
+            None,
+            0.34,
+            nx_run=(lambda: nx.approximation.treewidth_min_degree(nx_g))
+            if (have_nx_approx and nx_dense_ok)
+            else None,
+            nx_canon=lambda r: [float(r[0])],
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "treewidth_min_fill_in",
+            lambda: pygraphina.approximation.treewidth_min_fill_in(pyg_g),
+            None,
+            lambda r: [float(r[0])],
+            None,
+            0.34,
+            nx_run=(lambda: nx.approximation.treewidth_min_fill_in(nx_g))
+            if (have_nx_approx and nx_dense_ok)
+            else None,
+            nx_canon=lambda r: [float(r[0])],
+        )
+    )
+
+    # Approximate average clustering is a sampling estimate on both sides, so it is
+    # compared within a loose tolerance that absorbs the sampling noise.
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "average_clustering_approx",
+            lambda: pygraphina.approximation.average_clustering_approx(pyg_g),
+            None,
+            lambda r: [float(r)],
+            None,
+            0.2,
+            nx_run=when_nx_approx(lambda: nx.approximation.average_clustering(nx_g, trials=1000, seed=0)),
+            nx_canon=lambda r: [float(r)],
+        )
+    )
+
+    # Densest subgraph returns a node set; networkx's signature varies across
+    # versions, so it is timed on its own.
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "densest_subgraph",
+            lambda: pygraphina.approximation.densest_subgraph(pyg_g),
+            None,
+            lambda r: [0.0],
+            None,
+            0.0,
+        )
+    )
+
+    # --- Parallel algorithms ----------------------------------------------------
+    # pygraphina runs these across threads; comparing them to single-threaded
+    # networkx shows the end-to-end speedup a Python user sees. Results are
+    # canonicalized the same way as their sequential twins.
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "pagerank (parallel)",
+            lambda: pygraphina.parallel.pagerank_parallel(pyg_g),
+            None,
+            lambda r: canon_map(r, n),
+            None,
+            1e-4,
+            nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85)) if nx_g is not None else None,
+            nx_canon=lambda r: canon_map(r, n),
+        )
+    )
+
+    def ccp_canon(r: object) -> list[float]:
+        groups: dict[int, list[int]] = {}
+        for node, label in dict(r).items():
+            groups.setdefault(int(label), []).append(int(node))
+        return cc_canon(list(groups.values()))
+
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "connected_components (parallel)",
+            lambda: pygraphina.parallel.connected_components_parallel(pyg_g),
+            None,
+            ccp_canon,
+            None,
+            0.0,
+            nx_run=(lambda: list(nx.connected_components(nx_g))) if nx_g is not None else None,
+            nx_canon=cc_canon,
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "triangles (parallel)",
+            lambda: pygraphina.parallel.triangles_parallel(pyg_g),
+            None,
+            lambda r: canon_map(r, n),
+            None,
+            0.0,
+            nx_run=(lambda: nx.triangles(nx_g)) if nx_g is not None else None,
+            nx_canon=lambda r: canon_map(r, n),
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "clustering (parallel)",
+            lambda: pygraphina.parallel.clustering_coefficients_parallel(pyg_g),
+            None,
+            lambda r: canon_map(r, n),
+            None,
+            1e-9,
+            nx_run=(lambda: nx.clustering(nx_g)) if nx_g is not None else None,
+            nx_canon=lambda r: canon_map(r, n),
+        )
+    )
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "degrees (parallel)",
+            lambda: pygraphina.parallel.degrees_parallel(pyg_g),
+            None,
+            lambda r: canon_map(r, n),
+            None,
+            0.0,
+            nx_run=(lambda: dict(nx_g.degree())) if nx_g is not None else None,
+            nx_canon=lambda r: canon_map(r, n),
+        )
+    )
 
     print_table(rows)
     return rows
