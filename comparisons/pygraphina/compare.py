@@ -111,6 +111,7 @@ class Config:
     max_networkx_dense_nodes: int
     max_fill_nodes: int
     max_clique_nodes: int
+    csv: str | None
 
     @staticmethod
     def from_env() -> "Config":
@@ -180,6 +181,7 @@ class Config:
             max_networkx_dense_nodes,
             max_fill_nodes,
             max_clique_nodes,
+            os.environ.get("PYGRAPHINA_COMPARE_CSV") or None,
         )
 
 
@@ -1482,6 +1484,35 @@ def print_table(rows: list[Row]) -> None:
     )
 
 
+def write_csv(path: str, runs: list[tuple[str, int, int, list[Row]]]) -> None:
+    """Write the collected timings as a long-format CSV, one line per algorithm and
+    library, with empty timing fields for a row that was not timed (skipped,
+    mismatched, or errored). Each run is a (dataset label, nodes, edges, rows)
+    tuple; the sweep passes one run per size.
+    """
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("dataset,nodes,edges,algorithm,library,median_s,ci_lo_s,ci_hi_s,status\n")
+        for label, nodes, edges, rows in runs:
+            for r in rows:
+                libraries = (
+                    ("pygraphina", r.pyg),
+                    ("rustworkx", r.rwx),
+                    ("networkx", r.nx),
+                )
+                for library, stat in libraries:
+                    if stat is None:
+                        f.write(f"{label},{nodes},{edges},{r.name},{library},,,,{r.status}\n")
+                    else:
+                        f.write(
+                            f"{label},{nodes},{edges},{r.name},{library},"
+                            f"{stat.median:.9f},{stat.ci_lo:.9f},{stat.ci_hi:.9f},{r.status}\n"
+                        )
+    print(f"results written to {path}")
+
+
 def main() -> None:
     cfg = Config.from_env()
     print(
@@ -1497,13 +1528,18 @@ def main() -> None:
             f"dataset={cfg.dataset} nodes={data.nodes} edges={len(data.edges)} "
             f"(superlinear algorithms skipped above {cfg.max_dense_nodes} nodes)"
         )
-        run_at(cfg, data, source, cfg.max_dense_nodes)
+        rows = run_at(cfg, data, source, cfg.max_dense_nodes)
+        if cfg.csv:
+            label = os.path.splitext(os.path.basename(cfg.dataset))[0]
+            write_csv(cfg.csv, [(label, data.nodes, len(data.edges), rows)])
         return
 
     if not cfg.sweep:
         data = generate(cfg.nodes, cfg.edges, cfg.skew)
         source = f"nodes={cfg.nodes} edges={cfg.edges} skew={cfg.skew}"
-        run_at(cfg, data, source, sys.maxsize)
+        rows = run_at(cfg, data, source, sys.maxsize)
+        if cfg.csv:
+            write_csv(cfg.csv, [(f"synthetic-{cfg.skew}", cfg.nodes, cfg.edges, rows)])
         return
 
     sizes = [
@@ -1516,6 +1552,14 @@ def main() -> None:
         for n, e in sizes
     ]
     print_sweep(sizes, all_rows)
+    if cfg.csv:
+        write_csv(
+            cfg.csv,
+            [
+                (f"synthetic-{cfg.skew}", n, e, rows)
+                for (n, e), rows in zip(sizes, all_rows)
+            ],
+        )
 
 
 def print_sweep(sizes: list[tuple[int, int]], all_rows: list[list[Row]]) -> None:

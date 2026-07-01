@@ -45,6 +45,9 @@ The runs can be configured with these environment variables:
   synthetic runs are never gated
 - `PYGRAPHINA_COMPARE_MAX_NETWORKX_NODES`: node-count ceiling above which all NetworkX algorithms are skipped (default: 5000) to prevent long runs or hangs
 - `PYGRAPHINA_COMPARE_MAX_NETWORKX_DENSE_NODES`: node-count ceiling above which NetworkX superlinear algorithms (betweenness, closeness, eigenvector) are skipped (default: 1500)
+- `PYGRAPHINA_COMPARE_CSV`: path of a CSV file the per-algorithm timings are written to, one line per algorithm and library; the
+  `make bench-pygraphina` and `make bench-pygraphina-datasets` targets set it so results land in `comparisons/results/`, and `make bench-plots`
+  renders charts from them
 
 The defaults are smaller than the [Rust harness](../graphina)'s 2000 nodes because the slowest algorithms here (eigenvector's dense eigendecomposition
 and the per-node closeness) run through the Python binding and scale steeply. A default run takes a few minutes, dominated by those two; raise

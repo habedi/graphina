@@ -42,6 +42,8 @@ The runs can be configured with these environment variables:
   skew, sweep) are ignored
 - `RUSTWORKX_COMPARE_MAX_DENSE_NODES`: in dataset mode, the node-count ceiling above which the superlinear algorithms are skipped (default: 4000);
   synthetic runs are never gated
+- `RUSTWORKX_COMPARE_CSV`: path of a CSV file the per-algorithm timings are written to, one line per algorithm and library; the `make bench-graphina`
+  and `make bench-graphina-datasets` targets set it so results land in `comparisons/results/`, and `make bench-plots` renders charts from them
 
 ### Data
 

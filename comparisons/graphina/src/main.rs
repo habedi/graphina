@@ -32,7 +32,6 @@ use std::convert::Infallible;
 use std::panic::AssertUnwindSafe;
 use std::time::{Duration, Instant};
 
-
 use graphina::core::types::{Graph, NodeId, NodeMap};
 
 use rustworkx_core::centrality::{
@@ -96,6 +95,8 @@ struct Config {
     /// betweenness, closeness, dense eigendecomposition) are skipped. Applied only in
     /// dataset mode; synthetic runs are never gated, so their behavior is unchanged.
     max_dense_nodes: u64,
+    /// When set, a CSV file the per-algorithm timings are written to.
+    csv: Option<String>,
 }
 
 impl Config {
@@ -145,6 +146,9 @@ impl Config {
             budget: Duration::from_secs(var("RUSTWORKX_COMPARE_BUDGET_SECS", 30)),
             dataset,
             max_dense_nodes: var("RUSTWORKX_COMPARE_MAX_DENSE_NODES", 4_000),
+            csv: std::env::var("RUSTWORKX_COMPARE_CSV")
+                .ok()
+                .filter(|s| !s.is_empty()),
         }
     }
 }
@@ -489,6 +493,17 @@ enum Diff {
     /// One side panicked (for example an iterative method that fails to converge on
     /// a real dataset); reported rather than aborting the whole comparison.
     Errored,
+}
+
+impl Diff {
+    fn as_str(self) -> &'static str {
+        match self {
+            Diff::Match => "ok",
+            Diff::Mismatch => "mismatch",
+            Diff::Skipped => "skipped",
+            Diff::Errored => "error",
+        }
+    }
 }
 
 /// Runs `f`, catching a panic and returning `None` instead of unwinding through the
@@ -1094,6 +1109,46 @@ fn opt_vec(v: &[Option<f64>], n: usize) -> Vec<f64> {
     out
 }
 
+/// Writes the collected timings as a long-format CSV, one line per algorithm and
+/// library, with empty timing fields for a row that was not timed (skipped,
+/// mismatched, or errored). Each run is a `(dataset label, nodes, edges, rows)`
+/// tuple; the sweep passes one run per size.
+fn write_csv(path: &str, runs: &[(String, u64, u64, &[Row])]) {
+    let mut out =
+        String::from("dataset,nodes,edges,algorithm,library,median_s,ci_lo_s,ci_hi_s,status\n");
+    for (label, nodes, edges, rows) in runs {
+        for row in rows.iter() {
+            let status = row.diff.as_str();
+            for (library, stat) in [
+                ("graphina", &row.graphina),
+                ("rustworkx-core", &row.rustworkx),
+            ] {
+                match stat {
+                    Some(b) => out.push_str(&format!(
+                        "{label},{nodes},{edges},{},{library},{:.9},{:.9},{:.9},{status}\n",
+                        row.name,
+                        b.median.as_secs_f64(),
+                        b.ci_lo.as_secs_f64(),
+                        b.ci_hi.as_secs_f64(),
+                    )),
+                    None => out.push_str(&format!(
+                        "{label},{nodes},{edges},{},{library},,,,{status}\n",
+                        row.name
+                    )),
+                }
+            }
+        }
+    }
+    if let Some(dir) = std::path::Path::new(path).parent() {
+        if !dir.as_os_str().is_empty() {
+            std::fs::create_dir_all(dir)
+                .unwrap_or_else(|e| panic!("failed to create {}: {e}", dir.display()));
+        }
+    }
+    std::fs::write(path, out).unwrap_or_else(|e| panic!("failed to write {path}: {e}"));
+    println!("results written to {path}");
+}
+
 fn print_table(cfg: &Config, rows: &[Row]) {
     println!(
         "{:<22} {:>16} {:>16} {:>14}  diff",
@@ -1166,7 +1221,18 @@ fn main() {
             data.edges.len(),
             cfg.max_dense_nodes
         );
-        run_at(&cfg, &data, &source, cfg.max_dense_nodes);
+        let rows = run_at(&cfg, &data, &source, cfg.max_dense_nodes);
+        if let Some(csv) = &cfg.csv {
+            let label = std::path::Path::new(path)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("dataset")
+                .to_string();
+            write_csv(
+                csv,
+                &[(label, data.nodes, data.edges.len() as u64, &rows[..])],
+            );
+        }
         return;
     }
 
@@ -1178,7 +1244,11 @@ fn main() {
             cfg.edges,
             cfg.skew.as_str()
         );
-        run_at(&cfg, &data, &source, u64::MAX);
+        let rows = run_at(&cfg, &data, &source, u64::MAX);
+        if let Some(csv) = &cfg.csv {
+            let label = format!("synthetic-{}", cfg.skew.as_str());
+            write_csv(csv, &[(label, cfg.nodes, cfg.edges, &rows[..])]);
+        }
         return;
     }
 
@@ -1234,5 +1304,21 @@ fn main() {
             }
         };
         println!("{:<22} {:>20} {:>20}", name, cell(0, 1), cell(1, 2));
+    }
+
+    if let Some(csv) = &cfg.csv {
+        let runs: Vec<(String, u64, u64, &[Row])> = sizes
+            .iter()
+            .zip(&all)
+            .map(|(&(n, m), rows)| {
+                (
+                    format!("synthetic-{}", cfg.skew.as_str()),
+                    n,
+                    m,
+                    rows.as_slice(),
+                )
+            })
+            .collect();
+        write_csv(csv, &runs);
     }
 }
