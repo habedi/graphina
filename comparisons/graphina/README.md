@@ -14,13 +14,13 @@ than the binding or interpreter overhead.
 make bench-graphina
 
 # Or directly (from this directory, so the local toolchain pin applies):
-cd benchmarks/graphina && cargo run --release
+cd comparisons/graphina && cargo run --release
 
 # Against the real-world datasets (run `make testdata` first to download them):
 make bench-graphina-datasets
 
 # Or one dataset directly:
-cd benchmarks/graphina && RUSTWORKX_COMPARE_DATASET=../../tests/testdata/graphina-graphs/wikipedia_chameleon.txt cargo run --release
+cd comparisons/graphina && RUSTWORKX_COMPARE_DATASET=../../tests/testdata/graphina-graphs/wikipedia_chameleon.txt cargo run --release
 ```
 
 The harness is a detached crate: it is excluded from the graphina workspace and pulls rustworkx-core (and its dependency tree) only when built here,
@@ -42,6 +42,8 @@ The runs can be configured with these environment variables:
   skew, sweep) are ignored
 - `RUSTWORKX_COMPARE_MAX_DENSE_NODES`: in dataset mode, the node-count ceiling above which the superlinear algorithms are skipped (default: 4000);
   synthetic runs are never gated
+- `RUSTWORKX_COMPARE_CSV`: path of a CSV file the per-algorithm timings are written to, one line per algorithm and library; the `make bench-graphina`
+  and `make bench-graphina-datasets` targets set it so results land in `comparisons/results/`, and `make bench-plots` renders charts from them
 
 ### Data
 

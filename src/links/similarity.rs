@@ -5,6 +5,10 @@
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use std::collections::HashSet;
 
+/// Neighbor set with `rustc_hash`'s fast hasher; `NodeId` keys do not need
+/// SipHash's DoS resistance, and the default hasher dominated the per-pair cost.
+type NodeSet = HashSet<NodeId, rustc_hash::FxBuildHasher>;
+
 /// Helper: If no ebunch is provided, generate all unordered pairs of nodes.
 fn default_ebunch<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<(NodeId, NodeId)>
 where
@@ -33,12 +37,13 @@ where
         Some(p) => p.to_vec(),
         None => default_ebunch(graph),
     };
-    let mut results = Vec::new();
+    let mut results = Vec::with_capacity(pairs.len());
     for (u, v) in pairs {
-        let set_u: HashSet<_> = graph.neighbors(u).collect();
-        let set_v: HashSet<_> = graph.neighbors(v).collect();
+        let set_u: NodeSet = graph.neighbors(u).collect();
+        let set_v: NodeSet = graph.neighbors(v).collect();
         let intersection = set_u.intersection(&set_v).count();
-        let union = set_u.union(&set_v).count();
+        // |A ∪ B| = |A| + |B| - |A ∩ B|, so the union size needs no second pass.
+        let union = set_u.len() + set_v.len() - intersection;
         let score = if union > 0 {
             intersection as f64 / union as f64
         } else {
@@ -62,13 +67,13 @@ where
         Some(p) => p.to_vec(),
         None => default_ebunch(graph),
     };
-    let mut results = Vec::new();
+    let mut results = Vec::with_capacity(pairs.len());
     for (u, v) in pairs {
-        let set_u: HashSet<_> = graph.neighbors(u).collect();
-        let set_v: HashSet<_> = graph.neighbors(v).collect();
-        let common: Vec<_> = set_u.intersection(&set_v).cloned().collect();
-        let score: f64 = common
-            .iter()
+        let set_u: NodeSet = graph.neighbors(u).collect();
+        let set_v: NodeSet = graph.neighbors(v).collect();
+        // Sum over the common neighbors directly, without collecting them first.
+        let score: f64 = set_u
+            .intersection(&set_v)
             .filter_map(|w| {
                 let deg = graph.neighbors(*w).count();
                 if deg > 1 {
@@ -89,14 +94,14 @@ pub fn common_neighbors<A, W, Ty>(graph: &BaseGraph<A, W, Ty>, u: NodeId, v: Nod
 where
     Ty: GraphConstructor<A, W>,
 {
-    let set_u: HashSet<_> = graph.neighbors(u).collect();
-    let set_v: HashSet<_> = graph.neighbors(v).collect();
+    let set_u: NodeSet = graph.neighbors(u).collect();
+    let set_v: NodeSet = graph.neighbors(v).collect();
     set_u.intersection(&set_v).count()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{common_neighbors, jaccard_coefficient};
+    use super::{adamic_adar_index, common_neighbors, jaccard_coefficient};
     use crate::core::types::Graph;
 
     #[test]
@@ -113,6 +118,40 @@ mod tests {
         let results = jaccard_coefficient(&graph, Some(&[(n1, n2)]));
         let score = results[0].1;
         assert!((0.0..=1.0).contains(&score));
+    }
+
+    #[test]
+    fn test_jaccard_coefficient_exact() {
+        // N(n1) = {n2, n3}, N(n2) = {n1, n3}: intersection {n3} (1), union
+        // {n1, n2, n3} (3), so the coefficient is exactly 1/3.
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n1, n3, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+        let results = jaccard_coefficient(&graph, Some(&[(n1, n2)]));
+        assert!((results[0].1 - 1.0 / 3.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_adamic_adar_exact() {
+        // The only common neighbor of n1 and n2 is n3, whose degree is 3
+        // (n1, n2, n4), so the Adamic-Adar index is exactly 1 / ln(3).
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n1, n3, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+        let results = adamic_adar_index(&graph, Some(&[(n1, n2)]));
+        assert!((results[0].1 - 1.0 / 3.0_f64.ln()).abs() < 1e-12);
     }
 
     #[test]

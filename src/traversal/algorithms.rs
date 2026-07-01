@@ -23,6 +23,7 @@ if no valid path exists.
 
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap, NodeSet};
+use petgraph::visit::NodeIndexable;
 use std::collections::VecDeque;
 
 /// Performs a breadth-first search (BFS) starting from `start`.
@@ -63,17 +64,22 @@ where
         return Vec::new();
     }
 
-    let mut visited = NodeSet::default();
+    // Index-keyed visited flags sized to the node-index upper bound, so membership
+    // is an O(1) array test with no hashing. Neighbor iteration order is unchanged,
+    // so the visitation order matches the hash-set version exactly.
+    let mut visited = vec![false; graph.as_petgraph().node_bound()];
     let mut order = Vec::new();
     let mut queue = VecDeque::new();
 
-    visited.insert(start);
+    visited[start.index()] = true;
     queue.push_back(start);
 
     while let Some(node) = queue.pop_front() {
         order.push(node);
         for neighbor in graph.neighbors(node) {
-            if visited.insert(neighbor) {
+            let ni = neighbor.index();
+            if !visited[ni] {
+                visited[ni] = true;
                 queue.push_back(neighbor);
             }
         }
@@ -119,7 +125,8 @@ where
         return Vec::new();
     }
 
-    let mut visited = NodeSet::default();
+    // Index-keyed visited flags (see `bfs`); the recursion order is unchanged.
+    let mut visited = vec![false; graph.as_petgraph().node_bound()];
     let mut order = Vec::new();
     dfs_util(graph, start, &mut visited, &mut order);
     order
@@ -136,17 +143,18 @@ where
 fn dfs_util<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     node: NodeId,
-    visited: &mut NodeSet,
+    visited: &mut [bool],
     order: &mut Vec<NodeId>,
 ) where
     Ty: GraphConstructor<A, W>,
 {
-    if !visited.insert(node) {
+    if visited[node.index()] {
         return;
     }
+    visited[node.index()] = true;
     order.push(node);
     for neighbor in graph.neighbors(node) {
-        if !visited.contains(&neighbor) {
+        if !visited[neighbor.index()] {
             dfs_util(graph, neighbor, visited, order);
         }
     }
@@ -573,6 +581,48 @@ mod tests {
         assert!(visited.contains(&n1));
         assert!(visited.contains(&n2));
         assert!(visited.contains(&n3));
+    }
+    #[test]
+    fn test_bfs_excludes_unreachable_component() {
+        // Two disconnected components: {n1, n2, n3} and {n4, n5}.
+        let mut graph = Graph::<i32, ()>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        graph.add_edge(n1, n2, ());
+        graph.add_edge(n2, n3, ());
+        graph.add_edge(n4, n5, ());
+        let order = bfs(&graph, n1);
+        assert_eq!(order.len(), 3);
+        assert!(order.contains(&n1) && order.contains(&n2) && order.contains(&n3));
+        assert!(!order.contains(&n4) && !order.contains(&n5));
+        // BFS visits the start first.
+        assert_eq!(order[0], n1);
+    }
+    #[test]
+    fn test_dfs_excludes_unreachable_component() {
+        let mut graph = Graph::<i32, ()>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, ());
+        graph.add_edge(n2, n3, ());
+        // n4 isolated.
+        let order = dfs(&graph, n1);
+        assert_eq!(order.len(), 3);
+        assert!(!order.contains(&n4));
+        assert_eq!(order[0], n1);
+    }
+    #[test]
+    fn test_bfs_missing_start_is_empty() {
+        let mut graph = Graph::<i32, ()>::new();
+        let n1 = graph.add_node(1);
+        graph.remove_node(n1);
+        assert!(bfs(&graph, n1).is_empty());
+        assert!(dfs(&graph, n1).is_empty());
     }
     #[test]
     fn test_bidis() {

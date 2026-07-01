@@ -6,7 +6,7 @@ use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use rand::prelude::*;
 use rand::{SeedableRng, rngs::StdRng};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 /// Private helper: Create a seeded RNG from an optional seed.
 fn create_rng(seed: Option<u64>) -> StdRng {
@@ -58,123 +58,208 @@ where
         return Ok(graph.nodes().map(|(nid, _)| vec![nid]).collect());
     }
 
-    // BUGFIX: Map NodeId to contiguous indices to handle deleted nodes
+    // Map NodeId to contiguous indices so removed nodes and sparse ids are handled.
     let node_list: Vec<NodeId> = graph.nodes().map(|(nid, _)| nid).collect();
-    let node_to_idx: HashMap<NodeId, usize> = node_list
+    let node_to_idx: FxHashMap<NodeId, usize> = node_list
         .iter()
         .enumerate()
         .map(|(idx, &nid)| (nid, idx))
         .collect();
 
-    let mut community: Vec<usize> = (0..n).collect();
+    let two_m = 2.0 * m;
 
-    // Compute node degrees using the mapping
-    let mut degrees = vec![0.0; n];
+    // Initial working graph: weighted inter-node adjacency (both directions) plus each
+    // node's weighted degree. A self-loop adds twice to the degree and is not stored as
+    // a neighbor.
+    let mut deg = vec![0.0f64; n];
+    let mut adj: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
     for (u, v, &w) in graph.edges() {
         let ui = node_to_idx[&u];
         let vi = node_to_idx[&v];
-        degrees[ui] += w;
-        degrees[vi] += w;
+        if ui == vi {
+            deg[ui] += 2.0 * w;
+            continue;
+        }
+        deg[ui] += w;
+        deg[vi] += w;
+        adj[ui].push((vi, w));
+        adj[vi].push((ui, w));
     }
 
-    // Precompute neighbors: for each node, store (neighbor_index, weight)
-    let mut neighbors: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
-    for (u, v, &w) in graph.edges() {
-        let ui = node_to_idx[&u];
-        let vi = node_to_idx[&v];
-        neighbors[ui].push((vi, w));
-        neighbors[vi].push((ui, w));
-    }
-
-    // Cache: community degree sums; indexed by community id (which starts as node index)
-    let mut community_degree = degrees.clone();
-
+    // belongs[o] is the current super-node that original node o has been folded into.
+    let mut belongs: Vec<usize> = (0..n).collect();
     let mut rng = create_rng(seed);
-    let mut improvement = true;
-    let max_iterations = 100;
-    let mut iteration_count = 0;
 
-    while improvement && iteration_count < max_iterations {
-        improvement = false;
-        iteration_count += 1;
-
-        let mut nodes: Vec<usize> = (0..n).collect();
-        nodes.shuffle(&mut rng);
-
-        for &i in &nodes {
-            let current_comm = community[i];
-            let k_i = degrees[i];
-
-            // Skip isolated nodes
-            if k_i == 0.0 {
-                continue;
-            }
-
-            let mut comm_weights: HashMap<usize, f64> = HashMap::new();
-            for &(j, w) in &neighbors[i] {
-                let comm_j = community[j];
-                *comm_weights.entry(comm_j).or_insert(0.0) += w;
-            }
-
-            // Use cached totals
-            let total_current = community_degree[current_comm];
-            let k_i_in = comm_weights.get(&current_comm).copied().unwrap_or(0.0);
-
-            let delta_remove = k_i_in - (total_current * k_i) / (2.0 * m);
-
-            let mut best_delta = 0.0;
-            let mut best_comm = current_comm;
-
-            for (&comm, &w_in) in &comm_weights {
-                if comm == current_comm {
-                    continue;
-                }
-                let total_comm = community_degree[comm];
-                let delta = w_in - (total_comm * k_i) / (2.0 * m);
-
-                if delta > best_delta {
-                    best_delta = delta;
-                    best_comm = comm;
-                }
-            }
-
-            // Only move if there's a significant improvement
-            if best_delta > delta_remove + 1e-10 {
-                // update cache before moving
-                community_degree[current_comm] -= k_i;
-                community_degree[best_comm] += k_i;
-                community[i] = best_comm;
-                improvement = true;
-            }
+    // Multi-level loop: local moving, then aggregate the resulting communities into a
+    // smaller graph, and repeat until a pass merges nothing. Aggregation is what lets a
+    // community grow beyond a single node's neighborhood; local moving on its own leaves
+    // many small communities and low modularity.
+    let max_levels = 100;
+    for _ in 0..max_levels {
+        let (comm, k) = one_level(&adj, &deg, two_m, &mut rng);
+        for b in belongs.iter_mut() {
+            *b = comm[*b];
+        }
+        if k == adj.len() {
+            break; // no community merged, so the partition has converged
+        }
+        let (new_adj, new_deg) = aggregate_graph(&adj, &deg, &comm, k);
+        adj = new_adj;
+        deg = new_deg;
+        if adj.len() == 1 {
+            break;
         }
     }
 
-    // Phase 2: Aggregate nodes by community
-    let mut comm_map: HashMap<usize, usize> = HashMap::new();
-    for &c in &community {
-        if !comm_map.contains_key(&c) {
-            let new_index = comm_map.len();
-            comm_map.insert(c, new_index);
-        }
+    // Group original nodes by their final super-node.
+    let final_k = belongs.iter().copied().max().map_or(0, |c| c + 1);
+    let mut new_comms: Vec<Vec<NodeId>> = vec![Vec::new(); final_k];
+    for (o, &b) in belongs.iter().enumerate() {
+        new_comms[b].push(node_list[o]);
     }
-
-    let mut new_comms: Vec<Vec<NodeId>> = vec![Vec::new(); comm_map.len()];
-    for (i, &comm) in community.iter().enumerate() {
-        let new_comm = comm_map[&comm];
-        let node = node_list[i];
-        new_comms[new_comm].push(node);
-    }
-
-    // Remove empty communities
     new_comms.retain(|comm| !comm.is_empty());
 
     Ok(new_comms)
 }
 
+/// One level of Louvain local moving on a weighted graph given as inter-node adjacency
+/// (both directions) and node degrees. Returns each node's community label, compacted to
+/// `0..k`, together with `k`. Neighbor communities are visited in sorted order and ties
+/// are broken toward the lower community id, so the result is deterministic for a given
+/// RNG sequence.
+fn one_level(
+    adj: &[Vec<(usize, f64)>],
+    deg: &[f64],
+    two_m: f64,
+    rng: &mut StdRng,
+) -> (Vec<usize>, usize) {
+    let n = adj.len();
+    let mut community: Vec<usize> = (0..n).collect();
+    let mut tot: Vec<f64> = deg.to_vec();
+
+    let mut improvement = true;
+    let mut iter = 0;
+    while improvement && iter < 100 {
+        improvement = false;
+        iter += 1;
+        let mut order: Vec<usize> = (0..n).collect();
+        order.shuffle(rng);
+        for &i in &order {
+            let ki = deg[i];
+            if ki == 0.0 {
+                continue;
+            }
+            let ci = community[i];
+
+            // Weight from i to each neighboring community.
+            let mut cw: FxHashMap<usize, f64> = FxHashMap::default();
+            for &(j, w) in &adj[i] {
+                *cw.entry(community[j]).or_insert(0.0) += w;
+            }
+            let mut candidates: Vec<(usize, f64)> = cw.into_iter().collect();
+            candidates.sort_unstable_by_key(|&(c, _)| c);
+
+            // Remove i from its community, then pick the community with the best gain.
+            // Staying put is the baseline, so a move needs a strictly larger gain.
+            tot[ci] -= ki;
+            let w_to_ci = candidates
+                .iter()
+                .find(|&&(c, _)| c == ci)
+                .map_or(0.0, |&(_, w)| w);
+            let mut best_c = ci;
+            let mut best_gain = w_to_ci - tot[ci] * ki / two_m;
+            for &(c, w) in &candidates {
+                if c == ci {
+                    continue;
+                }
+                let gain = w - tot[c] * ki / two_m;
+                if gain > best_gain + 1e-12 {
+                    best_gain = gain;
+                    best_c = c;
+                }
+            }
+
+            tot[best_c] += ki;
+            community[i] = best_c;
+            if best_c != ci {
+                improvement = true;
+            }
+        }
+    }
+
+    // Compact labels to 0..k.
+    let mut relabel: FxHashMap<usize, usize> = FxHashMap::default();
+    let mut out = vec![0usize; n];
+    for (i, slot) in out.iter_mut().enumerate() {
+        let next = relabel.len();
+        *slot = *relabel.entry(community[i]).or_insert(next);
+    }
+    let k = relabel.len();
+    (out, k)
+}
+
+/// Aggregate a weighted graph by community: each community becomes one node whose degree
+/// is the sum of its members' degrees, with inter-community edge weights summed. Edges
+/// internal to a community are dropped, since they are already reflected in the summed
+/// degree; this keeps the total degree, and hence 2m, invariant across levels.
+fn aggregate_graph(
+    adj: &[Vec<(usize, f64)>],
+    deg: &[f64],
+    comm: &[usize],
+    k: usize,
+) -> (Vec<Vec<(usize, f64)>>, Vec<f64>) {
+    let mut new_deg = vec![0.0f64; k];
+    for (i, &d) in deg.iter().enumerate() {
+        new_deg[comm[i]] += d;
+    }
+
+    let mut maps: Vec<FxHashMap<usize, f64>> = vec![FxHashMap::default(); k];
+    for (i, nbrs) in adj.iter().enumerate() {
+        let ci = comm[i];
+        for &(j, w) in nbrs {
+            let cj = comm[j];
+            if ci != cj {
+                *maps[ci].entry(cj).or_insert(0.0) += w;
+            }
+        }
+    }
+    let new_adj: Vec<Vec<(usize, f64)>> =
+        maps.into_iter().map(|m| m.into_iter().collect()).collect();
+    (new_adj, new_deg)
+}
+
 #[cfg(test)]
 mod tests {
     use super::louvain;
-    use crate::core::types::Graph;
+    use crate::core::types::{Graph, NodeId};
+    use std::collections::HashMap;
+
+    /// Newman modularity of a partition, used to check partition quality.
+    fn modularity(graph: &Graph<i32, f64>, comms: &[Vec<NodeId>]) -> f64 {
+        let m: f64 = graph.edges().map(|(_, _, &w)| w).sum();
+        if m == 0.0 {
+            return 0.0;
+        }
+        let mut comm_of: HashMap<NodeId, usize> = HashMap::new();
+        for (ci, c) in comms.iter().enumerate() {
+            for &v in c {
+                comm_of.insert(v, ci);
+            }
+        }
+        let mut intra = vec![0.0; comms.len()];
+        let mut dsum = vec![0.0; comms.len()];
+        for (u, v, &w) in graph.edges() {
+            dsum[comm_of[&u]] += w;
+            dsum[comm_of[&v]] += w;
+            if comm_of[&u] == comm_of[&v] {
+                intra[comm_of[&u]] += w;
+            }
+        }
+        let two_m = 2.0 * m;
+        (0..comms.len())
+            .map(|c| intra[c] / m - (dsum[c] / two_m).powi(2))
+            .sum()
+    }
 
     #[test]
     fn test_louvain_simple() {
@@ -251,6 +336,50 @@ mod tests {
         // Total nodes in communities should match graph node count
         let total_nodes: usize = communities.iter().map(|c| c.len()).sum();
         assert_eq!(total_nodes, graph.node_count());
+    }
+
+    #[test]
+    fn test_louvain_multilevel_path_merges_segments() {
+        // A path has no dense clusters, so a single pass of local moving only pairs up
+        // adjacent nodes and leaves many tiny communities with low modularity.
+        // Recovering the long contiguous segments (high modularity) requires the
+        // aggregation step, so this pins the multi-level behavior against a regression
+        // to a single-level implementation.
+        let mut g = Graph::<i32, f64>::new();
+        let nodes: Vec<_> = (0..50).map(|i| g.add_node(i)).collect();
+        for i in 0..49 {
+            g.add_edge(nodes[i], nodes[i + 1], 1.0);
+        }
+        let comms = louvain(&g, Some(0)).unwrap();
+        let q = modularity(&g, &comms);
+        assert!(
+            q >= 0.6,
+            "expected modularity >= 0.6 from multi-level Louvain, got {q}"
+        );
+        let total: usize = comms.iter().map(|c| c.len()).sum();
+        assert_eq!(total, 50);
+    }
+
+    #[test]
+    fn test_louvain_recovers_clique_chain() {
+        // Four size-8 cliques joined by single bridge edges: the modularity-optimal
+        // partition is exactly the four cliques.
+        let mut g = Graph::<i32, f64>::new();
+        let nodes: Vec<_> = (0..32).map(|i| g.add_node(i)).collect();
+        for cl in 0..4 {
+            let base = cl * 8;
+            for i in 0..8 {
+                for j in (i + 1)..8 {
+                    g.add_edge(nodes[base + i], nodes[base + j], 1.0);
+                }
+            }
+        }
+        for cl in 0..3 {
+            g.add_edge(nodes[cl * 8 + 7], nodes[(cl + 1) * 8], 1.0);
+        }
+        let comms = louvain(&g, Some(0)).unwrap();
+        assert_eq!(comms.len(), 4);
+        assert!(modularity(&g, &comms) > 0.7);
     }
 
     #[test]

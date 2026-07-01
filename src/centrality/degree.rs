@@ -7,7 +7,39 @@
 
 use crate::core::error::Result;
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
-use std::collections::HashMap;
+
+/// Builds a degree map by asking the graph for each node's degree directly, so the
+/// work is a single pass over the nodes writing into the Fx-hashed result rather
+/// than an intermediate `std` `HashMap` populated by scanning every edge.
+///
+/// petgraph counts an undirected self-loop as one incident edge, but the degree
+/// convention here counts it as two, so the undirected paths add a correction of
+/// one per self-loop. Directed degrees already count a self-loop as two (one in and
+/// one out), so no correction is needed there.
+fn degree_map<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+    node_degree: impl Fn(NodeId) -> usize,
+    correct_undirected_self_loops: bool,
+) -> NodeMap<f64>
+where
+    Ty: GraphConstructor<A, W>,
+{
+    let mut centrality: NodeMap<f64> =
+        NodeMap::with_capacity_and_hasher(graph.node_count(), Default::default());
+    for node in graph.node_ids() {
+        centrality.insert(node, node_degree(node) as f64);
+    }
+    if correct_undirected_self_loops && !graph.is_directed() {
+        for (u, v, _w) in graph.edges() {
+            if u == v {
+                if let Some(d) = centrality.get_mut(&u) {
+                    *d += 1.0;
+                }
+            }
+        }
+    }
+    centrality
+}
 
 /// Degree centrality: number of incident edges (for directed, in + out).
 ///
@@ -19,38 +51,28 @@ pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMa
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::default();
-    if graph.is_directed() {
-        let mut in_counts: HashMap<NodeId, usize> = HashMap::new();
-        let mut out_counts: HashMap<NodeId, usize> = HashMap::new();
-        for (node, _) in graph.nodes() {
-            in_counts.insert(node, 0);
-            out_counts.insert(node, 0);
-        }
-        for (u, v, _w) in graph.edges() {
-            *out_counts.entry(u).or_insert(0) += 1;
-            *in_counts.entry(v).or_insert(0) += 1;
-        }
-        for (node, _) in graph.nodes() {
-            let d = in_counts[&node] + out_counts[&node];
-            centrality.insert(node, d as f64);
-        }
-    } else {
-        let mut counts: HashMap<NodeId, usize> = HashMap::new();
-        for (node, _) in graph.nodes() {
-            counts.insert(node, 0);
-        }
-        for (u, v, _w) in graph.edges() {
-            if u == v {
-                *counts.entry(u).or_insert(0) += 2;
-            } else {
-                *counts.entry(u).or_insert(0) += 1;
-                *counts.entry(v).or_insert(0) += 1;
-            }
-        }
-        for (node, _) in graph.nodes() {
-            centrality.insert(node, counts[&node] as f64);
-        }
+    // Single pass over the edges: each edge adds one to each of its two
+    // endpoints. This yields in-degree plus out-degree for directed graphs and
+    // the incident-edge count for undirected graphs, and it counts a self-loop as
+    // two (its endpoints coincide) in both cases, matching the per-node
+    // convention with no separate self-loop correction pass. Accumulating into a
+    // dense, index-keyed buffer keeps the inner loop hash-free; the `NodeMap` is
+    // materialized once at the end for existing nodes only (isolated nodes keep
+    // their zero).
+    let bound = graph
+        .node_ids()
+        .map(|n| n.index())
+        .max()
+        .map_or(0, |m| m + 1);
+    let mut degree = vec![0.0f64; bound];
+    for (u, v, _w) in graph.edges() {
+        degree[u.index()] += 1.0;
+        degree[v.index()] += 1.0;
+    }
+    let mut centrality: NodeMap<f64> =
+        NodeMap::with_capacity_and_hasher(graph.node_count(), Default::default());
+    for node in graph.node_ids() {
+        centrality.insert(node, degree[node.index()]);
     }
     Ok(centrality)
 }
@@ -64,37 +86,13 @@ pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<Nod
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::default();
-    if graph.is_directed() {
-        let mut in_counts: HashMap<NodeId, usize> = HashMap::new();
-        for (node, _) in graph.nodes() {
-            in_counts.insert(node, 0);
-        }
-        for (_u, v, _w) in graph.edges() {
-            *in_counts.entry(v).or_insert(0) += 1;
-        }
-        for (node, _) in graph.nodes() {
-            centrality.insert(node, in_counts[&node] as f64);
-        }
-    } else {
-        // Undirected: treat as total degree with self-loop as 2
-        let mut counts: HashMap<NodeId, usize> = HashMap::new();
-        for (node, _) in graph.nodes() {
-            counts.insert(node, 0);
-        }
-        for (u, v, _w) in graph.edges() {
-            if u == v {
-                *counts.entry(u).or_insert(0) += 2;
-            } else {
-                *counts.entry(u).or_insert(0) += 1;
-                *counts.entry(v).or_insert(0) += 1;
-            }
-        }
-        for (node, _) in graph.nodes() {
-            centrality.insert(node, counts[&node] as f64);
-        }
-    }
-    Ok(centrality)
+    // On undirected graphs in-degree equals total degree, so the self-loop
+    // correction applies; on directed graphs incoming self-loops already count once.
+    Ok(degree_map(
+        graph,
+        |node| graph.in_degree(node).unwrap_or(0),
+        true,
+    ))
 }
 
 /// Out-degree centrality: number of outgoing edges (raw count).
@@ -106,37 +104,13 @@ pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<No
 where
     Ty: GraphConstructor<A, W>,
 {
-    let mut centrality = NodeMap::default();
-    if graph.is_directed() {
-        let mut out_counts: HashMap<NodeId, usize> = HashMap::new();
-        for (node, _) in graph.nodes() {
-            out_counts.insert(node, 0);
-        }
-        for (u, _v, _w) in graph.edges() {
-            *out_counts.entry(u).or_insert(0) += 1;
-        }
-        for (node, _) in graph.nodes() {
-            centrality.insert(node, out_counts[&node] as f64);
-        }
-    } else {
-        // Undirected: treat as total degree with self-loop as 2
-        let mut counts: HashMap<NodeId, usize> = HashMap::new();
-        for (node, _) in graph.nodes() {
-            counts.insert(node, 0);
-        }
-        for (u, v, _w) in graph.edges() {
-            if u == v {
-                *counts.entry(u).or_insert(0) += 2;
-            } else {
-                *counts.entry(u).or_insert(0) += 1;
-                *counts.entry(v).or_insert(0) += 1;
-            }
-        }
-        for (node, _) in graph.nodes() {
-            centrality.insert(node, counts[&node] as f64);
-        }
-    }
-    Ok(centrality)
+    // On undirected graphs out-degree equals total degree, so the self-loop
+    // correction applies; on directed graphs outgoing self-loops already count once.
+    Ok(degree_map(
+        graph,
+        |node| graph.out_degree(node).unwrap_or(0),
+        true,
+    ))
 }
 
 #[cfg(test)]
@@ -167,6 +141,56 @@ mod tests {
         assert_eq!(d[&n], 2.0);
         assert_eq!(indeg[&n], 1.0);
         assert_eq!(outdeg[&n], 1.0);
+    }
+    #[test]
+    fn test_isolated_and_mixed_degrees_undirected() {
+        // A path 0-1-2 plus an isolated node 3: degrees are 1, 2, 1, and 0.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let iso = g.add_node(3);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        let d = degree_centrality(&g).unwrap();
+        assert_eq!(d[&a], 1.0);
+        assert_eq!(d[&b], 2.0);
+        assert_eq!(d[&c], 1.0);
+        assert_eq!(d[&iso], 0.0);
+        assert_eq!(d.len(), 4);
+    }
+    #[test]
+    fn test_isolated_and_mixed_degrees_directed() {
+        // 0->1, 1->2, plus isolated node 3.
+        let mut g = Digraph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let iso = g.add_node(3);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        let deg = degree_centrality(&g).unwrap();
+        let indeg = in_degree_centrality(&g).unwrap();
+        let outdeg = out_degree_centrality(&g).unwrap();
+        assert_eq!(deg[&b], 2.0); // one in, one out
+        assert_eq!(indeg[&a], 0.0);
+        assert_eq!(outdeg[&a], 1.0);
+        assert_eq!(indeg[&c], 1.0);
+        assert_eq!(outdeg[&c], 0.0);
+        assert_eq!(deg[&iso], 0.0);
+    }
+    #[test]
+    fn test_parallel_edges_undirected() {
+        // Two edges between the same pair count as two toward each endpoint's
+        // degree, so degree centrality is 2.0 for both nodes.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(a, b, 1.0);
+        let d = degree_centrality(&g).unwrap();
+        assert_eq!(d[&a], 2.0);
+        assert_eq!(d[&b], 2.0);
     }
     #[test]
     fn test_self_loop_undirected() {

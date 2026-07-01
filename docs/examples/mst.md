@@ -23,11 +23,11 @@ fn main() {
     graph.add_edge(n2, n3, OrderedFloat(2.0));
     graph.add_edge(n1, n3, OrderedFloat(10.0));
 
-    // Returns (Vec<(u, v, w)>, total_weight)
+    // Returns (Vec<MstEdge<W>>, total_weight)
     if let Ok((edges, total)) = prim_mst(&graph) {
         println!("MST Total Weight: {}", total);
-        for (u, v, w) in edges {
-            println!("Edge: {:?} - {:?} (wt: {})", u, v, w);
+        for edge in edges {
+            println!("Edge: {:?} - {:?} (wt: {})", edge.u, edge.v, edge.weight);
         }
     }
 }

@@ -30,7 +30,7 @@ let g = barabasi_albert_graph::<Undirected>(1000, 3, 42).unwrap();
 
 ### Watts-Strogatz (WS)
 
-Generates a small-world network by rewiring a regular lattice ring lattice.
+Generates a small-world network by rewiring a regular ring lattice.
 
 ```rust
 use graphina::core::generators::watts_strogatz_graph;

@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use std::collections::HashMap;
+use pyo3::types::PyDict;
 
 use crate::{PyDiGraph, PyGraph};
 use graphina::centrality::eigenvector::eigenvector_centrality;
@@ -28,22 +28,14 @@ use graphina::centrality::eigenvector::eigenvector_centrality;
 ///     If graph is not PyGraph or PyDiGraph.
 #[pyfunction]
 pub fn eigenvector(
+    py: Python<'_>,
     graph: &Bound<'_, PyAny>,
     max_iter: usize,
     tolerance: f64,
-) -> PyResult<HashMap<usize, f64>> {
+) -> PyResult<Py<PyDict>> {
     if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
         match eigenvector_centrality(&py_graph.graph, max_iter, tolerance) {
-            Ok(map) => {
-                let mut out = HashMap::new();
-                for (nid, val) in map.into_iter() {
-                    let pyid = py_graph.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                        crate::GraphinaError::new_err("Internal node id missing mapping")
-                    })?;
-                    out.insert(*pyid, val);
-                }
-                Ok(out)
-            }
+            Ok(map) => crate::nodemap_to_pydict(py, map, &py_graph.mapper),
             Err(e) => Err(crate::GraphinaError::new_err(format!(
                 "eigenvector failed: {}",
                 e
@@ -51,16 +43,7 @@ pub fn eigenvector(
         }
     } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
         match eigenvector_centrality(&py_graph.graph, max_iter, tolerance) {
-            Ok(map) => {
-                let mut out = HashMap::new();
-                for (nid, val) in map.into_iter() {
-                    let pyid = py_graph.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                        crate::GraphinaError::new_err("Internal node id missing mapping")
-                    })?;
-                    out.insert(*pyid, val);
-                }
-                Ok(out)
-            }
+            Ok(map) => crate::nodemap_to_pydict(py, map, &py_graph.mapper),
             Err(e) => Err(crate::GraphinaError::new_err(format!(
                 "eigenvector failed: {}",
                 e

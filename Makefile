@@ -42,10 +42,14 @@ bench: ## Run benchmarks
 	@echo "Running benchmarks..."
 	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench --features all
 
+# Directory the comparison harnesses write their CSV results and charts to.
+COMPARE_RESULTS_DIR := comparisons/results
+
 .PHONY: bench-graphina
 bench-graphina: ## Run the graphina vs rustworkx-core comparison harness
 	@echo "Running graphina vs rustworkx-core comparison..."
-	@cd benchmarks/graphina && cargo run --release
+	@mkdir -p $(COMPARE_RESULTS_DIR)
+	@cd comparisons/graphina && RUSTWORKX_COMPARE_CSV=$(CURDIR)/$(COMPARE_RESULTS_DIR)/graphina-synthetic.csv cargo run --release
 
 # Undirected real-world datasets used by the dataset comparison targets. The large
 # directed graphs (stanford_web_graph, dblp_citation_network) are left out by default;
@@ -55,23 +59,31 @@ COMPARE_DATASETS := wikipedia_chameleon wikipedia_squirrel wikipedia_crocodile f
 .PHONY: bench-graphina-datasets
 bench-graphina-datasets: ## Run the graphina vs rustworkx-core comparison on the real-world datasets (run `make testdata` first)
 	@echo "Running graphina vs rustworkx-core comparison on real-world datasets..."
+	@mkdir -p $(COMPARE_RESULTS_DIR)
 	@for ds in $(COMPARE_DATASETS); do \
 		echo ""; echo "########## dataset: $$ds ##########"; \
-		(cd benchmarks/graphina && RUSTWORKX_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt cargo run --release) || exit 1; \
+		(cd comparisons/graphina && RUSTWORKX_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt RUSTWORKX_COMPARE_CSV=$(CURDIR)/$(COMPARE_RESULTS_DIR)/graphina-$$ds.csv cargo run --release) || exit 1; \
 	done
 
 .PHONY: bench-pygraphina
-bench-pygraphina: develop-py ## Run the PyGraphina vs rustworkx comparison harness
+bench-pygraphina: develop-py-release ## Run the PyGraphina vs rustworkx comparison harness
 	@echo "Running PyGraphina vs rustworkx comparison..."
-	@uv run --with rustworkx python benchmarks/pygraphina/compare.py
+	@mkdir -p $(COMPARE_RESULTS_DIR)
+	@PYGRAPHINA_COMPARE_CSV=$(CURDIR)/$(COMPARE_RESULTS_DIR)/pygraphina-synthetic.csv uv run --with rustworkx --with networkx python comparisons/pygraphina/compare.py
 
 .PHONY: bench-pygraphina-datasets
-bench-pygraphina-datasets: develop-py ## Run the PyGraphina vs rustworkx comparison on the real-world datasets (run `make testdata` first)
+bench-pygraphina-datasets: develop-py-release ## Run the PyGraphina vs rustworkx comparison on the real-world datasets (run `make testdata` first)
 	@echo "Running PyGraphina vs rustworkx comparison on real-world datasets..."
+	@mkdir -p $(COMPARE_RESULTS_DIR)
 	@for ds in $(COMPARE_DATASETS); do \
 		echo ""; echo "########## dataset: $$ds ##########"; \
-		PYGRAPHINA_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt uv run --with rustworkx python benchmarks/pygraphina/compare.py || exit 1; \
+		PYGRAPHINA_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt PYGRAPHINA_COMPARE_CSV=$(CURDIR)/$(COMPARE_RESULTS_DIR)/pygraphina-$$ds.csv uv run --with rustworkx --with networkx python comparisons/pygraphina/compare.py || exit 1; \
 	done
+
+.PHONY: bench-plots
+bench-plots: ## Render charts from the comparison CSV files in COMPARE_RESULTS_DIR
+	@echo "Rendering comparison charts..."
+	@uv run --with matplotlib python comparisons/visualize.py $(COMPARE_RESULTS_DIR)
 
 .PHONY: build
 build: format ## Build the binary for the current platform
@@ -246,6 +258,12 @@ develop-py: ## Build and install PyGraphina in the current Python environment
 	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set.
 	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
 		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop)
+
+.PHONY: develop-py-release
+develop-py-release: ## Build and install PyGraphina in release mode in the current Python environment
+	@echo "Building and installing PyGraphina in release mode..."
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
+		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --release)
 
 .PHONY: docs-build
 docs-build: ## Generate Graphina MkDocs documentation

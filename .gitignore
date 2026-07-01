@@ -114,3 +114,5 @@ site/
 .codex
 .agents/
 target/
+*.csv
+comparisons/results/

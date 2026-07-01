@@ -25,6 +25,47 @@ mod parallel;
 mod subgraphs;
 mod traversal;
 
+/// Builds a Python `dict` of `{public_node_id: f64}` in a single pass from an
+/// iterator of `(key, value)` pairs, resolving each key to its public `usize` node
+/// ID with `resolve`.
+///
+/// Building the `PyDict` directly avoids materializing an intermediate
+/// `std::HashMap` (whose default SipHash hashing is pure overhead here) and the
+/// second pass PyO3 would then make to convert that map into a dict. The
+/// Python-visible return type is unchanged: still a plain `dict`. `resolve`
+/// returns a `PyResult` so callers can surface their own error for a missing
+/// mapping, including any intermediate remap step.
+pub(crate) fn f64_entries_to_pydict<K>(
+    py: Python<'_>,
+    entries: impl IntoIterator<Item = (K, f64)>,
+    resolve: impl Fn(K) -> PyResult<usize>,
+) -> PyResult<Py<PyDict>> {
+    let dict = PyDict::new(py);
+    for (key, val) in entries {
+        dict.set_item(resolve(key)?, val)?;
+    }
+    Ok(dict.unbind())
+}
+
+/// Builds a Python `dict` mapping public node IDs to `f64` values directly from a
+/// core `NodeMap`, remapping each internal `NodeId` through the graph's `IdMapper`.
+///
+/// Thin wrapper over [`f64_entries_to_pydict`] for the common case where the core
+/// result is keyed by the graph's own `NodeId`s.
+pub(crate) fn nodemap_to_pydict(
+    py: Python<'_>,
+    map: graphina::core::types::NodeMap<f64>,
+    mapper: &core::id_map::IdMapper,
+) -> PyResult<Py<PyDict>> {
+    f64_entries_to_pydict(py, map, |nid| {
+        mapper
+            .internal_to_py
+            .get(&nid)
+            .copied()
+            .ok_or_else(|| GraphinaError::new_err("Internal node id missing mapping"))
+    })
+}
+
 /// The Python module declaration.
 #[pymodule]
 fn pygraphina(m: &Bound<'_, PyModule>) -> PyResult<()> {

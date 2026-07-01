@@ -35,7 +35,7 @@ For example, algorithms that require nonnegative edge weights will return a `Res
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId, NodeMap};
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, VecDeque};
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
 
@@ -399,40 +399,43 @@ where
     Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
-    // Dense, index-keyed distance buffer (see `dijkstra`).
-    let mut dist: Vec<Option<W>> = vec![None; index_bound(graph)];
-    dist[source.index()] = Some(W::from(0u8));
+    let bound = index_bound(graph);
+    // Queue-based Bellman-Ford (SPFA): only nodes whose distance just improved are
+    // re-examined, rather than relaxing every edge for a fixed V-1 rounds. On the
+    // common shallow graph this behaves like BFS (O(V + E)) instead of O(V * E),
+    // while still handling negative weights.
+    //
+    // Dense, index-keyed buffers (see `dijkstra`). `path_len[v]` is the number of
+    // edges on the current shortest path to `v`; a simple path has at most n - 1
+    // edges, so reaching n edges proves a negative cycle reachable from the source.
+    let mut dist: Vec<Option<W>> = vec![None; bound];
+    let mut in_queue = vec![false; bound];
+    let mut path_len = vec![0usize; bound];
+    let mut queue = VecDeque::new();
 
-    for _ in 0..n.saturating_sub(1) {
-        let mut updated = false;
-        // Relax via the per-node incident-edge iterator, which follows undirected
-        // edges in both directions (iterating `graph.edges()` would relax each
-        // stored edge in one direction only, leaving most nodes unreachable on an
-        // undirected graph). This matches dijkstra.
-        for u in graph.node_ids() {
-            if let Some(du) = dist[u.index()] {
-                for (v, w) in outgoing_edges(graph, u) {
-                    let candidate = du + w;
-                    let vi = v.index();
-                    if dist[vi].is_none() || Some(candidate) < dist[vi] {
-                        dist[vi] = Some(candidate);
-                        updated = true;
-                    }
+    let si = source.index();
+    dist[si] = Some(W::from(0u8));
+    in_queue[si] = true;
+    queue.push_back(source);
+
+    while let Some(u) = queue.pop_front() {
+        let ui = u.index();
+        in_queue[ui] = false;
+        let Some(du) = dist[ui] else {
+            continue;
+        };
+        for (v, w) in outgoing_edges(graph, u) {
+            let candidate = du + w;
+            let vi = v.index();
+            if dist[vi].is_none() || Some(candidate) < dist[vi] {
+                dist[vi] = Some(candidate);
+                path_len[vi] = path_len[ui] + 1;
+                if path_len[vi] >= n {
+                    return None;
                 }
-            }
-        }
-        if !updated {
-            break;
-        }
-    }
-    // Check for negative cycles.
-    for u in graph.node_ids() {
-        if let Some(du) = dist[u.index()] {
-            for (v, w) in outgoing_edges(graph, u) {
-                if let Some(dv) = dist[v.index()] {
-                    if du + w < dv {
-                        return None;
-                    }
+                if !in_queue[vi] {
+                    in_queue[vi] = true;
+                    queue.push_back(v);
                 }
             }
         }
@@ -694,6 +697,109 @@ where
     Some(outer)
 }
 
+/// ============================
+/// Unweighted All-Pairs Shortest Paths (BFS)
+/// ============================
+///
+/// Computes an unweighted all-pairs distance matrix by breadth-first search from
+/// every node, treating each edge as a unit step and ignoring weights. This is the
+/// hop-count analogue of [`johnson`] and [`floyd_warshall`]: when the weighted
+/// algorithms would run Dijkstra or Bellman-Ford per source, this runs a plain
+/// queue-based BFS, which is faster whenever hop counts (rather than weighted
+/// distances) are wanted.
+///
+/// Returns the node ordering and a dense, row-major distance matrix. `nodes[i]` is
+/// the source for row `i`, and `matrix[i][j]` is the hop distance from `nodes[i]`
+/// to `nodes[j]`, with `None` for an unreachable target and `Some(0)` on the
+/// diagonal. A dense matrix (rather than a nested `NodeMap`) avoids materializing
+/// V^2 hash entries, which otherwise dominates the cost, and a `u32` cell halves
+/// the write bandwidth over the O(V^2) output (hop counts never exceed the node
+/// count). Reachability follows the same adjacency as the weighted path algorithms:
+/// outgoing edges on a directed graph, both directions on an undirected graph.
+///
+/// # Complexity
+///
+/// - **Time:** O(V * (V + E))
+/// - **Space:** O(V^2)
+pub fn all_pairs_shortest_path_length<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> (Vec<NodeId>, Vec<Vec<Option<u32>>>)
+where
+    W: Copy,
+    Ty: GraphConstructor<A, W>,
+{
+    // Snapshot the adjacency into a compact CSR in position space [0, n) once. Every
+    // per-source BFS then walks contiguous `u32` slices instead of the `StableGraph`
+    // adjacency (a linked list kept for NodeId stability), so the O(V^2) hot loop is
+    // cache-resident and hash-free. The one-time build is O(V + E).
+    let (nodes, offsets, adj) = position_csr(graph);
+    let n = nodes.len();
+
+    let mut matrix: Vec<Vec<Option<u32>>> = Vec::with_capacity(n);
+    let mut queue: VecDeque<u32> = VecDeque::new();
+    for source in 0..n {
+        // The freshly allocated row doubles as the distance buffer and the visited
+        // set (`None` means undiscovered), so BFS fills the output directly in a
+        // single O(V) pass, rather than clearing a separate buffer and projecting it.
+        let mut row: Vec<Option<u32>> = vec![None; n];
+        row[source] = Some(0);
+        queue.clear();
+        queue.push_back(source as u32);
+        while let Some(current) = queue.pop_front() {
+            let du = row[current as usize].unwrap_or(0);
+            for &next in &adj[offsets[current as usize]..offsets[current as usize + 1]] {
+                if row[next as usize].is_none() {
+                    row[next as usize] = Some(du + 1);
+                    queue.push_back(next);
+                }
+            }
+        }
+        matrix.push(row);
+    }
+    (nodes, matrix)
+}
+
+/// Builds a compact CSR adjacency in position space `[0, n)` from a graph whose
+/// stable node indices may be sparse. Returns the node ordering (position `i` is
+/// `nodes[i]`), row offsets of length `n + 1`, and the concatenated neighbor
+/// positions. Iterating a node's neighbors is then a contiguous slice, which the
+/// all-pairs searches rely on to stay hash-free and cache-resident.
+fn position_csr<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<NodeId>, Vec<usize>, Vec<u32>)
+where
+    W: Copy,
+    Ty: GraphConstructor<A, W>,
+{
+    let bound = index_bound(graph);
+    let nodes: Vec<NodeId> = graph.node_ids().collect();
+    let n = nodes.len();
+
+    // Map a stable node index onto its compact position.
+    let mut pos = vec![0u32; bound];
+    for (i, node) in nodes.iter().enumerate() {
+        pos[node.index()] = i as u32;
+    }
+
+    // Degrees, then a prefix sum, give the row offsets.
+    let mut offsets = vec![0usize; n + 1];
+    for (i, &node) in nodes.iter().enumerate() {
+        offsets[i + 1] = graph.neighbors(node).count();
+    }
+    for i in 0..n {
+        offsets[i + 1] += offsets[i];
+    }
+
+    // Scatter neighbor positions into the flat array using a moving write cursor.
+    let mut adj = vec![0u32; offsets[n]];
+    let mut cursor = offsets.clone();
+    for (i, &node) in nodes.iter().enumerate() {
+        for v in graph.neighbors(node) {
+            adj[cursor[i]] = pos[v.index()];
+            cursor[i] += 1;
+        }
+    }
+    (nodes, offsets, adj)
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -826,6 +932,56 @@ mod tests {
         assert_eq!(all_pairs[&a][&c], Some(1));
         assert_eq!(all_pairs[&d][&a], None);
     }
+
+    #[test]
+    fn test_all_pairs_bfs_directed_hop_counts() {
+        use crate::core::paths::all_pairs_shortest_path_length;
+        use crate::core::types::Digraph;
+
+        let mut g: Digraph<i32, f64> = Digraph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 5.0);
+        g.add_edge(b, c, 5.0);
+
+        // Hop counts ignore the edge weights entirely.
+        let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+        let pos = |node| nodes.iter().position(|&x| x == node).unwrap();
+        assert_eq!(matrix[pos(a)][pos(a)], Some(0));
+        assert_eq!(matrix[pos(a)][pos(b)], Some(1));
+        assert_eq!(matrix[pos(a)][pos(c)], Some(2));
+        assert_eq!(
+            matrix[pos(c)][pos(a)],
+            None,
+            "directed: no path back from c"
+        );
+    }
+
+    #[test]
+    fn test_all_pairs_bfs_undirected_and_disconnected() {
+        use crate::core::paths::all_pairs_shortest_path_length;
+        use crate::core::types::Graph;
+
+        let mut g: Graph<i32, f64> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let iso = g.add_node(3);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+
+        let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+        let pos = |node| nodes.iter().position(|&x| x == node).unwrap();
+        // Undirected: reachable in both directions, including against edge storage.
+        assert_eq!(matrix[pos(c)][pos(a)], Some(2));
+        assert_eq!(matrix[pos(a)][pos(c)], Some(2));
+        // The isolated node is unreachable from everyone but itself.
+        assert_eq!(matrix[pos(iso)][pos(iso)], Some(0));
+        assert_eq!(matrix[pos(a)][pos(iso)], None);
+        assert_eq!(matrix[pos(iso)][pos(a)], None);
+    }
+
     use super::*;
     use crate::core::types::{Digraph, NodeId};
     use ordered_float::OrderedFloat;
@@ -859,6 +1015,19 @@ mod tests {
         let n3 = nodes[&3];
         let dist = bellman_ford(&graph, n0).expect("No negative cycle");
         assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
+    }
+    #[test]
+    fn test_bellman_ford_detects_negative_cycle() {
+        // Directed cycle 0 -> 1 -> 2 -> 0 with total weight 1 - 2 - 2 = -3, a
+        // negative cycle reachable from the source, so no shortest path exists.
+        let mut graph: Digraph<i32, OrderedFloat<f64>> = Digraph::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        graph.add_edge(n0, n1, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, OrderedFloat(-2.0));
+        graph.add_edge(n2, n0, OrderedFloat(-2.0));
+        assert!(bellman_ford(&graph, n0).is_none());
     }
     #[test]
     fn test_bellman_ford_undirected() {

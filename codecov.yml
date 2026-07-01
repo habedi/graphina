@@ -1,5 +1,5 @@
 ignore:
-  - "benchmarks/*"
+  - "comparisons/*"
   - "benches/*"
   - "tests/*"
   - "pygraphina/tests/*"

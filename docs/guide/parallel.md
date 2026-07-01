@@ -9,7 +9,7 @@ The parallel feature must be enabled in your `Cargo.toml` (if not enabled by def
 
 ```toml
 [dependencies]
-graphina = { version = "0.4.0-alpha.1", features = ["parallel"] }
+graphina = { version = "0.4.0-alpha.2", features = ["parallel"] }
 ```
 
 ## Available Algorithms

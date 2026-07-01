@@ -12,7 +12,7 @@ Explores the graph layer by layer, visiting all neighbors of a node before movin
 use graphina::traversal::bfs;
 
 let order = bfs(&graph, start_node);
-println!("Visist order: {:?}", order);
+println!("Visit order: {:?}", order);
 ```
 
 ### Depth-First Search (DFS)

@@ -23,10 +23,11 @@ use graphina::core::types::Graph;
 use graphina::core::io::{read_edge_list, write_edge_list};
 
 // Save
-write_edge_list(&graph, "graph.txt", " ").unwrap();
+write_edge_list("graph.txt", &graph, ' ').unwrap();
 
-// Load (Node type i32, Edge weight f64)
-let g: Graph<i32, f64> = read_edge_list("graph.txt", " ").unwrap();
+// Load (node attribute i32, edge weight f32)
+let mut loaded_graph = Graph::<i32, f32>::new();
+read_edge_list("graph.txt", &mut loaded_graph, ' ').unwrap();
 ```
 
 ### Adjacency List
@@ -34,10 +35,15 @@ let g: Graph<i32, f64> = read_edge_list("graph.txt", " ").unwrap();
 Reads/Writes an adjacency list format (Node Neighbor1 Neighbor2 ...).
 
 ```rust
+use graphina::core::types::Graph;
 use graphina::core::io::{read_adjacency_list, write_adjacency_list};
 
-write_adjacency_list(&graph, "adj.txt").unwrap();
-let g: Graph<i32, f64> = read_adjacency_list("adj.txt").unwrap();
+// Save
+write_adjacency_list("adj.txt", &graph, ' ').unwrap();
+
+// Load
+let mut loaded_graph = Graph::<i32, f32>::new();
+read_adjacency_list("adj.txt", &mut loaded_graph, ' ').unwrap();
 ```
 
 ## Serialization

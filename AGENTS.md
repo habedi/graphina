@@ -65,7 +65,10 @@ Quick examples:
 - `src/settings.rs`: Runtime settings (such as the `DEBUG_GRAPHINA` toggle).
 - `pygraphina/`: PyGraphina, the Python bindings crate built with maturin and published to PyPI as `pygraphina`. Contains its own `Cargo.toml`,
   `src/`, `tests/`, a `pygraphina/` type-stub package (`__init__.pyi` plus one `.pyi` per submodule, with `py.typed`), and docs.
-- `benches/`: Criterion benchmarks (`graph_benchmarks`, `algorithm_benchmarks`, `project_benchmarks`).
+- `benches/`: Criterion micro-benchmarks (`graph_benchmarks`, `algorithm_benchmarks`, `project_benchmarks`) that track Graphina's own performance over
+  time, run by `make bench`.
+- `comparisons/`: standalone comparison harnesses that measure Graphina against other libraries: `comparisons/graphina` (versus rustworkx-core) and
+  `comparisons/pygraphina` (versus rustworkx and NetworkX), run by `make bench-graphina` and `make bench-pygraphina`.
 - `tests/`: Workspace integration, end-to-end, regression, and property-based tests, plus `tests/testdata/` (downloaded via `make testdata`).
 - `docs/`, `mkdocs.yml`: MkDocs documentation site.
 - `Makefile`: GNU Make wrapper around `cargo`, maturin, and tooling commands.

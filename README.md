@@ -7,7 +7,7 @@
 
 ## Graphina
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&color=4caf50&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
 [![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&labelColor=282c34&logo=codecov)](https://codecov.io/gh/habedi/graphina)
 [![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=e65100&logo=rust)](https://crates.io/crates/graphina)
 [![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-66c2a5?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
@@ -75,14 +75,14 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.4.0-alpha.1"
+graphina = "0.4.0-alpha.2"
 ```
 
 Or enable all features with:
 
 ```toml
 [dependencies]
-graphina = { version = "0.4.0-alpha.1", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel"] }
+graphina = { version = "0.4.0-alpha.2", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "links", "metrics"] }
 ```
 
 > [!NOTE]
