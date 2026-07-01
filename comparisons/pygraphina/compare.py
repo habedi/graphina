@@ -109,6 +109,7 @@ class Config:
     max_dense_nodes: int
     max_networkx_nodes: int
     max_networkx_dense_nodes: int
+    max_fill_nodes: int
 
     @staticmethod
     def from_env() -> "Config":
@@ -146,6 +147,12 @@ class Config:
         # and synthetic modes to prevent long hangs.
         max_networkx_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_NODES", 5_000)
         max_networkx_dense_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_DENSE_NODES", 1_500)
+        # The minimum fill-in treewidth heuristic densifies the graph as it runs, so it
+        # is superlinear on both libraries (pygraphina near O(V^3), networkx more).
+        # It is gated by its own ceiling that applies in every mode so very large runs
+        # stay bounded; the default matches the networkx dense ceiling, since above that
+        # the networkx side of the row is skipped anyway.
+        max_fill_nodes = var("PYGRAPHINA_COMPARE_MAX_FILL_NODES", 1_500)
 
         if nodes < 1:
             sys.exit("PYGRAPHINA_COMPARE_NODES must be at least 1")
@@ -166,6 +173,7 @@ class Config:
             max_dense_nodes,
             max_networkx_nodes,
             max_networkx_dense_nodes,
+            max_fill_nodes,
         )
 
 
@@ -1281,21 +1289,24 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             nx_canon=lambda r: [float(r[0])],
         )
     )
-    rows.append(
-        diff_and_bench(
-            cfg,
-            "treewidth_min_fill_in",
-            lambda: pygraphina.approximation.treewidth_min_fill_in(pyg_g),
-            None,
-            lambda r: [float(r[0])],
-            None,
-            0.34,
-            nx_run=(lambda: nx.approximation.treewidth_min_fill_in(nx_g))
-            if (have_nx_approx and nx_dense_ok)
-            else None,
-            nx_canon=lambda r: [float(r[0])],
+    if n <= cfg.max_fill_nodes:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "treewidth_min_fill_in",
+                lambda: pygraphina.approximation.treewidth_min_fill_in(pyg_g),
+                None,
+                lambda r: [float(r[0])],
+                None,
+                0.34,
+                nx_run=(lambda: nx.approximation.treewidth_min_fill_in(nx_g))
+                if (have_nx_approx and nx_dense_ok)
+                else None,
+                nx_canon=lambda r: [float(r[0])],
+            )
         )
-    )
+    else:
+        rows.append(skipped_row("treewidth_min_fill_in"))
 
     # Approximate average clustering is a sampling estimate on both sides, so it is
     # compared within a loose tolerance that absorbs the sampling noise.
