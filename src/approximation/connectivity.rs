@@ -16,9 +16,16 @@ fn find_path<A, Ty>(
 where
     Ty: crate::core::types::GraphConstructor<A, f64>,
 {
-    let n = graph.node_count();
-    let mut prev: Vec<Option<NodeId>> = vec![None; n];
-    let mut visited = vec![false; n];
+    // Size the BFS buffers by the index bound, not `node_count`: `BaseGraph` wraps
+    // a `StableGraph`, so after a node removal a remaining node's index can exceed
+    // the count, and these buffers are indexed by `NodeId::index()`.
+    let bound = graph
+        .node_ids()
+        .map(|node| node.index())
+        .max()
+        .map_or(0, |m| m + 1);
+    let mut prev: Vec<Option<NodeId>> = vec![None; bound];
+    let mut visited = vec![false; bound];
     let mut queue = VecDeque::new();
     visited[source.index()] = true;
     queue.push_back(source);
@@ -125,6 +132,23 @@ mod tests {
 
         let conn = local_node_connectivity(&g, n1, n3);
         assert!(conn >= 1);
+    }
+
+    #[test]
+    fn test_local_node_connectivity_sparse_indices_after_removal() {
+        // Removing a node leaves stable but non-contiguous indices, so a remaining
+        // node's index can exceed `node_count()`. Sizing the BFS buffers by
+        // `node_count()` and indexing them by `NodeId::index()` panics out of
+        // range. There is one path between the surviving endpoints.
+        let mut g = Graph::new();
+        let nodes: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        g.remove_node(nodes[1]);
+        // Remaining nodes 0, 2, 3 (indices 0, 2, 3; node_count is now 3).
+        g.add_edge(nodes[0], nodes[2], 1.0);
+        g.add_edge(nodes[2], nodes[3], 1.0);
+
+        let conn = local_node_connectivity(&g, nodes[0], nodes[3]);
+        assert_eq!(conn, 1);
     }
 
     #[test]
