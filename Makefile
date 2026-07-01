@@ -61,12 +61,12 @@ bench-graphina-datasets: ## Run the graphina vs rustworkx-core comparison on the
 	done
 
 .PHONY: bench-pygraphina
-bench-pygraphina: develop-py ## Run the PyGraphina vs rustworkx comparison harness
+bench-pygraphina: develop-py-release ## Run the PyGraphina vs rustworkx comparison harness
 	@echo "Running PyGraphina vs rustworkx comparison..."
 	@uv run --with rustworkx --with networkx python benchmarks/pygraphina/compare.py
 
 .PHONY: bench-pygraphina-datasets
-bench-pygraphina-datasets: develop-py ## Run the PyGraphina vs rustworkx comparison on the real-world datasets (run `make testdata` first)
+bench-pygraphina-datasets: develop-py-release ## Run the PyGraphina vs rustworkx comparison on the real-world datasets (run `make testdata` first)
 	@echo "Running PyGraphina vs rustworkx comparison on real-world datasets..."
 	@for ds in $(COMPARE_DATASETS); do \
 		echo ""; echo "########## dataset: $$ds ##########"; \
@@ -246,6 +246,12 @@ develop-py: ## Build and install PyGraphina in the current Python environment
 	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set.
 	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
 		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop)
+
+.PHONY: develop-py-release
+develop-py-release: ## Build and install PyGraphina in release mode in the current Python environment
+	@echo "Building and installing PyGraphina in release mode..."
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
+		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --release)
 
 .PHONY: docs-build
 docs-build: ## Generate Graphina MkDocs documentation
