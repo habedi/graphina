@@ -1,17 +1,18 @@
 use crate::PyGraph;
 use graphina::links::centrality::common_neighbor_centrality as common_neighbor_centrality_core;
 use pyo3::prelude::*;
-use std::collections::HashMap;
+use pyo3::types::PyDict;
 
 use super::similarity::{map_ebunch, map_pair_map_to_py};
 
 #[pyfunction]
 #[pyo3(signature = (py_graph, alpha, ebunch=None))]
 pub fn common_neighbor_centrality(
+    py: Python<'_>,
     py_graph: &PyGraph,
     alpha: f64,
     ebunch: Option<Vec<(usize, usize)>>,
-) -> PyResult<HashMap<(usize, usize), f64>> {
+) -> PyResult<Py<PyDict>> {
     let res = match ebunch {
         Some(pairs) => {
             let mapped = map_ebunch(py_graph, &pairs)?;
@@ -19,7 +20,7 @@ pub fn common_neighbor_centrality(
         }
         None => common_neighbor_centrality_core(&py_graph.graph, None, alpha),
     };
-    map_pair_map_to_py(py_graph, res)
+    map_pair_map_to_py(py, py_graph, res)
 }
 
 pub fn register_links_centrality(m: &Bound<'_, PyModule>) -> PyResult<()> {

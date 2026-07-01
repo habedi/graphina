@@ -1,6 +1,6 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use std::collections::HashMap;
+use pyo3::types::PyDict;
 
 use crate::PyGraph;
 use graphina::core::types::NodeId;
@@ -30,11 +30,16 @@ pub(super) fn map_ebunch(
     Ok(pairs)
 }
 
+/// Builds the `{(u, v): score}` Python dict directly, remapping internal node ids
+/// to public ids. Building the `PyDict` in one pass avoids the intermediate
+/// `std::HashMap` (default SipHash) that PyO3 would then re-convert; the
+/// Python-visible return type is unchanged.
 pub(super) fn map_pair_map_to_py(
+    py: Python<'_>,
     py_graph: &PyGraph,
     pairs: Vec<((NodeId, NodeId), f64)>,
-) -> PyResult<HashMap<(usize, usize), f64>> {
-    let mut out = HashMap::with_capacity(pairs.len());
+) -> PyResult<Py<PyDict>> {
+    let dict = PyDict::new(py);
     for ((u, v), score) in pairs.into_iter() {
         let pu = *py_graph
             .mapper
@@ -46,17 +51,18 @@ pub(super) fn map_pair_map_to_py(
             .internal_to_py
             .get(&v)
             .ok_or_else(|| PyValueError::new_err("Missing node mapping for v"))?;
-        out.insert((pu, pv), score);
+        dict.set_item((pu, pv), score)?;
     }
-    Ok(out)
+    Ok(dict.unbind())
 }
 
 #[pyfunction]
 #[pyo3(signature = (py_graph, ebunch=None))]
 pub fn jaccard_coefficient(
+    py: Python<'_>,
     py_graph: &PyGraph,
     ebunch: Option<Vec<(usize, usize)>>,
-) -> PyResult<HashMap<(usize, usize), f64>> {
+) -> PyResult<Py<PyDict>> {
     let res = match ebunch {
         Some(pairs) => {
             let mapped = map_ebunch(py_graph, &pairs)?;
@@ -64,15 +70,16 @@ pub fn jaccard_coefficient(
         }
         None => jaccard_coefficient_core(&py_graph.graph, None),
     };
-    map_pair_map_to_py(py_graph, res)
+    map_pair_map_to_py(py, py_graph, res)
 }
 
 #[pyfunction]
 #[pyo3(signature = (py_graph, ebunch=None))]
 pub fn adamic_adar_index(
+    py: Python<'_>,
     py_graph: &PyGraph,
     ebunch: Option<Vec<(usize, usize)>>,
-) -> PyResult<HashMap<(usize, usize), f64>> {
+) -> PyResult<Py<PyDict>> {
     let res = match ebunch {
         Some(pairs) => {
             let mapped = map_ebunch(py_graph, &pairs)?;
@@ -80,7 +87,7 @@ pub fn adamic_adar_index(
         }
         None => adamic_adar_index_core(&py_graph.graph, None),
     };
-    map_pair_map_to_py(py_graph, res)
+    map_pair_map_to_py(py, py_graph, res)
 }
 
 #[pyfunction]

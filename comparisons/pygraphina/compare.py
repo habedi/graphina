@@ -425,12 +425,17 @@ def diff_and_bench(
 ) -> Row:
     try:
         pyg_result = pyg_run()
-        rwx_result = rwx_run()
+        rwx_result = rwx_run() if rwx_run is not None else None
         nx_result = nx_run() if nx_run is not None else None
     except Exception as exc:
         return Row(name, None, None, None, f"ERR ({type(exc).__name__})")
 
-    if not within_tolerance(pyg_canon(pyg_result), rwx_canon(rwx_result), eps):
+    # rustworkx is optional: some algorithms (for example link prediction) have no
+    # rustworkx-core equivalent, so those rows compare against networkx only.
+    if (
+        rwx_run is not None
+        and not within_tolerance(pyg_canon(pyg_result), rwx_canon(rwx_result), eps)
+    ):
         return Row(name, None, None, None, "DIFF")
 
     if (
@@ -443,7 +448,7 @@ def diff_and_bench(
 
     budget = cfg.budget_secs
     pyg = bench(cfg.warmups, cfg.reps, budget, pyg_run)
-    rwx = bench(cfg.warmups, cfg.reps, budget, rwx_run)
+    rwx = bench(cfg.warmups, cfg.reps, budget, rwx_run) if rwx_run is not None else None
     nx_stat = bench(cfg.warmups, cfg.reps, budget, nx_run) if nx_run is not None else None
     return Row(name, pyg, rwx, nx_stat, "ok")
 
@@ -669,6 +674,51 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 if nx_g is not None
                 else None,
                 nx_canon=nx_mst_weight,
+            )
+        )
+
+    # Link prediction over a fixed set of node pairs. Scores are deterministic, so
+    # the differential check is exact. rustworkx has no link-prediction equivalent,
+    # so these rows compare against networkx only. The ebunch is a deterministic
+    # spread of pairs sized to the node count; pygraphina returns a
+    # ``{(u, v): score}`` dict and networkx yields ``(u, v, score)`` triples, so
+    # both are canonicalized to scores ordered by the unordered pair key.
+    ebunch = [(i, (i * 7 + 3) % n) for i in range(n) if (i * 7 + 3) % n != i]
+
+    def link_pyg_canon(r: object) -> list[float]:
+        return [s for _, s in sorted((tuple(sorted(k)), v) for k, v in r.items())]
+
+    def link_nx_canon(r: object) -> list[float]:
+        return [s for _, s in sorted((tuple(sorted((u, v))), s) for u, v, s in r)]
+
+    link_specs = [
+        ("jaccard_coefficient", pygraphina.links.jaccard_coefficient, nx.jaccard_coefficient)
+        if nx_ok
+        else ("jaccard_coefficient", pygraphina.links.jaccard_coefficient, None),
+        ("adamic_adar_index", pygraphina.links.adamic_adar_index, nx.adamic_adar_index)
+        if nx_ok
+        else ("adamic_adar_index", pygraphina.links.adamic_adar_index, None),
+        ("resource_allocation_index", pygraphina.links.resource_allocation_index,
+         nx.resource_allocation_index)
+        if nx_ok
+        else ("resource_allocation_index", pygraphina.links.resource_allocation_index, None),
+        ("preferential_attachment", pygraphina.links.preferential_attachment,
+         nx.preferential_attachment)
+        if nx_ok
+        else ("preferential_attachment", pygraphina.links.preferential_attachment, None),
+    ]
+    for lname, pf, nf in link_specs:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                lname,
+                (lambda pf=pf: pf(pyg_g, ebunch)),
+                None,
+                link_pyg_canon,
+                None,
+                1e-6,
+                nx_run=(lambda nf=nf: list(nf(nx_g, ebunch))) if nf is not None else None,
+                nx_canon=link_nx_canon,
             )
         )
 

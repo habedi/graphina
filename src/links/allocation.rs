@@ -5,6 +5,10 @@
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use std::collections::HashSet;
 
+/// Neighbor set with `rustc_hash`'s fast hasher; `NodeId` keys do not need
+/// SipHash's DoS resistance, and the default hasher dominated the per-pair cost.
+type NodeSet = HashSet<NodeId, rustc_hash::FxBuildHasher>;
+
 /// Helper: If no ebunch is provided, generate all unordered pairs of nodes.
 fn default_ebunch<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Vec<(NodeId, NodeId)>
 where
@@ -33,13 +37,13 @@ where
         Some(p) => p.to_vec(),
         None => default_ebunch(graph),
     };
-    let mut results = Vec::new();
+    let mut results = Vec::with_capacity(pairs.len());
     for (u, v) in pairs {
-        let neighbors_u: HashSet<_> = graph.neighbors(u).collect();
-        let neighbors_v: HashSet<_> = graph.neighbors(v).collect();
-        let common: Vec<_> = neighbors_u.intersection(&neighbors_v).cloned().collect();
-        let score: f64 = common
-            .iter()
+        let neighbors_u: NodeSet = graph.neighbors(u).collect();
+        let neighbors_v: NodeSet = graph.neighbors(v).collect();
+        // Sum over the common neighbors directly, without collecting them first.
+        let score: f64 = neighbors_u
+            .intersection(&neighbors_v)
             .map(|w| {
                 let deg = graph.neighbors(*w).count();
                 if deg > 0 { 1.0 / deg as f64 } else { 0.0 }
