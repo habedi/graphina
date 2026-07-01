@@ -63,14 +63,14 @@ bench-graphina-datasets: ## Run the graphina vs rustworkx-core comparison on the
 .PHONY: bench-pygraphina
 bench-pygraphina: develop-py ## Run the PyGraphina vs rustworkx comparison harness
 	@echo "Running PyGraphina vs rustworkx comparison..."
-	@uv run --with rustworkx python benchmarks/pygraphina/compare.py
+	@uv run --with rustworkx --with networkx python benchmarks/pygraphina/compare.py
 
 .PHONY: bench-pygraphina-datasets
 bench-pygraphina-datasets: develop-py ## Run the PyGraphina vs rustworkx comparison on the real-world datasets (run `make testdata` first)
 	@echo "Running PyGraphina vs rustworkx comparison on real-world datasets..."
 	@for ds in $(COMPARE_DATASETS); do \
 		echo ""; echo "########## dataset: $$ds ##########"; \
-		PYGRAPHINA_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt uv run --with rustworkx python benchmarks/pygraphina/compare.py || exit 1; \
+		PYGRAPHINA_COMPARE_DATASET=$(CURDIR)/$(TEST_DATA_DIR)/graphina-graphs/$$ds.txt uv run --with rustworkx --with networkx python benchmarks/pygraphina/compare.py || exit 1; \
 	done
 
 .PHONY: build

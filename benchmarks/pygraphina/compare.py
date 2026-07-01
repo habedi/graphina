@@ -44,12 +44,20 @@ from typing import Callable
 
 import pygraphina
 
+missing = []
 try:
     import rustworkx
 except ImportError:
+    missing.append("rustworkx")
+try:
+    import networkx as nx
+except ImportError:
+    missing.append("networkx")
+
+if missing:
     sys.exit(
-        "rustworkx is not installed. Run this harness with:\n"
-        "    uv run --with rustworkx python benchmarks/pygraphina/compare.py\n"
+        f"{', '.join(missing)} is/are not installed. Run this harness with:\n"
+        "    uv run --with rustworkx --with networkx python benchmarks/pygraphina/compare.py\n"
         "or `make bench-pygraphina`."
     )
 
@@ -84,6 +92,8 @@ class Config:
     budget_secs: float
     dataset: str | None
     max_dense_nodes: int
+    max_networkx_nodes: int
+    max_networkx_dense_nodes: int
 
     @staticmethod
     def from_env() -> "Config":
@@ -115,6 +125,12 @@ class Config:
         # closeness, dense eigendecomposition) are skipped. Applied only in dataset
         # mode; synthetic runs use an unbounded ceiling, so their behavior is unchanged.
         max_dense_nodes = var("PYGRAPHINA_COMPARE_MAX_DENSE_NODES", 4_000)
+        # Node-count ceilings for NetworkX. Pure-Python networkx is extremely slow on
+        # larger graphs. We skip it entirely above max_networkx_nodes, and skip
+        # superlinear algorithms above max_networkx_dense_nodes for both dataset
+        # and synthetic modes to prevent long hangs.
+        max_networkx_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_NODES", 5_000)
+        max_networkx_dense_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_DENSE_NODES", 1_500)
 
         if nodes < 1:
             sys.exit("PYGRAPHINA_COMPARE_NODES must be at least 1")
@@ -124,13 +140,24 @@ class Config:
             sys.exit("PYGRAPHINA_COMPARE_REPS must be at least 1")
 
         return Config(
-            nodes, edges, reps, warmups, skew, sweep, budget, dataset, max_dense_nodes
+            nodes,
+            edges,
+            reps,
+            warmups,
+            skew,
+            sweep,
+            budget,
+            dataset,
+            max_dense_nodes,
+            max_networkx_nodes,
+            max_networkx_dense_nodes,
         )
 
 
 class Lcg:
     """Deterministic 64-bit LCG (Knuth MMIX constants), matching the Rust harness, so
-    runs are reproducible and the generated graph is stable across invocations."""
+    runs are reproducible and the generated graph is stable across invocations.
+    """
 
     def __init__(self, seed: int) -> None:
         self.state = seed & U64_MASK
@@ -146,7 +173,8 @@ class Lcg:
 class Zipf:
     """Cumulative Zipf distribution over node indices ``0..n`` with exponent
     ``ZIPF_THETA``. Skewed sampling concentrates edge endpoints on low indices,
-    producing hub nodes whose degrees follow a power law, as in real graphs."""
+    producing hub nodes whose degrees follow a power law, as in real graphs.
+    """
 
     def __init__(self, n: int) -> None:
         cdf = []
@@ -171,7 +199,8 @@ class Zipf:
 @dataclass
 class Dataset:
     """An undirected simple graph as a node count and a deduplicated edge list. Edges
-    are stored as ordered pairs ``(a, b)`` with ``a < b``."""
+    are stored as ordered pairs ``(a, b)`` with ``a < b``.
+    """
 
     nodes: int
     edges: list[tuple[int, int]]
@@ -211,7 +240,8 @@ def load_dataset(path: str) -> Dataset:
     comment, and a non-numeric line (such as a CSV header) is skipped. Node ids are
     remapped to a contiguous ``0..n`` range in first-seen order, self-loops are dropped,
     and parallel edges are deduplicated, so the result matches the contract of
-    ``generate``."""
+    ``generate``.
+    """
     remap: dict[int, int] = {}
     seen: set[tuple[int, int]] = set()
     edges: list[tuple[int, int]] = []
@@ -242,7 +272,8 @@ def load_dataset(path: str) -> Dataset:
 
 def hub_node(data: Dataset) -> int:
     """Highest-degree node, the source for the single-source traversals. Ties break
-    toward the lowest index, so the choice is deterministic."""
+    toward the lowest index, so the choice is deterministic.
+    """
     degree = [0] * data.nodes
     for a, b in data.edges:
         degree[a] += 1
@@ -273,11 +304,19 @@ def build_rustworkx(data: Dataset) -> "rustworkx.PyGraph":
 def build_rustworkx_digraph(data: Dataset) -> "rustworkx.PyDiGraph":
     """Bidirected directed graph: rustworkx PageRank takes a ``PyDiGraph`` only, so an
     undirected edge is modelled as a pair of opposing directed edges. This matches
-    pygraphina's undirected PageRank to within numerical tolerance."""
+    pygraphina's undirected PageRank to within numerical tolerance.
+    """
     g = rustworkx.PyDiGraph()
     g.add_nodes_from([0] * data.nodes)
     g.add_edges_from([(a, b, 1.0) for a, b in data.edges])
     g.add_edges_from([(b, a, 1.0) for a, b in data.edges])
+    return g
+
+
+def build_networkx(data: Dataset) -> "nx.Graph":
+    g = nx.Graph()
+    g.add_nodes_from(range(data.nodes))
+    g.add_weighted_edges_from([(a, b, 1.0) for a, b in data.edges])
     return g
 
 
@@ -287,7 +326,8 @@ def build_rustworkx_digraph(data: Dataset) -> "rustworkx.PyDiGraph":
 
 def canon_map(result: object, n: int) -> list[float]:
     """Canonicalize a node->value mapping into a dense vector indexed by node id.
-    Missing nodes default to 0.0. Values are rounded to absorb summation-order noise."""
+    Missing nodes default to 0.0. Values are rounded to absorb summation-order noise.
+    """
     vec = [0.0] * n
     items = result.items() if hasattr(result, "items") else dict(result).items()
     for k, v in items:
@@ -323,7 +363,8 @@ class BenchStat:
 
 def bootstrap_ci95(times: list[float]) -> tuple[float, float]:
     """95% confidence interval for the median by percentile bootstrap, with a
-    fixed-seed generator so the interval is reproducible for a given set of times."""
+    fixed-seed generator so the interval is reproducible for a given set of times.
+    """
     rng = random.Random(0xB007)
     n = len(times)
     medians = []
@@ -338,7 +379,8 @@ def bootstrap_ci95(times: list[float]) -> tuple[float, float]:
 
 def bench(warmups: int, reps: int, budget: float, f: Callable[[], object]) -> BenchStat:
     """Run untimed warmups, then timed repetitions, stopping early once the budget is
-    spent (at least one timed repetition always runs)."""
+    spent (at least one timed repetition always runs).
+    """
     for _ in range(warmups):
         f()
     times: list[float] = []
@@ -366,6 +408,7 @@ class Row:
     name: str
     pyg: BenchStat | None
     rwx: BenchStat | None
+    nx: BenchStat | None
     status: str
 
 
@@ -377,25 +420,37 @@ def diff_and_bench(
     pyg_canon: Callable[[object], list[float]],
     rwx_canon: Callable[[object], list[float]],
     eps: float,
+    nx_run: Callable[[], object] | None = None,
+    nx_canon: Callable[[object], list[float]] | None = None,
 ) -> Row:
     try:
         pyg_result = pyg_run()
         rwx_result = rwx_run()
-    except Exception as exc:  # noqa: BLE001 - report, do not crash the whole run
-        return Row(name, None, None, f"ERR ({type(exc).__name__})")
+        nx_result = nx_run() if nx_run is not None else None
+    except Exception as exc:
+        return Row(name, None, None, None, f"ERR ({type(exc).__name__})")
 
     if not within_tolerance(pyg_canon(pyg_result), rwx_canon(rwx_result), eps):
-        return Row(name, None, None, "DIFF")
+        return Row(name, None, None, None, "DIFF")
+
+    if (
+        nx_run is not None
+        and nx_result is not None
+        and nx_canon is not None
+        and not within_tolerance(pyg_canon(pyg_result), nx_canon(nx_result), eps)
+    ):
+        return Row(name, None, None, None, "DIFF (networkx)")
 
     budget = cfg.budget_secs
     pyg = bench(cfg.warmups, cfg.reps, budget, pyg_run)
     rwx = bench(cfg.warmups, cfg.reps, budget, rwx_run)
-    return Row(name, pyg, rwx, "ok")
+    nx_stat = bench(cfg.warmups, cfg.reps, budget, nx_run) if nx_run is not None else None
+    return Row(name, pyg, rwx, nx_stat, "ok")
 
 
 def skipped_row(name: str) -> Row:
     """A row for a superlinear algorithm skipped because the dataset is too large."""
-    return Row(name, None, None, "skipped")
+    return Row(name, None, None, None, "skipped")
 
 
 def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]:
@@ -406,6 +461,12 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     hub = hub_node(data)
     pyg_g = build_pygraphina(data)
     rwx_g = build_rustworkx(data)
+
+    # Pure-Python networkx is extremely slow. We build the networkx graph only if
+    # the node count is within max_networkx_nodes.
+    nx_ok = n <= cfg.max_networkx_nodes
+    nx_dense_ok = nx_ok and n <= cfg.max_networkx_dense_nodes
+    nx_g = build_networkx(data) if nx_ok else None
 
     print(f"\n=== {source} reps={cfg.reps} warmups={cfg.warmups} ===")
 
@@ -428,6 +489,13 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 vec[int(k)] = float(v)
         return vec
 
+    def nx_dijkstra_canon(result: object) -> list[float]:
+        vec = [-1.0] * n
+        for k, v in dict(result).items():
+            if int(k) != hub:
+                vec[int(k)] = float(v)
+        return vec
+
     rows.append(
         diff_and_bench(
             cfg,
@@ -437,6 +505,10 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             pyg_dijkstra_canon,
             rwx_dijkstra_canon,
             1e-6,
+            nx_run=(lambda: nx.single_source_dijkstra_path_length(nx_g, hub))
+            if nx_g is not None
+            else None,
+            nx_canon=nx_dijkstra_canon if nx_g is not None else None,
         )
     )
 
@@ -459,6 +531,8 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             cc_canon,
             cc_canon,
             0.0,
+            nx_run=(lambda: list(nx.connected_components(nx_g))) if nx_g is not None else None,
+            nx_canon=cc_canon if nx_g is not None else None,
         )
     )
 
@@ -474,6 +548,8 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 lambda r: [x * scale for x in canon_map(r, n)],
                 lambda r: canon_map(r, n),
                 1e-9,
+                nx_run=(lambda: nx.degree_centrality(nx_g)) if nx_g is not None else None,
+                nx_canon=lambda r: canon_map(r, n),
             )
         )
 
@@ -491,6 +567,10 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 lambda r: canon_map(r, n),
                 lambda r: canon_map(r, n),
                 1e-6,
+                nx_run=(lambda: nx.betweenness_centrality(nx_g, normalized=False))
+                if nx_dense_ok
+                else None,
+                nx_canon=lambda r: canon_map(r, n),
             )
         )
     else:
@@ -508,6 +588,10 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 lambda r: canon_map(r, n),
                 lambda r: canon_map(r, n),
                 1e-6,
+                nx_run=(lambda: nx.closeness_centrality(nx_g, wf_improved=True))
+                if nx_dense_ok
+                else None,
+                nx_canon=lambda r: canon_map(r, n),
             )
         )
     else:
@@ -526,6 +610,10 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 lambda r: l2_sign_normalize(canon_map(r, n)),
                 lambda r: l2_sign_normalize(canon_map(r, n)),
                 1e-3,
+                nx_run=(lambda: nx.eigenvector_centrality(nx_g, max_iter=100, tol=1e-6))
+                if nx_dense_ok
+                else None,
+                nx_canon=lambda r: l2_sign_normalize(canon_map(r, n)),
             )
         )
     else:
@@ -545,6 +633,8 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 lambda r: canon_map(r, n),
                 lambda r: canon_map(r, n),
                 1e-4,
+                nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85)) if nx_g is not None else None,
+                nx_canon=lambda r: canon_map(r, n),
             )
         )
 
@@ -562,20 +652,41 @@ def fmt(stat: BenchStat | None) -> str:
 
 def print_table(rows: list[Row]) -> None:
     name_w = max((len(r.name) for r in rows), default=10)
-    header = f"{'algorithm':<{name_w}}  {'pygraphina':>14}  {'rustworkx':>14}  {'ratio':>8}  status"
+    header = (
+        f"{'algorithm':<{name_w}}  "
+        f"{'pygraphina':>14}  "
+        f"{'rustworkx':>14}  "
+        f"{'networkx':>14}  "
+        f"{'pyg/rwx':>8}  "
+        f"{'pyg/nx':>8}  "
+        f"status"
+    )
     print(header)
     print("-" * len(header))
     for r in rows:
         if r.pyg is not None and r.rwx is not None:
-            ratio = r.pyg.median / r.rwx.median if r.rwx.median > 0 else float("inf")
-            ratio_s = f"{ratio:7.2f}x"
+            ratio_rwx = r.pyg.median / r.rwx.median if r.rwx.median > 0 else float("inf")
+            ratio_rwx_s = f"{ratio_rwx:7.2f}x"
         else:
-            ratio_s = "-"
+            ratio_rwx_s = "-"
+
+        if r.pyg is not None and r.nx is not None:
+            ratio_nx = r.pyg.median / r.nx.median if r.nx.median > 0 else float("inf")
+            ratio_nx_s = f"{ratio_nx:7.2f}x"
+        else:
+            ratio_nx_s = "-"
+
         print(
-            f"{r.name:<{name_w}}  {fmt(r.pyg):>14}  {fmt(r.rwx):>14}  {ratio_s:>8}  {r.status}"
+            f"{r.name:<{name_w}}  "
+            f"{fmt(r.pyg):>14}  "
+            f"{fmt(r.rwx):>14}  "
+            f"{fmt(r.nx):>14}  "
+            f"{ratio_rwx_s:>8}  "
+            f"{ratio_nx_s:>8}  "
+            f"{r.status}"
         )
     print(
-        "\nratio > 1 means rustworkx is faster; ratio < 1 means pygraphina is faster. "
+        "\npyg/x > 1 means the other library is faster; pyg/x < 1 means pygraphina is faster.\n"
         "A trailing * marks a median taken from fewer than the requested repetitions "
         "(time budget spent)."
     )
@@ -583,7 +694,10 @@ def print_table(rows: list[Row]) -> None:
 
 def main() -> None:
     cfg = Config.from_env()
-    print(f"pygraphina vs rustworkx {getattr(rustworkx, '__version__', '?')} comparison harness")
+    print(
+        f"pygraphina vs rustworkx {getattr(rustworkx, '__version__', '?')} "
+        f"vs networkx {getattr(nx, '__version__', '?')} comparison harness"
+    )
 
     # Dataset mode: load a real-world edge list instead of generating a synthetic graph.
     # Superlinear algorithms are gated by the dense-node ceiling; the sweep is disabled.
