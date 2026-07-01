@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use crate::centrality::utils::{to_f64_digraph, to_f64_graph};
 use crate::{PyDiGraph, PyGraph};
-use graphina::centrality::closeness::closeness_centrality;
 use graphina::core::types::NodeId;
+use graphina::parallel::closeness_centrality_parallel;
 
 /// Compute closeness centrality for nodes.
 ///
@@ -34,7 +34,7 @@ pub fn closeness(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, f64>> {
             new_to_old.insert(*new, *old);
         }
 
-        match closeness_centrality(&og) {
+        match closeness_centrality_parallel(&og) {
             Ok(map) => {
                 let mut out = HashMap::new();
                 for (new_nid, val) in map.into_iter() {
@@ -61,7 +61,7 @@ pub fn closeness(graph: &Bound<'_, PyAny>) -> PyResult<HashMap<usize, f64>> {
             new_to_old.insert(*new, *old);
         }
 
-        match closeness_centrality(&og) {
+        match closeness_centrality_parallel(&og) {
             Ok(map) => {
                 let mut out = HashMap::new();
                 for (new_nid, val) in map.into_iter() {

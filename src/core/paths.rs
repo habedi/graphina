@@ -697,6 +697,78 @@ where
     Some(outer)
 }
 
+/// ============================
+/// Unweighted All-Pairs Shortest Paths (BFS)
+/// ============================
+///
+/// Computes an unweighted all-pairs distance matrix by breadth-first search from
+/// every node, treating each edge as a unit step and ignoring weights. This is the
+/// hop-count analogue of [`johnson`] and [`floyd_warshall`]: when the weighted
+/// algorithms would run Dijkstra or Bellman-Ford per source, this runs a plain
+/// queue-based BFS, which is faster whenever hop counts (rather than weighted
+/// distances) are wanted.
+///
+/// Returns the node ordering and a dense, row-major distance matrix. `nodes[i]` is
+/// the source for row `i`, and `matrix[i][j]` is the hop distance from `nodes[i]`
+/// to `nodes[j]`, with `None` for an unreachable target and `Some(0)` on the
+/// diagonal. A dense matrix (rather than a nested `NodeMap`) avoids materializing
+/// V^2 hash entries, which otherwise dominates the cost. Reachability follows the
+/// same adjacency as the weighted path algorithms: outgoing edges on a directed
+/// graph, both directions on an undirected graph.
+///
+/// # Complexity
+///
+/// - **Time:** O(V * (V + E))
+/// - **Space:** O(V^2)
+pub fn all_pairs_shortest_path_length<A, W, Ty>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> (Vec<NodeId>, Vec<Vec<Option<usize>>>)
+where
+    W: Copy,
+    Ty: GraphConstructor<A, W>,
+{
+    let bound = index_bound(graph);
+    let nodes: Vec<NodeId> = graph.node_ids().collect();
+    let n = nodes.len();
+
+    let mut matrix: Vec<Vec<Option<usize>>> = Vec::with_capacity(n);
+    let mut queue: VecDeque<NodeId> = VecDeque::new();
+    // Index-keyed distance buffer with a `u32::MAX` sentinel for "undiscovered".
+    // Four-byte cells keep the buffer cache-resident for the hot BFS loop, and
+    // indexing directly by `NodeId::index()` avoids a position lookup per edge; the
+    // compaction into the `Option` row happens once per source, off the hot path.
+    let mut dist: Vec<u32> = vec![u32::MAX; bound];
+    for &start in &nodes {
+        dist.iter_mut().for_each(|d| *d = u32::MAX);
+        dist[start.index()] = 0;
+        queue.clear();
+        queue.push_back(start);
+        while let Some(current) = queue.pop_front() {
+            let du = dist[current.index()];
+            for v in graph.neighbors(current) {
+                let vi = v.index();
+                if dist[vi] == u32::MAX {
+                    dist[vi] = du + 1;
+                    queue.push_back(v);
+                }
+            }
+        }
+        let row: Vec<Option<usize>> = nodes
+            .iter()
+            .map(|v| {
+                let d = dist[v.index()];
+                if d == u32::MAX {
+                    None
+                } else {
+                    Some(d as usize)
+                }
+            })
+            .collect();
+        matrix.push(row);
+    }
+    (nodes, matrix)
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -829,6 +901,56 @@ mod tests {
         assert_eq!(all_pairs[&a][&c], Some(1));
         assert_eq!(all_pairs[&d][&a], None);
     }
+
+    #[test]
+    fn test_all_pairs_bfs_directed_hop_counts() {
+        use crate::core::paths::all_pairs_shortest_path_length;
+        use crate::core::types::Digraph;
+
+        let mut g: Digraph<i32, f64> = Digraph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 5.0);
+        g.add_edge(b, c, 5.0);
+
+        // Hop counts ignore the edge weights entirely.
+        let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+        let pos = |node| nodes.iter().position(|&x| x == node).unwrap();
+        assert_eq!(matrix[pos(a)][pos(a)], Some(0));
+        assert_eq!(matrix[pos(a)][pos(b)], Some(1));
+        assert_eq!(matrix[pos(a)][pos(c)], Some(2));
+        assert_eq!(
+            matrix[pos(c)][pos(a)],
+            None,
+            "directed: no path back from c"
+        );
+    }
+
+    #[test]
+    fn test_all_pairs_bfs_undirected_and_disconnected() {
+        use crate::core::paths::all_pairs_shortest_path_length;
+        use crate::core::types::Graph;
+
+        let mut g: Graph<i32, f64> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let iso = g.add_node(3);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+
+        let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+        let pos = |node| nodes.iter().position(|&x| x == node).unwrap();
+        // Undirected: reachable in both directions, including against edge storage.
+        assert_eq!(matrix[pos(c)][pos(a)], Some(2));
+        assert_eq!(matrix[pos(a)][pos(c)], Some(2));
+        // The isolated node is unreachable from everyone but itself.
+        assert_eq!(matrix[pos(iso)][pos(iso)], Some(0));
+        assert_eq!(matrix[pos(a)][pos(iso)], None);
+        assert_eq!(matrix[pos(iso)][pos(a)], None);
+    }
+
     use super::*;
     use crate::core::types::{Digraph, NodeId};
     use ordered_float::OrderedFloat;

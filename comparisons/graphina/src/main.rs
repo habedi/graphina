@@ -741,27 +741,28 @@ fn run_at(cfg: &Config, data: &Dataset, source: &str, max_dense: u64) -> Vec<Row
         |opt| opt.iter().map(|(cost, _)| *cost as f64).collect(),
     );
 
-    // All-pairs shortest path: graphina's Johnson against rustworkx's BFS-based
-    // distance matrix. Both are flattened in row-major (source-major) order.
-    // O(V*E*logV) plus an O(V^2) result, so skipped on large datasets.
+    // All-pairs shortest path: both libraries compute unweighted hop counts, so
+    // graphina's BFS-based all-pairs is matched against rustworkx's BFS-based
+    // distance matrix (the earlier row ran graphina's weighted Johnson against the
+    // same unweighted matrix, which measured different work). Both are flattened in
+    // row-major (source-major) order. O(V*(V+E)) plus an O(V^2) result, so skipped
+    // on large datasets.
     if dense_ok {
         diff_and_bench(
-            "all-pairs (johnson)",
+            "all-pairs (unweighted BFS)",
             cfg,
             &mut rows,
             0.5,
-            || graphina::core::paths::johnson(&gg.int).expect("graphina johnson"),
-            |outer| {
+            || graphina::core::paths::all_pairs_shortest_path_length(&gg.int),
+            |(_nodes, matrix)| {
+                // The matrix rows follow node insertion order (no removals in the
+                // harness graph), which matches both `gg.ids` and rustworkx's
+                // node-index ordering, so a flat row-major read lines up column for
+                // column with the distance matrix below.
                 let mut v = Vec::with_capacity(n * n);
-                for i in 0..n {
-                    let inner = outer.get(&gg.ids[i]);
-                    for j in 0..n {
-                        let d = inner
-                            .and_then(|m| m.get(&gg.ids[j]))
-                            .and_then(|d| *d)
-                            .map(|d| d as f64)
-                            .unwrap_or(-1.0);
-                        v.push(d);
+                for row in matrix {
+                    for cell in row {
+                        v.push(cell.map(|d| d as f64).unwrap_or(-1.0));
                     }
                 }
                 v
@@ -770,7 +771,7 @@ fn run_at(cfg: &Config, data: &Dataset, source: &str, max_dense: u64) -> Vec<Row
             |mat| mat.iter().copied().collect(),
         );
     } else {
-        skipped(&mut rows, "all-pairs (johnson)");
+        skipped(&mut rows, "all-pairs (unweighted BFS)");
     }
 
     // BFS reachability from the hub, compared as the set of reached nodes

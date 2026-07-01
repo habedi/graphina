@@ -10,6 +10,7 @@ Independent of other extensions; depends only on core.
 */
 
 pub mod bfs;
+pub mod closeness;
 pub mod clustering;
 pub mod components;
 pub mod degrees;
@@ -19,6 +20,7 @@ pub mod triangles;
 
 // Re-export main functions for convenience
 pub use bfs::bfs_parallel;
+pub use closeness::closeness_centrality_parallel;
 pub use clustering::clustering_coefficients_parallel;
 pub use components::connected_components_parallel;
 pub use degrees::degrees_parallel;

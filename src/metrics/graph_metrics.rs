@@ -12,11 +12,7 @@ use petgraph::EdgeType;
 /// Orders a pair of node indices as `(low, high)`, the canonical key form for the
 /// undirected edge set used by triangle-counting metrics.
 fn order_pair(a: usize, b: usize) -> (usize, usize) {
-    if a <= b {
-        (a, b)
-    } else {
-        (b, a)
-    }
+    if a <= b { (a, b) } else { (b, a) }
 }
 
 /// Computes the diameter of the graph (longest shortest path).
@@ -146,15 +142,15 @@ pub fn average_clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeTyp
 /// Measures the ratio of triangles to connected triples in the graph.
 ///
 /// # Time Complexity
-/// O(V * d²)
+/// O(E^1.5) via degree-ordered forward triangle counting, down from O(V * d²).
 pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
 ) -> f64 {
+    use petgraph::visit::NodeIndexable;
+
     // Adjacency test via a single Fx-hashed set of canonical (low, high) endpoint
     // pairs, so an edge lookup is one integer-tuple hash rather than an O(degree)
-    // `contains_edge` call. One shared set (rather than one neighbor set per node)
-    // keeps the hot structure in cache and avoids V small allocations, holding the
-    // whole computation at the documented O(V * d²).
+    // `contains_edge` call.
     let mut edge_set: HashSet<(usize, usize), rustc_hash::FxBuildHasher> =
         HashSet::with_capacity_and_hasher(graph.edge_count(), rustc_hash::FxBuildHasher);
     for (u, v, _w) in graph.edges() {
@@ -162,37 +158,60 @@ pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
         edge_set.insert((lo, hi));
     }
 
-    let mut triangles = 0;
-    let mut triples = 0;
-    let mut neighbors: Vec<usize> = Vec::new();
-
+    // Rank each node by its neighbor count, keyed by the stable node index so ranks
+    // are dense and comparable in O(1). A node's rank is the tuple (degree, index):
+    // higher degree ranks higher, ties broken by index.
+    let bound = graph.as_petgraph().node_bound();
+    let mut degree = vec![0usize; bound];
     for node in graph.node_ids() {
-        neighbors.clear();
-        neighbors.extend(graph.neighbors(node).map(|nbr| nbr.index()));
-        let k = neighbors.len();
+        degree[node.index()] = graph.neighbors(node).count();
+    }
+    let higher_rank =
+        |a: usize, v: usize| degree[a] > degree[v] || (degree[a] == degree[v] && a > v);
 
-        if k < 2 {
-            continue;
+    // Connected triples are C(degree, 2) summed over all nodes, independent of the
+    // triangle count.
+    let mut triples = 0usize;
+    for &k in &degree {
+        if k >= 2 {
+            triples += k * (k - 1) / 2;
         }
+    }
+    if triples == 0 {
+        return 0.0;
+    }
 
-        triples += k * (k - 1) / 2;
-
+    // Count each triangle exactly once at its lowest-ranked vertex: from that vertex
+    // both other members are higher ranked, so enumerating pairs among the
+    // higher-ranked neighbors alone finds the triangle once and only once. On a
+    // graph with n nodes each of degree d this examines about half the neighbors per
+    // node, so roughly a quarter of the pairs the all-pairs enumeration would.
+    let mut higher: Vec<usize> = Vec::new();
+    let mut distinct_triangles = 0usize;
+    for node in graph.node_ids() {
+        let vi = node.index();
+        higher.clear();
+        higher.extend(
+            graph
+                .neighbors(node)
+                .map(|nbr| nbr.index())
+                .filter(|&nbr| higher_rank(nbr, vi)),
+        );
+        let k = higher.len();
         for i in 0..k {
-            let ni = neighbors[i];
-            for &other in neighbors.iter().skip(i + 1) {
+            let ni = higher[i];
+            for &other in higher.iter().skip(i + 1) {
                 let (lo, hi) = order_pair(ni, other);
                 if edge_set.contains(&(lo, hi)) {
-                    triangles += 1;
+                    distinct_triangles += 1;
                 }
             }
         }
     }
 
-    if triples == 0 {
-        return 0.0;
-    }
-
-    triangles as f64 / triples as f64
+    // Each distinct triangle closes three connected triples (one per apex), matching
+    // the standard 3 * triangles / triples definition of transitivity.
+    (3 * distinct_triangles) as f64 / triples as f64
 }
 
 /// Computes the average path length of the graph.
@@ -418,6 +437,29 @@ mod tests {
         g.add_edge(n2, n3, 1.0);
 
         assert!((transitivity(&g) - 0.6).abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_transitivity_two_triangles_sharing_an_edge() {
+        // Two triangles that share the edge (1, 2): {0, 1, 2} and {1, 2, 3}.
+        // Degrees are 0 -> 2, 1 -> 3, 2 -> 3, and 3 -> 2, so the connected triples
+        // are C(2, 2) + C(3, 2) + C(3, 2) + C(2, 2) = 1 + 3 + 3 + 1 = 8. There are
+        // two distinct triangles, so the transitivity is 3 * 2 / 8 = 0.75. This pins
+        // the count when a vertex belongs to more than one triangle, guarding the
+        // degree-ordered forward counting against double counting or omission.
+        let mut g = Graph::<i32, f64>::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        let n3 = g.add_node(3);
+
+        g.add_edge(n0, n1, 1.0);
+        g.add_edge(n1, n2, 1.0);
+        g.add_edge(n2, n0, 1.0);
+        g.add_edge(n1, n3, 1.0);
+        g.add_edge(n2, n3, 1.0);
+
+        assert!((transitivity(&g) - 0.75).abs() < 1e-9);
     }
 
     #[test]
