@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use std::collections::HashMap;
 
 use crate::centrality::utils::{to_f64_digraph, to_f64_graph};
@@ -28,12 +29,13 @@ use graphina::core::types::NodeId;
 /// TypeError
 ///     If graph is not PyGraph or PyDiGraph.
 #[pyfunction]
-pub fn betweenness(graph: &Bound<'_, PyAny>, normalized: bool) -> PyResult<HashMap<usize, f64>> {
+pub fn betweenness(
+    py: Python<'_>,
+    graph: &Bound<'_, PyAny>,
+    normalized: bool,
+) -> PyResult<Py<PyDict>> {
     if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
         let (og, old_to_new) = to_f64_graph(&py_graph);
-        // ... (rest of logic for PyGraph)
-        // Actually I should factor this out or duplicate?
-        // Duplicating is cleaner for now to avoid generic mess in binding code.
         let mut new_to_old: std::collections::HashMap<NodeId, NodeId> =
             std::collections::HashMap::new();
         for (old, new) in old_to_new.iter() {
@@ -41,19 +43,19 @@ pub fn betweenness(graph: &Bound<'_, PyAny>, normalized: bool) -> PyResult<HashM
         }
 
         match betweenness_centrality(&og, normalized) {
-            Ok(map) => {
-                let mut out = HashMap::new();
-                for (new_nid, val) in map.into_iter() {
-                    let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
-                        crate::GraphinaError::new_err("missing mapping back to original node")
-                    })?;
-                    let pyid = py_graph.mapper.internal_to_py.get(old_nid).ok_or_else(|| {
+            Ok(map) => crate::f64_entries_to_pydict(py, map, |new_nid| {
+                let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
+                    crate::GraphinaError::new_err("missing mapping back to original node")
+                })?;
+                py_graph
+                    .mapper
+                    .internal_to_py
+                    .get(old_nid)
+                    .copied()
+                    .ok_or_else(|| {
                         crate::GraphinaError::new_err("Internal node id missing mapping")
-                    })?;
-                    out.insert(*pyid, val);
-                }
-                Ok(out)
-            }
+                    })
+            }),
             Err(e) => Err(crate::GraphinaError::new_err(format!(
                 "betweenness failed: {}",
                 e
@@ -68,19 +70,19 @@ pub fn betweenness(graph: &Bound<'_, PyAny>, normalized: bool) -> PyResult<HashM
         }
 
         match betweenness_centrality(&og, normalized) {
-            Ok(map) => {
-                let mut out = HashMap::new();
-                for (new_nid, val) in map.into_iter() {
-                    let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
-                        crate::GraphinaError::new_err("missing mapping back to original node")
-                    })?;
-                    let pyid = py_graph.mapper.internal_to_py.get(old_nid).ok_or_else(|| {
+            Ok(map) => crate::f64_entries_to_pydict(py, map, |new_nid| {
+                let old_nid = new_to_old.get(&new_nid).ok_or_else(|| {
+                    crate::GraphinaError::new_err("missing mapping back to original node")
+                })?;
+                py_graph
+                    .mapper
+                    .internal_to_py
+                    .get(old_nid)
+                    .copied()
+                    .ok_or_else(|| {
                         crate::GraphinaError::new_err("Internal node id missing mapping")
-                    })?;
-                    out.insert(*pyid, val);
-                }
-                Ok(out)
-            }
+                    })
+            }),
             Err(e) => Err(crate::GraphinaError::new_err(format!(
                 "betweenness failed: {}",
                 e

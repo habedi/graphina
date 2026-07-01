@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use std::collections::HashMap;
 
 use crate::{PyDiGraph, PyGraph};
@@ -35,12 +36,13 @@ use graphina::core::types::NodeMap;
 #[pyfunction]
 #[pyo3(signature = (graph, damping=0.85, max_iter=100, tolerance=1e-6, nstart=None))]
 pub fn pagerank(
+    py: Python<'_>,
     graph: &Bound<'_, PyAny>,
     damping: f64,
     max_iter: usize,
     tolerance: f64,
     nstart: Option<HashMap<usize, f64>>,
-) -> PyResult<HashMap<usize, f64>> {
+) -> PyResult<Py<PyDict>> {
     if let Ok(g) = graph.extract::<PyRef<PyGraph>>() {
         let nstart_map = if let Some(ns) = nstart {
             let mut map = NodeMap::default();
@@ -56,15 +58,7 @@ pub fn pagerank(
 
         let res = pagerank_core(&g.graph, damping, max_iter, tolerance, nstart_map.as_ref())
             .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
-        let mut out = HashMap::new();
-        for (nid, val) in res.into_iter() {
-            let pyid =
-                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                    crate::GraphinaError::new_err("Internal node id missing mapping")
-                })?;
-            out.insert(*pyid, val);
-        }
-        Ok(out)
+        crate::nodemap_to_pydict(py, res, &g.mapper)
     } else if let Ok(g) = graph.extract::<PyRef<PyDiGraph>>() {
         let nstart_map = if let Some(ns) = nstart {
             let mut map = NodeMap::default();
@@ -80,15 +74,7 @@ pub fn pagerank(
 
         let res = pagerank_core(&g.graph, damping, max_iter, tolerance, nstart_map.as_ref())
             .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
-        let mut out = HashMap::new();
-        for (nid, val) in res.into_iter() {
-            let pyid =
-                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                    crate::GraphinaError::new_err("Internal node id missing mapping")
-                })?;
-            out.insert(*pyid, val);
-        }
-        Ok(out)
+        crate::nodemap_to_pydict(py, res, &g.mapper)
     } else {
         Err(pyo3::exceptions::PyTypeError::new_err(
             "Expected PyGraph or PyDiGraph",
@@ -129,13 +115,14 @@ pub fn pagerank(
 #[pyo3(signature = (graph, personalization=None, damping=0.85, tolerance=1e-6, max_iter=100, nstart=None)
 )]
 pub fn personalized_pagerank(
+    py: Python<'_>,
     graph: &Bound<'_, PyAny>,
     personalization: Option<Vec<f64>>,
     damping: f64,
     tolerance: f64,
     max_iter: usize,
     nstart: Option<HashMap<usize, f64>>,
-) -> PyResult<HashMap<usize, f64>> {
+) -> PyResult<Py<PyDict>> {
     // personalized_pagerank_core does not support nstart, so it is accepted for API
     // compatibility but ignored here.
     let _ = nstart;
@@ -144,30 +131,12 @@ pub fn personalized_pagerank(
         let res =
             personalized_pagerank_core(&g.graph, personalization, damping, tolerance, max_iter)
                 .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
-
-        let mut out = HashMap::new();
-        for (nid, val) in res.into_iter() {
-            let pyid =
-                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                    crate::GraphinaError::new_err("Internal node id missing mapping")
-                })?;
-            out.insert(*pyid, val);
-        }
-        Ok(out)
+        crate::nodemap_to_pydict(py, res, &g.mapper)
     } else if let Ok(g) = graph.extract::<PyRef<PyDiGraph>>() {
         let res =
             personalized_pagerank_core(&g.graph, personalization, damping, tolerance, max_iter)
                 .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
-
-        let mut out = HashMap::new();
-        for (nid, val) in res.into_iter() {
-            let pyid =
-                g.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                    crate::GraphinaError::new_err("Internal node id missing mapping")
-                })?;
-            out.insert(*pyid, val);
-        }
-        Ok(out)
+        crate::nodemap_to_pydict(py, res, &g.mapper)
     } else {
         Err(pyo3::exceptions::PyTypeError::new_err(
             "Expected PyGraph or PyDiGraph",

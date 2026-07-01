@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use std::collections::HashMap;
+use pyo3::types::PyDict;
 
 use crate::{PyDiGraph, PyGraph};
 use graphina::centrality::katz::katz_centrality;
@@ -30,36 +30,21 @@ use graphina::centrality::katz::katz_centrality;
 ///     If graph is not PyGraph or PyDiGraph.
 #[pyfunction]
 pub fn katz(
+    py: Python<'_>,
     graph: &Bound<'_, PyAny>,
     alpha: f64,
     max_iter: usize,
     tolerance: f64,
-) -> PyResult<HashMap<usize, f64>> {
+) -> PyResult<Py<PyDict>> {
     if let Ok(py_graph) = graph.extract::<PyRef<PyGraph>>() {
         // We don't support a beta callback from Python; pass None
         let res = katz_centrality(&py_graph.graph, alpha, None, max_iter, tolerance)
             .map_err(|e| crate::GraphinaError::new_err(format!("Katz centrality failed: {}", e)))?;
-        let mut out = HashMap::new();
-        for (nid, val) in res.into_iter() {
-            let pyid =
-                py_graph.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                    crate::GraphinaError::new_err("Internal node id missing mapping")
-                })?;
-            out.insert(*pyid, val);
-        }
-        Ok(out)
+        crate::nodemap_to_pydict(py, res, &py_graph.mapper)
     } else if let Ok(py_graph) = graph.extract::<PyRef<PyDiGraph>>() {
         let res = katz_centrality(&py_graph.graph, alpha, None, max_iter, tolerance)
             .map_err(|e| crate::GraphinaError::new_err(format!("Katz centrality failed: {}", e)))?;
-        let mut out = HashMap::new();
-        for (nid, val) in res.into_iter() {
-            let pyid =
-                py_graph.mapper.internal_to_py.get(&nid).ok_or_else(|| {
-                    crate::GraphinaError::new_err("Internal node id missing mapping")
-                })?;
-            out.insert(*pyid, val);
-        }
-        Ok(out)
+        crate::nodemap_to_pydict(py, res, &py_graph.mapper)
     } else {
         Err(pyo3::exceptions::PyTypeError::new_err(
             "Expected PyGraph or PyDiGraph",

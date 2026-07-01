@@ -51,11 +51,30 @@ pub fn degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<NodeMa
 where
     Ty: GraphConstructor<A, W>,
 {
-    Ok(degree_map(
-        graph,
-        |node| graph.degree(node).unwrap_or(0),
-        true,
-    ))
+    // Single pass over the edges: each edge adds one to each of its two
+    // endpoints. This yields in-degree plus out-degree for directed graphs and
+    // the incident-edge count for undirected graphs, and it counts a self-loop as
+    // two (its endpoints coincide) in both cases, matching the per-node
+    // convention with no separate self-loop correction pass. Accumulating into a
+    // dense, index-keyed buffer keeps the inner loop hash-free; the `NodeMap` is
+    // materialized once at the end for existing nodes only (isolated nodes keep
+    // their zero).
+    let bound = graph
+        .node_ids()
+        .map(|n| n.index())
+        .max()
+        .map_or(0, |m| m + 1);
+    let mut degree = vec![0.0f64; bound];
+    for (u, v, _w) in graph.edges() {
+        degree[u.index()] += 1.0;
+        degree[v.index()] += 1.0;
+    }
+    let mut centrality: NodeMap<f64> =
+        NodeMap::with_capacity_and_hasher(graph.node_count(), Default::default());
+    for node in graph.node_ids() {
+        centrality.insert(node, degree[node.index()]);
+    }
+    Ok(centrality)
 }
 
 /// In-degree centrality: number of incoming edges (raw count).
@@ -159,6 +178,19 @@ mod tests {
         assert_eq!(indeg[&c], 1.0);
         assert_eq!(outdeg[&c], 0.0);
         assert_eq!(deg[&iso], 0.0);
+    }
+    #[test]
+    fn test_parallel_edges_undirected() {
+        // Two edges between the same pair count as two toward each endpoint's
+        // degree, so degree centrality is 2.0 for both nodes.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(a, b, 1.0);
+        let d = degree_centrality(&g).unwrap();
+        assert_eq!(d[&a], 2.0);
+        assert_eq!(d[&b], 2.0);
     }
     #[test]
     fn test_self_loop_undirected() {
