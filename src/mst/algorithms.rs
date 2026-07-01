@@ -32,6 +32,29 @@ use std::cmp::Ordering;
 use std::convert::From;
 use std::ops::{Add, AddAssign, Sub};
 
+/// Edge-count floor above which Borůvka's per-round cheapest-edge search runs in
+/// parallel. Below it the Rayon dispatch and per-worker table allocation cost
+/// more than a single sequential pass, so the sequential path is used.
+const BORUVKA_PARALLEL_MIN_EDGES: usize = 10_000;
+
+/// Returns an upper bound on node indices, suitable for sizing a dense structure
+/// indexed by `NodeId::index()`.
+///
+/// `BaseGraph` wraps a `StableGraph`, so indices are stable but not contiguous
+/// after node removals; a remaining node's index can exceed `node_count()`.
+/// Sizing by this bound (rather than `node_count`) keeps index-keyed access in
+/// range for sparse graphs.
+fn index_bound<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> usize
+where
+    Ty: GraphConstructor<A, W>,
+{
+    graph
+        .node_ids()
+        .map(|node| node.index())
+        .max()
+        .map_or(0, |m| m + 1)
+}
+
 /// A simple union–find (disjoint-set) data structure.
 struct UnionFind {
     parent: Vec<usize>,
@@ -89,9 +112,12 @@ pub struct MstEdge<W> {
 ///
 /// Computes the Minimum Spanning Tree (MST) using a parallel variant of Borůvka's algorithm.
 ///
-/// The algorithm iteratively finds, in parallel, the cheapest edge connecting each component to a different component.
-/// These candidate edges are then processed sequentially using a union–find structure. The process continues until
-/// a single component remains or no connecting edges are found (i.e. the graph is disconnected).
+/// Each round finds the cheapest edge leaving every component in a single pass
+/// over the edges (parallelized with Rayon for large graphs, sequential below an
+/// edge-count threshold where dispatch would cost more than it saves). These
+/// candidate edges are then processed sequentially using a union–find structure.
+/// The process continues until a single component remains or no connecting edges
+/// are found (i.e. the graph is disconnected).
 ///
 /// # Type Bounds
 ///
@@ -137,37 +163,76 @@ where
         ));
     }
 
-    let n = graph.node_count();
+    // `bound` sizes index-keyed structures for the possibly-sparse index space;
+    // `components` counts actual nodes, so it reaches 1 when the real nodes are
+    // merged even though gap indices remain singletons in the union-find.
+    let bound = index_bound(graph);
     let all_edges: Vec<(NodeId, NodeId, W)> = graph.edges().map(|(u, v, w)| (u, v, *w)).collect();
 
-    let mut uf = UnionFind::new(n);
+    let mut uf = UnionFind::new(bound);
     let mut mst_edges = Vec::new();
     let mut total_weight = W::from(0u8);
-    let mut components = n;
+    let mut components = graph.node_count();
 
     while components > 1 {
         // Use the canonical component root for each node, not the raw parent
         // pointer: after unions the parent array is not path-compressed, so two
         // nodes in the same component can have different parents.
-        let roots: Vec<usize> = (0..n).map(|i| uf.find(i)).collect();
-        let cheapest: Vec<Option<(NodeId, NodeId, W)>> = (0..n)
-            .into_par_iter()
-            .map(|comp| {
-                let mut min_edge: Option<(NodeId, NodeId, W)> = None;
+        let roots: Vec<usize> = (0..bound).map(|i| uf.find(i)).collect();
+
+        // Cheapest outgoing edge per component root, found in a single parallel
+        // pass over the edges (O(E)) rather than one full edge scan per component
+        // (O(V * E)). Each worker folds edges into a local per-component table
+        // keyed by root, then the tables are reduced by keeping the lighter edge
+        // for each component.
+        let keep_lighter =
+            |slot: &mut Option<(NodeId, NodeId, W)>, cand: (NodeId, NodeId, W)| match slot {
+                Some((_, _, current)) if cand.2 < *current => *slot = Some(cand),
+                None => *slot = Some(cand),
+                _ => {}
+            };
+        // Parallelism pays off only when the edge scan is large enough to cover
+        // Rayon's dispatch and the per-worker table allocation; below the
+        // threshold a single sequential pass over the edges is faster.
+        let cheapest: Vec<Option<(NodeId, NodeId, W)>> =
+            if all_edges.len() >= BORUVKA_PARALLEL_MIN_EDGES {
+                all_edges
+                    .par_iter()
+                    .fold(
+                        || vec![None::<(NodeId, NodeId, W)>; bound],
+                        |mut acc, &(u, v, w)| {
+                            let ru = roots[u.index()];
+                            let rv = roots[v.index()];
+                            if ru != rv {
+                                keep_lighter(&mut acc[ru], (u, v, w));
+                                keep_lighter(&mut acc[rv], (u, v, w));
+                            }
+                            acc
+                        },
+                    )
+                    .reduce(
+                        || vec![None::<(NodeId, NodeId, W)>; bound],
+                        |mut a, b| {
+                            for (slot, other) in a.iter_mut().zip(b) {
+                                if let Some(cand) = other {
+                                    keep_lighter(slot, cand);
+                                }
+                            }
+                            a
+                        },
+                    )
+            } else {
+                let mut acc = vec![None::<(NodeId, NodeId, W)>; bound];
                 for &(u, v, w) in &all_edges {
-                    let comp_u = roots[u.index()];
-                    let comp_v = roots[v.index()];
-                    if (comp_u == comp && comp_v != comp) || (comp_v == comp && comp_u != comp) {
-                        match min_edge {
-                            Some((_, _, current)) if w < current => min_edge = Some((u, v, w)),
-                            None => min_edge = Some((u, v, w)),
-                            _ => {}
-                        }
+                    let ru = roots[u.index()];
+                    let rv = roots[v.index()];
+                    if ru != rv {
+                        keep_lighter(&mut acc[ru], (u, v, w));
+                        keep_lighter(&mut acc[rv], (u, v, w));
                     }
                 }
-                min_edge
-            })
-            .collect();
+                acc
+            };
 
         let mut found = false;
         for (u, v, w) in cheapest.into_iter().flatten() {
@@ -238,11 +303,13 @@ where
         ));
     }
 
-    let n = graph.node_count();
     let mut edges: Vec<(NodeId, NodeId, W)> = graph.edges().map(|(u, v, w)| (u, v, *w)).collect();
     edges.sort_by(|a, b| a.2.cmp(&b.2));
 
-    let mut uf = UnionFind::new(n);
+    // Size union-find by the index bound, not `node_count`: after node removals a
+    // remaining node's index can exceed the count, and `find(index)` must stay in
+    // range.
+    let mut uf = UnionFind::new(index_bound(graph));
     let mut mst_edges = Vec::new();
     let mut total_weight = W::from(0u8);
 
@@ -311,40 +378,42 @@ where
 
     let mut mst_edges = Vec::new();
     let mut total_weight = W::from(0u8);
-    let mut in_tree: std::collections::HashSet<NodeId> = std::collections::HashSet::new();
 
-    // Build an undirected incident-edge adjacency once (O(E)). The previous
-    // version filtered the full edge list for every node added to the tree, which
-    // was O(V * E); this makes expansion O(degree) per node. Each edge is stored
-    // from both endpoints to mirror the original both-directions seeding.
-    let mut adjacency: std::collections::HashMap<NodeId, Vec<(NodeId, W)>> =
-        std::collections::HashMap::new();
+    // Dense, index-keyed state (`BaseGraph` wraps a `StableGraph`, so indices are
+    // stable but sparse after removals; size by the index bound). `in_tree` and
+    // the incident-edge adjacency are plain `Vec`s indexed by `NodeId::index()`,
+    // so the inner-loop membership checks and neighbor lookups are hash-free. The
+    // previous version used `HashSet`/`HashMap` keyed by `NodeId`, whose default
+    // SipHash hashing dominated the runtime. Adjacency is built once (O(E)) with
+    // each edge stored from both endpoints.
+    let bound = index_bound(graph);
+    let mut in_tree = vec![false; bound];
+    let mut adjacency: Vec<Vec<(NodeId, W)>> = vec![Vec::new(); bound];
     for (u, v, w) in graph.edges() {
-        adjacency.entry(u).or_default().push((v, *w));
-        adjacency.entry(v).or_default().push((u, *w));
+        adjacency[u.index()].push((v, *w));
+        adjacency[v.index()].push((u, *w));
     }
-    let empty: Vec<(NodeId, W)> = Vec::new();
 
     // Process each connected component.
-    for start in graph.nodes().map(|(node, _)| node) {
-        if in_tree.contains(&start) {
+    for start in graph.node_ids() {
+        if in_tree[start.index()] {
             continue;
         }
-        in_tree.insert(start);
+        in_tree[start.index()] = true;
         let mut heap = std::collections::BinaryHeap::new();
 
-        for &(neighbor, weight) in adjacency.get(&start).unwrap_or(&empty) {
+        for &(neighbor, weight) in &adjacency[start.index()] {
             heap.push(std::cmp::Reverse((weight, start, neighbor)));
         }
 
         while let Some(std::cmp::Reverse((w, u, v))) = heap.pop() {
             // Skip if both endpoints are already in the MST.
-            if in_tree.contains(&u) && in_tree.contains(&v) {
+            if in_tree[u.index()] && in_tree[v.index()] {
                 continue;
             }
-            let (from, to) = if in_tree.contains(&u) { (u, v) } else { (v, u) };
-            if !in_tree.contains(&to) {
-                in_tree.insert(to);
+            let (from, to) = if in_tree[u.index()] { (u, v) } else { (v, u) };
+            if !in_tree[to.index()] {
+                in_tree[to.index()] = true;
                 mst_edges.push(MstEdge {
                     u: from,
                     v: to,
@@ -352,8 +421,8 @@ where
                 });
                 total_weight += w;
                 // Add all edges incident to the newly added node.
-                for &(neighbor, weight) in adjacency.get(&to).unwrap_or(&empty) {
-                    if !in_tree.contains(&neighbor) {
+                for &(neighbor, weight) in &adjacency[to.index()] {
+                    if !in_tree[neighbor.index()] {
                         heap.push(std::cmp::Reverse((weight, to, neighbor)));
                     }
                 }
@@ -484,6 +553,55 @@ mod tests {
         assert_eq!(mst.0.len(), 3);
         let total_weight: f64 = mst.0.iter().map(|e| e.weight.0).sum();
         assert!((total_weight - 7.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_mst_disconnected_forest() {
+        // Two disjoint components (0-1-2 and 3-4) form a spanning forest: three
+        // edges total, and all three algorithms must agree on edge count and
+        // weight rather than erroring on the disconnected input.
+        let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let nodes: Vec<_> = (0..5).map(|i| g.add_node(i)).collect();
+        for (u, v, w) in [(0, 1, 1.0), (1, 2, 2.0), (0, 2, 5.0), (3, 4, 3.0)] {
+            g.add_edge(nodes[u], nodes[v], OrderedFloat(w));
+        }
+
+        let (k_edges, k_weight) = kruskal_mst(&g).unwrap();
+        let (p_edges, p_weight) = prim_mst(&g).unwrap();
+        let (b_edges, b_weight) = boruvka_mst(&g).unwrap();
+
+        assert_eq!(k_edges.len(), 3);
+        assert_eq!(k_weight, OrderedFloat(6.0));
+        assert_eq!(p_edges.len(), 3);
+        assert_eq!(p_weight, k_weight);
+        assert_eq!(b_edges.len(), 3);
+        assert_eq!(b_weight, k_weight);
+    }
+
+    #[test]
+    fn test_mst_sparse_indices_after_removal() {
+        // Removing a node leaves stable but non-contiguous indices (`BaseGraph`
+        // wraps a `StableGraph`), so a remaining node's index can exceed
+        // `node_count()`. Sizing union-find or per-node buffers by `node_count()`
+        // instead of the index bound indexes out of range and panics. All three
+        // algorithms must handle the sparse graph and agree on the spanning tree.
+        let mut g: Graph<i32, OrderedFloat<f64>> = Graph::new();
+        let nodes: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        g.remove_node(nodes[1]);
+        // Remaining nodes 0, 2, 3 (indices 0, 2, 3; node_count is now 3).
+        g.add_edge(nodes[0], nodes[2], OrderedFloat(1.0));
+        g.add_edge(nodes[2], nodes[3], OrderedFloat(2.0));
+
+        let (k_edges, k_weight) = kruskal_mst(&g).unwrap();
+        let (p_edges, p_weight) = prim_mst(&g).unwrap();
+        let (b_edges, b_weight) = boruvka_mst(&g).unwrap();
+
+        assert_eq!(k_edges.len(), 2);
+        assert_eq!(k_weight, OrderedFloat(3.0));
+        assert_eq!(p_edges.len(), 2);
+        assert_eq!(p_weight, k_weight);
+        assert_eq!(b_edges.len(), 2);
+        assert_eq!(b_weight, k_weight);
     }
 
     #[test]

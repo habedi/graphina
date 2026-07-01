@@ -638,6 +638,40 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             )
         )
 
+    # Minimum spanning tree / forest. An MST is not unique, but its total weight
+    # is, so the differential check compares the total tree weight (a single
+    # value); with unit edge weights every spanning forest has the same weight, so
+    # all three libraries agree. pygraphina returns ``(total_weight, edges)`` and
+    # rustworkx returns an eagerly computed ``WeightedEdgeList``; networkx yields a
+    # lazy generator, so the networkx side is materialized with ``list()`` inside
+    # the timed call to capture the real work.
+    def rwx_mst_weight(r: object) -> list[float]:
+        return [sum(e[2] for e in r)]
+
+    def nx_mst_weight(r: object) -> list[float]:
+        return [sum(d["weight"] for _, _, d in r)]
+
+    for mst_name, mst_fn in (
+        ("mst (kruskal)", pygraphina.mst.kruskal_mst),
+        ("mst (prim)", pygraphina.mst.prim_mst),
+        ("mst (boruvka)", pygraphina.mst.boruvka_mst),
+    ):
+        rows.append(
+            diff_and_bench(
+                cfg,
+                mst_name,
+                (lambda f=mst_fn: f(pyg_g)),
+                lambda: rustworkx.minimum_spanning_edges(rwx_g, weight_fn=lambda e: e),
+                lambda r: [r[0]],
+                rwx_mst_weight,
+                1e-6,
+                nx_run=(lambda: list(nx.minimum_spanning_edges(nx_g, data=True)))
+                if nx_g is not None
+                else None,
+                nx_canon=nx_mst_weight,
+            )
+        )
+
     print_table(rows)
     return rows
 
