@@ -9,12 +9,10 @@ Find an approximate shortest path that visits every node exactly once.
 ```rust
 use graphina::core::types::Graph;
 use graphina::approximation::tsp::greedy_tsp;
-use ordered_float::OrderedFloat;
 
 fn main() {
     // Note: TSP generally requires a complete or dense graph with metric weights.
-    // Weights must be Ord, so we use OrderedFloat<f64>.
-    let mut graph = Graph::<&str, OrderedFloat<f64>>::new();
+    let mut graph = Graph::<&str, f64>::new();
 
     let a = graph.add_node("A");
     let b = graph.add_node("B");
@@ -22,13 +20,13 @@ fn main() {
     let d = graph.add_node("D");
 
     // Add edges forming a cycle/tour
-    graph.add_edge(a, b, OrderedFloat(1.0));
-    graph.add_edge(b, c, OrderedFloat(1.0));
-    graph.add_edge(c, d, OrderedFloat(1.0));
-    graph.add_edge(d, a, OrderedFloat(1.0));
+    graph.add_edge(a, b, 1.0);
+    graph.add_edge(b, c, 1.0);
+    graph.add_edge(c, d, 1.0);
+    graph.add_edge(d, a, 1.0);
     // Cross edges
-    graph.add_edge(a, c, OrderedFloat(1.5));
-    graph.add_edge(b, d, OrderedFloat(1.5));
+    graph.add_edge(a, c, 1.5);
+    graph.add_edge(b, d, 1.5);
 
     let start_node = a;
 

@@ -82,7 +82,7 @@ Or enable all features with:
 
 ```toml
 [dependencies]
-graphina = { version = "0.4.0-alpha.2", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel"] }
+graphina = { version = "0.4.0-alpha.2", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "links", "metrics"] }
 ```
 
 > [!NOTE]

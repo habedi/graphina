@@ -8,13 +8,13 @@ In this example, we validate that the input graph is a Directed Acyclic Graph (D
 
 ```rust
 use graphina::core::types::Digraph;
-use graphina::core::validation::{require_dag, require_no_negative_weights};
+use graphina::core::validation::{require_dag, require_non_negative_weights};
 use graphina::core::error::Result;
 
 fn process_graph(graph: &Digraph<&str, f64>) -> Result<()> {
     // 1. Verify preconditions
     require_dag(graph)?;
-    require_no_negative_weights(graph)?;
+    require_non_negative_weights(graph)?;
 
     // 2. Perform graph processing
     println!("Graph is valid. Processing...");

@@ -33,14 +33,16 @@ fn main() {
     graph.add_edge(n2, n3, 0.2);
 
     // 2. Run Louvain
-    let communities = louvain(&graph);
+    let communities = louvain(&graph, None).unwrap();
 
     // 3. Print results
     // Organize by community ID
     let mut groups: HashMap<usize, Vec<&str>> = HashMap::new();
-    for (node_id, comm_id) in communities {
-        let label = graph.node_weight(node_id).unwrap();
-        groups.entry(comm_id).or_default().push(label);
+    for (comm_id, community) in communities.iter().enumerate() {
+        for &node_id in community {
+            let label = graph.node_attr(node_id).unwrap();
+            groups.entry(comm_id).or_default().push(label);
+        }
     }
 
     for (id, members) in groups {

@@ -35,10 +35,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 4. Edge List (Universally compatible)
     // Good for exporting to tools like Gephi, NetworkX, Pandas
-    write_edge_list(&graph, "temp_graph.txt", " ")?;
-    // Note: Edge list doesn't preserve complex node attributes, usually just IDs
-    // So we read it back as integer IDs if we want structure, or parse specially.
-    // Here we just demo writing.
+    // Note: Edge list functions operate on graphs with i32 node attributes and f32 edge weights.
+    let mut el_graph = Graph::<i32, f32>::new();
+    let e_n1 = el_graph.add_node(1);
+    let e_n2 = el_graph.add_node(2);
+    el_graph.add_edge(e_n1, e_n2, 1.5);
+
+    write_edge_list("temp_graph.txt", &el_graph, ' ')?;
+
+    let mut loaded_el_graph = Graph::<i32, f32>::new();
+    read_edge_list("temp_graph.txt", &mut loaded_el_graph, ' ')?;
+    println!("Loaded Edge List: {} nodes", loaded_el_graph.node_count());
 
     // Cleanup
     fs::remove_file("temp_graph.bin")?;

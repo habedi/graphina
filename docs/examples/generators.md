@@ -6,7 +6,7 @@ This example demonstrates how to generate various random graphs and analyze thei
 ```rust
 use graphina::core::generators::{erdos_renyi_graph, barabasi_albert_graph, watts_strogatz_graph};
 use graphina::core::types::Undirected;
-use graphina::metrics::{diameter, average_clustering};
+use graphina::metrics::{diameter, average_clustering_coefficient};
 
 fn main() {
     let seed = 42;
@@ -18,7 +18,7 @@ fn main() {
     println!("Generating Erdős-Rényi graph...");
     let er_graph = erdos_renyi_graph::<Undirected>(n, 0.01, seed).unwrap();
     println!("  ER Edges: {}", er_graph.edge_count());
-    println!("  ER Clustering: {:.4}", average_clustering(&er_graph));
+    println!("  ER Clustering: {:.4}", average_clustering_coefficient(&er_graph));
 
     // 2. Barabási-Albert Graph (Scale-Free)
     // n=1000, edges per new node=3
@@ -36,7 +36,7 @@ fn main() {
     println!("\nGenerating Watts-Strogatz graph...");
     let ws_graph = watts_strogatz_graph::<Undirected>(n, 10, 0.1, seed).unwrap();
     println!("  WS Edges: {}", ws_graph.edge_count());
-    println!("  WS Clustering: {:.4}", average_clustering(&ws_graph));
+    println!("  WS Clustering: {:.4}", average_clustering_coefficient(&ws_graph));
 
     // Comparison summary
     println!("\nSummary:");
