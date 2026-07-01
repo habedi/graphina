@@ -9,6 +9,16 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
 
+/// Orders a pair of node indices as `(low, high)`, the canonical key form for the
+/// undirected edge set used by triangle-counting metrics.
+fn order_pair(a: usize, b: usize) -> (usize, usize) {
+    if a <= b {
+        (a, b)
+    } else {
+        (b, a)
+    }
+}
+
 /// Computes the diameter of the graph (longest shortest path).
 ///
 /// For disconnected graphs, returns None.
@@ -140,19 +150,25 @@ pub fn average_clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeTyp
 pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
 ) -> f64 {
-    // Precompute each node's neighbor set once so the inner adjacency test is an
-    // O(1) hash lookup rather than an O(degree) `contains_edge` call. This keeps
-    // the whole computation at the documented O(V * d²) instead of O(V * d² * degree).
-    let neighbor_sets: HashMap<NodeId, HashSet<NodeId>> = graph
-        .node_ids()
-        .map(|node| (node, graph.neighbors(node).collect()))
-        .collect();
+    // Adjacency test via a single Fx-hashed set of canonical (low, high) endpoint
+    // pairs, so an edge lookup is one integer-tuple hash rather than an O(degree)
+    // `contains_edge` call. One shared set (rather than one neighbor set per node)
+    // keeps the hot structure in cache and avoids V small allocations, holding the
+    // whole computation at the documented O(V * d²).
+    let mut edge_set: HashSet<(usize, usize), rustc_hash::FxBuildHasher> =
+        HashSet::with_capacity_and_hasher(graph.edge_count(), rustc_hash::FxBuildHasher);
+    for (u, v, _w) in graph.edges() {
+        let (lo, hi) = order_pair(u.index(), v.index());
+        edge_set.insert((lo, hi));
+    }
 
     let mut triangles = 0;
     let mut triples = 0;
+    let mut neighbors: Vec<usize> = Vec::new();
 
     for node in graph.node_ids() {
-        let neighbors: Vec<NodeId> = graph.neighbors(node).collect();
+        neighbors.clear();
+        neighbors.extend(graph.neighbors(node).map(|nbr| nbr.index()));
         let k = neighbors.len();
 
         if k < 2 {
@@ -162,9 +178,10 @@ pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
         triples += k * (k - 1) / 2;
 
         for i in 0..k {
-            let ni = &neighbor_sets[&neighbors[i]];
+            let ni = neighbors[i];
             for &other in neighbors.iter().skip(i + 1) {
-                if ni.contains(&other) {
+                let (lo, hi) = order_pair(ni, other);
+                if edge_set.contains(&(lo, hi)) {
                     triangles += 1;
                 }
             }

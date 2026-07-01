@@ -35,7 +35,7 @@ For example, algorithms that require nonnegative edge weights will return a `Res
 use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, GraphinaGraph, NodeId, NodeMap};
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, VecDeque};
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
 
@@ -399,40 +399,43 @@ where
     Ty: GraphConstructor<A, W>,
 {
     let n = graph.node_count();
-    // Dense, index-keyed distance buffer (see `dijkstra`).
-    let mut dist: Vec<Option<W>> = vec![None; index_bound(graph)];
-    dist[source.index()] = Some(W::from(0u8));
+    let bound = index_bound(graph);
+    // Queue-based Bellman-Ford (SPFA): only nodes whose distance just improved are
+    // re-examined, rather than relaxing every edge for a fixed V-1 rounds. On the
+    // common shallow graph this behaves like BFS (O(V + E)) instead of O(V * E),
+    // while still handling negative weights.
+    //
+    // Dense, index-keyed buffers (see `dijkstra`). `path_len[v]` is the number of
+    // edges on the current shortest path to `v`; a simple path has at most n - 1
+    // edges, so reaching n edges proves a negative cycle reachable from the source.
+    let mut dist: Vec<Option<W>> = vec![None; bound];
+    let mut in_queue = vec![false; bound];
+    let mut path_len = vec![0usize; bound];
+    let mut queue = VecDeque::new();
 
-    for _ in 0..n.saturating_sub(1) {
-        let mut updated = false;
-        // Relax via the per-node incident-edge iterator, which follows undirected
-        // edges in both directions (iterating `graph.edges()` would relax each
-        // stored edge in one direction only, leaving most nodes unreachable on an
-        // undirected graph). This matches dijkstra.
-        for u in graph.node_ids() {
-            if let Some(du) = dist[u.index()] {
-                for (v, w) in outgoing_edges(graph, u) {
-                    let candidate = du + w;
-                    let vi = v.index();
-                    if dist[vi].is_none() || Some(candidate) < dist[vi] {
-                        dist[vi] = Some(candidate);
-                        updated = true;
-                    }
+    let si = source.index();
+    dist[si] = Some(W::from(0u8));
+    in_queue[si] = true;
+    queue.push_back(source);
+
+    while let Some(u) = queue.pop_front() {
+        let ui = u.index();
+        in_queue[ui] = false;
+        let Some(du) = dist[ui] else {
+            continue;
+        };
+        for (v, w) in outgoing_edges(graph, u) {
+            let candidate = du + w;
+            let vi = v.index();
+            if dist[vi].is_none() || Some(candidate) < dist[vi] {
+                dist[vi] = Some(candidate);
+                path_len[vi] = path_len[ui] + 1;
+                if path_len[vi] >= n {
+                    return None;
                 }
-            }
-        }
-        if !updated {
-            break;
-        }
-    }
-    // Check for negative cycles.
-    for u in graph.node_ids() {
-        if let Some(du) = dist[u.index()] {
-            for (v, w) in outgoing_edges(graph, u) {
-                if let Some(dv) = dist[v.index()] {
-                    if du + w < dv {
-                        return None;
-                    }
+                if !in_queue[vi] {
+                    in_queue[vi] = true;
+                    queue.push_back(v);
                 }
             }
         }
@@ -859,6 +862,19 @@ mod tests {
         let n3 = nodes[&3];
         let dist = bellman_ford(&graph, n0).expect("No negative cycle");
         assert_eq!(dist[&n3], Some(OrderedFloat(6.0)));
+    }
+    #[test]
+    fn test_bellman_ford_detects_negative_cycle() {
+        // Directed cycle 0 -> 1 -> 2 -> 0 with total weight 1 - 2 - 2 = -3, a
+        // negative cycle reachable from the source, so no shortest path exists.
+        let mut graph: Digraph<i32, OrderedFloat<f64>> = Digraph::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        graph.add_edge(n0, n1, OrderedFloat(1.0));
+        graph.add_edge(n1, n2, OrderedFloat(-2.0));
+        graph.add_edge(n2, n0, OrderedFloat(-2.0));
+        assert!(bellman_ford(&graph, n0).is_none());
     }
     #[test]
     fn test_bellman_ford_undirected() {
