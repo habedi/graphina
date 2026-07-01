@@ -100,7 +100,7 @@ members = [
   "pygraphina"
 ]
 exclude = [
-  "benchmarks/graphina"
+  "comparisons/graphina"
 ]
 
 [package.metadata.docs.rs]

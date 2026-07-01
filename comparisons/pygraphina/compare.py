@@ -57,7 +57,7 @@ except ImportError:
 if missing:
     sys.exit(
         f"{', '.join(missing)} is/are not installed. Run this harness with:\n"
-        "    uv run --with rustworkx --with networkx python benchmarks/pygraphina/compare.py\n"
+        "    uv run --with rustworkx --with networkx python comparisons/pygraphina/compare.py\n"
         "or `make bench-pygraphina`."
     )
 

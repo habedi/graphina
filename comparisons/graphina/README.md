@@ -14,13 +14,13 @@ than the binding or interpreter overhead.
 make bench-graphina
 
 # Or directly (from this directory, so the local toolchain pin applies):
-cd benchmarks/graphina && cargo run --release
+cd comparisons/graphina && cargo run --release
 
 # Against the real-world datasets (run `make testdata` first to download them):
 make bench-graphina-datasets
 
 # Or one dataset directly:
-cd benchmarks/graphina && RUSTWORKX_COMPARE_DATASET=../../tests/testdata/graphina-graphs/wikipedia_chameleon.txt cargo run --release
+cd comparisons/graphina && RUSTWORKX_COMPARE_DATASET=../../tests/testdata/graphina-graphs/wikipedia_chameleon.txt cargo run --release
 ```
 
 The harness is a detached crate: it is excluded from the graphina workspace and pulls rustworkx-core (and its dependency tree) only when built here,

@@ -14,14 +14,14 @@ what a Python user actually pays.
 make bench-pygraphina
 
 # Or directly, once PyGraphina is built into the active environment (make develop-py):
-uv run --with rustworkx --with networkx python benchmarks/pygraphina/compare.py
+uv run --with rustworkx --with networkx python comparisons/pygraphina/compare.py
 
 # Against the real-world datasets (run `make testdata` first to download them):
 make bench-pygraphina-datasets
 
 # Or one dataset directly:
 PYGRAPHINA_COMPARE_DATASET=tests/testdata/graphina-graphs/wikipedia_chameleon.txt \
-    uv run --with rustworkx --with networkx python benchmarks/pygraphina/compare.py
+    uv run --with rustworkx --with networkx python comparisons/pygraphina/compare.py
 ```
 
 The harness imports PyGraphina from the active environment, so `make bench-pygraphina` runs `make develop-py` first to build and install the current
