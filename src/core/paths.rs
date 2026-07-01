@@ -712,9 +712,10 @@ where
 /// the source for row `i`, and `matrix[i][j]` is the hop distance from `nodes[i]`
 /// to `nodes[j]`, with `None` for an unreachable target and `Some(0)` on the
 /// diagonal. A dense matrix (rather than a nested `NodeMap`) avoids materializing
-/// V^2 hash entries, which otherwise dominates the cost. Reachability follows the
-/// same adjacency as the weighted path algorithms: outgoing edges on a directed
-/// graph, both directions on an undirected graph.
+/// V^2 hash entries, which otherwise dominates the cost, and a `u32` cell halves
+/// the write bandwidth over the O(V^2) output (hop counts never exceed the node
+/// count). Reachability follows the same adjacency as the weighted path algorithms:
+/// outgoing edges on a directed graph, both directions on an undirected graph.
 ///
 /// # Complexity
 ///
@@ -722,7 +723,48 @@ where
 /// - **Space:** O(V^2)
 pub fn all_pairs_shortest_path_length<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
-) -> (Vec<NodeId>, Vec<Vec<Option<usize>>>)
+) -> (Vec<NodeId>, Vec<Vec<Option<u32>>>)
+where
+    W: Copy,
+    Ty: GraphConstructor<A, W>,
+{
+    // Snapshot the adjacency into a compact CSR in position space [0, n) once. Every
+    // per-source BFS then walks contiguous `u32` slices instead of the `StableGraph`
+    // adjacency (a linked list kept for NodeId stability), so the O(V^2) hot loop is
+    // cache-resident and hash-free. The one-time build is O(V + E).
+    let (nodes, offsets, adj) = position_csr(graph);
+    let n = nodes.len();
+
+    let mut matrix: Vec<Vec<Option<u32>>> = Vec::with_capacity(n);
+    let mut queue: VecDeque<u32> = VecDeque::new();
+    for source in 0..n {
+        // The freshly allocated row doubles as the distance buffer and the visited
+        // set (`None` means undiscovered), so BFS fills the output directly in a
+        // single O(V) pass, rather than clearing a separate buffer and projecting it.
+        let mut row: Vec<Option<u32>> = vec![None; n];
+        row[source] = Some(0);
+        queue.clear();
+        queue.push_back(source as u32);
+        while let Some(current) = queue.pop_front() {
+            let du = row[current as usize].unwrap_or(0);
+            for &next in &adj[offsets[current as usize]..offsets[current as usize + 1]] {
+                if row[next as usize].is_none() {
+                    row[next as usize] = Some(du + 1);
+                    queue.push_back(next);
+                }
+            }
+        }
+        matrix.push(row);
+    }
+    (nodes, matrix)
+}
+
+/// Builds a compact CSR adjacency in position space `[0, n)` from a graph whose
+/// stable node indices may be sparse. Returns the node ordering (position `i` is
+/// `nodes[i]`), row offsets of length `n + 1`, and the concatenated neighbor
+/// positions. Iterating a node's neighbors is then a contiguous slice, which the
+/// all-pairs searches rely on to stay hash-free and cache-resident.
+fn position_csr<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> (Vec<NodeId>, Vec<usize>, Vec<u32>)
 where
     W: Copy,
     Ty: GraphConstructor<A, W>,
@@ -731,42 +773,31 @@ where
     let nodes: Vec<NodeId> = graph.node_ids().collect();
     let n = nodes.len();
 
-    let mut matrix: Vec<Vec<Option<usize>>> = Vec::with_capacity(n);
-    let mut queue: VecDeque<NodeId> = VecDeque::new();
-    // Index-keyed distance buffer with a `u32::MAX` sentinel for "undiscovered".
-    // Four-byte cells keep the buffer cache-resident for the hot BFS loop, and
-    // indexing directly by `NodeId::index()` avoids a position lookup per edge; the
-    // compaction into the `Option` row happens once per source, off the hot path.
-    let mut dist: Vec<u32> = vec![u32::MAX; bound];
-    for &start in &nodes {
-        dist.iter_mut().for_each(|d| *d = u32::MAX);
-        dist[start.index()] = 0;
-        queue.clear();
-        queue.push_back(start);
-        while let Some(current) = queue.pop_front() {
-            let du = dist[current.index()];
-            for v in graph.neighbors(current) {
-                let vi = v.index();
-                if dist[vi] == u32::MAX {
-                    dist[vi] = du + 1;
-                    queue.push_back(v);
-                }
-            }
-        }
-        let row: Vec<Option<usize>> = nodes
-            .iter()
-            .map(|v| {
-                let d = dist[v.index()];
-                if d == u32::MAX {
-                    None
-                } else {
-                    Some(d as usize)
-                }
-            })
-            .collect();
-        matrix.push(row);
+    // Map a stable node index onto its compact position.
+    let mut pos = vec![0u32; bound];
+    for (i, node) in nodes.iter().enumerate() {
+        pos[node.index()] = i as u32;
     }
-    (nodes, matrix)
+
+    // Degrees, then a prefix sum, give the row offsets.
+    let mut offsets = vec![0usize; n + 1];
+    for (i, &node) in nodes.iter().enumerate() {
+        offsets[i + 1] = graph.neighbors(node).count();
+    }
+    for i in 0..n {
+        offsets[i + 1] += offsets[i];
+    }
+
+    // Scatter neighbor positions into the flat array using a moving write cursor.
+    let mut adj = vec![0u32; offsets[n]];
+    let mut cursor = offsets.clone();
+    for (i, &node) in nodes.iter().enumerate() {
+        for v in graph.neighbors(node) {
+            adj[cursor[i]] = pos[v.index()];
+            cursor[i] += 1;
+        }
+    }
+    (nodes, offsets, adj)
 }
 
 #[cfg(test)]

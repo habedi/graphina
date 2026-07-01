@@ -25,5 +25,5 @@ pub use clustering::clustering_coefficients_parallel;
 pub use components::connected_components_parallel;
 pub use degrees::degrees_parallel;
 pub use pagerank::pagerank_parallel;
-pub use paths::shortest_paths_parallel;
+pub use paths::{all_pairs_shortest_path_length_parallel, shortest_paths_parallel};
 pub use triangles::triangles_parallel;

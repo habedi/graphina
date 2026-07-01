@@ -774,6 +774,34 @@ fn run_at(cfg: &Config, data: &Dataset, source: &str, max_dense: u64) -> Vec<Row
         skipped(&mut rows, "all-pairs (unweighted BFS)");
     }
 
+    // The same all-pairs task with both libraries parallelized: graphina's Rayon
+    // all-pairs against rustworkx's distance matrix with a parallel threshold of 0,
+    // which forces its Rayon path. The sequential row above is bounded by
+    // StableGraph traversal overhead at V^2 scale; spreading the independent
+    // per-source searches over the thread pool closes that gap.
+    if dense_ok {
+        diff_and_bench(
+            "all-pairs (parallel BFS)",
+            cfg,
+            &mut rows,
+            0.5,
+            || graphina::parallel::all_pairs_shortest_path_length_parallel(&gg.int),
+            |(_nodes, matrix)| {
+                let mut v = Vec::with_capacity(n * n);
+                for row in matrix {
+                    for cell in row {
+                        v.push(cell.map(|d| d as f64).unwrap_or(-1.0));
+                    }
+                }
+                v
+            },
+            || rwx_distance_matrix(&pg, 0, false, -1.0),
+            |mat| mat.iter().copied().collect(),
+        );
+    } else {
+        skipped(&mut rows, "all-pairs (parallel BFS)");
+    }
+
     // BFS reachability from the hub, compared as the set of reached nodes
     // (visitation order can differ by internal adjacency ordering).
     diff_and_bench(

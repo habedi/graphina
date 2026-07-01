@@ -5,14 +5,14 @@ edition = "2021"
 publish = false
 
 [dependencies]
-graphina = { path = "../..", features = ["centrality", "community", "metrics", "traversal"] }
+graphina = { path = "../..", features = ["centrality", "community", "metrics", "traversal", "parallel"] }
 rustworkx-core = "0.18"
 ordered-float = "5"
 
-# Detached from the graphina workspace on purpose
+# Detached from the Graphina workspace on purpose
 [workspace]
 
-# Mirror the graphina root release profile
+# Mirror the Graphina root release profile
 [profile.release]
 strip = "debuginfo"
 panic = "unwind"
