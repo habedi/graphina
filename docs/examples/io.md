@@ -1,7 +1,6 @@
 # Graph I/O Examples
 
-Persisting graphs is crucial for long-running applications.
-Graphina supports efficient binary formats as well as standard text formats.
+Graphina supports binary formats as well as standard text formats for storing graphs.
 
 ```rust
 use graphina::core::types::Graph;

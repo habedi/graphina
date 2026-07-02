@@ -1,6 +1,6 @@
 # Graph Generators
 
-Graphina provides generators for creating synthetic graphs with specific properties, useful for testing and analysis.
+Graphina provides generators for creating synthetic graphs with specific properties which are typically very useful for testing among other things.
 
 ## Random Graph Models
 
@@ -18,7 +18,8 @@ let g = erdos_renyi_graph::<Undirected>(100, 0.1, 42).unwrap();
 
 ### Barabási-Albert (BA)
 
-Generates a scale-free network using preferential attachment. New nodes attach to existing high-degree nodes.
+Generates a scale-free network using preferential attachment.
+New nodes attach to existing high-degree nodes.
 
 ```rust
 use graphina::core::generators::barabasi_albert_graph;

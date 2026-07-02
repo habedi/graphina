@@ -1,6 +1,6 @@
 # Graph Generators Examples
 
-Graph generators are essential for testing algorithms and creating benchmarks.
+Graph generators are useful for testing algorithms and creating benchmarks.
 This example demonstrates how to generate various random graphs and analyze their properties.
 
 ```rust

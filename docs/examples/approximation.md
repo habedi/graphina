@@ -1,6 +1,6 @@
 # Approximation Algorithms Examples
 
-Examples of using Graphina to solve NP-hard problems using approximation heuristics.
+Examples of using Graphina to solve computationally hard graph problems using heuristic or approximation algorithms.
 
 ## Solving Traveling Salesman Problem (TSP)
 

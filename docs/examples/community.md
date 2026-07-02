@@ -1,6 +1,6 @@
 # Community Detection Examples
 
-This guide demonstrates how to use Graphina's community detection algorithms to find clusters in your data.
+This guide show how to use Graphina's community detection algorithms to find clusters and dense subgraphs in the data.
 
 ## Detecting Communities with Louvain Method
 
