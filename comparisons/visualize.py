@@ -39,11 +39,11 @@ matplotlib.rcParams["ytick.color"] = "#475569"
 # Fixed library order and colors so charts from different runs are comparable.
 LIBRARIES = ["graphina", "rustworkx-core", "pygraphina", "networkx", "rustworkx"]
 COLORS = {
-    "graphina": "#3b82f6",        # Vibrant Blue
-    "pygraphina": "#06b6d4",      # Vibrant Teal/Cyan
-    "rustworkx-core": "#ef4444",  # Rose Red
-    "rustworkx": "#f97316",       # Amber Orange
-    "networkx": "#10b981",        # Emerald Green
+    "graphina": "#0f172a",        # Dark Slate (Graphina Rust)
+    "pygraphina": "#0f172a",      # Dark Slate (PyGraphina Python)
+    "rustworkx-core": "#94a3b8",  # Light Slate (rustworkx-core Rust)
+    "networkx": "#64748b",        # Medium Slate (NetworkX Python)
+    "rustworkx": "#cbd5e1",       # Very Light Slate (rustworkx Python)
 }
 
 
