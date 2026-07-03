@@ -322,7 +322,8 @@ impl PyGraph {
         self.get_edge_weight_impl(source, target)
     }
 
-    /// Update the weight of an existing edge.
+    /// Update the weight of an existing edge. The graph is undirected, so the
+    /// edge is matched in either orientation.
     ///
     /// Parameters
     /// ----------

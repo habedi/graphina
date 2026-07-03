@@ -57,6 +57,32 @@ def test_add_edge_updates_existing_directed_edge():
     assert dg.edge_count() == 2
 
 
+def test_update_edge_weight_matches_either_orientation():
+    # On an undirected graph, update_edge_weight matches the edge in either
+    # orientation and raises ValueError for a missing edge.
+    g = pygraphina.PyGraph()
+    a = g.add_node(1)
+    b = g.add_node(2)
+    c = g.add_node(3)
+    g.add_edge(a, b, 1.0)
+    g.update_edge_weight(b, a, 2.0)
+    assert g.get_edge_weight(a, b) == 2.0
+    with pytest.raises(ValueError):
+        g.update_edge_weight(a, c, 1.0)
+
+
+def test_update_edge_weight_directed_orientation():
+    # On a directed graph, update_edge_weight matches the exact direction only.
+    dg = pygraphina.PyDiGraph()
+    x = dg.add_node(1)
+    y = dg.add_node(2)
+    dg.add_edge(x, y, 1.0)
+    with pytest.raises(ValueError):
+        dg.update_edge_weight(y, x, 2.0)
+    dg.update_edge_weight(x, y, 2.0)
+    assert dg.get_edge_weight(x, y) == 2.0
+
+
 def test_remove_node():
     g = pygraphina.PyGraph()
     n0 = g.add_node(10)

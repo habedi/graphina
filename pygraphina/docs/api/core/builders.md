@@ -70,8 +70,8 @@ exists = g.contains_node(node_c)  # False
 ### Update Edge Weights
 
 ```python
-# Update edge weight
-success = g.update_edge_weight(node_a, node_b, 2.5)
+# Update edge weight (raises ValueError if the edge doesn't exist)
+g.update_edge_weight(node_a, node_b, 2.5)
 
 # Get edge weight
 weight = g.get_edge_weight(node_a, node_b)
@@ -80,8 +80,8 @@ weight = g.get_edge_weight(node_a, node_b)
 ### Remove Edges
 
 ```python
-# Remove edge
-removed = g.remove_edge(node_a, node_b)
+# Remove edge (raises ValueError if the edge doesn't exist)
+g.remove_edge(node_a, node_b)
 
 # Check if edge exists
 exists = g.contains_edge(node_a, node_b)

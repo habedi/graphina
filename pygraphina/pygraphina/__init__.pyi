@@ -174,7 +174,7 @@ class PyGraph:
         ...
 
     def update_edge_weight(self, source: int, target: int, new_weight: float) -> None:
-        """Update the weight of an existing edge, raising an error if the edge doesn't exist."""
+        """Update the weight of an existing edge, matched in either orientation, raising an error if the edge doesn't exist."""
         ...
 
     def node_count(self) -> int:
