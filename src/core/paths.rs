@@ -19,9 +19,6 @@ It supports single‑source and all‑pairs computations via (classical) algorit
 - **Johnson’s Algorithm:**
   Computes all‑pairs shortest paths for sparse graphs (even with negative edge weights) by re-weighting the graph and then running Dijkstra’s algorithm from each node.
 
-- **Iterative Deepening A\* (IDA\*):**
-  A recursive, depth‑first variant of A\* search specialized for graphs with `f64` weights.
-  The f64 is used instead of a generic weight type to simplify the implementation.
 
 ## Error Handling
 
