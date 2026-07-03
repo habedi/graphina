@@ -191,7 +191,7 @@ print(f"  Density: {network.density():.3f}")
 print(f"  Average degree: {sum(network.degree[n] for n in network.nodes) / network.node_count():.2f}")
 ```
 
-## Working with Directed Graphs
+## Working With Directed Graphs
 
 PyGraphina also supports directed graphs:
 

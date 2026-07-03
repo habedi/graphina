@@ -5,7 +5,7 @@ Select the appropriate type for your use case.
 
 ## Main Types
 
-Graphina focuses on simple graphs to maximize performance. Multiple edges between the same node pair are not supported.
+Graphina graphs are simple: calling `add_edge` again with the same endpoints updates the stored weight instead of creating a parallel edge. Use `add_edge_if_absent` to insert without overwriting an existing weight, or build the graph with `AdvancedGraphBuilder` and `allow_parallel_edges(false)` to treat duplicates as an error.
 
 ### `Graph<A, W>` (Undirected)
 
@@ -42,7 +42,7 @@ Graphina uses a `StableGraph` backend from `petgraph`.
 2. Stable Indices: Removing a node does not shift other indices. Safely retain `NodeId`s.
 3. Cache Locality: Contiguous memory usage improves iteration performance.
 
-## NodeId vs Node Values
+## NodeId Vs Node Values
 
 NetworkX adds nodes by value:
 
@@ -54,11 +54,11 @@ G.add_edge("Alice", "Bob")
 Graphina separates topology from data. "Alice" is an attribute; the node is identified by a lightweight `NodeId`.
 
 ```rust
-let alice_id = graph.add_node("Alice");
-let bob_id = graph.add_node("Bob");
+let alice_id = g.add_node("Alice");
+let bob_id = g.add_node("Bob");
 
 // Connect using IDs, not strings
-graph.add_edge(alice_id, bob_id, 1.0);
+g.add_edge(alice_id, bob_id, 1.0);
 ```
 
 This design separates topology from data, enabling optimized integer-based algorithms.
@@ -68,6 +68,6 @@ This design separates topology from data, enabling optimized integer-based algor
 Check density (ratio of existing to possible edges).
 
 ```rust
-let d = graph.density();
+let d = g.density();
 println!("Graph density: {:.2}", d);
 ```

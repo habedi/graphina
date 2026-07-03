@@ -7,7 +7,7 @@ Graph generators create synthetic graphs with specific properties for testing an
 ### Erdos-Renyi (ER)
 
 ```python
-pg.core.erdos_renyi(n, p, seed=None)
+pg.core.erdos_renyi(n, p, seed)
 ```
 
 Random graph where each edge exists with probability p.
@@ -19,7 +19,7 @@ Random graph where each edge exists with probability p.
 ### Barabasi-Albert (BA)
 
 ```python
-pg.core.barabasi_albert(n, m, seed=None)
+pg.core.barabasi_albert(n, m, seed)
 ```
 
 Preferential attachment model - new nodes attach to existing high-degree nodes.
@@ -66,17 +66,17 @@ Nodes arranged in a circle.
 - Diameter: n/2
 - Uses: Ring networks
 
-### Path Graph
+### Star Graph
 
 ```python
-pg.core.path_graph(n)
+pg.core.star_graph(n)
 ```
 
-Linear chain of nodes.
+One center node connected to n-1 leaves.
 
 - Edges: n-1
-- Diameter: n-1
-- Uses: Sequential structures
+- Diameter: 2
+- Uses: Hub-and-spoke structures
 
 ## Examples
 

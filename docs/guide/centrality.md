@@ -99,3 +99,70 @@ use graphina::centrality::closeness::closeness_centrality;
 
 let scores = closeness_centrality(&g).unwrap();
 ```
+
+## Katz Centrality
+
+Computes the relative influence of a node by measuring the number of walks of length $k$ between node pairs, attenuated by a factor $\alpha$.
+
+```rust
+use graphina::centrality::katz::katz_centrality;
+
+// Arguments: graph, alpha, beta closure, max_iter, tolerance
+let scores = katz_centrality(&g, 0.1, None, 1000, 1e-9).unwrap();
+```
+
+## Harmonic Centrality
+
+A variant of closeness centrality designed for disconnected graphs. It sums the reciprocals of the shortest path distances.
+
+```rust
+use graphina::centrality::harmonic::harmonic_centrality;
+
+let scores = harmonic_centrality(&g).unwrap();
+```
+
+## Personalized PageRank
+
+Computes a PageRank vector biased towards a set of target nodes defined by a personalization vector.
+
+```rust
+use graphina::centrality::personalized::personalized_pagerank;
+
+let personalization = vec![0.8, 0.2]; // mapped to nodes in order
+let scores = personalized_pagerank(&g, Some(personalization), 0.85, 1e-6, 100).unwrap();
+```
+
+## VoteRank
+
+Identifies a set of influential node seeds using a voting mechanism where elected nodes weaken their neighbors' voting weights.
+
+```rust
+use graphina::centrality::other::voterank;
+
+// Returns top 3 seeds as a Vec<NodeId>
+let seeds = voterank(&g, 3);
+```
+
+## Reaching Centrality
+
+Local reaching centrality measures the fraction of nodes that can be reached from a node within a given distance. Global reaching centrality considers the entire graph.
+
+```rust
+use graphina::centrality::other::{local_reaching_centrality, global_reaching_centrality};
+
+// local reaching centrality within 2 steps
+let local_scores = local_reaching_centrality(&g, 2).unwrap();
+
+// global reaching centrality
+let global_scores = global_reaching_centrality(&g).unwrap();
+```
+
+## Laplacian Centrality
+
+Measures the drop in the Laplacian energy of a graph when a node is removed.
+
+```rust
+use graphina::centrality::other::laplacian_centrality;
+
+let scores = laplacian_centrality(&g).unwrap();
+```

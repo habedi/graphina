@@ -30,22 +30,21 @@ if is_connected(&graph) && is_dag(&graph) {
 
 ## Precondition Validators
 
-Validator functions return `Result<(), GraphinaError>` and yield an error if the condition is not met. These are prefixed with `require_`:
+Validator functions return `Result<(), GraphinaError>` and yield an error if the condition is not met. These are prefixed with `require_` and take the name of the calling algorithm as a second argument, which is included in error messages:
 
-*   `require_non_empty(&graph)`
-*   `require_connected(&graph)`
-*   `require_directed(&graph)`
-*   `require_undirected(&graph)`
-*   `require_no_negative_weights(&graph)`
-*   `require_no_self_loops(&graph)`
-*   `require_dag(&graph)`
-*   `require_bipartite(&graph)`
+*   `require_non_empty(&graph, algo_name)`
+*   `require_connected(&graph, algo_name)`
+*   `require_non_negative_weights(&graph, algo_name)`
+*   `require_no_self_loops(&graph, algo_name)`
+*   `require_dag(&graph, algo_name)`
 
 ```rust
+use graphina::core::types::Digraph;
+use graphina::core::error::Result;
 use graphina::core::validation::require_dag;
 
-fn run_custom_algorithm(graph: &MyGraph) -> Result<()> {
-    require_dag(graph)?;
+fn run_custom_algorithm(graph: &Digraph<i32, f64>) -> Result<()> {
+    require_dag(graph, "run_custom_algorithm")?;
     // Implementation
     Ok(())
 }

@@ -9,7 +9,7 @@ The parallel feature must be enabled in your `Cargo.toml` (if not enabled by def
 
 ```toml
 [dependencies]
-graphina = { version = "0.4.0-alpha.2", features = ["parallel"] }
+graphina = { version = "0.4.0-alpha.3", features = ["parallel"] }
 ```
 
 ## Available Algorithms
@@ -60,7 +60,27 @@ let start_nodes = vec![n1, n2];
 let visited = bfs_parallel(&g, &start_nodes);
 ```
 
-## When to use Parallelism?
+### Parallel Closeness Centrality
+
+Computes closeness centrality scores in parallel using Wasserman-Faust correction for disconnected graphs.
+
+```rust
+use graphina::parallel::closeness_centrality_parallel;
+
+let closeness = closeness_centrality_parallel(&g).unwrap();
+```
+
+### Parallel All Pairs Shortest Path Length
+
+Computes the shortest path lengths between all pairs of nodes in parallel.
+
+```rust
+use graphina::parallel::all_pairs_shortest_path_length_parallel;
+
+let (node_ordering, matrix) = all_pairs_shortest_path_length_parallel(&g);
+```
+
+## When to Use Parallelism?
 
 Parallelism implies overhead. Use it when:
 

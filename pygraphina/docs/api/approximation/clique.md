@@ -71,7 +71,7 @@ print(f"Found {len(cliques)} cliques via removal")
 
 - Community structure discovery
 - Dense subgraph identification
-- Analyzing highly interconnected groups
+- Analyzing densely interconnected groups
 - Preprocessing for other algorithms
 
 ## Notes

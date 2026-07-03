@@ -1,10 +1,10 @@
 # Approximation Algorithms Examples
 
-Examples of using Graphina to solve NP-hard problems using approximation heuristics.
+Examples of using Graphina to solve computationally hard graph problems using heuristic or approximation algorithms.
 
 ## Solving Traveling Salesman Problem (TSP)
 
-Find an approximate shortest path that visits every node exactly once.
+Find an approximate shortest tour that visits every node exactly once and returns to the start node.
 
 ```rust
 use graphina::core::types::Graph;

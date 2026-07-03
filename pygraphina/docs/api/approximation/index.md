@@ -58,11 +58,11 @@ for i in range(100):
 # Use approximation algorithms
 clique_size = pg.approximation.large_clique_size(g)
 vc_size = len(pg.approximation.min_weighted_vertex_cover(g))
-diameter_approx = pg.approximation.diameter(g)
+mis_size = len(pg.approximation.maximum_independent_set(g))
 
 print(f"Approximate clique size: {clique_size}")
 print(f"Approximate vertex cover: {vc_size}")
-print(f"Approximate diameter: {diameter_approx}")
+print(f"Approximate independent set: {mis_size}")
 ```
 
 ## Approximation Guarantees

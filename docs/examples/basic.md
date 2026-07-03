@@ -11,7 +11,7 @@ We'll model a network where:
 
 ```rust
 use graphina::core::types::Graph;
-use graphina::centrality::pagerank;
+use graphina::centrality::pagerank::pagerank;
 use std::fmt;
 
 // Define your custom node data

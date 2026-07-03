@@ -47,9 +47,6 @@ pub mod mst;
 /// Parallel implementations of algorithms.
 #[cfg(feature = "parallel")]
 pub mod parallel;
-/// Logging configuration.
-#[cfg(feature = "logging")]
-mod settings;
 /// Induced subgraph and ego network utilities.
 #[cfg(feature = "subgraphs")]
 pub mod subgraphs;

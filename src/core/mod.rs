@@ -3,6 +3,7 @@ pub mod error;
 pub mod generators;
 pub mod io;
 pub mod paths;
+pub(crate) mod rng;
 pub mod serialization;
 pub mod traits;
 pub mod types;

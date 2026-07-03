@@ -172,7 +172,7 @@ fast = pg.centrality.pagerank(g, max_iter=10, tolerance=1e-3)
 precise = pg.centrality.pagerank(g, max_iter=200, tolerance=1e-9)
 ```
 
-### Warm Start with nstart
+### Warm Start with `nstart`
 
 Use `nstart` to continue iterations from a previous state or provide custom initial values:
 
@@ -199,7 +199,7 @@ print(f"Custom init: {pr3}")
 print(f"Node 0 has highest score: {pr3[0]:.4f}")
 ```
 
-## Comparison with Eigenvector Centrality
+## Comparison With Eigenvector Centrality
 
 PageRank and eigenvector centrality are similar but have primary differences:
 
@@ -243,12 +243,14 @@ PageRank handles disconnected graphs gracefully due to the random jump mechanism
 For large graphs, consider:
 
 1. Parallel implementation: Use `pg.parallel.pagerank_parallel()`
-2. Early stopping: Use larger `tol` for faster (approximate) results
-3. Fewer iterations: Reduce `max_iters` if exact convergence isn't critical
+2. Early stopping: Use a larger `tolerance` for faster (approximate) results
+3. Fewer iterations: Reduce `max_iter` if exact convergence isn't critical
 
 ```python
 # For large graphs
 import pygraphina as pg
+
+large_graph = pg.core.erdos_renyi(n=10000, p=0.001, seed=42)
 
 # Standard (sequential)
 scores = pg.centrality.pagerank(large_graph, 0.85, 100, 1e-6)
@@ -272,8 +274,8 @@ Personalized PageRank (PPR) allows you to bias the random jumps toward specific 
 to a particular starting point.
 
 !!! note "Implementation Note"
-    The current implementation uses the Power Iteration method. While generally fast, for extremely large graphs with
-    slow convergence, other methods (like Arnoldi) might be considered in future releases.lowing workaround.
+    The current implementation uses the Power Iteration method. While generally fast, for very large graphs with
+    slow convergence, other methods (like Arnoldi) might be considered in future releases.
 
 ### Workaround for Personalized PageRank
 

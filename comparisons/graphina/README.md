@@ -74,7 +74,8 @@ and compared before timing. The workload covers every graphina algorithm that ha
 
 - Single-source shortest path (`dijkstra`, `bellman_ford`)
 - Point-to-point shortest path (`a_star`, zero heuristic)
-- All-pairs shortest path (graphina `johnson` against rustworkx `distance_matrix`)
+- All-pairs shortest path (unweighted BFS on both sides: graphina `all_pairs_shortest_path_length` against rustworkx `distance_matrix`, once
+  sequential and once with both libraries on their parallel paths)
 - Breadth-first and depth-first reachability (`bfs`, `dfs`)
 - Connected components
 - Degree centrality
@@ -86,8 +87,29 @@ and compared before timing. The workload covers every graphina algorithm that ha
 
 The differential check runs before timing: medians for an algorithm the libraries disagree on are meaningless, since a library doing the wrong amount
 of work can look faster.
-A divergent algorithm is reported as `DIFF` and not timed; an algorithm that panics on one side (for example failing to converge on a real dataset) is
-reported as `ERR` and not timed; an algorithm skipped because the dataset exceeds the dense-node ceiling is reported as `skipped`.
+A divergent algorithm is reported as `DIFF` and not timed. An algorithm that panics on one side (for example failing to converge on a real dataset) is
+reported as `ERR` with the failing library named; the surviving side is still timed, but without differential validation. An algorithm skipped because
+the dataset exceeds the dense-node ceiling is reported as `skipped`.
+
+### Library Coverage
+
+The two crates are large in different directions, which is why the workload above is the intersection rather than either library's full surface.
+rustworkx-core grew out of Qiskit and is deep in circuit-shaped problems (DAG algorithms, coloring, matching, planarity, Steiner trees, and token
+swapping), while Graphina is aimed at network analysis. Note that some rustworkx algorithms (PageRank, isomorphism, and the layout family) live in the
+rustworkx Python crate rather than in rustworkx-core, so they are not reachable from a Rust-to-Rust harness.
+
+| Area                                                  | Graphina | rustworkx-core |
+|-------------------------------------------------------|:--------:|:--------------:|
+| Shortest paths, traversal, and components             |   yes    |      yes       |
+| Classic centrality (degree through Katz)              |   yes    |      yes       |
+| PageRank and personalized PageRank                    |   yes    |       no       |
+| Minimum spanning tree                                 |   yes    | Steiner tree only |
+| Community detection                                   |   yes    |       no       |
+| Link prediction                                       |   yes    |       no       |
+| Approximation heuristics for NP-hard problems         |   yes    |       no       |
+| Network metrics (clustering, assortativity, and distances) | yes | transitivity only |
+| Explicit parallel algorithm family                    |   yes    |   threshold-based in centrality and all-pairs   |
+| DAG algorithms, coloring, matching, and planarity     |    no    |      yes       |
 
 ### Fairness Notes
 
@@ -95,7 +117,8 @@ reported as `ERR` and not timed; an algorithm skipped because the dataset exceed
   unweighted) while graphina's are weighted; unit weights make the two directly comparable.
 - rustworkx betweenness and closeness parallelize above a node-count threshold. The harness passes `usize::MAX` for that threshold to force the
   sequential path, so both libraries are measured single-threaded. graphina's sequential centrality modules are used (not the `parallel` feature), so
-  the comparison is single-thread against single-thread.
+  the comparison is single-thread against single-thread. The one exception is the dedicated parallel all-pairs row, where both libraries are
+  deliberately put on their parallel paths (graphina's Rayon all-pairs against rustworkx with a parallel threshold of zero).
 - Eigenvector and Katz centrality use different scaling and sign conventions in the two libraries (graphina does not normalize, rustworkx
   L2-normalizes), so their vectors are L2-normalized and sign-fixed (largest-magnitude component made positive) before comparison.
 - Katz centrality converges only for an attenuation factor below the reciprocal of the largest eigenvalue, which is much smaller on real graphs than
@@ -111,5 +134,5 @@ reported as `ERR` and not timed; an algorithm skipped because the dataset exceed
 
 > [!NOTE]
 > The harness covers only algorithms that both libraries implement over their core Rust APIs with directly comparable semantics.
-> Algorithms exclusive to one library (graphina's community detection, link prediction, and approximation modules; rustworkx's isomorphism, planarity,
-> coloring, and matching) are out of scope for a like-for-like timing comparison.
+> Algorithms exclusive to one library (graphina's community detection, link prediction, and approximation modules; rustworkx-core's DAG algorithms,
+> planarity, coloring, and matching) are out of scope for a like-for-like timing comparison.

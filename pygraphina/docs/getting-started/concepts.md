@@ -8,7 +8,7 @@ PyGraphina represents graphs using an adjacency list data structure, which provi
 
 While PyGraphina allows modifying the graph structure, it's generally more efficient to build the graph first and then analyze it. Frequent modifications (especially removals) can be slower than bulk building.
 
-### Undirected vs. Directed Graphs
+### Undirected Vs Directed Graphs
 
 PyGraphina supports both undirected and directed graphs:
 
@@ -103,7 +103,7 @@ assert g.get_node_attr(node_id) == 100
     - Entity IDs for mapping to external data
     - Array indices for external data structures
 
-### Storing Rich Node Attributes
+### Storing Complex Node Attributes
 
 If you need to store complex attributes (strings, objects, etc.), use an external dictionary:
 
@@ -114,7 +114,7 @@ import pygraphina as pg
 g = pg.PyGraph()
 node_data = {}
 
-# Add nodes with rich attributes stored externally
+# Add nodes with complex attributes stored externally
 people = [
     {"name": "Alice", "age": 30, "city": "NYC"},
     {"name": "Bob", "age": 25, "city": "LA"},
@@ -160,17 +160,18 @@ g.add_edge(a, b, 2.5)
 
 ### Multiple Edges
 
-PyGraphina does not support multiple edges between the same pair of nodes (no multigraph support):
+PyGraphina does not support multiple edges between the same pair of nodes (no multigraph support). Calling `add_edge` again with the same endpoints updates the existing edge:
 
 ```python
 g = pg.PyGraph()
 a, b = g.add_node(1), g.add_node(2)
 
 g.add_edge(a, b, 1.0)
-g.add_edge(a, b, 2.0)  # This will update the existing edge
+g.add_edge(a, b, 2.0)  # This updates the existing edge
 
 # Only one edge exists between a and b
 assert g.edge_count() == 1
+assert g.get_edge_weight(a, b) == 2.0
 ```
 
 ### Self-Loops
@@ -250,6 +251,8 @@ PyGraphina organizes algorithms into logical modules:
 Measures of node importance and influence:
 
 ```python
+g = pg.core.erdos_renyi(n=50, p=0.1, seed=42)
+
 # PageRank centrality
 pagerank = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tolerance=1e-6)
 
@@ -301,8 +304,8 @@ clique_size = pg.approximation.large_clique_size(g)
 # Approximate clustering coefficient
 clustering = pg.approximation.average_clustering_approx(g)
 
-# Approximate diameter
-diameter = pg.approximation.diameter(g)
+# Approximate maximum independent set
+independent_set = pg.approximation.maximum_independent_set(g)
 ```
 
 ### `pg.core`
@@ -317,6 +320,7 @@ g = pg.core.watts_strogatz(n=100, k=4, beta=0.3, seed=42)
 g = pg.core.complete_graph(n=10)
 
 # Shortest paths use graph methods directly:
+source, target = 0, 1
 distances = g.dijkstra(source)  # Returns dict of distances
 result = g.shortest_path(source, target)  # Returns (distance, path) or None
 ```
@@ -333,6 +337,7 @@ avg_clustering = g.average_clustering()
 transitivity = g.transitivity()
 
 # Node-level metrics (instance methods)
+node = 0
 clustering = g.clustering_of(node)
 triangles = g.triangles_of(node)
 ```
@@ -342,35 +347,40 @@ triangles = g.triangles_of(node)
 Minimum spanning tree algorithms:
 
 ```python
-# Kruskal's algorithm
-mst = pg.mst.kruskal(g)
+# Kruskal's algorithm; returns (total_weight, edges)
+total_weight, mst_edges = pg.mst.kruskal_mst(g)
 
 # Prim's algorithm
-mst = pg.mst.prim(g, start_node)
+total_weight, mst_edges = pg.mst.prim_mst(g)
 ```
 
-### `pg.traversal`
+### Traversal
 
-Graph traversal algorithms:
+Graph traversal algorithms are instance methods on graph objects:
 
 ```python
+start_node = 0
+
 # Breadth-first search
-bfs_order = pg.traversal.bfs(g, start_node)
+bfs_order = g.bfs(start_node)
 
 # Depth-first search
-dfs_order = pg.traversal.dfs(g, start_node)
+dfs_order = g.dfs(start_node)
 ```
 
-### `pg.subgraphs`
+### Subgraphs
 
-Subgraph extraction:
+Subgraph extraction methods are also instance methods on graph objects:
 
 ```python
+node_set = [0, 1]
+center_node = 0
+
 # Extract induced subgraph
-subgraph = pg.subgraphs.induced_subgraph(g, node_set)
+subgraph = g.induced_subgraph(node_set)
 
 # Extract ego graph (k-hop neighborhood)
-ego = pg.subgraphs.ego_graph(g, center_node, radius=2)
+ego = g.ego_graph(center_node, radius=2)
 ```
 
 ### `pg.parallel`
@@ -381,8 +391,8 @@ Parallel implementations for large graphs:
 # Parallel PageRank
 pagerank = pg.parallel.pagerank_parallel(g, 0.85, 100, 1e-6)
 
-# Parallel BFS
-bfs_order = pg.parallel.bfs_parallel(g, [start_node])
+# Parallel BFS (one traversal per start node)
+bfs_orders = pg.parallel.bfs_parallel(g, [start_node])
 ```
 
 ## Performance Considerations
@@ -406,6 +416,8 @@ PyGraphina is designed for graphs with:
 Many algorithms have parallel implementations in `pg.parallel` that can leverage multiple CPU cores:
 
 ```python
+large_graph = pg.core.erdos_renyi(n=10000, p=0.001, seed=42)
+
 # Sequential version
 result = pg.centrality.pagerank(large_graph, 0.85, 100, 1e-6)
 
@@ -420,7 +432,8 @@ result = pg.parallel.pagerank_parallel(large_graph, 0.85, 100, 1e-6)
 Algorithms return different data types depending on their nature:
 
 - Dict[int, float]: Node-to-score mappings (centrality algorithms)
-- Dict[int, int]: Node-to-cluster mappings (community detection)
+- Dict[int, int]: Node-to-label mappings (label propagation)
+- List[List[int]]: Node groups (communities and connected components)
 - Dict[tuple, float]: Edge-to-score mappings (link prediction)
 - List[int]: Node sequences (paths, traversals)
 - float: Single values (density, diameter)
@@ -436,8 +449,12 @@ print(pagerank)  # {0: 0.25, 1: 0.35, 2: 0.40}
 communities = pg.community.label_propagation(g, 100)
 print(communities)  # {0: 0, 1: 0, 2: 1}
 
+# Returns List[List[int]] with one list of node IDs per community
+communities = pg.community.louvain(g)
+print(communities)  # [[0, 1], [2]]
+
 # Returns List[int] with node IDs in traversal order
-bfs = pg.traversal.bfs(g, start_node=0)
+bfs = g.bfs(0)
 print(bfs)  # [0, 1, 2, 3, 4]
 ```
 
@@ -467,6 +484,8 @@ For large graphs:
 Always check for None or empty results:
 
 ```python
+source, target = 0, 1
+
 result = g.shortest_path(source, target)
 if result:
     distance, path = result

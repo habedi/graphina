@@ -14,7 +14,7 @@ A directed graph with integer node attributes and floating-point edge weights.
     - Node attributes: Must be integers (`i64` range: -2^63 to 2^63-1)
     - Edge weights: Floating-point numbers (`f64`)
 
-    For complex node attributes (strings, objects), use an external dictionary. See [Basic Concepts](../getting-started/concepts.md#storing-rich-node-attributes).
+    For complex node attributes (strings, objects), use an external dictionary. See [Basic Concepts](../getting-started/concepts.md#storing-complex-node-attributes).
 
 ### Creating a Graph
 
@@ -31,7 +31,7 @@ dg = pg.PyDiGraph()
 
 - Edges are directional: An edge from A to B is different from an edge from B to A
 - Degree operations: Supports `in_degree(node)` and `out_degree(node)` methods in addition to `degree` property
-- Neighbors: `neighbors()` returns outgoing neighbors, `predecessors()` returns incoming neighbors
+- Neighbors: `neighbors()` returns outgoing neighbors, `in_neighbors()` returns incoming neighbors
 
 ## Additional Methods for Directed Graphs
 
@@ -91,10 +91,10 @@ print(dg.out_degree(a))  # 2 (edges to b and c)
 print(dg.out_degree(b))  # 0 (no outgoing edges)
 ```
 
-### predecessors
+### in_neighbors
 
 ```python
-predecessors(node: int) -> List[int]
+in_neighbors(node: int) -> List[int]
 ```
 
 Get the predecessor nodes (nodes with edges pointing to this node).
@@ -119,13 +119,13 @@ a, b, c = [dg.add_node(i) for i in range(3)]
 dg.add_edge(a, c, 1.0)  # a → c
 dg.add_edge(b, c, 1.0)  # b → c
 
-print(dg.predecessors(c))  # [0, 1] (a and b)
+print(dg.in_neighbors(c))  # [0, 1] (a and b)
 ```
 
-### successors
+### out_neighbors
 
 ```python
-successors(node: int) -> List[int]
+out_neighbors(node: int) -> List[int]
 ```
 
 Get the successor nodes (nodes that this node has edges pointing to). Equivalent to `neighbors()` for directed graphs.
@@ -150,7 +150,7 @@ a, b, c = [dg.add_node(i) for i in range(3)]
 dg.add_edge(a, b, 1.0)  # a → b
 dg.add_edge(a, c, 1.0)  # a → c
 
-print(dg.successors(a))  # [1, 2] (b and c)
+print(dg.out_neighbors(a))  # [1, 2] (b and c)
 ```
 
 ## Inherited Methods
@@ -193,21 +193,21 @@ print(f"Total tasks: {workflow.node_count()}")
 print(f"Dependencies: {workflow.edge_count()}")
 
 # Check task dependencies
-print(f"Process depends on: {workflow.predecessors(process)}")
-print(f"Fetch data leads to: {workflow.successors(fetch_data)}")
+print(f"Process depends on: {workflow.in_neighbors(process)}")
+print(f"Fetch data leads to: {workflow.out_neighbors(fetch_data)}")
 
 # Find tasks with no dependencies (starting points)
-start_tasks = [n for n in workflow.nodes() if workflow.in_degree(n) == 0]
+start_tasks = [n for n in workflow.nodes if workflow.in_degree(n) == 0]
 print(f"Start tasks: {start_tasks}")
 
 # Find tasks with no dependents (end points)
-end_tasks = [n for n in workflow.nodes() if workflow.out_degree(n) == 0]
+end_tasks = [n for n in workflow.nodes if workflow.out_degree(n) == 0]
 print(f"End tasks: {end_tasks}")
 ```
 
-## Directed vs Undirected: When to Use
+## Directed Vs Undirected: When to Use
 
-### Use PyDiGraph when:
+### Use PyDiGraph When:
 
 - Relationships have direction (like "follows", "depends on", "links to")
 - Order matters (like workflows, dependencies, hierarchies)
@@ -221,7 +221,7 @@ Examples:
 - Task dependencies
 - Food chains
 
-### Use PyGraph when:
+### Use PyGraph When:
 
 - Relationships are symmetric (like "is friends with", "is connected to")
 - Order doesn't matter
@@ -245,7 +245,7 @@ a, b = undirected.add_node(1), undirected.add_node(2)
 undirected.add_edge(a, b, 1.0)
 
 directed = pg.PyDiGraph()
-for node in undirected.nodes():
+for node in undirected.nodes:
     attr = undirected.get_node_attr(node)
     directed.add_node(attr)
 

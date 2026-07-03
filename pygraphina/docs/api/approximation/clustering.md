@@ -6,16 +6,12 @@ approximation is used.
 ## Function Signature
 
 ```python
-pg.approximation.average_clustering_approx(
-    graph: PyGraph,
-num_samples: int = 1000
-) -> float
+pg.approximation.average_clustering_approx(graph: PyGraph) -> float
 ```
 
 ## Parameters
 
 - graph: The graph to analyze
-- num_samples: Number of nodes to sample (default: 1000)
 
 ## Returns
 
@@ -25,12 +21,11 @@ Approximate average clustering coefficient (0 to 1).
 
 The clustering coefficient for a node is the fraction of possible triangles through that node that actually exist.
 
-Exact computation requires checking all triangles (O(V³) worst case). The approximation samples nodes and computes exact
-clustering for those.
+The current implementation computes the coefficient for every node and averages the results.
 
 ## Time Complexity
 
-O(num_samples · d²) where d is average degree
+O(V · d²) where d is average degree
 
 ## Space Complexity
 
@@ -51,7 +46,7 @@ for i in range(50):
         g.add_edge(nodes[i], nodes[j], 1.0)
 
 # Compute approximate clustering
-clustering = pg.approximation.average_clustering_approx(g, num_samples=100)
+clustering = pg.approximation.average_clustering_approx(g)
 print(f"Average clustering coefficient: {clustering:.4f}")
 
 # Exact computation (for comparison on small graphs)

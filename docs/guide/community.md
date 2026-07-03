@@ -27,7 +27,7 @@ use graphina::community::label_propagation::label_propagation;
 let communities = label_propagation(&graph, 100, None).unwrap();
 
 // Group nodes by community ID
-let mut groups: std::collections::HashMap<usize, Vec<crate::core::types::NodeId>> = std::collections::HashMap::new();
+let mut groups: std::collections::HashMap<usize, Vec<graphina::core::types::NodeId>> = std::collections::HashMap::new();
 for (idx, &comm_id) in communities.iter().enumerate() {
     let node_id = graph.node_ids().nth(idx).unwrap();
     groups.entry(comm_id).or_default().push(node_id);
@@ -73,6 +73,9 @@ let communities = spectral_clustering(&graph, 3, Some(42)).unwrap();
 
 A heuristic method to extract communities by optimizing modularity.
 It is widely considered one of the best algorithms for community detection due to its speed and quality of results.
+
+!!! note "Weight Type"
+    The Louvain method only accepts graphs with `f64` edge weights (`BaseGraph<A, f64, Ty>`).
 
 ```rust
 use graphina::community::louvain::louvain;

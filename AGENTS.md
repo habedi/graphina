@@ -51,7 +51,7 @@ Quick examples:
 - Avoid colorful adjectives and adverbs. Write "graph generator" not "powerful graph generator".
 - Prefer using noun phrases for checklist items, not imperative verbs. Write "negative weight detection" not "detect negative weights".
 - Headings in Markdown files must be in title case: "Build from Source" not "Build from source". Minor words
-  (a, an, the, and, but, or, for, in, on, at, to, by, of) stay lowercase unless they are the first word.
+  (a, an, the, and, but, or, for, in, on, at, to, by, of, with, from) stay lowercase unless they are the first word.
 - Write correct and complete sentences.
 - Avoid made-up words, abbreviations, and colons in the middle of sentences.
 - Don't use pretentious language and made-up words.
@@ -62,7 +62,6 @@ Quick examples:
 - `src/centrality/`, `src/community/`, `src/links/`, `src/metrics/`, `src/mst/`, `src/traversal/`, `src/approximation/`, `src/parallel/`,
   `src/subgraphs/`: Optional extensions, each behind a Cargo feature of the same name. The `all` feature enables them together.
 - `src/lib.rs`: Crate root with module declarations, crate-level docs, and API conventions.
-- `src/settings.rs`: Runtime settings (such as the `DEBUG_GRAPHINA` toggle).
 - `pygraphina/`: PyGraphina, the Python bindings crate built with maturin and published to PyPI as `pygraphina`. Contains its own `Cargo.toml`,
   `src/`, `tests/`, a `pygraphina/` type-stub package (`__init__.pyi` plus one `.pyi` per submodule, with `py.typed`), and docs.
 - `benches/`: Criterion micro-benchmarks (`graph_benchmarks`, `algorithm_benchmarks`, `project_benchmarks`) that track Graphina's own performance over
@@ -131,7 +130,8 @@ deliberately or keep it private.
   return `None` for an empty or disconnected graph).
 - Weight totality: the `mst` family (`kruskal_mst`, `prim_mst`, `boruvka_mst`) is generic over a totally-ordered weight `W: Ord`, so floating-point
   callers wrap weights in `ordered_float::OrderedFloat`. The `centrality` and `approximation` functions, by contrast, all accept a plain
-  `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`, `local_node_connectivity`) ignore weights, and the
+  `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`, `local_node_connectivity`) ignore weights, and
+  the
   path-based ones (`harmonic_centrality`, `closeness_centrality`, `greedy_tsp`) order distances internally.
 - Negative weights: `dijkstra` and `a_star` return an error on a negative weight; `bellman_ford`, `floyd_warshall`, and `johnson` accept negatives and
   return `None` on a negative cycle. Pathfinding assumes a non-empty graph; validate with `core::validation` first.
@@ -145,12 +145,13 @@ Signatures are self-describing; read them from the source rather than this file.
 choice, and the edge-case behavior a caller cannot infer from the type.
 Every function listed is gated behind its module's feature flag.
 
-### `core` (always compiled)
+### `core` (Always Compiled)
 
 - `BaseGraph<A, W, Ty>` is the central type; `A` is the node attribute, `W` the edge weight, and `Ty` the `Directed` or `Undirected` marker.
   `Graph<A, W>` and `Digraph<A, W>` are the undirected and directed aliases. `degree`, `in_degree`, and `out_degree` return `Option<usize>` (`None`
   for a missing node); for undirected graphs in-degree and out-degree both equal the total degree. `density` returns `0.0` for fewer than two nodes.
-  `add_edge_if_absent` and `find_edge` check both directions on undirected graphs.
+  Graphs are simple: `add_edge` updates the weight of an existing edge instead of creating a parallel edge, and `add_edge_if_absent` inserts without
+  overwriting an existing weight. `add_edge`, `add_edge_if_absent`, and `find_edge` check both directions on undirected graphs.
 - `GraphinaError` (in `core::error`) is the single error type, with constructor helpers (`invalid_graph`, `node_not_found`, `no_path`,
   `convergence_failed`, and so on) and `From` impls for `io::Error`, `serde_json::Error`, and the bincode codec errors. `Result<T>` aliases
   `Result<T, GraphinaError>`.
@@ -160,32 +161,35 @@ Every function listed is gated behind its module's feature flag.
 - Serialization: `save_json`/`load_json`, `save_binary`/`load_binary`, and `save_graphml` round-trip through the index-based `SerializableGraph`. The
   `_strict` loaders (`load_json_strict`, `load_binary_strict` and `try_from_serializable`) additionally validate that the serialized directedness
   matches the target type; the plain loaders do not.
-- Paths: `dijkstra`/`dijkstra_path_f64` (nonnegative weights), `bellman_ford` (negatives, `None` on negative cycle), `a_star` (admissible heuristic,
-  returns the path directly), `floyd_warshall`, and `johnson` (all-pairs, `None` on negative cycle). Distance maps use `None` for unreachable nodes;
-  the source has distance `Some(0)` and no predecessor.
+- Paths: `dijkstra`/`dijkstra_path_f64` (nonnegative weights, return `Result`), `bellman_ford` (negatives, returns `Option`, `None` on negative
+  cycle), `a_star` (admissible heuristic, returns `Result<Option<(W, Vec<NodeId>)>>`), `floyd_warshall`, and `johnson` (all-pairs, return `Option`,
+  `None` on negative cycle). Distance maps use `None` for unreachable nodes; the source has distance `Some(0)` (or `Some(0.0)`) and no predecessor.
 - Generators: `erdos_renyi_graph`, `complete_graph`, `bipartite_graph`, `star_graph`, `cycle_graph` (requires `n >= 3`), `watts_strogatz_graph` (`k`
   even and `< n`), and `barabasi_albert_graph` (`n >= m`). Each takes a `seed` where randomized and returns `InvalidArgument` on out-of-range
   parameters.
-- Validation: boolean predicates (`is_connected`, `has_negative_weights`, `is_dag`, `is_bipartite`, `count_components`) and `require_*`/`validate_*`
-  variants that return a `GraphinaError` for use as algorithm preconditions.
+- Validation: boolean predicates (`is_empty`, `is_connected`, `has_negative_weights`, `has_self_loops`, `is_dag`, `is_bipartite`, `count_components`)
+  and the `require_*` and `validate_*` validator families that return a `Result<(), GraphinaError>` (for use as algorithm preconditions).
 
 ### `centrality`
 
 Most functions return `Result<NodeMap<f64>>`. Iterative methods take explicit `max_iter` and `tolerance` and return `ConvergenceFailed` rather than
 looping forever.
 
-- `degree_centrality`, `in_degree_centrality`, `out_degree_centrality`: raw counts, not normalized; a self-loop counts as 2 on undirected graphs.
-  Succeed on an empty graph with an empty map.
+- `degree_centrality`, `in_degree_centrality`, `out_degree_centrality`: raw counts, not normalized. In undirected graphs, total degree, in-degree, and
+  out-degree all count self-loops as 2. In directed graphs, a self-loop counts as 1 for in-degree and 1 for out-degree (summing to 2 for total
+  degree). Succeed on an empty graph with an empty map.
 - `betweenness_centrality` and `edge_betweenness_centrality`: take a `normalized: bool` and an `f64`-weighted graph; Brandes' algorithm over BFS, so
   edge weights are ignored; error on an empty graph. Edge betweenness stores both `(u, v)` and `(v, u)` for undirected graphs.
 - `closeness_centrality`: Wasserman-Faust correction for disconnected graphs; a node with no reachable neighbors scores `0.0`.
-- `eigenvector_centrality`: power iteration for directed graphs, symmetric eigendecomposition for undirected (avoids bipartite oscillation); values
-  normalized to sum to `n`; isolated or zero-weight graphs yield a uniform distribution.
+- `eigenvector_centrality`: power iteration for both directed and undirected graphs; L2-normalizes the centrality vector each iteration (except for
+  zero-edge/isolated graphs which yield a uniform `1/n` distribution).
 - `pagerank`: takes `damping`, `max_iter`, `tolerance`, and optional `nstart`; result sums to `1.0`; dangling nodes redistribute uniformly; a single
   node scores `1.0`.
-- `personalized_page_rank` returns a raw `Vec<f64>` aligned to internal node order and is re-exported as `personalized_pagerank_vec`;
-  `personalized_pagerank` is the `NodeMap` facade over it. Both require `damping` in `(0, 1)` and `max_iter > 0`.
-- `katz_centrality`: takes `alpha` (below the reciprocal of the largest eigenvalue) and an optional per-node `beta` closure; no normalization.
+- `personalized_page_rank` takes `personalization: Option<Vec<f64>>`, `damping`, `tol`, and `max_iter`, returning a raw `Vec<f64>` aligned to internal
+  node order. It is re-exported as `personalized_pagerank_vec`; `personalized_pagerank` is the `NodeMap` facade over it. Both require `damping` in
+  `(0, 1)` and `max_iter > 0`.
+- `katz_centrality`: takes `alpha`, an optional per-node `beta` closure, `max_iter`, and `tolerance`; returns `Result<NodeMap<f64>, GraphinaError>` to
+  handle convergence issues.
 - `voterank(graph, num_seeds) -> Vec<NodeId>`: selector-style, returns a plain vector, never a `Result`; stops early when no node has positive votes.
 - `local_reaching_centrality`, `global_reaching_centrality`, `laplacian_centrality`: `Result<NodeMap<f64>>`.
 
@@ -245,11 +249,13 @@ order (use `OrderedFloat<f64>` for floats); `boruvka_mst` additionally requires 
 
 ### `approximation`
 
-Heuristics for NP-hard problems. Set-returning functions (`min_weighted_vertex_cover`, `maximum_independent_set`, `max_clique`,
-`min_maximal_matching`, `densest_subgraph`) return `HashSet`/`Vec` with no `Result`; TSP functions return `Result<(Vec<NodeId>, f64)>`.
+Heuristics for NP-hard problems. Set/value returning functions: `min_weighted_vertex_cover`, `maximum_independent_set`, `max_clique`,
+`clique_removal` (returns `Vec<HashSet<NodeId>>`), `large_clique_size` (returns `usize`), `average_clustering` (returns `f64`),
+`min_maximal_matching` (returns `HashSet<(NodeId, NodeId)>`), `ramsey_r2` (returns `(HashSet, HashSet)`), `densest_subgraph`, `treewidth_min_degree`/
+`treewidth_min_fill_in` (return `(usize, Vec<NodeId>)`), and `local_node_connectivity` (returns `usize`) return collections or plain values with no
+`Result` (except TSP).
 
-- TSP: `greedy_tsp(graph, start)` is a greedy nearest-neighbor heuristic over `f64` weights. The returned tour is a cycle (
-  `tour[0] == tour[last]`).
+- TSP: `greedy_tsp(graph, start)` is a greedy nearest-neighbor heuristic over `f64` weights. The returned tour is a cycle (`tour[0] == tour[last]`).
 - `min_weighted_vertex_cover` is a greedy 2-approximation.
 - `local_node_connectivity` takes an `f64`-weighted graph and finds vertex-disjoint paths by BFS, so edge weights are ignored.
 
@@ -260,8 +266,9 @@ All return collections (`HashMap`/`Vec`), not `Result`, and produce results inde
 
 - `bfs_parallel(graph, starts)` and `shortest_paths_parallel(graph, sources)` run one search per source and return results in input order; shortest
   paths are unweighted (hop counts).
-- `degrees_parallel`, `clustering_coefficients_parallel`, `triangles_parallel`, `connected_components_parallel` (and its `_list` variant), and
-  `pagerank_parallel` (same parameters as the sequential `pagerank`) return per-node maps.
+- `degrees_parallel`, `clustering_coefficients_parallel`, `triangles_parallel`, `connected_components_parallel` (and its `_list` variant),
+  `pagerank_parallel` (takes `nstart: Option<&HashMap<NodeId, f64>>`), `closeness_centrality_parallel`, and `all_pairs_shortest_path_length_parallel`
+  return per-node maps or path results.
 
 ### `subgraphs`
 

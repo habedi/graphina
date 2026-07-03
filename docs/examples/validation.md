@@ -12,9 +12,9 @@ use graphina::core::validation::{require_dag, require_non_negative_weights};
 use graphina::core::error::Result;
 
 fn process_graph(graph: &Digraph<&str, f64>) -> Result<()> {
-    // 1. Verify preconditions
-    require_dag(graph)?;
-    require_non_negative_weights(graph)?;
+    // 1. Verify preconditions (the second argument names the caller for error messages)
+    require_dag(graph, "process_graph")?;
+    require_non_negative_weights(graph, "process_graph")?;
 
     // 2. Perform graph processing
     println!("Graph is valid. Processing...");

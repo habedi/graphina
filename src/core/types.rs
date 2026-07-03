@@ -269,9 +269,12 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             ))
         }
     }
-    /// Adds an edge with the given weight between two nodes.
+    /// Adds an edge with the given weight between two nodes, or updates the
+    /// weight if the edge already exists (in either orientation on an
+    /// undirected graph). Graphs therefore stay simple: `add_edge` never
+    /// creates a parallel edge.
     pub fn add_edge(&mut self, source: NodeId, target: NodeId, weight: W) -> EdgeId {
-        EdgeId::new(self.inner.add_edge(source.0, target.0, weight))
+        EdgeId::new(self.inner.update_edge(source.0, target.0, weight))
     }
     /// Adds multiple nodes at once from a slice of attributes.
     pub fn add_nodes_bulk(&mut self, attributes: &[A]) -> Vec<NodeId>
@@ -492,24 +495,19 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
             )
         })
     }
-    /// Adds an edge if it doesn't already exist. Returns (edge_id, inserted?).
+    /// Adds an edge if it doesn't already exist, keeping the existing weight
+    /// otherwise. Returns the edge id and whether a new edge was inserted. On
+    /// an undirected graph the edge is matched in either orientation.
     pub fn add_edge_if_absent(
         &mut self,
         source: NodeId,
         target: NodeId,
         weight: W,
-    ) -> (EdgeId, bool)
-    where
-        W: Clone,
-    {
+    ) -> (EdgeId, bool) {
+        // `find_edge` already matches either orientation on undirected graphs.
         if let Some(eid) = self.find_edge(source, target) {
             (eid, false)
         } else {
-            if !<Ty as GraphConstructor<A, W>>::is_directed() {
-                if let Some(eid) = self.find_edge(target, source) {
-                    return (eid, false);
-                }
-            }
             let eid = self.add_edge(source, target, weight);
             (eid, true)
         }
@@ -969,6 +967,113 @@ mod tests {
         assert!(dg.find_edge(x, y).is_some());
         assert!(dg.find_edge(y, x).is_none());
         assert!(dg.contains_edge(x, y) && !dg.contains_edge(y, x));
+    }
+
+    #[test]
+    fn test_add_edge_updates_existing_undirected_edge() {
+        use crate::core::types::Graph;
+        // `add_edge` must keep graphs simple: repeating a pair (in either
+        // orientation) updates the stored weight instead of inserting a
+        // parallel edge.
+        let mut g: Graph<i32, f64> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+
+        let first = g.add_edge(a, b, 1.0);
+        let second = g.add_edge(a, b, 2.0);
+
+        assert_eq!(first, second);
+        assert_eq!(g.edge_count(), 1);
+        assert_eq!(g.edge_weight(first), Some(&2.0));
+
+        // The reversed orientation is the same undirected edge.
+        let third = g.add_edge(b, a, 3.0);
+        assert_eq!(first, third);
+        assert_eq!(g.edge_count(), 1);
+        assert_eq!(g.edge_weight(first), Some(&3.0));
+    }
+
+    #[test]
+    fn test_add_edge_updates_existing_directed_edge() {
+        use crate::core::types::Digraph;
+        let mut g: Digraph<i32, f64> = Digraph::new();
+        let x = g.add_node(0);
+        let y = g.add_node(1);
+
+        let forward = g.add_edge(x, y, 1.0);
+        let updated = g.add_edge(x, y, 2.0);
+
+        assert_eq!(forward, updated);
+        assert_eq!(g.edge_count(), 1);
+        assert_eq!(g.edge_weight(forward), Some(&2.0));
+
+        // The reverse direction is a distinct edge on a directed graph.
+        let backward = g.add_edge(y, x, 4.0);
+        assert_ne!(forward, backward);
+        assert_eq!(g.edge_count(), 2);
+        assert_eq!(g.edge_weight(forward), Some(&2.0));
+        assert_eq!(g.edge_weight(backward), Some(&4.0));
+    }
+
+    #[test]
+    fn test_add_edge_updates_existing_self_loop() {
+        use crate::core::types::Graph;
+        let mut g: Graph<i32, f64> = Graph::new();
+        let a = g.add_node(0);
+
+        let first = g.add_edge(a, a, 1.0);
+        let second = g.add_edge(a, a, 2.0);
+
+        assert_eq!(first, second);
+        assert_eq!(g.edge_count(), 1);
+        assert_eq!(g.edge_weight(first), Some(&2.0));
+    }
+
+    #[test]
+    fn test_add_edge_if_absent_undirected() {
+        use crate::core::types::Graph;
+        let mut g: Graph<i32, f64> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+
+        let (eid, inserted) = g.add_edge_if_absent(a, b, 1.0);
+        assert!(inserted);
+        assert_eq!(g.edge_count(), 1);
+
+        // A repeated pair keeps the existing weight.
+        let (same, inserted) = g.add_edge_if_absent(a, b, 2.0);
+        assert!(!inserted);
+        assert_eq!(same, eid);
+        assert_eq!(g.edge_weight(eid), Some(&1.0));
+
+        // The reversed orientation is the same undirected edge.
+        let (reversed, inserted) = g.add_edge_if_absent(b, a, 3.0);
+        assert!(!inserted);
+        assert_eq!(reversed, eid);
+        assert_eq!(g.edge_count(), 1);
+        assert_eq!(g.edge_weight(eid), Some(&1.0));
+    }
+
+    #[test]
+    fn test_add_edge_if_absent_directed() {
+        use crate::core::types::Digraph;
+        let mut g: Digraph<i32, f64> = Digraph::new();
+        let x = g.add_node(0);
+        let y = g.add_node(1);
+
+        let (forward, inserted) = g.add_edge_if_absent(x, y, 1.0);
+        assert!(inserted);
+
+        let (same, inserted) = g.add_edge_if_absent(x, y, 2.0);
+        assert!(!inserted);
+        assert_eq!(same, forward);
+        assert_eq!(g.edge_weight(forward), Some(&1.0));
+
+        // The reverse direction is a distinct edge on a directed graph.
+        let (backward, inserted) = g.add_edge_if_absent(y, x, 4.0);
+        assert!(inserted);
+        assert_ne!(forward, backward);
+        assert_eq!(g.edge_count(), 2);
     }
     use super::*;
     #[test]

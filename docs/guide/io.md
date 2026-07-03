@@ -50,27 +50,29 @@ read_adjacency_list("adj.txt", &mut loaded_graph, ' ').unwrap();
 
 Graphina uses `serde` for serialization.
 
+The serialization entry points are methods on the graph types.
+
 ### JSON
 
 ```rust
-use graphina::core::serialization::{save_json,load_json};
+use graphina::core::types::Graph;
 
 // Save
-save_json(&graph, "graph.json").unwrap();
+graph.save_json("graph.json").unwrap();
 
 // Load
-let g: Graph<String, f64> = load_json("graph.json").unwrap();
+let g = Graph::<i32, f32>::load_json("graph.json").unwrap();
 ```
 
-### Binary (bincode)
+### Binary Format
 
 Compact and fast binary format.
 
 ```rust
-use graphina::core::serialization::{save_binary, load_binary};
+use graphina::core::types::Graph;
 
-save_binary(&graph, "graph.bin").unwrap();
-let g: Graph<i32, f64> = load_binary("graph.bin").unwrap();
+graph.save_binary("graph.bin").unwrap();
+let g = Graph::<i32, f32>::load_binary("graph.bin").unwrap();
 ```
 
 ### GraphML (Export Only)
@@ -78,7 +80,5 @@ let g: Graph<i32, f64> = load_binary("graph.bin").unwrap();
 GraphML is standard for graph visualization tools.
 
 ```rust
-use graphina::core::serialization::save_graphml;
-
-save_graphml(&graph, "graph.graphml").unwrap();
+graph.save_graphml("graph.graphml").unwrap();
 ```

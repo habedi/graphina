@@ -7,18 +7,20 @@ Spectral clustering uses the graph Laplacian matrix to partition the graph into 
 ```python
 pg.community.spectral_clustering(
     graph: PyGraph,
-    k: int
-) -> Dict[int, int]
+    k: int,
+    seed: Optional[int] = None
+) -> List[List[int]]
 ```
 
 ## Parameters
 
 - graph: Undirected graph to analyze
 - k: Number of communities to find
+- seed: Optional random seed for the k-means step
 
 ## Returns
 
-Dictionary mapping node IDs to community labels (0 to k-1).
+List of k communities, each a list of node IDs.
 
 ## Description
 
@@ -64,9 +66,8 @@ g.add_edge(cluster2[-1], cluster3[0], 0.5)
 communities = pg.community.spectral_clustering(g, k=3)
 
 # Verify
-from collections import Counter
-print(f"Found {len(set(communities.values()))} communities")
-print(f"Size distribution: {Counter(communities.values())}")
+print(f"Found {len(communities)} communities")
+print(f"Sizes: {[len(c) for c in communities]}")
 ```
 
 ## Advantages

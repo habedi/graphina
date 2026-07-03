@@ -22,14 +22,28 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+# Configure clean, modern typography and visual defaults
+matplotlib.rcParams["font.family"] = "sans-serif"
+matplotlib.rcParams["font.sans-serif"] = [
+    "Inter",
+    "Roboto",
+    "Helvetica Neue",
+    "Arial",
+    "DejaVu Sans",
+]
+matplotlib.rcParams["text.color"] = "#1e293b"
+matplotlib.rcParams["axes.labelcolor"] = "#334155"
+matplotlib.rcParams["xtick.color"] = "#475569"
+matplotlib.rcParams["ytick.color"] = "#475569"
+
 # Fixed library order and colors so charts from different runs are comparable.
-LIBRARIES = ["graphina", "pygraphina", "rustworkx-core", "rustworkx", "networkx"]
+LIBRARIES = ["graphina", "rustworkx-core", "pygraphina", "networkx", "rustworkx"]
 COLORS = {
-    "graphina": "#1f77b4",
-    "pygraphina": "#1f77b4",
-    "rustworkx-core": "#ff7f0e",
-    "rustworkx": "#ff7f0e",
-    "networkx": "#2ca02c",
+    "graphina": "#2563eb",        # Electric Blue (Graphina Rust)
+    "pygraphina": "#2563eb",      # Electric Blue (PyGraphina Python)
+    "rustworkx-core": "#94a3b8",  # Light Slate (rustworkx-core Rust)
+    "networkx": "#64748b",        # Medium Slate (NetworkX Python)
+    "rustworkx": "#cbd5e1",       # Very Light Slate (rustworkx Python)
 }
 
 
@@ -74,8 +88,8 @@ def plot_run(
     libraries = [
         lib for lib in LIBRARIES if any((a, lib) in timings for a in algorithms)
     ]
-    bar_height = 0.8 / len(libraries)
-    fig_height = max(3.0, 0.45 * len(algorithms) + 1.5)
+    bar_height = 0.7 / len(libraries)
+    fig_height = max(3.5, 0.45 * len(algorithms) + 1.5)
     fig, ax = plt.subplots(figsize=(10, fig_height))
 
     for li, lib in enumerate(libraries):
@@ -96,20 +110,60 @@ def plot_run(
             xerr=(err_lo, err_hi),
             color=COLORS.get(lib, "#7f7f7f"),
             label=lib,
-            error_kw={"linewidth": 0.8, "capsize": 2},
+            edgecolor="none",
+            error_kw={"linewidth": 1.0, "capsize": 2, "ecolor": "#4b5563"},
         )
 
     ax.set_yticks(range(len(algorithms)))
-    ax.set_yticklabels(algorithms)
+    ax.set_yticklabels(algorithms, fontsize=9.5)
     ax.set_ylim(len(algorithms) - 0.5, -0.5)
     ax.set_xscale("log")
-    ax.set_xlabel("median wall time (s, log scale; lower is better)")
+    ax.set_xlabel("Median Wall Time (s, log scale; lower is better)", fontsize=10, fontweight="semibold", labelpad=8)
+    
+    # Despine axes (remove top and right borders)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color("#cbd5e1")
+    ax.spines["bottom"].set_color("#cbd5e1")
+    ax.spines["left"].set_linewidth(0.8)
+    ax.spines["bottom"].set_linewidth(0.8)
+
+    # Style Title
+    ax.set_title(title, fontsize=12, fontweight="bold", pad=16, color="#1e293b", loc="left")
+    
+    # Style Legend
+    ax.legend(
+        loc="lower right",
+        fontsize=8.5,
+        frameon=True,
+        facecolor="#ffffff",
+        edgecolor="#e2e8f0",
+        framealpha=0.9,
+        borderpad=0.6,
+        labelspacing=0.5,
+    )
+    
+    # Style Grid lines (put behind bars)
+    ax.set_axisbelow(True)
+    ax.grid(axis="x", which="both", color="#e2e8f0", linestyle=":", linewidth=0.5)
+    
+    # Footnote/Caption for untimed algorithms
     if untimed:
-        title = f"{title}\nnot timed (skipped, mismatch, or error): {', '.join(untimed)}"
-    ax.set_title(title, fontsize=10)
-    ax.legend(loc="lower right", fontsize=8)
-    ax.grid(axis="x", which="both", alpha=0.3)
-    fig.tight_layout()
+        caption = f"* Not timed (skipped, mismatch, or error): {', '.join(untimed)}"
+        fig.text(
+            0.02,
+            0.08 / fig_height,
+            caption,
+            fontsize=7.5,
+            color="#64748b",
+            style="italic",
+            wrap=True,
+        )
+        bottom_margin = max(0.02, min(0.08, 0.25 / fig_height))
+        fig.tight_layout(rect=[0, bottom_margin, 1, 1])
+    else:
+        fig.tight_layout()
+
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
     print(f"  wrote {out_path}")

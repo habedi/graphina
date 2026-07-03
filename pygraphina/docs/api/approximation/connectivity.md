@@ -97,7 +97,7 @@ print(f"Connectivity in diamond graph (0 → 3): {conn_diamond} paths")
 Result Values:
 - 0: Nodes are disconnected (no path exists)
 - 1: Nodes are connected by a single edge or bridge
-- k ≥ 2: Multiple disjoint paths exist between nodes (highly connected)
+- k ≥ 2: Multiple disjoint paths exist between nodes
 
 ## Time Complexity
 
@@ -148,11 +148,12 @@ Based on Max-Flow Min-Cut Theorem:
 
 ```python
 # Same node
-conn = pg.approximation.local_node_connectivity(g, node_a, node_a)
-# Returns: Infinity (or large value) - node is fully connected to itself
+conn = pg.approximation.local_node_connectivity(g, nodes[0], nodes[0])
+# Returns: 0 - there is no path from a node to itself
 
 # Disconnected nodes
-conn = pg.approximation.local_node_connectivity(g, node_a, node_b)
+isolated = g.add_node(99)
+conn = pg.approximation.local_node_connectivity(g, nodes[0], isolated)
 # Returns: 0 - no path exists
 ```
 

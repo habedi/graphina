@@ -16,6 +16,13 @@ PyGraphina supports multiple formats for saving and loading graphs.
 Simple text format with edges, one per line.
 
 ```python
+import pygraphina as pg
+
+g = pg.PyGraph()
+a, b, c = g.add_node(1), g.add_node(2), g.add_node(3)
+g.add_edge(a, b, 1.0)
+g.add_edge(b, c, 2.0)
+
 # Save as edge list
 g.save_edge_list("graph.txt", sep=" ")
 
@@ -109,10 +116,12 @@ Common separators:
 ```python
 # CSV format
 g.save_edge_list("graph.csv", sep=",")
+g2 = pg.PyGraph()
 g2.load_edge_list("graph.csv", sep=",")
 
 # Tab-separated
 g.save_edge_list("graph.tsv", sep="\t")
+g3 = pg.PyGraph()
 g3.load_edge_list("graph.tsv", sep="\t")
 ```
 
