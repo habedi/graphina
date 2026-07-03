@@ -1,6 +1,5 @@
 # Variables
 PATH            := /snap/bin:$(PATH)
-DEBUG_GRAPHINA  := 1
 RUST_LOG        := info
 RUST_BACKTRACE  := full
 WHEEL_DIR       := dist
@@ -40,7 +39,7 @@ audit: ## Run security audit on Rust dependencies
 .PHONY: bench
 bench: ## Run benchmarks
 	@echo "Running benchmarks..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo bench --features all
+	@cargo bench --features all
 
 # Directory the comparison harnesses write their CSV results and charts to.
 COMPARE_RESULTS_DIR := comparisons/results
@@ -88,12 +87,12 @@ bench-plots: ## Render charts from the comparison CSV files in COMPARE_RESULTS_D
 .PHONY: build
 build: format ## Build the binary for the current platform
 	@echo "Building the project..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo build --release
+	@cargo build --release
 
 .PHONY: careful
 careful: ## Run tests under cargo-careful (detects undefined behavior and unsafe misuse)
 	@echo "Running tests under cargo-careful..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo careful test --features all
+	@RUST_BACKTRACE=$(RUST_BACKTRACE) cargo careful test --features all
 
 .PHONY: check-module-deps
 check-module-deps: ## Check that top-level modules only depend on core (not on each other)
@@ -140,7 +139,7 @@ clean: ## Remove generated and temporary files
 .PHONY: coverage
 coverage: format doctest ## Generate test coverage report (excludes the pygraphina cdylib crate)
 	@echo "Generating test coverage report..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo tarpaulin --workspace --exclude pygraphina --features all --out Xml --out Html
+	@cargo tarpaulin --workspace --exclude pygraphina --features all --out Xml --out Html
 
 .PHONY: deny
 deny: ## Check dependencies for advisories, license compliance, and duplicates
@@ -202,18 +201,18 @@ install-snap: ## Install dependencies using Snapcraft
 lint: format ## Run linters on Rust files
 	@echo "Linting Rust files..."
 	@# graphina production code (all features): ban unwrap/expect as well as warnings.
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy --features all -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
+	@cargo clippy --features all -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
 	@# graphina all targets (tests, benches, examples): warnings only, since unwrap/expect are allowed in tests.
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy --features all --all-targets -- -D warnings
+	@cargo clippy --features all --all-targets -- -D warnings
 	@# pygraphina production code: same unwrap/expect ban.
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -p pygraphina --all-features -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
+	@cargo clippy -p pygraphina --all-features -- -D warnings -D clippy::unwrap_used -D clippy::expect_used
 	@# pygraphina all targets: warnings only.
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) cargo clippy -p pygraphina --all-features --all-targets -- -D warnings
+	@cargo clippy -p pygraphina --all-features --all-targets -- -D warnings
 
 .PHONY: nextest
 nextest: ## Run tests using nextest
 	@echo "Running tests using nextest..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run --features all
+	@RUST_BACKTRACE=$(RUST_BACKTRACE) cargo nextest run --features all
 
 .PHONY: oracle-fixtures
 oracle-fixtures: ## Regenerate the NetworkX oracle corpora (for the oracle tests)
@@ -244,7 +243,7 @@ run-examples: ## Run all the scripts in the examples directory one by one
 .PHONY: test
 test: format doctest ## Run the tests
 	@echo "Running tests..."
-	@DEBUG_GRAPHINA=$(DEBUG_GRAPHINA) RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --features all --all-targets \
+	@RUST_LOG=debug RUST_BACKTRACE=$(RUST_BACKTRACE) cargo test --features all --all-targets \
 	--workspace -- --nocapture
 
 .PHONY: testdata
