@@ -51,7 +51,7 @@ Quick examples:
 - Avoid colorful adjectives and adverbs. Write "graph generator" not "powerful graph generator".
 - Prefer using noun phrases for checklist items, not imperative verbs. Write "negative weight detection" not "detect negative weights".
 - Headings in Markdown files must be in title case: "Build from Source" not "Build from source". Minor words
-  (a, an, the, and, but, or, for, in, on, at, to, by, of) stay lowercase unless they are the first word.
+  (a, an, the, and, but, or, for, in, on, at, to, by, of, with, from) stay lowercase unless they are the first word.
 - Write correct and complete sentences.
 - Avoid made-up words, abbreviations, and colons in the middle of sentences.
 - Don't use pretentious language and made-up words.
@@ -144,7 +144,7 @@ Signatures are self-describing; read them from the source rather than this file.
 choice, and the edge-case behavior a caller cannot infer from the type.
 Every function listed is gated behind its module's feature flag.
 
-### `core` (always compiled)
+### `core` (Always Compiled)
 
 - `BaseGraph<A, W, Ty>` is the central type; `A` is the node attribute, `W` the edge weight, and `Ty` the `Directed` or `Undirected` marker.
   `Graph<A, W>` and `Digraph<A, W>` are the undirected and directed aliases. `degree`, `in_degree`, and `out_degree` return `Option<usize>` (`None`

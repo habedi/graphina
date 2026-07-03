@@ -139,7 +139,7 @@ This means at least one of the returned sets will have logarithmic size relative
 - Sparse graphs tend to have larger independent sets
 - The algorithm is deterministic (same graph always produces same result)
 
-## Example: Finding Coherent vs. Diverse Groups
+## Example: Finding Coherent Vs Diverse Groups
 
 ```python
 import pygraphina as pg

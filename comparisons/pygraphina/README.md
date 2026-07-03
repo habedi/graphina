@@ -1,4 +1,4 @@
-## Python Benchmark Comparison (rustworkx and NetworkX)
+## Python Benchmark Comparison (Rustworkx and NetworkX)
 
 This directory contains a benchmark harness that compares PyGraphina against [rustworkx](https://www.rustworkx.org/)
 and [NetworkX](https://networkx.org/).

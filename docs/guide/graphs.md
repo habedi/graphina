@@ -42,7 +42,7 @@ Graphina uses a `StableGraph` backend from `petgraph`.
 2. Stable Indices: Removing a node does not shift other indices. Safely retain `NodeId`s.
 3. Cache Locality: Contiguous memory usage improves iteration performance.
 
-## NodeId vs Node Values
+## NodeId Vs Node Values
 
 NetworkX adds nodes by value:
 

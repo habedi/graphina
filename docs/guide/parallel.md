@@ -80,7 +80,7 @@ use graphina::parallel::all_pairs_shortest_path_length_parallel;
 let (node_ordering, matrix) = all_pairs_shortest_path_length_parallel(&g);
 ```
 
-## When to use Parallelism?
+## When to Use Parallelism?
 
 Parallelism implies overhead. Use it when:
 

@@ -39,7 +39,7 @@ You use this ID for all subsequent graph operations:
 *   Querying neighbors (`graph.neighbors(id1)`)
 *   Algorithms (`pagerank(&graph, ...)`)
 
-## The `try_` API vs Option/Result Returning Methods
+## The `try_` API Vs Option/Result Returning Methods
 
 Graphina offers two styles of interaction for mutative operations:
 

@@ -24,7 +24,7 @@ Returns:
 
 ## Understanding Degree Centrality
 
-### What is Degree Centrality?
+### What Is Degree Centrality?
 
 Degree centrality is a normalized measure of connectivity:
 
@@ -39,7 +39,7 @@ Where:
 - `n` = total number of nodes in the graph
 - `n - 1` = maximum possible degree
 
-### Centrality Scores vs Raw Degree
+### Centrality Scores Vs Raw Degree
 
 | Measure | Function | Returns | Use Case |
 |---------|----------|---------|----------|
@@ -70,7 +70,7 @@ print(centrality)
 # Other nodes have centrality 0.25 (connected to 1 node: 1/(5-1) = 0.25)
 ```
 
-### Comparing with Raw Degree
+### Comparing With Raw Degree
 
 ```python
 import pygraphina as pg

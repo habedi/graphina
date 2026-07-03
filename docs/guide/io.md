@@ -64,7 +64,7 @@ graph.save_json("graph.json").unwrap();
 let g = Graph::<i32, f32>::load_json("graph.json").unwrap();
 ```
 
-### Binary (bincode)
+### Binary Format
 
 Compact and fast binary format.
 

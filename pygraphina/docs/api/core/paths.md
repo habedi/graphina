@@ -122,7 +122,7 @@ if result:
 
 ---
 
-## dijkstra() Method
+## `dijkstra()` Method
 
 Compute single-source shortest paths from one node to all reachable nodes.
 

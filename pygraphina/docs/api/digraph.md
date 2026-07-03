@@ -205,9 +205,9 @@ end_tasks = [n for n in workflow.nodes if workflow.out_degree(n) == 0]
 print(f"End tasks: {end_tasks}")
 ```
 
-## Directed vs Undirected: When to Use
+## Directed Vs Undirected: When to Use
 
-### Use PyDiGraph when:
+### Use PyDiGraph When:
 
 - Relationships have direction (like "follows", "depends on", "links to")
 - Order matters (like workflows, dependencies, hierarchies)
@@ -221,7 +221,7 @@ Examples:
 - Task dependencies
 - Food chains
 
-### Use PyGraph when:
+### Use PyGraph When:
 
 - Relationships are symmetric (like "is friends with", "is connected to")
 - Order doesn't matter

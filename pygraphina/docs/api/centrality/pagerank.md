@@ -172,7 +172,7 @@ fast = pg.centrality.pagerank(g, max_iter=10, tolerance=1e-3)
 precise = pg.centrality.pagerank(g, max_iter=200, tolerance=1e-9)
 ```
 
-### Warm Start with nstart
+### Warm Start with `nstart`
 
 Use `nstart` to continue iterations from a previous state or provide custom initial values:
 
@@ -199,7 +199,7 @@ print(f"Custom init: {pr3}")
 print(f"Node 0 has highest score: {pr3[0]:.4f}")
 ```
 
-## Comparison with Eigenvector Centrality
+## Comparison With Eigenvector Centrality
 
 PageRank and eigenvector centrality are similar but have primary differences:
 

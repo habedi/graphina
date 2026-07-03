@@ -8,7 +8,7 @@ PyGraphina represents graphs using an adjacency list data structure, which provi
 
 While PyGraphina allows modifying the graph structure, it's generally more efficient to build the graph first and then analyze it. Frequent modifications (especially removals) can be slower than bulk building.
 
-### Undirected vs. Directed Graphs
+### Undirected Vs Directed Graphs
 
 PyGraphina supports both undirected and directed graphs:
 

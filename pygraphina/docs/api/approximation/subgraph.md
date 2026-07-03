@@ -99,7 +99,7 @@ print(f"Core density: {core_graph.density():.3f}")
 This algorithm provides a 2-approximation for the densest subgraph problem, meaning the density of the returned
 subgraph is at least half the density of the optimal solution.
 
-## Comparison with Related Algorithms
+## Comparison With Related Algorithms
 
 | Algorithm           | Time Complexity | Approximation Ratio | Use Case                |
 |---------------------|-----------------|---------------------|-------------------------|
