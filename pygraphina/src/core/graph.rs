@@ -77,7 +77,9 @@ impl PyGraph {
         self.try_update_node_impl(py_node, new_attr)
     }
 
-    /// Add an edge between two nodes with a weight.
+    /// Add an edge between two nodes with a weight, or update the weight if
+    /// the edge already exists. Graphs stay simple: no parallel edges are
+    /// created.
     ///
     /// Parameters
     /// ----------

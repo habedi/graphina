@@ -149,7 +149,8 @@ Every function listed is gated behind its module's feature flag.
 - `BaseGraph<A, W, Ty>` is the central type; `A` is the node attribute, `W` the edge weight, and `Ty` the `Directed` or `Undirected` marker.
   `Graph<A, W>` and `Digraph<A, W>` are the undirected and directed aliases. `degree`, `in_degree`, and `out_degree` return `Option<usize>` (`None`
   for a missing node); for undirected graphs in-degree and out-degree both equal the total degree. `density` returns `0.0` for fewer than two nodes.
-  `add_edge_if_absent` and `find_edge` check both directions on undirected graphs.
+  Graphs are simple: `add_edge` updates the weight of an existing edge instead of creating a parallel edge, and `add_edge_if_absent` inserts without
+  overwriting an existing weight. `add_edge`, `add_edge_if_absent`, and `find_edge` check both directions on undirected graphs.
 - `GraphinaError` (in `core::error`) is the single error type, with constructor helpers (`invalid_graph`, `node_not_found`, `no_path`,
   `convergence_failed`, and so on) and `From` impls for `io::Error`, `serde_json::Error`, and the bincode codec errors. `Result<T>` aliases
   `Result<T, GraphinaError>`.

@@ -711,12 +711,13 @@ mod edge_case_tests {
     }
 
     #[test]
-    fn test_algorithms_with_parallel_edges() {
+    fn test_algorithms_with_duplicate_edges() {
         let mut graph: Graph<i32, f64> = Graph::new();
         let n1 = graph.add_node(1);
         let n2 = graph.add_node(2);
         graph.add_edge(n1, n2, 1.0);
-        graph.add_edge(n1, n2, 2.0); // Parallel edge
+        graph.add_edge(n1, n2, 2.0); // Updates the existing edge; graphs stay simple
+        assert_eq!(graph.edge_count(), 1);
 
         use graphina::links::attachment::preferential_attachment;
         let result = preferential_attachment(&graph, None);

@@ -86,7 +86,9 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> AdvancedGraphBuilder<A, W, Ty>
         self
     }
 
-    /// Sets whether parallel edges (multiple edges between the same pair of nodes) are allowed.
+    /// Sets whether duplicate edges between the same pair of nodes are accepted.
+    /// With `true` (the default), a repeated pair updates the edge weight; with
+    /// `false`, `build` returns an error on a duplicate.
     pub fn allow_parallel_edges(mut self, allow: bool) -> Self {
         self.allow_parallel_edges = allow;
         self

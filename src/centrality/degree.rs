@@ -180,17 +180,17 @@ mod tests {
         assert_eq!(deg[&iso], 0.0);
     }
     #[test]
-    fn test_parallel_edges_undirected() {
-        // Two edges between the same pair count as two toward each endpoint's
-        // degree, so degree centrality is 2.0 for both nodes.
+    fn test_duplicate_add_edge_undirected() {
+        // Graphs are simple: a duplicate `add_edge` updates the existing edge,
+        // so each endpoint still has degree 1.
         let mut g = Graph::<i32, f64>::new();
         let a = g.add_node(0);
         let b = g.add_node(1);
         g.add_edge(a, b, 1.0);
         g.add_edge(a, b, 1.0);
         let d = degree_centrality(&g).unwrap();
-        assert_eq!(d[&a], 2.0);
-        assert_eq!(d[&b], 2.0);
+        assert_eq!(d[&a], 1.0);
+        assert_eq!(d[&b], 1.0);
     }
     #[test]
     fn test_self_loop_undirected() {

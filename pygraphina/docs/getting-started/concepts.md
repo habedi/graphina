@@ -160,24 +160,18 @@ g.add_edge(a, b, 2.5)
 
 ### Multiple Edges
 
-PyGraphina graphs are meant to be simple graphs, but `add_edge` does not check for an existing edge: calling it twice with the same endpoints creates a parallel edge. Use `contains_edge` or `update_edge_weight` to avoid duplicates:
+PyGraphina does not support multiple edges between the same pair of nodes (no multigraph support). Calling `add_edge` again with the same endpoints updates the existing edge:
 
 ```python
 g = pg.PyGraph()
 a, b = g.add_node(1), g.add_node(2)
 
 g.add_edge(a, b, 1.0)
-g.add_edge(a, b, 2.0)  # This creates a second, parallel edge
+g.add_edge(a, b, 2.0)  # This updates the existing edge
 
-assert g.edge_count() == 2
-
-# To change a weight instead of adding an edge, use update_edge_weight
-g2 = pg.PyGraph()
-a, b = g2.add_node(1), g2.add_node(2)
-g2.add_edge(a, b, 1.0)
-g2.update_edge_weight(a, b, 2.0)
-
-assert g2.edge_count() == 1
+# Only one edge exists between a and b
+assert g.edge_count() == 1
+assert g.get_edge_weight(a, b) == 2.0
 ```
 
 ### Self-Loops

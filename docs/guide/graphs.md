@@ -5,7 +5,7 @@ Select the appropriate type for your use case.
 
 ## Main Types
 
-Graphina graphs are simple by convention, but `add_edge` does not check for an existing edge: calling it twice with the same endpoints creates a parallel edge. Use `add_edge_if_absent` to avoid duplicates, or build the graph with `AdvancedGraphBuilder` and `allow_parallel_edges(false)` to reject them at build time.
+Graphina graphs are simple: calling `add_edge` again with the same endpoints updates the stored weight instead of creating a parallel edge. Use `add_edge_if_absent` to insert without overwriting an existing weight, or build the graph with `AdvancedGraphBuilder` and `allow_parallel_edges(false)` to treat duplicates as an error.
 
 ### `Graph<A, W>` (Undirected)
 
