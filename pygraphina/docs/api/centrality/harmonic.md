@@ -67,7 +67,3 @@ for node in sorted(harmonic.keys()):
 | Closeness   | No (undefined for disconnected) | O(V·E)             |
 | Betweenness | Yes                             | O(V·E)             |
 | Degree      | N/A (local)                     | O(1) per node      |
-
-## References
-
-- Boldi, P., & Vigna, S. (2014). Axioms for centrality. Internet Mathematics, 10(3-4), 222-262.
