@@ -12,7 +12,7 @@ use std::collections::HashMap;
 fn create_rng(seed: Option<u64>) -> StdRng {
     match seed {
         Some(s) => StdRng::seed_from_u64(s),
-        None => StdRng::seed_from_u64(rand::random::<u64>()),
+        None => StdRng::seed_from_u64(crate::core::rng::entropy_seed()),
     }
 }
 

@@ -88,6 +88,13 @@ graphina = { version = "0.4.0-alpha.3", features = ["centrality", "community", "
 > [!NOTE]
 > Graphina requires Rust 1.85 or later.
 
+#### WebAssembly
+
+Graphina compiles for the `wasm32-unknown-unknown` target with all features enabled and needs no extra configuration, because it does not depend on
+an OS entropy source.
+Two caveats apply on wasm: the `parallel` algorithms run sequentially because the target has no threads, and the file-based IO and serialization
+functions return an error at runtime because the target has no filesystem.
+
 ### Documentation
 
 See [docs](https://habedi.github.io/graphina) and [docs.rs/graphina](https://docs.rs/graphina) for more information for the detailed documentation

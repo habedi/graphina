@@ -124,6 +124,12 @@ check-module-deps: ## Check that top-level modules only depend on core (not on e
 		exit 1; \
 	fi
 
+.PHONY: check-wasm
+check-wasm: ## Check that the library compiles for the `wasm32-unknown-unknown` target
+	@echo "Checking the wasm32 build..."
+	@rustup target add wasm32-unknown-unknown
+	@cargo check --target wasm32-unknown-unknown --features all
+
 .PHONY: clean
 clean: ## Remove generated and temporary files
 	@echo "Cleaning up..."
