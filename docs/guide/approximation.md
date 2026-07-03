@@ -1,10 +1,10 @@
 # Approximation Algorithms
 
-Graphina provides approximation algorithms for several NP-hard graph problems.
+Graphina provides implementations of a few approximation (or heuristic) algorithms for several computationally hard graph problems.
 
 ## Traveling Salesman Problem (TSP)
 
-Finds an approximate solution to the TSP (shortest tour visiting all nodes).
+Finds an approximate solution to the TSP (which is the shortest tour visiting all nodes).
 
 ### Greedy Algorithm
 
@@ -13,7 +13,7 @@ Constructs a tour by repeatedly visiting the nearest unvisited node.
 ```rust
 use graphina::approximation::tsp::greedy_tsp;
 
-// greedy_tsp takes an f64-weighted graph; the returned tour is a cycle
+// `greedy_tsp` takes an f64-weighted graph; the returned tour is a cycle
 if let Ok((tour, cost)) = greedy_tsp(&graph, start_node) {
     println!("Tour: {:?}, Cost: {}", tour, cost);
 }
@@ -31,7 +31,7 @@ let cover = min_weighted_vertex_cover(&graph);
 
 ## Maximum Independent Set
 
-Finds a set of nodes where no two nodes in the set are adjacent.
+Finds a set of nodes where no two nodes in the set are adjacent (connected by an edge).
 
 ```rust
 use graphina::approximation::independent_set::maximum_independent_set;
@@ -49,11 +49,9 @@ use graphina::approximation::clique::max_clique;
 let clique = max_clique(&graph);
 ```
 
-## Other Approximations
+## Average Clustering Coefficient
 
-### Average Clustering Coefficient
-
-Estimates the average local clustering coefficient.
+Estimates the average local clustering coefficient in the graph.
 
 ```rust
 use graphina::approximation::clustering::average_clustering;
@@ -61,7 +59,7 @@ use graphina::approximation::clustering::average_clustering;
 let avg_cc = average_clustering(&graph);
 ```
 
-### Local Node Connectivity
+## Local Node Connectivity
 
 Approximates the local node connectivity between two nodes using repeated BFS.
 
@@ -71,9 +69,9 @@ use graphina::approximation::connectivity::local_node_connectivity;
 let conn = local_node_connectivity(&graph, source, target);
 ```
 
-### Minimum Maximal Matching
+## Minimum Maximal Matching
 
-Greedy approximation for minimum maximal matching.
+Finds a minimum maximal matching in the graph, which is a matching that cannot be extended by adding an edge.
 
 ```rust
 use graphina::approximation::matching::min_maximal_matching;
@@ -81,7 +79,7 @@ use graphina::approximation::matching::min_maximal_matching;
 let matching = min_maximal_matching(&graph);
 ```
 
-### Ramsey R(2, t)
+## Ramsey R(2, t)
 
 Approximates the Ramsey number R(2, t) by finding a max clique and max independent set.
 
@@ -91,7 +89,7 @@ use graphina::approximation::ramsey::ramsey_r2;
 let (clique, ind_set) = ramsey_r2(&graph);
 ```
 
-### Densest Subgraph
+## Densest Subgraph
 
 Finds a subgraph with maximum average degree using a greedy peeling strategy.
 
@@ -101,7 +99,7 @@ use graphina::approximation::subgraph::densest_subgraph;
 let nodes = densest_subgraph(&graph);
 ```
 
-### Treewidth
+## Treewidth
 
 Approximates treewidth using minimum degree or minimum fill-in heuristics.
 
@@ -109,6 +107,6 @@ Approximates treewidth using minimum degree or minimum fill-in heuristics.
 use graphina::approximation::treewidth::{treewidth_min_degree, treewidth_min_fill_in};
 
 let (tw, order) = treewidth_min_degree(&graph);
-// or
+// Or
 let (tw, order) = treewidth_min_fill_in(&graph);
 ```
