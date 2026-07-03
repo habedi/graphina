@@ -14,7 +14,7 @@ A directed graph with integer node attributes and floating-point edge weights.
     - Node attributes: Must be integers (`i64` range: -2^63 to 2^63-1)
     - Edge weights: Floating-point numbers (`f64`)
 
-    For complex node attributes (strings, objects), use an external dictionary. See [Basic Concepts](../getting-started/concepts.md#storing-rich-node-attributes).
+    For complex node attributes (strings, objects), use an external dictionary. See [Basic Concepts](../getting-started/concepts.md#storing-complex-node-attributes).
 
 ### Creating a Graph
 

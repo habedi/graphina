@@ -103,7 +103,7 @@ assert g.get_node_attr(node_id) == 100
     - Entity IDs for mapping to external data
     - Array indices for external data structures
 
-### Storing Rich Node Attributes
+### Storing Complex Node Attributes
 
 If you need to store complex attributes (strings, objects, etc.), use an external dictionary:
 
@@ -114,7 +114,7 @@ import pygraphina as pg
 g = pg.PyGraph()
 node_data = {}
 
-# Add nodes with rich attributes stored externally
+# Add nodes with complex attributes stored externally
 people = [
     {"name": "Alice", "age": 30, "city": "NYC"},
     {"name": "Bob", "age": 25, "city": "LA"},

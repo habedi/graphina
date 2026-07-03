@@ -274,8 +274,8 @@ Personalized PageRank (PPR) allows you to bias the random jumps toward specific 
 to a particular starting point.
 
 !!! note "Implementation Note"
-    The current implementation uses the Power Iteration method. While generally fast, for extremely large graphs with
-    slow convergence, other methods (like Arnoldi) might be considered in future releases.lowing workaround.
+    The current implementation uses the Power Iteration method. While generally fast, for very large graphs with
+    slow convergence, other methods (like Arnoldi) might be considered in future releases.
 
 ### Workaround for Personalized PageRank
 

@@ -97,7 +97,7 @@ print(f"Connectivity in diamond graph (0 → 3): {conn_diamond} paths")
 Result Values:
 - 0: Nodes are disconnected (no path exists)
 - 1: Nodes are connected by a single edge or bridge
-- k ≥ 2: Multiple disjoint paths exist between nodes (highly connected)
+- k ≥ 2: Multiple disjoint paths exist between nodes
 
 ## Time Complexity
 

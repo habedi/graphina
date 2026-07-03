@@ -1,6 +1,6 @@
 # Subgraphs and Views
 
-Graphina provides a rich set of operations to extract subgraphs, filter views, and analyze local neighborhoods. These methods are available via the `SubgraphOps` trait.
+Graphina provides a set of operations to extract subgraphs, filter views, and analyze local neighborhoods. These methods are available via the `SubgraphOps` trait.
 
 ## Extracting Subgraphs
 
