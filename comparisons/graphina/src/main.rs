@@ -8,7 +8,10 @@
 //! normalized to a canonical, library-independent form and compared before
 //! timing. Medians for an algorithm the two libraries disagree on are
 //! meaningless (a library doing the wrong amount of work can look faster), so a
-//! divergent algorithm is reported and not timed.
+//! divergent algorithm is reported and not timed. A side that panics (for example
+//! an iterative method that fails to converge) is reported with the failing
+//! library named; the surviving side is still timed, without differential
+//! validation.
 //!
 //! A few comparisons need care to be meaningful across the two libraries:
 //!
@@ -102,10 +105,12 @@ struct Config {
 impl Config {
     fn from_env() -> Self {
         fn var(name: &str, default: u64) -> u64 {
-            std::env::var(name)
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(default)
+            match std::env::var(name) {
+                Ok(raw) => raw
+                    .parse()
+                    .unwrap_or_else(|_| panic!("{name} must be an integer, got {raw:?}")),
+                Err(_) => default,
+            }
         }
         let skew = match std::env::var("RUSTWORKX_COMPARE_SKEW").as_deref() {
             Ok("zipf") => Skew::Zipf,
@@ -310,7 +315,9 @@ fn hub_node(data: &Dataset) -> usize {
     degree
         .iter()
         .enumerate()
-        .max_by_key(|&(_, &d)| d)
+        // `max_by_key` keeps the last maximum, so `Reverse(i)` makes the key unique
+        // and breaks degree ties toward the lowest index, matching the Python harness.
+        .max_by_key(|&(i, &d)| (d, std::cmp::Reverse(i)))
         .map(|(i, _)| i)
         .unwrap_or(0)
 }
@@ -490,9 +497,10 @@ enum Diff {
     Mismatch,
     /// Not run because the dataset exceeds the dense-algorithm node ceiling.
     Skipped,
-    /// One side panicked (for example an iterative method that fails to converge on
-    /// a real dataset); reported rather than aborting the whole comparison.
-    Errored,
+    /// A side panicked (for example an iterative method that fails to converge on a
+    /// real dataset); the failing side is recorded, and the surviving side is still
+    /// timed (without differential validation) rather than dropping the whole row.
+    Errored { graphina: bool, rustworkx: bool },
 }
 
 impl Diff {
@@ -501,7 +509,12 @@ impl Diff {
             Diff::Match => "ok",
             Diff::Mismatch => "mismatch",
             Diff::Skipped => "skipped",
-            Diff::Errored => "error",
+            Diff::Errored {
+                graphina: true,
+                rustworkx: true,
+            } => "error(both)",
+            Diff::Errored { graphina: true, .. } => "error(graphina)",
+            Diff::Errored { .. } => "error(rustworkx)",
         }
     }
 }
@@ -560,14 +573,33 @@ fn diff_and_bench<GN, RN>(
     mut r_run: impl FnMut() -> RN,
     r_norm: impl Fn(&RN) -> Vec<f64>,
 ) {
-    let (Some(g_native), Some(r_native)) = (catch(&mut g_run), catch(&mut r_run)) else {
+    let g_native = catch(&mut g_run);
+    let r_native = catch(&mut r_run);
+    if g_native.is_none() || r_native.is_none() {
+        // A side panicked, so no differential validation is possible; time the
+        // surviving side anyway and record which side failed.
+        let diff = Diff::Errored {
+            graphina: g_native.is_none(),
+            rustworkx: r_native.is_none(),
+        };
         rows.push(Row {
             name,
-            graphina: None,
-            rustworkx: None,
-            diff: Diff::Errored,
+            graphina: g_native.map(|_| {
+                bench(cfg.warmups, cfg.reps, cfg.budget, || {
+                    std::hint::black_box(g_run());
+                })
+            }),
+            rustworkx: r_native.map(|_| {
+                bench(cfg.warmups, cfg.reps, cfg.budget, || {
+                    std::hint::black_box(r_run());
+                })
+            }),
+            diff,
         });
         return;
+    }
+    let (Some(g_native), Some(r_native)) = (g_native, r_native) else {
+        unreachable!("both sides checked above");
     };
     let diff = if within_tolerance(&g_norm(&g_native), &r_norm(&r_native), eps) {
         Diff::Match
@@ -1189,10 +1221,14 @@ fn print_table(cfg: &Config, rows: &[Row]) {
                     row.name, "-", "-", "-"
                 );
             }
-            (Diff::Errored, _, _) => {
+            (Diff::Errored { .. }, g, r) => {
                 println!(
-                    "{:<22} {:>16} {:>16} {:>14}  ERR (not timed)",
-                    row.name, "-", "-", "-"
+                    "{:<22} {:>16} {:>16} {:>14}  ERR: {} (not diffed)",
+                    row.name,
+                    g.as_ref().map(&fmt).unwrap_or_else(|| "-".to_string()),
+                    r.as_ref().map(&fmt).unwrap_or_else(|| "-".to_string()),
+                    "-",
+                    row.diff.as_str()
                 );
             }
             _ => {

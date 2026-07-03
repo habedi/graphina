@@ -45,6 +45,13 @@ The runs can be configured with these environment variables:
   synthetic runs are never gated
 - `PYGRAPHINA_COMPARE_MAX_NETWORKX_NODES`: node-count ceiling above which all NetworkX algorithms are skipped (default: 5000) to prevent long runs or hangs
 - `PYGRAPHINA_COMPARE_MAX_NETWORKX_DENSE_NODES`: node-count ceiling above which NetworkX superlinear algorithms (betweenness, closeness, eigenvector) are skipped (default: 1500)
+- `PYGRAPHINA_COMPARE_MAX_NETWORKX_CLIQUE_NODES`: node-count ceiling for the NetworkX clique-family approximations (`max_clique`,
+  `maximum_independent_set`, `clique_removal`, `ramsey_R2`), which recurse through the Ramsey routine and become very slow (default: 400)
+- `PYGRAPHINA_COMPARE_MAX_FILL_NODES`: node-count ceiling for the `treewidth_min_fill_in` row on every library (default: 600)
+- `PYGRAPHINA_COMPARE_MAX_GN_NODES`: node-count ceiling for the Girvan-Newman row, which is O(V * E^2) on both libraries (default: 200); the default
+  synthetic size exceeds it, so raise this ceiling or lower the node count to include the row
+- `PYGRAPHINA_COMPARE_MAX_FW_NODES`: node-count ceiling for the Floyd-Warshall row, whose O(V^2) result crosses the Python binding on every
+  repetition (default: 1000)
 - `PYGRAPHINA_COMPARE_CSV`: path of a CSV file the per-algorithm timings are written to, one line per algorithm and library; the
   `make bench-pygraphina` and `make bench-pygraphina-datasets` targets set it so results land in `comparisons/results/`, and `make bench-plots`
   renders charts from them
@@ -68,29 +75,43 @@ of generating one. The loader accepts comma or whitespace-separated edges, one p
 contiguous range, treats the graph as undirected, drops self-loops, and deduplicates parallel edges.
 The [graphina-graphs](https://huggingface.co/datasets/habedi/graphina-graphs) datasets downloaded by `make testdata` are in this format.
 
-Real graphs are far larger and more skewed than the synthetic default, so the superlinear algorithms (betweenness, closeness, and eigenvector) are
-skipped above `PYGRAPHINA_COMPARE_MAX_DENSE_NODES` nodes (default 4000) and reported as `skipped`. Only the near-linear algorithms (single-source
-shortest paths, connected components, degree centrality, and PageRank) run on every dataset. The smallest dataset (`wikipedia_chameleon`, about 2300
-nodes) runs the full suite; the larger ones run the near-linear subset.
+Real graphs are far larger and more skewed than the synthetic default, so the superlinear algorithms (betweenness, edge betweenness, closeness,
+harmonic, eigenvector, and the eccentricity metrics) are skipped above `PYGRAPHINA_COMPARE_MAX_DENSE_NODES` nodes (default 4000) and reported as
+`skipped`, and the Floyd-Warshall, Girvan-Newman, and treewidth-min-fill-in rows are gated by their own lower ceilings. The near-linear algorithms
+(shortest paths, traversal, connected components, degree centrality, PageRank, MST, link prediction, most community detection, the approximation
+heuristics, and the parallel family) run on every dataset. The smallest dataset (`wikipedia_chameleon`, about 2300 nodes) runs the dense subset too;
+the larger ones run the near-linear subset.
 `make bench-pygraphina-datasets` covers the undirected datasets; the large directed graphs (`stanford_web_graph`, `dblp_citation_network`) are
 excluded by default but can be run by pointing `PYGRAPHINA_COMPARE_DATASET` at them.
 
 ### Algorithms
 
-Each algorithm is run on a PyGraphina graph, an equivalent rustworkx graph, and an equivalent NetworkX graph. The result is normalized to a canonical, library-independent form and compared before timing.
-The workload covers the PyGraphina algorithms that have directly comparable counterparts:
+Each algorithm is run on a PyGraphina graph and on equivalent rustworkx and NetworkX graphs where the library offers a comparable counterpart. The
+result is normalized to a canonical, library-independent form and compared before timing. The workload covers most of the PyGraphina surface:
 
-- Single-source shortest path lengths (`dijkstra`)
-- Connected components
-- Degree centrality
-- Betweenness centrality (unnormalized)
-- Closeness centrality
-- Eigenvector centrality
-- PageRank
+- Shortest paths: single-source `dijkstra` and `bellman_ford`, all-pairs `floyd_warshall`, and the point-to-point `shortest_path` and
+  `bidirectional_search`
+- Traversal: `bfs` and `dfs` reachability
+- Connected components (sequential and parallel)
+- Centrality: degree, betweenness, edge betweenness, closeness, harmonic, eigenvector, Katz, PageRank, and personalized PageRank
+- Minimum spanning tree (`kruskal`, `prim`, `boruvka`), compared by total tree weight
+- Link prediction (Jaccard, Adamic-Adar, resource allocation, preferential attachment, and common-neighbor centrality), against NetworkX only
+- Metrics: transitivity, average clustering, assortativity, diameter, radius, and average path length
+- Community detection (Louvain, label propagation, Girvan-Newman, and spectral clustering), checked by partition modularity
+- Approximation heuristics (vertex cover, independent set, clique family, Ramsey, local node connectivity, treewidth, approximate average
+  clustering, and densest subgraph), checked by solution validity or a scalar objective
+- Parallel algorithms (PageRank, connected components, triangles, clustering coefficients, degrees, multi-source BFS, and multi-source shortest
+  paths), against single-threaded NetworkX
+
+Deterministic algorithms are checked element-wise. Heuristic and non-deterministic algorithms (community detection and the approximation family)
+will not reproduce another library bit for bit, so they are checked by a quality invariant instead: either the returned solution is validated (a
+vertex cover really covers, a clique is really a clique) or a scalar objective (modularity, an estimated size, a tree width) is compared within a
+loose quality tolerance.
 
 The differential check runs before timing: medians for an algorithm the libraries disagree on are meaningless, since a library doing the wrong amount
 of work can look faster.
-A divergent algorithm is reported as `DIFF` (or `DIFF (networkx)` if only NetworkX disagrees) and not timed; an algorithm that raises is reported as `ERR` and not timed.
+A divergent algorithm is reported as `DIFF` (or `DIFF (networkx)` if only NetworkX disagrees) and not timed. A rustworkx or NetworkX call that raises
+drops only that library's column, with the failing library named in the status; a PyGraphina failure is reported as `ERR` and the row is not timed.
 
 ### Fairness Notes
 
@@ -104,15 +125,21 @@ A divergent algorithm is reported as `DIFF` (or `DIFF (networkx)` if only Networ
   comparison.
 - rustworkx PageRank takes a directed graph only, so the rustworkx side runs on a bidirected copy of the same edges (each undirected edge becomes a
   pair of opposing directed edges), which matches PyGraphina's undirected PageRank to within numerical tolerance.
+- Katz centrality converges only for an attenuation factor below the reciprocal of the largest eigenvalue, which is much larger on real graphs than
+  on the synthetic default. The harness estimates the spectral radius by power iteration and derives `alpha` from it, using the same value for all
+  libraries so the comparison stays fair.
+- Personalized PageRank runs with matched iteration parameters tighter than the comparison tolerance on every side, since at the library defaults
+  the implementations stop at slightly different points and the residual convergence error alone exceeds the tolerance on the real datasets.
 - Floating-point results are compared within a small tolerance rather than by exact equality, since summation order differs between the two
   implementations.
 - The single-source distance maps are compared over reachable targets only (PyGraphina returns every node with `None` for unreachable and `0` for the
   source; rustworkx returns reachable targets, excluding the source).
 
 > [!NOTE]
-> The harness covers only algorithms that both libraries expose through their Python bindings with directly comparable semantics.
-> Algorithms exclusive to one library (PyGraphina's community detection and link prediction; rustworkx's isomorphism, planarity, coloring, and
-> matching) are out of scope for a like-for-like timing comparison.
+> Rows compare only libraries with directly comparable semantics: rustworkx has no counterpart for link prediction, MST is compared by total weight,
+> and a few PyGraphina functions (spectral clustering, densest subgraph, common-neighbor centrality) are timed on their own. Algorithms with no
+> comparable counterpart in either library (for example PyGraphina's reaching centrality, whose quantity differs from NetworkX's, and rustworkx's
+> isomorphism, planarity, coloring, and matching) are out of scope.
 
 > [!NOTE]
 > These numbers measure the full Python stack (binding plus algorithm plus interpreter overhead), not the Rust implementations in isolation.

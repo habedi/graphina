@@ -8,7 +8,10 @@ median wall time per library, so it doubles as a differential correctness check:
 result of each algorithm is normalized to a canonical, library-independent form and
 compared before timing. Medians for an algorithm the libraries disagree on are
 meaningless (a library doing the wrong amount of work can look faster), so a divergent
-algorithm is reported as ``DIFF`` and not timed.
+algorithm is reported as ``DIFF`` and not timed. A rustworkx or networkx call that
+raises drops only that library's column (named in the status); the surviving
+libraries are still checked and timed. A pygraphina failure kills the whole row,
+since pygraphina anchors the differential check.
 
 The comparison covers most of the pygraphina surface. rustworkx-core has no equivalent
 for several families (link prediction, MST from Python, the approximation heuristics),
@@ -40,6 +43,10 @@ A few comparisons need care to be meaningful across the two libraries:
   libraries are measured single-threaded.
 * Eigenvector centrality uses different normalization conventions, so its vector is
   L2-normalized and sign-fixed before comparison.
+* Katz centrality converges only for an attenuation factor below the reciprocal of
+  the largest eigenvalue, which is far larger on real graphs than on the synthetic
+  default, so ``alpha`` is derived from a power-iteration estimate of the spectral
+  radius and shared by all libraries.
 * Degree centrality is raw degree counts in pygraphina but divided by ``n - 1`` in
   rustworkx, so the pygraphina side is scaled by ``1 / (n - 1)`` before comparison.
 
@@ -111,6 +118,8 @@ class Config:
     max_networkx_dense_nodes: int
     max_fill_nodes: int
     max_clique_nodes: int
+    max_gn_nodes: int
+    max_fw_nodes: int
     csv: str | None
 
     @staticmethod
@@ -122,7 +131,7 @@ class Config:
             try:
                 return int(raw)
             except ValueError:
-                return default
+                sys.exit(f"{name} must be an integer, got {raw!r}")
 
         skew = os.environ.get("PYGRAPHINA_COMPARE_SKEW", "uniform")
         if skew not in ("uniform", "zipf"):
@@ -159,6 +168,13 @@ class Config:
         # networkx side is gated by a low ceiling; the pygraphina side is microseconds
         # and always runs.
         max_clique_nodes = var("PYGRAPHINA_COMPARE_MAX_NETWORKX_CLIQUE_NODES", 400)
+        # Girvan-Newman is O(V * E^2) on both libraries, so it runs only on very small
+        # graphs; raise this ceiling to include it on a larger run.
+        max_gn_nodes = var("PYGRAPHINA_COMPARE_MAX_GN_NODES", 200)
+        # Floyd-Warshall is O(V^3) time and O(V^2) result size; the whole all-pairs
+        # dict crosses the Python binding on every repetition, so the row gets its
+        # own ceiling that applies in every mode.
+        max_fw_nodes = var("PYGRAPHINA_COMPARE_MAX_FW_NODES", 1_000)
 
         if nodes < 1:
             sys.exit("PYGRAPHINA_COMPARE_NODES must be at least 1")
@@ -181,6 +197,8 @@ class Config:
             max_networkx_dense_nodes,
             max_fill_nodes,
             max_clique_nodes,
+            max_gn_nodes,
+            max_fw_nodes,
             os.environ.get("PYGRAPHINA_COMPARE_CSV") or None,
         )
 
@@ -314,6 +332,32 @@ def hub_node(data: Dataset) -> int:
         if d > best_deg:
             best, best_deg = i, d
     return best
+
+
+def spectral_radius(data: Dataset) -> float:
+    """Estimate the spectral radius (largest eigenvalue magnitude) of the adjacency
+    matrix by power iteration on the edge list. Katz centrality converges only for an
+    attenuation factor below ``1 / spectral_radius``, and real graphs have a much
+    larger spectral radius than the small synthetic default, so the Katz ``alpha`` is
+    derived from this estimate rather than fixed. Matches the Rust harness. Returns at
+    least ``1.0``.
+    """
+    n = data.nodes
+    if n == 0 or not data.edges:
+        return 1.0
+    x = [1.0] * n
+    lam = 1.0
+    for _ in range(50):
+        y = [0.0] * n
+        for a, b in data.edges:
+            y[a] += x[b]
+            y[b] += x[a]
+        norm = math.sqrt(sum(v * v for v in y))
+        if norm <= sys.float_info.min:
+            break
+        x = [v / norm for v in y]
+        lam = norm
+    return max(lam, 1.0)
 
 
 def build_pygraphina(data: Dataset) -> pygraphina.PyGraph:
@@ -494,11 +538,14 @@ def bootstrap_ci95(times: list[float]) -> tuple[float, float]:
 
 
 def bench(warmups: int, reps: int, budget: float, f: Callable[[], object]) -> BenchStat:
-    """Run untimed warmups, then timed repetitions, stopping early once the budget is
-    spent (at least one timed repetition always runs).
+    """Run untimed warmups, then timed repetitions. Each phase stops early once the
+    budget is spent (at least one timed repetition always runs).
     """
+    warmup_start = time.perf_counter()
     for _ in range(warmups):
         f()
+        if time.perf_counter() - warmup_start >= budget:
+            break
     times: list[float] = []
     spent = 0.0
     truncated = False
@@ -539,15 +586,32 @@ def diff_and_bench(
     nx_run: Callable[[], object] | None = None,
     nx_canon: Callable[[object], list[float]] | None = None,
 ) -> Row:
+    # Failures are caught per library: pygraphina anchors the differential check, so
+    # a pygraphina failure kills the row, but a rustworkx or networkx failure only
+    # drops that library's column; the surviving libraries are still diffed and
+    # timed, and the failing library is named in the status.
     try:
         pyg_result = pyg_run()
-        rwx_result = rwx_run() if rwx_run is not None else None
-        nx_result = nx_run() if nx_run is not None else None
     except Exception as exc:
-        return Row(name, None, None, None, f"ERR ({type(exc).__name__})")
+        return Row(name, None, None, None, f"ERR (pygraphina: {type(exc).__name__})")
+
+    errors: list[str] = []
+    rwx_result = nx_result = None
+    if rwx_run is not None:
+        try:
+            rwx_result = rwx_run()
+        except Exception as exc:
+            errors.append(f"rustworkx: {type(exc).__name__}")
+            rwx_run = None
+    if nx_run is not None:
+        try:
+            nx_result = nx_run()
+        except Exception as exc:
+            errors.append(f"networkx: {type(exc).__name__}")
+            nx_run = None
 
     # rustworkx is optional: some algorithms (for example link prediction) have no
-    # rustworkx-core equivalent, so those rows compare against networkx only.
+    # rustworkx equivalent, so those rows compare against networkx only.
     if (
         rwx_run is not None
         and not within_tolerance(pyg_canon(pyg_result), rwx_canon(rwx_result), eps)
@@ -566,7 +630,8 @@ def diff_and_bench(
     pyg = bench(cfg.warmups, cfg.reps, budget, pyg_run)
     rwx = bench(cfg.warmups, cfg.reps, budget, rwx_run) if rwx_run is not None else None
     nx_stat = bench(cfg.warmups, cfg.reps, budget, nx_run) if nx_run is not None else None
-    return Row(name, pyg, rwx, nx_stat, "ok")
+    status = "ok" if not errors else f"ok; ERR ({'; '.join(errors)})"
+    return Row(name, pyg, rwx, nx_stat, status)
 
 
 def skipped_row(name: str) -> Row:
@@ -595,7 +660,10 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     adj = build_adjacency(data)
     connected = pyg_g.is_connected()
     # Girvan-Newman is O(V * E^2); cap it hard so it never dominates a run.
-    gn_ok = n <= 200
+    gn_ok = n <= cfg.max_gn_nodes
+    # Katz needs alpha below the reciprocal of the spectral radius to converge; derive
+    # it from an estimate so the same alpha works on both the synthetic and real graphs.
+    katz_alpha = 0.85 / spectral_radius(data)
 
     print(f"\n=== {source} reps={cfg.reps} warmups={cfg.warmups} ===")
 
@@ -640,6 +708,68 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             nx_canon=nx_dijkstra_canon if nx_g is not None else None,
         )
     )
+
+    # Bellman-Ford single-source shortest path (unit weights, no negative cycle).
+    # The result has the same shape as the dijkstra row on every side. O(V*E), so
+    # gated by the dense-node ceiling as in the Rust harness.
+    if dense_ok:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "bellman_ford (SSSP)",
+                lambda: pyg_g.bellman_ford(hub),
+                lambda: rustworkx.bellman_ford_shortest_path_lengths(rwx_g, hub, float),
+                pyg_dijkstra_canon,
+                rwx_dijkstra_canon,
+                1e-6,
+                nx_run=(lambda: nx.single_source_bellman_ford_path_length(nx_g, hub))
+                if nx_g is not None
+                else None,
+                nx_canon=nx_dijkstra_canon if nx_g is not None else None,
+            )
+        )
+    else:
+        rows.append(skipped_row("bellman_ford (SSSP)"))
+
+    # Floyd-Warshall all-pairs shortest path. Compared as a flat row-major distance
+    # matrix (unreachable and missing entries as -1). The full O(V^2) result crosses
+    # the binding on every repetition and pure-Python networkx is O(V^3), so the row
+    # has its own node ceiling and the networkx side is additionally gated by the
+    # networkx dense ceiling.
+    def fw_canon(result: object) -> list[float]:
+        vec = [-1.0] * (n * n)
+        for s, row in dict(result).items():
+            base = int(s) * n
+            for t, d in dict(row).items():
+                if d is not None:
+                    vec[base + int(t)] = float(d)
+        return vec
+
+    def nx_fw_canon(result: object) -> list[float]:
+        vec = [-1.0] * (n * n)
+        for s, row in dict(result).items():
+            base = int(s) * n
+            for t, d in row.items():
+                if d != float("inf"):
+                    vec[base + int(t)] = float(d)
+        return vec
+
+    if n <= cfg.max_fw_nodes:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "floyd_warshall (all-pairs)",
+                lambda: pyg_g.floyd_warshall(),
+                lambda: rustworkx.floyd_warshall(rwx_g, weight_fn=float),
+                fw_canon,
+                fw_canon,
+                1e-6,
+                nx_run=(lambda: nx.floyd_warshall(nx_g)) if nx_dense_ok else None,
+                nx_canon=nx_fw_canon,
+            )
+        )
+    else:
+        rows.append(skipped_row("floyd_warshall (all-pairs)"))
 
     # Connected components: compare as a partition (set of frozensets of node ids).
     def cc_canon(components: object) -> list[float]:
@@ -925,6 +1055,29 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     else:
         rows.append(skipped_row("bidirectional_search"))
 
+    # Point-to-point Dijkstra. Shortest paths are not unique, so only the path cost
+    # is compared (with unit weights the rustworkx path cost is its hop count).
+    if target is not None:
+        rows.append(
+            diff_and_bench(
+                cfg,
+                "shortest_path (point-to-point)",
+                lambda: pyg_g.shortest_path(hub, target),
+                lambda: rustworkx.dijkstra_shortest_paths(
+                    rwx_g, hub, target=target, weight_fn=float
+                ),
+                lambda r: [float(r[0])],
+                lambda r: [float(len(dict(r)[target]) - 1)],
+                1e-6,
+                nx_run=(lambda: nx.dijkstra_path_length(nx_g, hub, target))
+                if nx_g is not None
+                else None,
+                nx_canon=lambda d: [float(d)],
+            )
+        )
+    else:
+        rows.append(skipped_row("shortest_path (point-to-point)"))
+
     # --- Centrality (remaining) -------------------------------------------------
     # Harmonic centrality: unnormalized sum of reciprocal distances on both sides.
     # O(V*(V+E)), so gated by the dense-node ceiling.
@@ -947,11 +1100,21 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
 
     # Edge betweenness. pygraphina stores both (u, v) and (v, u) for undirected
     # graphs, so both sides are deduplicated by the unordered pair key before
-    # comparison. O(V*E), gated by the dense-node ceiling.
+    # comparison; rustworkx returns a vector indexed by edge id, which is aligned
+    # through its edge list. O(V*E), gated by the dense-node ceiling.
     def edge_bet_canon(r: object) -> list[float]:
         seen: dict[tuple[int, int], float] = {}
         for (u, v), val in r.items():
             seen[tuple(sorted((int(u), int(v))))] = float(val)
+        return [val for _, val in sorted(seen.items())]
+
+    rwx_edge_list = [tuple(sorted(e)) for e in rwx_g.edge_list()]
+
+    def rwx_edge_bet_canon(r: object) -> list[float]:
+        vals = dict(r)
+        seen: dict[tuple[int, int], float] = {}
+        for idx, key in enumerate(rwx_edge_list):
+            seen[key] = float(vals.get(idx, 0.0))
         return [val for _, val in sorted(seen.items())]
 
     if dense_ok:
@@ -960,9 +1123,11 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 cfg,
                 "edge_betweenness",
                 lambda: pygraphina.centrality.edge_betweenness(pyg_g, False),
-                None,
+                lambda: rustworkx.edge_betweenness_centrality(
+                    rwx_g, normalized=False, parallel_threshold=SEQUENTIAL_THRESHOLD
+                ),
                 edge_bet_canon,
-                None,
+                rwx_edge_bet_canon,
                 1e-6,
                 nx_run=(lambda: nx.edge_betweenness_centrality(nx_g, normalized=False))
                 if nx_dense_ok
@@ -973,19 +1138,25 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     else:
         rows.append(skipped_row("edge_betweenness"))
 
-    # Katz centrality: pygraphina does not normalize, networkx L2-normalizes, so the
-    # direction is compared after L2 and sign normalization. alpha stays below the
-    # reciprocal of the largest eigenvalue so both converge.
+    # Katz centrality: pygraphina does not normalize, rustworkx and networkx
+    # L2-normalize, so the direction is compared after L2 and sign normalization.
+    # The attenuation factor is derived from the estimated spectral radius so all
+    # three libraries converge on the real datasets too, whose spectral radius is
+    # far larger than the synthetic default's.
     rows.append(
         diff_and_bench(
             cfg,
             "katz",
-            lambda: pygraphina.centrality.katz(pyg_g, 0.05, 1000, 1e-6),
-            None,
+            lambda: pygraphina.centrality.katz(pyg_g, katz_alpha, 1000, 1e-6),
+            lambda: rustworkx.katz_centrality(
+                rwx_g, alpha=katz_alpha, beta=1.0, max_iter=1000, tol=1e-6
+            ),
             lambda r: l2_sign_normalize(canon_map(r, n)),
-            None,
+            lambda r: l2_sign_normalize(canon_map(r, n)),
             1e-2,
-            nx_run=(lambda: nx.katz_centrality(nx_g, alpha=0.05, max_iter=1000, tol=1e-6))
+            nx_run=(
+                lambda: nx.katz_centrality(nx_g, alpha=katz_alpha, max_iter=1000, tol=1e-6)
+            )
             if nx_g is not None
             else None,
             nx_canon=lambda r: l2_sign_normalize(canon_map(r, n)),
@@ -994,19 +1165,28 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
 
     # Personalized PageRank concentrated on the hub. pygraphina takes a
     # personalization vector aligned to node order; networkx takes a {node: weight}
-    # mapping. Both distributions sum to 1.
+    # mapping. Both distributions sum to 1. The iteration parameters are matched and
+    # tighter than the 1e-4 comparison tolerance: at the library defaults (tol 1e-6)
+    # the two implementations stop at slightly different points and the residual
+    # convergence error alone exceeds the tolerance on the real datasets.
     perso_vec = [1.0 if i == hub else 0.0 for i in range(n)]
     perso_dict = {i: (1.0 if i == hub else 0.0) for i in range(n)}
     rows.append(
         diff_and_bench(
             cfg,
             "personalized_pagerank",
-            lambda: pygraphina.centrality.personalized_pagerank(pyg_g, perso_vec),
+            lambda: pygraphina.centrality.personalized_pagerank(
+                pyg_g, perso_vec, 0.85, 1e-10, 1000
+            ),
             None,
             lambda r: canon_map(r, n),
             None,
             1e-4,
-            nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85, personalization=perso_dict))
+            nx_run=(
+                lambda: nx.pagerank(
+                    nx_g, alpha=0.85, personalization=perso_dict, max_iter=1000, tol=1e-10
+                )
+            )
             if nx_g is not None
             else None,
             nx_canon=lambda r: canon_map(r, n),
@@ -1017,8 +1197,20 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     # Ratio metrics are always defined; the eccentricity metrics require a connected
     # graph, so networkx raises on a disconnected one and they are gated on both
     # connectivity and the dense-node ceiling.
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "transitivity",
+            lambda: pyg_g.transitivity(),
+            lambda: rustworkx.transitivity(rwx_g),
+            lambda r: [float(r)],
+            lambda r: [float(r)],
+            1e-9,
+            nx_run=(lambda: nx.transitivity(nx_g)) if nx_g is not None else None,
+            nx_canon=lambda r: [float(r)],
+        )
+    )
     for mname, pfn, nfn, meps in (
-        ("transitivity", lambda: pyg_g.transitivity(), lambda: nx.transitivity(nx_g), 1e-9),
         (
             "average_clustering",
             lambda: pyg_g.average_clustering(),
@@ -1254,6 +1446,9 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
         clique, indep = r
         return [1.0 if (is_clique(adj, clique) and is_independent_set(adj, indep)) else 0.0]
 
+    # networkx's ramsey_R2 is the recursive Ramsey routine itself, so its side is
+    # gated by the clique ceiling like the rest of the clique family (at a few
+    # thousand nodes the recursion exceeds the interpreter recursion limit).
     rows.append(
         diff_and_bench(
             cfg,
@@ -1263,10 +1458,20 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             ramsey_valid,
             None,
             0.0,
-            nx_run=when_nx_approx(lambda: nx.approximation.ramsey_R2(nx_g)),
+            nx_run=when_nx_clique(lambda: nx.approximation.ramsey_R2(nx_g)),
             nx_canon=ramsey_valid,
         )
     )
+
+    # Both local-node-connectivity implementations are approximations that count
+    # vertex-disjoint paths heuristically, so their values legitimately differ and an
+    # exact check would spuriously flag the row. Like the other heuristics, the check
+    # is a validity invariant instead: the estimate must lie between 1 (the graph is
+    # connected, so a path exists) and min(deg(hub), deg(target)) (each disjoint path
+    # uses a distinct neighbor of both endpoints).
+    def lnc_valid(r: object) -> list[float]:
+        bound = float(min(len(adj[hub]), len(adj[target])))
+        return [1.0 if 1.0 <= float(r) <= bound else 0.0]
 
     if target is not None:
         rows.append(
@@ -1275,13 +1480,13 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
                 "local_node_connectivity",
                 lambda: pygraphina.approximation.local_node_connectivity(pyg_g, hub, target),
                 None,
-                lambda r: [float(r)],
+                lnc_valid,
                 None,
                 0.0,
                 nx_run=when_nx_approx(
                     lambda: nx.approximation.local_node_connectivity(nx_g, hub, target)
                 ),
-                nx_canon=lambda r: [float(r)],
+                nx_canon=lnc_valid,
             )
         )
     else:
@@ -1427,6 +1632,66 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
             0.0,
             nx_run=(lambda: dict(nx_g.degree())) if nx_g is not None else None,
             nx_canon=lambda r: canon_map(r, n),
+        )
+    )
+
+    # The multi-source parallel searches run one search per source; eight
+    # deterministic sources spread across the id range give the thread pool real
+    # work. Results come back in input order on both sides. BFS visitation order
+    # differs between libraries, so it is compared as one reached set per source;
+    # the parallel shortest paths are unweighted hop counts, compared exactly.
+    stride = max(n // 8, 1)
+    multi_sources = sorted({(hub + k * stride) % n for k in range(8)})
+
+    def multi_reach_canon(results: object) -> list[float]:
+        out: list[float] = []
+        for order in results:
+            out.extend(reach_canon(order))
+        return out
+
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "bfs (parallel)",
+            lambda: pygraphina.parallel.bfs_parallel(pyg_g, multi_sources),
+            None,
+            multi_reach_canon,
+            None,
+            0.0,
+            nx_run=(lambda: [list(nx.bfs_tree(nx_g, s)) for s in multi_sources])
+            if nx_g is not None
+            else None,
+            nx_canon=multi_reach_canon,
+        )
+    )
+
+    def multi_dist_canon(results: object) -> list[float]:
+        out: list[float] = []
+        for dist_map in results:
+            vec = [-1.0] * n
+            for k, v in dict(dist_map).items():
+                vec[int(k)] = float(v)
+            out.extend(vec)
+        return out
+
+    rows.append(
+        diff_and_bench(
+            cfg,
+            "shortest_paths (parallel)",
+            lambda: pygraphina.parallel.shortest_paths_parallel(pyg_g, multi_sources),
+            None,
+            multi_dist_canon,
+            None,
+            0.0,
+            nx_run=(
+                lambda: [
+                    dict(nx.single_source_shortest_path_length(nx_g, s))
+                    for s in multi_sources
+                ]
+            )
+            if nx_g is not None
+            else None,
+            nx_canon=multi_dist_canon,
         )
     )
 
