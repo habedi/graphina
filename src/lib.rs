@@ -25,29 +25,30 @@ Selector-style helpers that pick nodes (like `voterank`) may return plain collec
 Enable only required features to minimize size and compile time.
 */
 
-/// Approximation algorithms for NP-hard problems.
+/// Approximation (and heuristics) algorithms for computationally hard graph problems.
 #[cfg(feature = "approximation")]
 pub mod approximation;
+/// Node and edge centrality algorithms.
 #[cfg(feature = "centrality")]
 pub mod centrality;
-/// Community detection and clustering algorithms.
+/// Community detection and graph clustering algorithms.
 #[cfg(feature = "community")]
 pub mod community;
-/// Core graph types and utilities.
+/// Core graph data types and utilities.
 pub mod core;
 /// Link prediction algorithms.
 #[cfg(feature = "links")]
 pub mod links;
-/// Graph metrics and metrics-based algorithms.
+/// Graph metrics and related algorithms.
 #[cfg(feature = "metrics")]
 pub mod metrics;
 /// Minimum spanning tree algorithms.
 #[cfg(feature = "mst")]
 pub mod mst;
-/// Parallel implementations of algorithms.
+/// Parallel implementations of some of the algorithms.
 #[cfg(feature = "parallel")]
 pub mod parallel;
-/// Induced subgraph and ego network utilities.
+/// Algorithms related to induced subgraph and ego network.
 #[cfg(feature = "subgraphs")]
 pub mod subgraphs;
 /// Graph traversal algorithms.
