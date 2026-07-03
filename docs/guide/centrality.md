@@ -1,7 +1,8 @@
 # Centrality Algorithms
 
-Centrality measures identify the most important nodes in a graph.
-Graphina provides implementations of standard centrality metrics.
+Centrality measures assign an importance score to each node or edge in a graph.
+The definition of "importance" is context-dependent.
+Graphina provides implementations of several centrality algorithms, each with its own definition of "importance".
 
 ## PageRank
 
@@ -145,7 +146,8 @@ let seeds = voterank(&g, 3);
 
 ## Reaching Centrality
 
-Local reaching centrality measures the fraction of nodes that can be reached from a node within a given distance. Global reaching centrality considers the entire graph.
+Local reaching centrality measures the fraction of nodes that can be reached from a node within a given distance.
+Global reaching centrality considers the entire graph.
 
 ```rust
 use graphina::centrality::other::{local_reaching_centrality, global_reaching_centrality};
