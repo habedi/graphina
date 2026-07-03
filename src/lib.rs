@@ -7,8 +7,8 @@ A graph data science library for Rust with a high-level API.
 ## Extension (or Module) Overview
 
 * `core` – Core graph types, builders, IO, serialization, etc. (`core` is always enabled.)
-* `centrality` *(feature: centrality)* – Node and edge importance measures (Result-based APIs).
-* `community` *(feature: community)* – Community detection and clustering (Result-based APIs).
+* `centrality` *(feature: centrality)* – Node and edge importance measures.
+* `community` *(feature: community)* – Community detection and clustering.
 * `links` *(feature: links)* – Link prediction algorithms.
 * `metrics` *(feature: metrics)* – Graph and node metrics (like diameter, radius, etc.).
 * `mst` *(feature: mst)* – Minimum spanning tree algorithms.
@@ -19,7 +19,7 @@ A graph data science library for Rust with a high-level API.
 
 ## API Conventions
 
-Most algorithms return `Result<_, graphina::core::error::GraphinaError>` for error handling.
+Most algorithm implementations return `Result<_, graphina::core::error::GraphinaError>` for error handling.
 
 Enable only required features to minimize binary size and compile time.
 */
