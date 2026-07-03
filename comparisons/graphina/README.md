@@ -91,6 +91,26 @@ A divergent algorithm is reported as `DIFF` and not timed. An algorithm that pan
 reported as `ERR` with the failing library named; the surviving side is still timed, but without differential validation. An algorithm skipped because
 the dataset exceeds the dense-node ceiling is reported as `skipped`.
 
+### Library Coverage
+
+The two crates are large in different directions, which is why the workload above is the intersection rather than either library's full surface.
+rustworkx-core grew out of Qiskit and is deep in circuit-shaped problems (DAG algorithms, coloring, matching, planarity, Steiner trees, and token
+swapping), while Graphina is aimed at network analysis. Note that some rustworkx algorithms (PageRank, isomorphism, and the layout family) live in the
+rustworkx Python crate rather than in rustworkx-core, so they are not reachable from a Rust-to-Rust harness.
+
+| Area                                                  | Graphina | rustworkx-core |
+|-------------------------------------------------------|:--------:|:--------------:|
+| Shortest paths, traversal, and components             |   yes    |      yes       |
+| Classic centrality (degree through Katz)              |   yes    |      yes       |
+| PageRank and personalized PageRank                    |   yes    |       no       |
+| Minimum spanning tree                                 |   yes    | Steiner tree only |
+| Community detection                                   |   yes    |       no       |
+| Link prediction                                       |   yes    |       no       |
+| Approximation heuristics for NP-hard problems         |   yes    |       no       |
+| Network metrics (clustering, assortativity, and distances) | yes | transitivity only |
+| Explicit parallel algorithm family                    |   yes    |   threshold-based in centrality and all-pairs   |
+| DAG algorithms, coloring, matching, and planarity     |    no    |      yes       |
+
 ### Fairness Notes
 
 - The graph carries unit edge weights, so weighted shortest paths equal unweighted hop counts. rustworkx betweenness and closeness are structural (
@@ -114,5 +134,5 @@ the dataset exceeds the dense-node ceiling is reported as `skipped`.
 
 > [!NOTE]
 > The harness covers only algorithms that both libraries implement over their core Rust APIs with directly comparable semantics.
-> Algorithms exclusive to one library (graphina's community detection, link prediction, and approximation modules; rustworkx's isomorphism, planarity,
-> coloring, and matching) are out of scope for a like-for-like timing comparison.
+> Algorithms exclusive to one library (graphina's community detection, link prediction, and approximation modules; rustworkx-core's DAG algorithms,
+> planarity, coloring, and matching) are out of scope for a like-for-like timing comparison.
