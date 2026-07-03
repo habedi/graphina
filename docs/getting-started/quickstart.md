@@ -71,7 +71,7 @@ Graphina provides standard algorithms in modules like `centrality`, `community`,
 Calculate PageRank:
 
 ```rust
-use graphina::centrality::pagerank;
+use graphina::centrality::pagerank::pagerank;
 
     // Create a simple graph for the example
     let mut graph = Graph::<String, f64>::new();
@@ -95,7 +95,7 @@ Combine creation, population, and analysis:
 
 ```rust
 use graphina::core::types::Graph;
-use graphina::centrality::pagerank;
+use graphina::centrality::pagerank::pagerank;
 
 fn main() {
     let mut g = Graph::<&str, f64>::new();

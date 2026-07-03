@@ -61,7 +61,7 @@ fn main() {
 If you have community labels, you can use Soundarajan-Hopcroft variants to boost scores for nodes in the same community.
 
 ```rust
-use graphina::core::types::Graph;
+use graphina::core::types::{Graph, NodeId};
 use graphina::links::allocation::ra_index_soundarajan_hopcroft;
 
 fn main() {
@@ -75,7 +75,7 @@ fn main() {
     graph.add_edge(n2, n3, 1.0);
 
     // Mock community assignment closure
-    let community_map = |node_id| {
+    let community_map = |node_id: NodeId| {
         // In reality, lookup from a HashMap or property
         if node_id.index() % 2 == 0 { 1 } else { 2 }
     };

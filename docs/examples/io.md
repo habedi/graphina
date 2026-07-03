@@ -5,7 +5,6 @@ Graphina supports binary formats as well as standard text formats for storing gr
 ```rust
 use graphina::core::types::Graph;
 use graphina::core::io::{write_edge_list, read_edge_list};
-use graphina::core::serialization::{save_binary, load_binary, save_json, load_json};
 use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,14 +21,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Binary Serialization (Fastest, Compact)
     // Best for saving state between runs of the same application
-    save_binary(&graph, "temp_graph.bin")?;
-    let loaded_bin: Graph<String, f64> = load_binary("temp_graph.bin")?;
+    graph.save_binary("temp_graph.bin")?;
+    let loaded_bin = Graph::<String, f64>::load_binary("temp_graph.bin")?;
     println!("Loaded Binary: {} nodes", loaded_bin.node_count());
 
     // 3. JSON Serialization (Human readable, Portable)
     // Good for debugging or web APIs
-    save_json(&graph, "temp_graph.json")?;
-    let loaded_json: Graph<String, f64> = load_json("temp_graph.json")?;
+    graph.save_json("temp_graph.json")?;
+    let loaded_json = Graph::<String, f64>::load_json("temp_graph.json")?;
     println!("Loaded JSON: {} nodes", loaded_json.node_count());
 
     // 4. Edge List (Universally compatible)

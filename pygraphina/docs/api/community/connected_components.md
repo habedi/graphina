@@ -5,7 +5,7 @@ Connected components are maximal subgraphs where every node is reachable from ev
 ## Function Signature
 
 ```python
-pg.community.connected_components(graph: PyGraph) -> Dict[int, int]
+pg.community.connected_components(graph: PyGraph) -> List[List[int]]
 ```
 
 ## Parameters
@@ -14,7 +14,7 @@ pg.community.connected_components(graph: PyGraph) -> Dict[int, int]
 
 ## Returns
 
-Dictionary mapping node IDs to component IDs.
+List of components, each a list of node IDs.
 
 ## Description
 
@@ -51,14 +51,8 @@ g.add_edge(nodes[4], nodes[5], 1.0)
 # Find connected components
 components = pg.community.connected_components(g)
 
-# Group nodes by component
-from collections import defaultdict
-
-comp_groups = defaultdict(list)
-for node, comp_id in components.items():
-    comp_groups[comp_id].append(node)
-
-for comp_id, members in sorted(comp_groups.items()):
+# The result is a list with one list of node IDs per component
+for comp_id, members in enumerate(components):
     print(f"Component {comp_id}: {sorted(members)}")
 ```
 
@@ -122,16 +116,11 @@ users = [g.add_node(i) for i in range(100)]
 
 components = pg.community.connected_components(g)
 
-# Find isolated users
-isolated = []
-for user, comp_id in components.items():
-    # Count users in this component
-    comp_size = sum(1 for c_id in components.values() if c_id == comp_id)
-    if comp_size == 1:
-        isolated.append(user)
+# Find isolated users (components with a single member)
+isolated = [comp[0] for comp in components if len(comp) == 1]
 
 print(f"Isolated users: {isolated}")
-print(f"Number of distinct networks: {max(components.values()) + 1}")
+print(f"Number of distinct networks: {len(components)}")
 ```
 
 ## Edge Cases

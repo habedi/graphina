@@ -13,21 +13,21 @@ It behaves like a list of nodes or a dict of node attributes.
 import pygraphina as pg
 
 g = pg.PyGraph()
-g.add_node(1, attr=100)
+n = g.add_node(100)  # node 0 with attribute 100
 
 # Iteration
-for n in g.nodes:
-    print(n)
+for node in g.nodes:
+    print(node)
 
 # Membership
-if 1 in g.nodes:
-    print("Node 1 exists")
+if n in g.nodes:
+    print(f"Node {n} exists")
 
 # Attribute Access
-print(g.nodes[1])  # {'attr': 100}
+print(g.nodes[n])  # {'attr': 100}
 
 # Data Access
-print(list(g.nodes.data("attr")))  # [(1, 100)]
+print(list(g.nodes.data("attr")))  # [(0, 100)]
 ```
 
 ### Methods
@@ -48,18 +48,19 @@ Provides access to edges and their weights.
 ### Usage
 
 ```python
-g.add_edge(1, 2, 3.5)
+u, v = g.add_node(200), g.add_node(300)
+g.add_edge(u, v, 3.5)
 
 # Iteration
-for u, v in g.edges:
-    print(u, v)
+for a, b in g.edges:
+    print(a, b)
 
 # Membership
-if (1, 2) in g.edges:
+if (u, v) in g.edges:
     print("Edge exists")
 
 # Attribute Access (Weights)
-print(g.edges[1, 2])  # {'weight': 3.5}
+print(g.edges[u, v])  # {'weight': 3.5}
 
 # Data Access
 print(list(g.edges.data("weight")))  # [(1, 2, 3.5)]
@@ -84,7 +85,7 @@ Provides access to node degrees.
 
 ```python
 # Access single node degree
-print(g.degree[1])  # 2
+print(g.degree[u])  # 1
 
 # Iterate over (node, degree)
 for n, d in g.degree:

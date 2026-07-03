@@ -12,11 +12,9 @@ Constructs a tour by repeatedly visiting the nearest unvisited node.
 
 ```rust
 use graphina::approximation::tsp::greedy_tsp;
-use ordered_float::OrderedFloat;
 
-// Weights must implementation Ord (use OrderedFloat for f64)
-let g_ord = graph.convert::<OrderedFloat<f64>>();
-if let Ok((tour, cost)) = greedy_tsp(&g_ord, start_node) {
+// greedy_tsp takes an f64-weighted graph; the returned tour is a cycle
+if let Ok((tour, cost)) = greedy_tsp(&graph, start_node) {
     println!("Tour: {:?}, Cost: {}", tour, cost);
 }
 ```
@@ -36,9 +34,9 @@ let cover = min_weighted_vertex_cover(&graph);
 Finds a set of nodes where no two nodes in the set are adjacent.
 
 ```rust
-use graphina::approximation::independent_set::max_independent_set;
+use graphina::approximation::independent_set::maximum_independent_set;
 
-let set = max_independent_set(&graph);
+let set = maximum_independent_set(&graph);
 ```
 
 ## Maximum Clique

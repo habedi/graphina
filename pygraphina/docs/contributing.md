@@ -136,6 +136,11 @@ Python style guidelines:
 Example:
 
 ```python
+from typing import Any, Dict
+
+from pygraphina import PyGraph
+
+
 def calculate_centrality(
     graph: PyGraph,
     method: str = "pagerank",

@@ -7,10 +7,18 @@ Node metrics characterize individual nodes in the graph.
 ### Degree Information
 
 ```python
+import pygraphina as pg
+
+g = pg.core.erdos_renyi(n=20, p=0.2, seed=42)
+dg = pg.PyDiGraph()
+a, b = dg.add_node(1), dg.add_node(2)
+dg.add_edge(a, b, 1.0)
+node = 0
+
 g.degree[node]  # Total degree of node
 # For directed graphs:
-g.in_degree[node]  # In-degree
-g.out_degree[node]  # Out-degree
+dg.in_degree(node)  # In-degree
+dg.out_degree(node)  # Out-degree
 ```
 
 ### Clustering
@@ -25,8 +33,8 @@ g.triangles_of(node)  # Number of triangles through node
 ```python
 g.neighbors(node)  # Adjacent nodes
 # For directed graphs:
-g.out_neighbors(node)  # Outgoing neighbors
-g.in_neighbors(node)  # Incoming neighbors
+dg.out_neighbors(node)  # Outgoing neighbors
+dg.in_neighbors(node)  # Incoming neighbors
 ```
 
 ### Attributes

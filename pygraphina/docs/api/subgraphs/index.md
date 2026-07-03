@@ -347,10 +347,7 @@ community_graphs = {}
 for comm_id, members in enumerate(communities):
     if len(members) > 0:
         community_graphs[comm_id] = g.subgraph(members)
-
-for comm_id, nodes in comm_nodes.items():
-    community_graphs[comm_id] = g.subgraph(nodes)
-    print(f"Community {comm_id}: {len(nodes)} nodes")
+        print(f"Community {comm_id}: {len(members)} nodes")
 ```
 
 ### Local Network Analysis

@@ -5,13 +5,14 @@ Reaching centrality measures how many nodes a node can reach within a given dist
 ## Function Signatures
 
 ```python
-pg.centrality.local_reaching(graph: PyGraph) -> Dict[int, float]
-pg.centrality.global_reaching(graph: PyGraph) -> Dict[int, float]
+pg.centrality.local_reaching_centrality(graph: Union[PyGraph, PyDiGraph], distance: int) -> Dict[int, float]
+pg.centrality.global_reaching_centrality(graph: Union[PyGraph, PyDiGraph]) -> Dict[int, float]
 ```
 
 ## Parameters
 
 - graph: The graph to analyze
+- distance: Maximum number of hops to consider (local variant only)
 
 ## Returns
 
@@ -47,11 +48,11 @@ for i in range(5, 10):
 # Add bridge
 g.add_edge(nodes[0], nodes[5], 1.0)
 
-# Local reaching focuses on immediate neighbors
-local = pg.centrality.local_reaching(g)
+# Local reaching focuses on a bounded neighborhood
+local = pg.centrality.local_reaching_centrality(g, 1)
 
 # Global reaching counts all reachable nodes
-global_reaching = pg.centrality.global_reaching(g)
+global_reaching = pg.centrality.global_reaching_centrality(g)
 
 for node in nodes:
     print(f"Node {node}: local={local[node]:.2f}, global={global_reaching[node]:.2f}")

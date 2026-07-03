@@ -243,12 +243,14 @@ PageRank handles disconnected graphs gracefully due to the random jump mechanism
 For large graphs, consider:
 
 1. Parallel implementation: Use `pg.parallel.pagerank_parallel()`
-2. Early stopping: Use larger `tol` for faster (approximate) results
-3. Fewer iterations: Reduce `max_iters` if exact convergence isn't critical
+2. Early stopping: Use a larger `tolerance` for faster (approximate) results
+3. Fewer iterations: Reduce `max_iter` if exact convergence isn't critical
 
 ```python
 # For large graphs
 import pygraphina as pg
+
+large_graph = pg.core.erdos_renyi(n=10000, p=0.001, seed=42)
 
 # Standard (sequential)
 scores = pg.centrality.pagerank(large_graph, 0.85, 100, 1e-6)

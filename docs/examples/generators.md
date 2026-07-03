@@ -27,7 +27,7 @@ fn main() {
     let ba_graph = barabasi_albert_graph::<Undirected>(n, 3, seed).unwrap();
     println!("  BA Edges: {}", ba_graph.edge_count());
     // BA graphs typically have higher max degree due to hubs
-    let max_degree = ba_graph.nodes().map(|(id, _)| ba_graph.degree(id)).max().unwrap_or(0);
+    let max_degree = ba_graph.nodes().filter_map(|(id, _)| ba_graph.degree(id)).max().unwrap_or(0);
     println!("  BA Max Degree: {}", max_degree);
 
     // 3. Watts-Strogatz Graph (Small World)

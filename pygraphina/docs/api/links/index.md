@@ -19,7 +19,7 @@ Link prediction is used for:
 | Adamic-Adar             | O(V²·d) | O(V²) | Social networks      |
 | Resource Allocation     | O(V²·d) | O(V²) | Information networks |
 | Preferential Attachment | O(V²)   | O(V²) | Scale-free networks  |
-| Common Neighbors        | O(V²·d) | O(V²) | Quick baseline       |
+| Common Neighbors        | O(d)    | O(1)  | Quick baseline       |
 | Centrality-Based        | O(V·E)  | O(V)  | Influence networks   |
 
 Where d is average degree.
@@ -35,7 +35,9 @@ g = pg.core.barabasi_albert(50, 3, 42)
 # Predict links using different methods
 jaccard = pg.links.jaccard_coefficient(g)
 adamic = pg.links.adamic_adar_index(g)
-common = pg.links.common_neighbors(g)
+
+# Count common neighbors for a specific pair
+common = pg.links.common_neighbors(g, 0, 1)
 
 # Get top predictions
 top_jaccard = sorted(jaccard.items(), key=lambda x: x[1], reverse=True)[:10]

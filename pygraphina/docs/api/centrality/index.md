@@ -29,8 +29,8 @@ All centrality functions are available under the `pg.centrality` module.
 | `personalized_pagerank()` | O(V·E·k)   | Topic-biased ranking       |
 | `katz()`            | O(V·E·k)        | Weighted influence         |
 | `harmonic()`        | O(V·E)          | Alternative to closeness   |
-| `local_reaching()`  | O(V·E)          | Local reachability         |
-| `global_reaching()` | O(V·E)          | Global reachability        |
+| `local_reaching_centrality()`  | O(V·E) | Local reachability     |
+| `global_reaching_centrality()` | O(V·E) | Global reachability    |
 
 Where:
 
@@ -44,8 +44,7 @@ Where:
 import pygraphina as pg
 
 # Create or load a graph
-g = pg.PyGraph()
-# ... add nodes and edges ...
+g = pg.core.erdos_renyi(n=50, p=0.1, seed=42)
 
 # Calculate centrality
 scores = pg.centrality.pagerank(g, damping=0.85, max_iter=100, tolerance=1e-6)
@@ -106,7 +105,7 @@ The algorithm behind Google Search. Models random surfing behavior.
 ### Katz Centrality
 
 ```python
-scores = pg.centrality.katz(g, alpha=0.1, beta=1.0, max_iter=100, tolerance=1e-6)
+scores = pg.centrality.katz(g, alpha=0.1, max_iter=100, tolerance=1e-6)
 ```
 
 Weighted sum of all paths, with exponential decay for longer paths.

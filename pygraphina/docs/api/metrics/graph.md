@@ -13,6 +13,10 @@ Graph metrics characterize properties of the entire graph.
 ### Basic Properties
 
 ```python
+import pygraphina as pg
+
+g = pg.core.erdos_renyi(n=30, p=0.2, seed=42)
+
 g.node_count()  # Number of nodes
 g.edge_count()  # Number of edges
 g.density()  # Edge density (0 to 1)

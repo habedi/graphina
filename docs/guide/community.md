@@ -27,7 +27,7 @@ use graphina::community::label_propagation::label_propagation;
 let communities = label_propagation(&graph, 100, None).unwrap();
 
 // Group nodes by community ID
-let mut groups: std::collections::HashMap<usize, Vec<crate::core::types::NodeId>> = std::collections::HashMap::new();
+let mut groups: std::collections::HashMap<usize, Vec<graphina::core::types::NodeId>> = std::collections::HashMap::new();
 for (idx, &comm_id) in communities.iter().enumerate() {
     let node_id = graph.node_ids().nth(idx).unwrap();
     groups.entry(comm_id).or_default().push(node_id);

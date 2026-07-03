@@ -5,7 +5,7 @@ Select the appropriate type for your use case.
 
 ## Main Types
 
-Graphina focuses on simple graphs to maximize performance. Multiple edges between the same node pair are not supported.
+Graphina graphs are simple by convention, but `add_edge` does not check for an existing edge: calling it twice with the same endpoints creates a parallel edge. Use `add_edge_if_absent` to avoid duplicates, or build the graph with `AdvancedGraphBuilder` and `allow_parallel_edges(false)` to reject them at build time.
 
 ### `Graph<A, W>` (Undirected)
 
@@ -54,11 +54,11 @@ G.add_edge("Alice", "Bob")
 Graphina separates topology from data. "Alice" is an attribute; the node is identified by a lightweight `NodeId`.
 
 ```rust
-let alice_id = graph.add_node("Alice");
-let bob_id = graph.add_node("Bob");
+let alice_id = g.add_node("Alice");
+let bob_id = g.add_node("Bob");
 
 // Connect using IDs, not strings
-graph.add_edge(alice_id, bob_id, 1.0);
+g.add_edge(alice_id, bob_id, 1.0);
 ```
 
 This design separates topology from data, enabling optimized integer-based algorithms.
@@ -68,6 +68,6 @@ This design separates topology from data, enabling optimized integer-based algor
 Check density (ratio of existing to possible edges).
 
 ```rust
-let d = graph.density();
+let d = g.density();
 println!("Graph density: {:.2}", d);
 ```

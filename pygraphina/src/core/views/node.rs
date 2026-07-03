@@ -41,25 +41,8 @@ impl NodeView {
         let attr_obj = obj.call_method1("get_node_attr", (node,))?;
 
         if attr_obj.is_none() {
-            // We need to check if the node actually exists to distinguish "attr is None" from "node missing"
-            // But get_node_attr impl returns None if node missing OR if attr is None?
-            // Wait, Rust PyGraph::get_node_attr returns Option<i64>.
-            // Actually, in `core/graph.rs`: `get_node_attr` returns `Option<i64>`.
-            // `core/basic_ops.rs` logic: `self.mapper.py_to_internal.get(&py_node)?` returns None if missing.
-            // If present, `node_attr` returns `Option<&T>`.
-
-            // So if it returns None, either node is missing or valid node has no attr (unlikely in this design where attr is i64).
-            // But wait, the previous code handled it as "None" -> Key Error.
-            // Let's verify if node exists first.
-            if obj.contains(node)? {
-                // Node exists, but attribute is None (impl detail: i64 is always Copy, so Option<i64> is None only if graph says so)
-                // In our simplified graph, nodes always have an attr (user provided or default).
-                // Actually PyGraph::add_node takes `attr: i64`. So it should always return Some(i64) if node exists.
-                // So if get_node_attr returns None, it means Node doesn't exist.
-                Err(PyKeyError::new_err(format!("Node {} not found", node)))
-            } else {
-                Err(PyKeyError::new_err(format!("Node {} not found", node)))
-            }
+            // Attributes are plain i64, so a missing attribute means a missing node.
+            Err(PyKeyError::new_err(format!("Node {} not found", node)))
         } else {
             let val: i64 = attr_obj.extract()?;
             let dict = PyDict::new(py);
@@ -197,11 +180,7 @@ impl NodeDataIterator {
                     }
                     dict.into_any().unbind()
                 } else {
-                    // data=False -> return plain node id?
-                    // Wait, generic behavior for G.nodes(data=False) is just the iterator over keys.
-                    // But NodeDataView is usually created via G.nodes(data=True) or G.nodes.data().
-                    // If user manually called G.nodes.data(data=False), it might be weird.
-                    // Returning None to mimic "no data" but usually this case isn't hit in standard usage loops.
+                    // data=False on a data view has no attribute payload to return
                     py.None()
                 }
             } else {

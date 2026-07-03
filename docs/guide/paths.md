@@ -16,15 +16,19 @@ pub fn dijkstra<A, W, Ty>(
 ) -> Result<NodeMap<Option<W>>>
 ```
 
+The generic `dijkstra` requires a totally ordered weight type (`W: Ord`), so wrap floating-point
+weights in `ordered_float::OrderedFloat`. For plain `f64` graphs, `dijkstra_path_f64` computes the
+same distances (plus the predecessor trace) without the wrapper.
+
 ### Example
 
 ```rust
-use graphina::core::paths::dijkstra;
+use graphina::core::paths::dijkstra_path_f64;
 
-let result = dijkstra(&graph, start_node)?;
+let (cost, _trace) = dijkstra_path_f64(&graph, start_node, None)?;
 
-if let Some(cost) = result.get(&end_node).unwrap() {
-    println!("Shortest distance: {}", cost);
+if let Some(distance) = cost.get(&end_node).copied().flatten() {
+    println!("Shortest distance: {}", distance);
 } else {
     println!("Node is unreachable");
 }
@@ -35,17 +39,21 @@ if let Some(cost) = result.get(&end_node).unwrap() {
 Finds the shortest path to a specific target using a heuristic function to guide the search.
 Faster than Dijkstra if you have a good heuristic (like Euclidean distance for maps).
 
+Like `dijkstra`, `a_star` requires a totally ordered weight type, so convert `f64` weights to
+`OrderedFloat<f64>` first. The heuristic must never overestimate the true remaining distance.
+
 ```rust
 use graphina::core::paths::a_star;
+use graphina::core::types::NodeId;
+use ordered_float::OrderedFloat;
 
-// Heuristic function: estimate distance from u to target
-let heuristic = |u: NodeId| -> f64 {
-    // Calculate distance
-    let dist = (x1 - x2).hypot(y1 - y2);
-    0.0
-};
+let g_ord = graph.convert::<OrderedFloat<f64>>();
 
-let path = a_star(&graph, start, end, heuristic)?;
+// Heuristic function: a lower bound on the distance from u to the target,
+// for example the Euclidean distance when nodes have coordinates
+let heuristic = |u: NodeId| OrderedFloat((x1 - x2).hypot(y1 - y2));
+
+let path = a_star(&g_ord, start, end, heuristic)?;
 ```
 
 ## Bellman-Ford

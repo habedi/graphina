@@ -1,6 +1,6 @@
 # Community Detection Examples
 
-This guide show how to use Graphina's community detection algorithms to find clusters and dense subgraphs in the data.
+This guide shows how to use Graphina's community detection algorithms to find clusters and dense subgraphs in the data.
 
 ## Detecting Communities with Louvain Method
 
@@ -8,7 +8,7 @@ The Louvain method is excellent for finding modular communities in large network
 
 ```rust
 use graphina::core::types::Graph;
-use graphina::community::louvain;
+use graphina::community::louvain::louvain;
 use std::collections::HashMap;
 
 fn main() {

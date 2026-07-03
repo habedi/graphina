@@ -58,10 +58,11 @@ attr = g.get_node_attr(node_a)
 
 ```python
 # Remove single node (removes incident edges too)
-removed_attr = g.remove_node(node_a)
+node_c = g.add_node(300)
+removed_attr = g.remove_node(node_c)
 
 # Check if node exists
-exists = g.contains_node(node_a)
+exists = g.contains_node(node_c)  # False
 ```
 
 ## Edge Management

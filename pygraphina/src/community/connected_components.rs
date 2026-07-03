@@ -22,13 +22,6 @@ use pyo3::prelude::*;
 #[pyfunction]
 pub fn connected_components(py_graph: &PyGraph) -> Vec<Vec<usize>> {
     let components = connected_components_core(&py_graph.graph);
-    // Core returns Vec<Vec<NodeId>>. Infallible? It seems so in core wrapper?
-    // If core returns Result, map it. If not, just map output.
-    // The previous code didn't handle Result?
-    // Let's check view of connected_components.rs (Step 938).
-    // line 7: `let components = connected_components_core(&py_graph.graph);`
-    // It seems it returns `Vec<Vec<NodeId>>` directly, no Result.
-    // So no error handling needed for algorithm failure, but we assume it succeeds.
     components
         .into_iter()
         .map(|comp| {

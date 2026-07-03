@@ -8,18 +8,18 @@ centrality.
 ```python
 pg.community.girvan_newman(
     graph: PyGraph,
-num_communities: int
-) -> Dict[int, int]
+    target_communities: int
+) -> List[List[int]]
 ```
 
 ## Parameters
 
 - graph: Undirected graph to analyze
-- num_communities: Number of communities to find
+- target_communities: Number of communities to stop at
 
 ## Returns
 
-Dictionary mapping node IDs to community labels.
+List of communities, each a list of node IDs.
 
 ## Description
 
@@ -65,15 +65,11 @@ g.add_edge(nodes[2], nodes[3], 1.0)  # Bridge 1-2
 g.add_edge(nodes[5], nodes[6], 1.0)  # Bridge 2-3
 
 # Detect communities
-communities = pg.community.girvan_newman(g, num_communities=3)
+communities = pg.community.girvan_newman(g, target_communities=3)
 
-from collections import defaultdict
-
-groups = defaultdict(list)
-for node, comm in communities.items():
-    groups[comm].append(node)
-
-print(f"Communities: {dict(groups)}")
+# The result is a list with one list of node IDs per community
+for comm_id, members in enumerate(communities):
+    print(f"Community {comm_id}: {sorted(members)}")
 ```
 
 ## Advantages

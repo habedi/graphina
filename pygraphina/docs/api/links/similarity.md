@@ -23,10 +23,10 @@ Ranges from 0 (no common neighbors) to 1 (identical neighborhoods).
 A simple metric that counts shared neighbors:
 
 ```python
-pg.links.common_neighbors(graph) -> Dict[Tuple, int]
+pg.links.common_neighbors(graph, u, v) -> int
 ```
 
-This counts the number of common neighbors between two nodes.
+This counts the number of common neighbors between two specific nodes.
 
 ## Adamic-Adar Index
 
@@ -61,13 +61,13 @@ for u, v in edges:
 # Compare metrics
 jaccard = pg.links.jaccard_coefficient(g)
 adamic = pg.links.adamic_adar_index(g)
-common = pg.links.common_neighbors(g)
 
 # Example: nodes 0 and 3
 key = (nodes[0], nodes[3])
+common = pg.links.common_neighbors(g, nodes[0], nodes[3])
 print(f"Jaccard (0,3): {jaccard.get(key, 'N/A')}")
 print(f"Adamic-Adar (0,3): {adamic.get(key, 'N/A')}")
-print(f"Common neighbors (0,3): {common.get(key, 'N/A')}")
+print(f"Common neighbors (0,3): {common}")
 ```
 
 ## Comparison

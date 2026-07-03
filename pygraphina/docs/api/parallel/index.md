@@ -26,8 +26,7 @@ For very large graphs (millions of nodes, tens of millions of edges), PyGraphina
 import pygraphina.parallel as pgp
 import pygraphina as pg
 
-g = pg.PyGraph()
-# ... add nodes and edges ...
+g = pg.core.erdos_renyi(n=30, p=0.2, seed=42)
 
 # Parallel PageRank
 scores = pgp.pagerank_parallel(g, damping=0.85, max_iterations=100, tolerance=1e-6)
@@ -67,7 +66,9 @@ def analyze_graph(graph_data):
     }
 
 # Process multiple graphs in parallel
-graphs = [graph1_data, graph2_data, graph3_data, ...]
+graph1_data = {'nodes': [1, 2, 3], 'edges': [(0, 1, 1.0), (1, 2, 1.0)]}
+graph2_data = {'nodes': [1, 2], 'edges': [(0, 1, 1.0)]}
+graphs = [graph1_data, graph2_data]
 with Pool(processes=4) as pool:
     results = pool.map(analyze_graph, graphs)
 ```
@@ -77,6 +78,9 @@ with Pool(processes=4) as pool:
 Build graphs efficiently:
 
 ```python
+node_attributes = [10, 20, 30]
+edge_list = [(0, 1, 1.0), (1, 2, 2.0)]
+
 # Recommended: Batch operations
 g = pg.PyGraph()
 node_ids = [g.add_node(attr) for attr in node_attributes]
@@ -84,8 +88,9 @@ for src, tgt, weight in edge_list:
     g.add_edge(src, tgt, weight)
 
 # Slower: Many small operations
+g2 = pg.PyGraph()
 for attr in node_attributes:
-    node_id = g.add_node(attr)
+    node_id = g2.add_node(attr)
     # Do something with node_id immediately
 ```
 
@@ -97,6 +102,8 @@ Compute PageRank scores using parallel processing.
 
 ```python
 import pygraphina.parallel as pgp
+
+graph = pg.core.erdos_renyi(n=30, p=0.2, seed=1)
 
 scores = pgp.pagerank_parallel(
     graph,

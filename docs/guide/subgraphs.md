@@ -20,6 +20,8 @@ let subgraph = graph.subgraph(&nodes).unwrap();
 Extract the neighborhood around a center node up to a certain radius.
 
 ```rust
+use graphina::subgraphs::SubgraphOps;
+
 // 1-hop neighborhood around n1
 let ego = graph.ego_graph(n1, 1).unwrap();
 ```
@@ -29,6 +31,8 @@ let ego = graph.ego_graph(n1, 1).unwrap();
 Extract the connected component containing a specific node.
 
 ```rust
+use graphina::subgraphs::SubgraphOps;
+
 let component = graph.component_subgraph(n1).unwrap();
 ```
 
@@ -37,6 +41,8 @@ let component = graph.component_subgraph(n1).unwrap();
 Create subgraphs by filtering nodes or edges based on custom predicates.
 
 ```rust
+use graphina::subgraphs::SubgraphOps;
+
 // Keep only nodes with even IDs
 let even_nodes = graph.filter_nodes(|id, _attr| id.index() % 2 == 0);
 
@@ -49,6 +55,8 @@ let heavy_edges = graph.filter_edges(|_u, _v, w| *w > 10.0);
 Query local structure without creating a new graph object.
 
 ```rust
+use graphina::subgraphs::SubgraphOps;
+
 // Get all nodes within 2 hops
 let neighbors = graph.k_hop_neighbors(n1, 2);
 ```

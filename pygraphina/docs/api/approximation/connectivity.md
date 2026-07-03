@@ -148,11 +148,12 @@ Based on Max-Flow Min-Cut Theorem:
 
 ```python
 # Same node
-conn = pg.approximation.local_node_connectivity(g, node_a, node_a)
-# Returns: Infinity (or large value) - node is fully connected to itself
+conn = pg.approximation.local_node_connectivity(g, nodes[0], nodes[0])
+# Returns: 0 - there is no path from a node to itself
 
 # Disconnected nodes
-conn = pg.approximation.local_node_connectivity(g, node_a, node_b)
+isolated = g.add_node(99)
+conn = pg.approximation.local_node_connectivity(g, nodes[0], isolated)
 # Returns: 0 - no path exists
 ```
 

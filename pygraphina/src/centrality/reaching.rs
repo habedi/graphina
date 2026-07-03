@@ -12,8 +12,8 @@ use std::collections::HashMap;
 /// ----------
 /// graph : PyGraph or PyDiGraph
 ///     The input graph.
-/// distance : float
-///     Distance threshold.
+/// distance : int
+///     Maximum number of hops to consider.
 ///
 /// Returns
 /// -------
@@ -84,24 +84,9 @@ pub fn local_reaching_centrality(
 ///
 /// Returns
 /// -------
-/// f64
-///     The global reaching centrality score. (Wait, core returns HashMap used in existing code?)
-///     Existing code filtered map. So it returns dict?
-///     Standard global reaching centrality is a single scalar.
-///     Let's check existing return type: HashMap<usize, f64>.
-///     NetworkX global reaching is a float.
-///     But graphina core `global_reaching_centrality` return type?
-///     The existing code iterates and maps. So it returns node scores?
-///     Maybe it's generalized reaching centrality per node?
-///     NetworkX: `local_reaching_centrality` (node score), `global_reaching_centrality` (single float).
-///     The existing binding returns `HashMap<usize, f64>`.
-///     So maybe core implements node-level metric.
-///     I will document return as dict.
-///
-/// Returns
-/// -------
 /// dict
-///     Dictionary mapping node IDs to scores.
+///     Dictionary mapping node IDs to global reaching centrality scores,
+///     equivalent to local reaching centrality with an unbounded distance.
 ///
 /// Raises
 /// ------
