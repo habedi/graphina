@@ -149,7 +149,7 @@ deny: ## Check dependencies for advisories, license compliance, and duplicates
 .PHONY: docs
 docs: format ## Generate the documentation
 	@echo "Generating documentation..."
-	@cargo doc --no-deps --document-private-items
+	@cargo doc --no-deps --document-private-items --features all
 
 .PHONY: doctest
 doctest: ## Run documentation tests (Rust code examples in doc comments)

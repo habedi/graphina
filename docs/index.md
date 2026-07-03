@@ -10,7 +10,8 @@ Graphina is a high-level graph data science library for Rust 🦀.
 
 * Efficient implementations of simple directed/undirected graphs
 * Support for weighted and unweighted graphs
-* Support for a large collection of conventional graph algorithms (like the shortest path, connected components, etc.) as well as more advanced and high-level algorithms (like PageRank, Louvain, etc.) that are commonly used in graph data science
+* Support for a large collection of conventional graph algorithms (like the shortest path, connected components, etc.) as well as more advanced and
+  high-level algorithms (like PageRank, Louvain, etc.) that are commonly used in graph data science
 * Python bindings with an API close to the [NetworkX API](https://networkx.org/documentation/stable/index.html)
 * Fast and memory-efficient Rust implementation of the algorithms with an idiomatic API
 

@@ -1,14 +1,3 @@
-/*!
-# Parallel Algorithms Extension
-
-This extension provides parallel implementations of computationally intensive graph algorithms
-using Rayon for multi-threading. These implementations can provide 4-8x speedup on multi-core machines.
-
-All parallel functions have the `_parallel` suffix to distinguish them from sequential versions.
-
-Independent of other extensions; depends only on core.
-*/
-
 pub mod bfs;
 pub mod closeness;
 pub mod clustering;
