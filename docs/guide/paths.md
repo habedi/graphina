@@ -80,3 +80,14 @@ use graphina::core::paths::floyd_warshall;
 
 let all_paths = floyd_warshall(&graph);
 ```
+
+## Johnson's Algorithm
+
+Computes all-pairs shortest paths in sparse graphs that may contain negative weights (but no negative cycles).
+It uses Bellman-Ford to reweight the graph, then runs Dijkstra from every node.
+
+```rust
+use graphina::core::paths::johnson;
+
+let all_paths = johnson(&graph);
+```

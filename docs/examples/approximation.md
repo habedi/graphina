@@ -4,7 +4,7 @@ Examples of using Graphina to solve computationally hard graph problems using he
 
 ## Solving Traveling Salesman Problem (TSP)
 
-Find an approximate shortest path that visits every node exactly once.
+Find an approximate shortest tour that visits every node exactly once and returns to the start node.
 
 ```rust
 use graphina::core::types::Graph;

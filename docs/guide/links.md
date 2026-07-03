@@ -24,8 +24,9 @@ let predictions = jaccard_coefficient(&graph, Some(&pairs));
 ### Adamic-Adar Index
 
 The Adamic-Adar index is a measure that assigns more weight to neighbors with lower degrees.
+Neighbors with degree `<= 1` are excluded to avoid division by zero (since $\ln(1) = 0$).
 
-$$ A(u, v) = \sum_{w \in N(u) \cap N(v)} \frac{1}{\log |N(w)|} $$
+$$ A(u, v) = \sum_{w \in N(u) \cap N(v), |N(w)| > 1} \frac{1}{\ln |N(w)|} $$
 
 ```rust
 use graphina::links::similarity::adamic_adar_index;
