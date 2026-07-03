@@ -82,3 +82,31 @@ fn main() {
     println!("Found clique of size: {}", clique.len());
 }
 ```
+
+## Removing Cliques
+
+Repeatedly find and remove cliques from the graph to partition it into clique decomposition.
+
+```rust
+use graphina::core::types::Graph;
+use graphina::approximation::clique::clique_removal;
+
+fn main() {
+    let mut graph = Graph::<i32, f64>::new();
+    let n1 = graph.add_node(1);
+    let n2 = graph.add_node(2);
+    let n3 = graph.add_node(3);
+
+    graph.add_edge(n1, n2, 1.0);
+    graph.add_edge(n2, n3, 1.0);
+    graph.add_edge(n3, n1, 1.0);
+
+    let cliques = clique_removal(&graph);
+    println!("Found {} cliques", cliques.len());
+    for (i, clique) in cliques.iter().enumerate() {
+        println!("Clique {}: {} nodes", i + 1, clique.len());
+    }
+}
+```
+
+

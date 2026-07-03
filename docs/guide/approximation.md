@@ -49,6 +49,26 @@ use graphina::approximation::clique::max_clique;
 let clique = max_clique(&graph);
 ```
 
+### Clique Removal
+
+Repeatedly removes cliques from the graph until no nodes remain, returning all found cliques.
+
+```rust
+use graphina::approximation::clique::clique_removal;
+
+let cliques = clique_removal(&graph);
+```
+
+### Large Clique Size
+
+Returns the size of a large clique approximated by the greedy heuristic (equivalent to `max_clique(&graph).len()`).
+
+```rust
+use graphina::approximation::clique::large_clique_size;
+
+let size = large_clique_size(&graph);
+```
+
 ## Average Clustering Coefficient
 
 Estimates the average local clustering coefficient in the graph.
