@@ -1,11 +1,13 @@
 ## Python Benchmark Comparison (rustworkx and NetworkX)
 
-This directory contains a benchmark harness that compares PyGraphina against [rustworkx](https://www.rustworkx.org/) and [NetworkX](https://networkx.org/).
+This directory contains a benchmark harness that compares PyGraphina against [rustworkx](https://www.rustworkx.org/)
+and [NetworkX](https://networkx.org/).
 The harness builds one graph, runs the same set of algorithms through all three libraries, reports the median wall time for each, and checks that
 they produce the same result.
 
 This is the Python counterpart of the [graphina](../graphina) harness. That one compares the core Rust crates and measures the algorithm
-implementations; this one goes through the Python bindings/APIs, so the numbers include the binding and interpreter overhead each library adds, which is
+implementations; this one goes through the Python bindings/APIs, so the numbers include the binding and interpreter overhead each library adds, which
+is
 what a Python user actually pays.
 
 ### Running the Harness
@@ -43,8 +45,10 @@ The runs can be configured with these environment variables:
   edges, skew, sweep) are ignored
 - `PYGRAPHINA_COMPARE_MAX_DENSE_NODES`: in dataset mode, the node-count ceiling above which the superlinear algorithms are skipped (default: 4000);
   synthetic runs are never gated
-- `PYGRAPHINA_COMPARE_MAX_NETWORKX_NODES`: node-count ceiling above which all NetworkX algorithms are skipped (default: 5000) to prevent long runs or hangs
-- `PYGRAPHINA_COMPARE_MAX_NETWORKX_DENSE_NODES`: node-count ceiling above which NetworkX superlinear algorithms (betweenness, closeness, eigenvector) are skipped (default: 1500)
+- `PYGRAPHINA_COMPARE_MAX_NETWORKX_NODES`: node-count ceiling above which all NetworkX algorithms are skipped (default: 5000) to prevent long runs or
+  hangs
+- `PYGRAPHINA_COMPARE_MAX_NETWORKX_DENSE_NODES`: node-count ceiling above which NetworkX superlinear algorithms (betweenness, closeness, eigenvector)
+  are skipped (default: 1500)
 - `PYGRAPHINA_COMPARE_MAX_NETWORKX_CLIQUE_NODES`: node-count ceiling for the NetworkX clique-family approximations (`max_clique`,
   `maximum_independent_set`, `clique_removal`, `ramsey_R2`), which recurse through the Ramsey routine and become very slow (default: 400)
 - `PYGRAPHINA_COMPARE_MAX_FILL_NODES`: node-count ceiling for the `treewidth_min_fill_in` row on every library (default: 600)
@@ -113,6 +117,27 @@ of work can look faster.
 A divergent algorithm is reported as `DIFF` (or `DIFF (networkx)` if only NetworkX disagrees) and not timed. A rustworkx or NetworkX call that raises
 drops only that library's column, with the failing library named in the status; a PyGraphina failure is reported as `ERR` and the row is not timed.
 
+### Library Coverage
+
+The three libraries are large in different directions, which explains why some rows have an empty rustworkx or NetworkX column. rustworkx grew out of
+Qiskit and is deep in circuit-shaped problems (isomorphism, DAG algorithms, layouts, matching, and coloring) but has no community detection, link
+prediction, or approximation module. PyGraphina and NetworkX are aimed at network analysis. The table below summarizes which areas each library
+covers;
+the harness compares the rows where at least two libraries overlap.
+
+| Area                                                       | PyGraphina |     rustworkx     | NetworkX |
+|------------------------------------------------------------|:----------:|:-----------------:|:--------:|
+| Shortest paths, traversal, and components                  |    yes     |        yes        |   yes    |
+| Classic centrality (degree through Katz) and PageRank      |    yes     |        yes        |   yes    |
+| Harmonic centrality and personalized PageRank              |    yes     |        no         |   yes    |
+| Minimum spanning tree                                      |    yes     |        yes        |   yes    |
+| Community detection                                        |    yes     |        no         |   yes    |
+| Link prediction                                            |    yes     |        no         |   yes    |
+| Approximation heuristics for NP-hard problems              |    yes     |        no         |   yes    |
+| Network metrics (clustering, assortativity, and distances) |    yes     | transitivity only |   yes    |
+| Explicit parallel algorithm family                         |    yes     |        no         |    no    |
+| Isomorphism, planarity, coloring, and matching             |     no     |        yes        |   yes    |
+
 ### Fairness Notes
 
 - The graph carries unit edge weights, so weighted shortest paths equal unweighted hop counts. rustworkx betweenness and closeness are structural (
@@ -121,7 +146,8 @@ drops only that library's column, with the failing library named in the status; 
   sequential path, so both libraries are measured single-threaded.
 - Eigenvector centrality uses different scaling and sign conventions across the libraries, so its vector is L2-normalized and sign-fixed (
   largest-magnitude component made positive) before comparison.
-- Degree centrality is raw degree counts in PyGraphina but divided by `n - 1` in rustworkx and NetworkX, so the PyGraphina side is scaled by `1 / (n - 1)` before
+- Degree centrality is raw degree counts in PyGraphina but divided by `n - 1` in rustworkx and NetworkX, so the PyGraphina side is scaled by
+  `1 / (n - 1)` before
   comparison.
 - rustworkx PageRank takes a directed graph only, so the rustworkx side runs on a bidirected copy of the same edges (each undirected edge becomes a
   pair of opposing directed edges), which matches PyGraphina's undirected PageRank to within numerical tolerance.
