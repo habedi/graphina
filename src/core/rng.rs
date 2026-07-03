@@ -1,6 +1,3 @@
-use std::collections::hash_map::RandomState;
-use std::hash::{BuildHasher, Hasher};
-
 /// Returns a nondeterministic 64-bit seed without requiring an OS entropy source.
 ///
 /// Each `RandomState` carries per-instance keys, so consecutive calls produce
@@ -8,8 +5,13 @@ use std::hash::{BuildHasher, Hasher};
 /// algorithms whose caller passed no explicit seed. Unlike `rand::random`, it
 /// does not pull in `getrandom`, so it works on targets like
 /// `wasm32-unknown-unknown` without a JavaScript entropy backend.
+#[cfg(any(feature = "community", test))]
 pub(crate) fn entropy_seed() -> u64 {
-    RandomState::new().build_hasher().finish()
+    use std::hash::{BuildHasher, Hasher};
+
+    std::collections::hash_map::RandomState::new()
+        .build_hasher()
+        .finish()
 }
 
 #[cfg(test)]
