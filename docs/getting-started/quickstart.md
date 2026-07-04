@@ -4,8 +4,7 @@ Create graphs, add nodes, and run algorithms with Graphina.
 
 ## Creating a Graph
 
-Rust requires defined types for node and edge data.
-Create an undirected graph with `String` nodes and `f64` edge weights:
+Example below shows how to create an undirected graph with `String` nodes and `f64` edge weights.
 
 ```rust
 use graphina::core::types::Graph;
@@ -21,7 +20,8 @@ fn main() {
 
 ## Adding Nodes
 
-`add_node` returns a `NodeId`. Use this ID to reference the node, like when adding edges.
+`add_node` returns a `NodeId`.
+Use this ID to reference the node, for example when adding edges or accessing the node data.
 
 ```rust
     // Add nodes
@@ -34,7 +34,7 @@ fn main() {
 
 ## Adding Edges
 
-Connect nodes using their `NodeId`s.
+Connect nodes using their `NodeId`s with `add_edge`.
 
 ```rust
     // Add weighted edges
@@ -47,9 +47,9 @@ Connect nodes using their `NodeId`s.
     println!("Graph has {} edges", graph.edge_count());
 ```
 
-## Examining the Graph
+## Checking Graph Properties
 
-Check for existence, degrees, or neighbors.
+You can use the methods in `Graph` trait to query the graph's properties.
 
 ```rust
     // Check degree
@@ -64,11 +64,9 @@ Check for existence, degrees, or neighbors.
     }
 ```
 
-## Running Algorithms
+## Running Algorithms on Graphs
 
-Graphina provides standard algorithms in modules like `centrality`, `community`, and `paths`.
-
-Calculate PageRank:
+Graphina provides standard algorithms in its extensions (or modules) like `centrality`, `community`, and `paths`.
 
 ```rust
 use graphina::centrality::pagerank::pagerank;
@@ -89,9 +87,9 @@ use graphina::centrality::pagerank::pagerank;
     }
 ```
 
-## Complete Example
+## Full Example
 
-Combine creation, population, and analysis:
+The following example creates a graph, adds nodes and edges, and runs PageRank on it.
 
 ```rust
 use graphina::core::types::Graph;
@@ -117,7 +115,7 @@ fn main() {
 
 ## Advanced Graph Creation
 
-For more control over graph properties (capacity, self-loops, etc.), use the `AdvancedGraphBuilder`.
+For more control over graph properties (capacity, self-loops, etc.), you can use the `AdvancedGraphBuilder`.
 
 ```rust
 use graphina::core::builders::UndirectedGraphBuilder;

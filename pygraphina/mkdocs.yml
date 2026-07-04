@@ -114,7 +114,6 @@ nav:
       - Community Detection: examples/community.md
       - Link Prediction: examples/links.md
       - Graph Algorithms: examples/algorithms.md
-  - Contributing: contributing.md
 
 extra_javascript:
   - assets/js/mathjax.js

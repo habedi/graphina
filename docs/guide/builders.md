@@ -1,10 +1,10 @@
 # Graph Builders
 
-Graphina provides builder patterns to construct graphs programmatically with validation and preset configurations.
+Graphina provides an API for using builder patterns to create graphs programmatically.
 
 ## AdvancedGraphBuilder
 
-For more control over graph properties (capacity, self-loops, etc.), use the `AdvancedGraphBuilder`.
+For more control over graph properties (like capacity, self-loops, etc.), use the `AdvancedGraphBuilder`.
 
 ### Basic Usage
 
@@ -40,7 +40,7 @@ The `build()` method validates the configuration:
 
 ## TopologyBuilder
 
-The `TopologyBuilder` provides convenience methods for creating standard graph structures.
+The `TopologyBuilder` provides a bunch of convenience methods for creating commonly used graphs.
 
 ### Supported Topologies
 

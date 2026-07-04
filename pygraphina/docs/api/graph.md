@@ -484,4 +484,4 @@ print(f"Edges after removal: {g.edge_count()}")  # 2
 
 - [PyDiGraph](digraph.md): Directed graph API
 - [Core Operations](core/builders.md): Graph builders and generators
-- [Algorithms](centrality/index.md): Graph algorithms
+- [Centrality Algorithms](centrality/index.md): Node and edge centrality measures
