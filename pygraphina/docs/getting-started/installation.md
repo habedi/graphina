@@ -70,4 +70,4 @@ python3.10 -m pip install pygraphina
 
 - [Quick Start Tutorial](quickstart.md): Build your first graph
 - [Basic Concepts](concepts.md): Understand PyGraphina's graph model
-- [API Reference](../api/graph.md): Explore the API
+- [API Reference](../api/graph.md): Check out the API documentation

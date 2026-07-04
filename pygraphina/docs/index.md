@@ -13,17 +13,17 @@ Welcome to PyGraphina documentation!
 
 - All algorithms and data structures are implemented in fast, safe Rust
 - A large collection of graph algorithms for graph mining and network science:
-    - Centrality measures: PageRank, betweenness, closeness, eigenvector, Katz, and more
-    - Community detection: Louvain, label propagation, Girvan-Newman, spectral clustering
-    - Link prediction: Jaccard coefficient, Adamic-Adar, resource allocation, preferential attachment
-    - Path algorithms: Dijkstra, Bellman-Ford, A*, Floyd-Warshall, Johnson's algorithm
-    - Graph metrics: Clustering coefficient, transitivity, diameter, assortativity
-    - Approximation algorithms: For cliques, vertex cover, independent sets, TSP, and more
-    - Minimum spanning trees: Prim's, Kruskal's, and Borůvka's algorithms
+    - Centrality measures like betweenness, closeness, and eigenvector
+    - Community detection like Louvain, label propagation, and Girvan-Newman 
+    - Link prediction like Jaccard coefficient, Adamic-Adar, and resource allocation
+    - Path algorithms like Dijkstra, Bellman-Ford, A*, and Floyd-Warshall
+    - Graph metrics like clustering coefficient, transitivity, diameter, and assortativity
+    - Algorithms for hard problems like for cliques, vertex cover, and independent sets
+    - Minimum spanning trees algorithms like Prim's and Kruskal's
 - A Pythonic API
-- Create random and structured graphs (like Erdős-Rényi, Barabási-Albert, Watts-Strogatz, etc.)
-- Read and write graphs in multiple formats (like edge lists, adjacency lists, JSON, and GraphML)
-- Multi-threaded implementations of popular graph algorithms like PageRank
+- Create random and structured graphs (like Erdős-Rényi, Watts-Strogatz, etc.)
+- Read and write graphs in edge lists, adjacency lists, GraphML, etc. formats
+- Multi-threaded implementations of popular graph algorithms like PageRank and shortest paths
 
 ## Quick Example
 
@@ -76,14 +76,3 @@ PyGraphina aims to be a drop-in replacement for NetworkX by providing a similar 
 - [Basic Concepts](getting-started/concepts.md): Understand the core concepts of graphs and PyGraphina
 - [API Reference](api/graph.md): Detailed API documentation
 - [Examples](examples/basic.md): See PyGraphina in action with example programs
-
-## Community and Support
-
-- GitHub: [https://github.com/habedi/graphina](https://github.com/habedi/graphina)
-- Issues: [Report bugs or request features](https://github.com/habedi/graphina/issues)
-- Contributing: See the [Contributing Guide](contributing.md)
-
-## License
-
-PyGraphina is licensed under the MIT License.
-See the [LICENSE](https://github.com/habedi/graphina/blob/main/LICENSE-MIT) file for details.
