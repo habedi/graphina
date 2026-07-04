@@ -1,4 +1,4 @@
-# Graph Types in Graphina
+# Graph Types
 
 Graphina provides statically typed graph structures, so you can select the appropriate type for your use case.
 
@@ -29,32 +29,4 @@ let mut g = Graph::<&str, f64>::new();
 use graphina::core::types::Digraph;
 
 let mut dg = Digraph::<&str, f64>::new();
-```
-
-## NodeId Vs Node Values
-
-NetworkX adds nodes by value:
-
-```python
-G.add_node("Alice")
-G.add_edge("Alice", "Bob")
-```
-
-Graphina separates topology from data, so using Graphina, "Alice" is an attribute; the node is identified by its `NodeId`.
-
-```rust
-let alice_id = g.add_node("Alice");
-let bob_id = g.add_node("Bob");
-
-// Connect using IDs, not strings
-g.add_edge(alice_id, bob_id, 1.0);
-```
-
-## Density
-
-Check density (ratio of existing to possible edges).
-
-```rust
-let d = g.density();
-println!("Graph density: {:.2}", d);
 ```

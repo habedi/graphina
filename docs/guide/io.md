@@ -1,58 +1,50 @@
 # Graph I/O
 
-Graphina supports multiple formats for saving and loading graphs, facilitating data interchange and persistence.
+Graphina supports multiple formats for saving and loading graphs.
 
 ## Supported Formats
 
-| Format | Read | Write | Best For |
-| :--- | :--- | :--- | :--- |
-| Edge List | Yes | Yes | Simple, text-based data exchange. |
-| Adjacency List | Yes | Yes | Compact text representation. |
-| JSON | Yes | Yes | Web applications and detailed attribute storage. |
-| Binary | Yes | Yes | Compact storage for large graphs. |
-| GraphML | No | Yes | Interoperability with Gephi, Cytoscape, etc. |
+| Format         | Read | Write | Best For                                                |
+|:---------------|:-----|:------|:--------------------------------------------------------|
+| Edge List      | Yes  | Yes   | Simple, text-based data exchange.                       |
+| Adjacency List | Yes  | Yes   | Compact text representation.                            |
+| JSON           | Yes  | Yes   | Web applications and detailed attribute storage.        |
+| Binary         | Yes  | Yes   | Compact storage for large graphs.                       |
+| GraphML        | No   | Yes   | Interoperability with tools like Gephi, Cytoscape, etc. |
 
-## Text Formats
+## Edge List
 
-### Edge List
-
-Reads/Writes a list of edges, one per line.
+Reads and writes a list of edges, one edge per line.
 
 ```rust
 use graphina::core::types::Graph;
 use graphina::core::io::{read_edge_list, write_edge_list};
 
 // Save
-write_edge_list("graph.txt", &graph, ' ').unwrap();
+write_edge_list("graph.txt", & graph, ' ').unwrap();
 
 // Load (node attribute i32, edge weight f32)
 let mut loaded_graph = Graph::<i32, f32>::new();
-read_edge_list("graph.txt", &mut loaded_graph, ' ').unwrap();
+read_edge_list("graph.txt", & mut loaded_graph, ' ').unwrap();
 ```
 
-### Adjacency List
+## Adjacency List
 
-Reads/Writes an adjacency list format (Node Neighbor1 Neighbor2 ...).
+Reads and writes an adjacency list format (in `Node` `Neighbor1` `Neighbor2` ...).
 
 ```rust
 use graphina::core::types::Graph;
 use graphina::core::io::{read_adjacency_list, write_adjacency_list};
 
 // Save
-write_adjacency_list("adj.txt", &graph, ' ').unwrap();
+write_adjacency_list("adj.txt", & graph, ' ').unwrap();
 
 // Load
 let mut loaded_graph = Graph::<i32, f32>::new();
-read_adjacency_list("adj.txt", &mut loaded_graph, ' ').unwrap();
+read_adjacency_list("adj.txt", & mut loaded_graph, ' ').unwrap();
 ```
 
-## Serialization
-
-Graphina uses `serde` for serialization.
-
-The serialization entry points are methods on the graph types.
-
-### JSON
+## JSON
 
 ```rust
 use graphina::core::types::Graph;
@@ -64,7 +56,7 @@ graph.save_json("graph.json").unwrap();
 let g = Graph::<i32, f32>::load_json("graph.json").unwrap();
 ```
 
-### Binary Format
+## Binary Format
 
 Compact and fast binary format.
 
@@ -75,9 +67,7 @@ graph.save_binary("graph.bin").unwrap();
 let g = Graph::<i32, f32>::load_binary("graph.bin").unwrap();
 ```
 
-### GraphML (Export Only)
-
-GraphML is standard for graph visualization tools.
+## GraphML (Export-only)
 
 ```rust
 graph.save_graphml("graph.graphml").unwrap();
