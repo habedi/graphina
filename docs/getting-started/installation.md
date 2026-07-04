@@ -15,8 +15,8 @@ graphina = "0.4.0-alpha.3"
 
 Replace `0.4.0-alpha.3` with the latest version or the version you want to use.
 
-   !!! note "Note"
-        `graphina` requires Rust 1.85 or newer.
+!!! note "Note" 
+    `graphina` requires Rust 1.85 or newer.
 
 ## Feature Flags
 
