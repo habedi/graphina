@@ -1,6 +1,6 @@
 # Installation
 
-To add `graphina` to your project, run:
+To add Graphina to your project, run:
 
 ```bash
 cargo add graphina
