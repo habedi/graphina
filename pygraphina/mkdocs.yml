@@ -6,6 +6,8 @@ site_url: https://habedi.github.io/graphina/python/
 
 theme:
   name: material
+  logo: assets/img/logo.png
+  favicon: assets/img/logo.png
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
