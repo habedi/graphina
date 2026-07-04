@@ -307,6 +307,7 @@ dependencies = [
  "ordered-float",
  "petgraph",
  "proptest",
+ "rand",
  "rayon",
  "rustc-hash",
  "serde",

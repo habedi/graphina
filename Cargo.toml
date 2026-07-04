@@ -42,6 +42,7 @@ subgraphs = []
 all = ["centrality", "community", "links", "approximation", "parallel", "metrics", "mst", "traversal", "subgraphs"]
 
 [dependencies]
+rand = { version = "=0.9.3", default-features = false, features = ["std", "std_rng"] }
 sprs = "0.11.3"
 ordered-float = "5.0.0"
 rayon = "1.10.0"
