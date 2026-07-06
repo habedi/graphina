@@ -4,7 +4,7 @@ Graphina provides a set of validation functions in the `core::validation` module
 
 ## Precondition Verification
 
-Many graph algorithms require specific graph properties. For example, Dijkstra's algorithm assumes non-negative edge weights, and topological sorting requires a Directed Acyclic Graph (DAG). 
+Many graph algorithms require specific graph properties. For example, Dijkstra's algorithm assumes non-negative edge weights, and topological sorting requires a Directed Acyclic Graph (DAG).
 
 Using the validation functions helps ensure the input graph meets these requirements.
 

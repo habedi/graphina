@@ -18,7 +18,7 @@ fn process_graph(graph: &Digraph<&str, f64>) -> Result<()> {
 
     // 2. Perform graph processing
     println!("Graph is valid. Processing...");
-    
+
     Ok(())
 }
 
@@ -48,7 +48,7 @@ fn main() {
     let n1 = g.add_node(1);
     let n2 = g.add_node(2);
     let n3 = g.add_node(3);
-    
+
     g.add_edge(n1, n2, 1.0);
     g.add_edge(n2, n3, 1.0);
 
