@@ -61,7 +61,10 @@ where
             for (&other_node, dist_opt) in &dist_map {
                 if node != other_node {
                     if let Some(dist_f64) = dist_opt {
-                        if *dist_f64 > 0.0 && dist_f64.is_finite() {
+                        // A distance of 0.0 over a zero-weight edge still means
+                        // the node is reachable, so only non-finite entries are
+                        // skipped, matching the sequential version.
+                        if dist_f64.is_finite() {
                             sum_dist += *dist_f64;
                             reachable += 1;
                         }
@@ -109,6 +112,26 @@ mod tests {
             (cc[&n2] - 2.0 / 3.0).abs() < 1e-12,
             "endpoint got {}",
             cc[&n2]
+        );
+    }
+
+    #[test]
+    fn test_parallel_closeness_counts_zero_distance_nodes() {
+        // Mirrors the sequential regression: a node reachable at distance 0.0
+        // over a zero-weight edge must count as reachable. From u the distances
+        // are v: 0.0 and x: 1.0, so Wasserman-Faust closeness is 2.0.
+        let mut g = Graph::<i32, f64>::new();
+        let u = g.add_node(0);
+        let v = g.add_node(1);
+        let x = g.add_node(2);
+        g.add_edge(u, v, 0.0);
+        g.add_edge(u, x, 1.0);
+
+        let cc = closeness_centrality_parallel(&g).expect("parallel closeness");
+        assert!(
+            (cc[&u] - 2.0).abs() < 1e-9,
+            "expected 2.0 for u, got {}",
+            cc[&u]
         );
     }
 

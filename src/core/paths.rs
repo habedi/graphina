@@ -212,6 +212,13 @@ where
     // search may touch few nodes, but the return contract is a complete map (one
     // entry per node, `None` when unreachable), so we fill from the dense buffers
     // at the end rather than building two full maps up front.
+    if graph.node_attr(source).is_none() {
+        return Err(GraphinaError::node_not_found(format!(
+            "Dijkstra source node {:?} does not exist in the graph",
+            source
+        )));
+    }
+
     let bound = index_bound(graph);
     let mut dist: Vec<Option<f64>> = vec![None; bound];
     let mut trace: Vec<Option<NodeId>> = vec![None; bound];
@@ -344,6 +351,13 @@ where
     Ty: GraphConstructor<A, W>,
     NodeId: Ord,
 {
+    if graph.node_attr(source).is_none() {
+        return Err(GraphinaError::node_not_found(format!(
+            "Dijkstra source node {:?} does not exist in the graph",
+            source
+        )));
+    }
+
     // Dense, index-keyed distance buffer: `vec[id.index()]` is hash-free in the
     // inner loop. Converted to the `NodeMap` return type once at the end.
     let mut dist: Vec<Option<W>> = vec![None; index_bound(graph)];
@@ -410,6 +424,12 @@ where
     let mut path_len = vec![0usize; bound];
     let mut queue = VecDeque::new();
 
+    // No error channel here: a missing source cannot panic, so report every
+    // live node as unreachable instead.
+    if graph.node_attr(source).is_none() {
+        return Some(dense_to_nodemap(graph, &dist));
+    }
+
     let si = source.index();
     dist[si] = Some(W::from(0u8));
     in_queue[si] = true;
@@ -471,6 +491,19 @@ where
     F: Fn(NodeId) -> W,
     NodeId: Ord,
 {
+    if graph.node_attr(source).is_none() {
+        return Err(GraphinaError::node_not_found(format!(
+            "A* source node {:?} does not exist in the graph",
+            source
+        )));
+    }
+    if graph.node_attr(target).is_none() {
+        return Err(GraphinaError::node_not_found(format!(
+            "A* target node {:?} does not exist in the graph",
+            target
+        )));
+    }
+
     // Buffers are keyed by `NodeId::index()`, which stays stable across node
     // removal, so they must span the index bound (max live index + 1), not the
     // node count. Sizing by `node_count()` panics once a node has been removed.
@@ -584,6 +617,16 @@ where
             }
         }
     }
+    // A negative diagonal entry means some node can reach itself at negative
+    // cost, which is exactly a negative cycle; this must be checked before the
+    // diagonal is reset to zero below.
+    for (i, row) in dist.iter().enumerate().take(n) {
+        if let Some(dii) = row[i] {
+            if dii < W::from(0u8) {
+                return None;
+            }
+        }
+    }
     for (i, row) in dist.iter_mut().enumerate().take(n) {
         row[i] = Some(W::from(0u8));
     }
@@ -625,7 +668,11 @@ where
     let node_count = graph.node_count();
     let mut h = vec![W::from(0u8); bound];
 
-    // Relax edges for node_count - 1 iterations.
+    // Relax edges for node_count - 1 iterations. Undirected edges are stored
+    // once but traversable both ways, so they relax in both directions; a
+    // single orientation misses the negative cycle any undirected negative
+    // edge forms and feeds negative reweighted edges to the Dijkstra phase.
+    let is_directed = graph.is_directed();
     for _ in 0..node_count.saturating_sub(1) {
         let mut updated = false;
         for (u, v, &w) in graph.edges() {
@@ -633,6 +680,10 @@ where
             let vi = v.index();
             if h[ui] + w < h[vi] {
                 h[vi] = h[ui] + w;
+                updated = true;
+            }
+            if !is_directed && h[vi] + w < h[ui] {
+                h[ui] = h[vi] + w;
                 updated = true;
             }
         }
@@ -645,6 +696,9 @@ where
         let ui = u.index();
         let vi = v.index();
         if h[ui] + w < h[vi] {
+            return None;
+        }
+        if !is_directed && h[vi] + w < h[ui] {
             return None;
         }
     }
@@ -799,6 +853,123 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_floyd_warshall_negative_cycle_returns_none() {
+        use crate::core::paths::floyd_warshall;
+        use crate::core::types::Digraph;
+
+        let mut g: Digraph<i32, i32> = Digraph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, b, -1);
+        g.add_edge(b, a, -1);
+
+        assert!(
+            floyd_warshall(&g).is_none(),
+            "a negative cycle must yield None"
+        );
+    }
+
+    #[test]
+    fn test_johnson_undirected_negative_edge_returns_none() {
+        use crate::core::paths::johnson;
+        use crate::core::types::Graph;
+
+        // Traversing an undirected negative edge back and forth is a negative
+        // cycle, so Johnson must return None rather than distances.
+        let mut g: Graph<i32, i32> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, b, -1);
+
+        assert!(johnson(&g).is_none());
+    }
+
+    #[test]
+    fn test_dijkstra_stale_source_errors() {
+        use crate::core::paths::dijkstra;
+        use crate::core::types::Graph;
+
+        // The removed node held the highest index, so the dense distance buffer
+        // is smaller than its index and an unchecked write panicked out of
+        // bounds. A stale source must produce a node_not_found error instead.
+        let mut g: Graph<i32, i32> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1);
+        g.remove_node(c);
+
+        assert!(dijkstra(&g, c).is_err());
+    }
+
+    #[test]
+    fn test_dijkstra_path_f64_stale_source_errors() {
+        use crate::core::paths::dijkstra_path_f64;
+        use crate::core::types::Graph;
+
+        let mut g: Graph<i32, f64> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.remove_node(c);
+
+        assert!(dijkstra_path_f64(&g, c, None).is_err());
+    }
+
+    #[test]
+    fn test_dijkstra_removed_mid_index_source_errors() {
+        use crate::core::paths::dijkstra;
+        use crate::core::types::Graph;
+
+        // A removed node whose index is still below the bound used to return Ok
+        // with a meaningless all-None map; it must error like any missing node.
+        let mut g: Graph<i32, i32> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, c, 1);
+        g.remove_node(b);
+
+        assert!(dijkstra(&g, b).is_err());
+    }
+
+    #[test]
+    fn test_a_star_stale_source_and_target_error() {
+        use crate::core::paths::a_star;
+        use crate::core::types::Graph;
+
+        let mut g: Graph<i32, i32> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1);
+        g.remove_node(c);
+
+        assert!(a_star(&g, c, a, |_| 0).is_err());
+        assert!(a_star(&g, a, c, |_| 0).is_err());
+    }
+
+    #[test]
+    fn test_bellman_ford_stale_source_no_panic() {
+        use crate::core::paths::bellman_ford;
+        use crate::core::types::Graph;
+
+        // bellman_ford has no error channel; a stale source must not panic and
+        // must report every live node as unreachable.
+        let mut g: Graph<i32, i32> = Graph::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1);
+        g.remove_node(c);
+
+        let dist = bellman_ford(&g, c).expect("no negative cycle");
+        assert_eq!(dist[&a], None);
+        assert_eq!(dist[&b], None);
+    }
 
     #[test]
     fn test_dijkstra_negative_weights() {

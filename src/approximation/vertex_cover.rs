@@ -7,6 +7,10 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 /// repeatedly add the node covering the most still-uncovered edges, then mark all its
 /// incident edges as covered.
 ///
+/// Edge weights are ignored; the `f64` weight type only fixes the graph type. The
+/// maximum-degree heuristic carries a logarithmic (not constant-factor)
+/// approximation guarantee, although it often produces small covers in practice.
+///
 /// The uncovered degree of every node is maintained incrementally through a
 /// lazy-deletion max-heap, so each edge is touched a constant number of times. The run
 /// time is O((V + E) log V), replacing the earlier version that rescanned every node

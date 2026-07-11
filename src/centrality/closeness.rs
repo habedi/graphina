@@ -35,7 +35,9 @@ where
         for (&other_node, dist_opt) in &dist_map {
             if node != other_node {
                 if let Some(dist_f64) = dist_opt {
-                    if *dist_f64 > 0.0 && dist_f64.is_finite() {
+                    // A distance of 0.0 over a zero-weight edge still means the
+                    // node is reachable, so only non-finite entries are skipped.
+                    if dist_f64.is_finite() {
                         sum_dist += *dist_f64;
                         reachable += 1;
                     }
@@ -62,6 +64,30 @@ mod tests {
     // centrality formula) instead of computing closeness. On the unit-weight path
     // 0-1-2 the endpoint's closeness is (reachable / sum_dist) * (reachable / (n-1))
     // = (2/3) * (2/2) = 0.6667, not the harmonic value 1/1 + 1/2 = 1.5.
+    #[test]
+    fn test_closeness_centrality_counts_zero_distance_nodes() {
+        use crate::centrality::closeness::closeness_centrality;
+        use crate::core::types::Graph;
+
+        // Zero-weight edges are legal for Dijkstra, and a node at distance 0.0
+        // is still reachable. From u the distances are v: 0.0 and x: 1.0, so
+        // Wasserman-Faust closeness is (2 / 1.0) * (2 / 2) = 2.0; dropping the
+        // zero-distance node deflates it to 0.5.
+        let mut g = Graph::<i32, f64>::new();
+        let u = g.add_node(0);
+        let v = g.add_node(1);
+        let x = g.add_node(2);
+        g.add_edge(u, v, 0.0);
+        g.add_edge(u, x, 1.0);
+
+        let cc = closeness_centrality(&g).expect("closeness should succeed");
+        assert!(
+            (cc[&u] - 2.0).abs() < 1e-9,
+            "expected 2.0 for u, got {}",
+            cc[&u]
+        );
+    }
+
     #[test]
     fn test_closeness_centrality_is_not_harmonic() {
         use crate::centrality::closeness::closeness_centrality;

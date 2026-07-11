@@ -12,6 +12,7 @@ fn find_path<A, Ty>(
     source: NodeId,
     target: NodeId,
     blocked: &HashSet<NodeId>,
+    forbid_direct: bool,
 ) -> Option<Vec<NodeId>>
 where
     Ty: crate::core::types::GraphConstructor<A, f64>,
@@ -42,6 +43,11 @@ where
             return Some(path);
         }
         for v in graph.neighbors(u) {
+            // The single-hop source-target path has no intermediate node to
+            // block, so the disjoint-path search skips it and counts it apart.
+            if forbid_direct && u == source && v == target {
+                continue;
+            }
             if !visited[v.index()] && !blocked.contains(&v) {
                 visited[v.index()] = true;
                 prev[v.index()] = Some(u);
@@ -68,34 +74,31 @@ where
     }
 
     let mut connectivity = 0;
+
+    // The direct edge is a vertex-disjoint path with no intermediate node, so
+    // it can never be excluded by blocking; count it once here and forbid the
+    // single-hop path in the searches below.
+    if graph.neighbors(source).any(|v| v == target) {
+        connectivity += 1;
+    }
+
     let mut blocked = HashSet::new();
 
     // Limit iterations to prevent infinite loops
     let max_iterations = graph.node_count();
     let mut iterations = 0;
 
-    while let Some(path) = find_path(graph, source, target, &blocked) {
+    while let Some(path) = find_path(graph, source, target, &blocked, true) {
         iterations += 1;
         if iterations > max_iterations {
             // Safety check: prevent infinite loops
             break;
         }
 
-        // Block all intermediate nodes (exclude source and target)
-        // For a path [s, n1, n2, ..., nk, t], we want to block n1, n2, ..., nk
-        match path.len().cmp(&2) {
-            std::cmp::Ordering::Greater => {
-                for &node in path.iter().skip(1).take(path.len() - 2) {
-                    blocked.insert(node);
-                }
-            }
-            std::cmp::Ordering::Equal => {
-                // Direct edge from source to target
-                // No intermediate nodes to block, but we can't find more disjoint paths
-                connectivity += 1;
-                break;
-            }
-            std::cmp::Ordering::Less => {}
+        // Every found path has at least one intermediate node (the direct hop
+        // is forbidden); block them all so the next path is vertex-disjoint.
+        for &node in path.iter().skip(1).take(path.len().saturating_sub(2)) {
+            blocked.insert(node);
         }
 
         connectivity += 1;
@@ -118,6 +121,38 @@ mod tests {
         // Direct edge should return 1 without hanging
         let conn = local_node_connectivity(&g, n1, n2);
         assert_eq!(conn, 1);
+    }
+
+    #[test]
+    fn test_local_node_connectivity_direct_edge_plus_indirect_path() {
+        // A triangle has two vertex-disjoint s-t paths: the direct edge and the
+        // path through the third node. Stopping at the direct edge undercounts.
+        let mut g = Graph::new();
+        let s = g.add_node(0);
+        let t = g.add_node(1);
+        let a = g.add_node(2);
+        g.add_edge(s, t, 1.0);
+        g.add_edge(s, a, 1.0);
+        g.add_edge(a, t, 1.0);
+
+        let conn = local_node_connectivity(&g, s, t);
+        assert_eq!(conn, 2);
+    }
+
+    #[test]
+    fn test_local_node_connectivity_complete_graph() {
+        // In K5 any two nodes are joined by the direct edge plus three paths
+        // through the remaining nodes, so the connectivity is 4.
+        let mut g = Graph::new();
+        let nodes: Vec<_> = (0..5).map(|i| g.add_node(i)).collect();
+        for i in 0..5 {
+            for j in (i + 1)..5 {
+                g.add_edge(nodes[i], nodes[j], 1.0);
+            }
+        }
+
+        let conn = local_node_connectivity(&g, nodes[0], nodes[1]);
+        assert_eq!(conn, 4);
     }
 
     #[test]
