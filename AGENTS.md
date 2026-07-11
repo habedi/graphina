@@ -267,7 +267,8 @@ All return collections (`HashMap`/`Vec`), not `Result`, and produce results inde
 - `bfs_parallel(graph, starts)` and `shortest_paths_parallel(graph, sources)` run one search per source and return results in input order; shortest
   paths are unweighted (hop counts).
 - `degrees_parallel`, `clustering_coefficients_parallel`, `triangles_parallel`, `connected_components_parallel` (and its `_list` variant),
-  `pagerank_parallel` (takes `nstart: Option<&HashMap<NodeId, f64>>`), `closeness_centrality_parallel`, and `all_pairs_shortest_path_length_parallel`
+  `pagerank_parallel` (weight aware, matching the sequential `pagerank`; takes `nstart: Option<&HashMap<NodeId, f64>>`),
+  `closeness_centrality_parallel`, and `all_pairs_shortest_path_length_parallel`
   return per-node maps or path results.
 
 ### `subgraphs`

@@ -19,13 +19,14 @@ The `graphina::parallel` module mirrors many algorithms from the main modules bu
 ### Parallel PageRank
 
 Significantly faster than the single-threaded version for graphs with millions of nodes.
+Rank is distributed in proportion to edge weight, so results match the sequential `pagerank` in the `centrality` module.
 
 ```rust
 use graphina::core::types::Digraph;
 use graphina::parallel::pagerank_parallel;
 
 let mut g = Digraph::<&str, f64>::new();
-// Add some nodes
+// Add a few nodes
 let n1 = g.add_node("A");
 let n2 = g.add_node("B");
 g.add_edge(n1, n2, 1.0);

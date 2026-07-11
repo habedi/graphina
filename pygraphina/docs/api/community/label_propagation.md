@@ -48,7 +48,7 @@ O(V)
 
 ## Disadvantages
 
-- Results can be non-deterministic
+- Non-deterministic results unless a seed is set
 - May not find globally optimal communities
 - Sensitive to label initialization
 
