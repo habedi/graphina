@@ -88,36 +88,30 @@ pub fn is_dag<A, W, Ty: GraphConstructor<A, W> + EdgeType>(graph: &BaseGraph<A, 
         white.insert(node);
     }
 
-    fn dfs_has_cycle<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
-        graph: &BaseGraph<A, W, Ty>,
-        node: NodeId,
-        white: &mut HashSet<NodeId>,
-        gray: &mut HashSet<NodeId>,
-        black: &mut HashSet<NodeId>,
-    ) -> bool {
-        white.remove(&node);
-        gray.insert(node);
-
-        for neighbor in graph.neighbors(node) {
-            if black.contains(&neighbor) {
-                continue;
+    // Iterative three-color DFS with an explicit stack of neighbor iterators.
+    // Recursing one frame per node overflows the thread stack on deep graphs
+    // such as long directed paths.
+    while let Some(&start) = white.iter().next() {
+        white.remove(&start);
+        gray.insert(start);
+        let mut stack = vec![(start, graph.neighbors(start))];
+        while let Some(top) = stack.last_mut() {
+            let node = top.0;
+            if let Some(neighbor) = top.1.next() {
+                if black.contains(&neighbor) {
+                    continue;
+                }
+                if gray.contains(&neighbor) {
+                    return false; // Back edge found - cycle detected
+                }
+                white.remove(&neighbor);
+                gray.insert(neighbor);
+                stack.push((neighbor, graph.neighbors(neighbor)));
+            } else {
+                gray.remove(&node);
+                black.insert(node);
+                stack.pop();
             }
-            if gray.contains(&neighbor) {
-                return true; // Back edge found - cycle detected
-            }
-            if dfs_has_cycle(graph, neighbor, white, gray, black) {
-                return true;
-            }
-        }
-
-        gray.remove(&node);
-        black.insert(node);
-        false
-    }
-
-    while let Some(&node) = white.iter().next() {
-        if dfs_has_cycle(graph, node, &mut white, &mut gray, &mut black) {
-            return false; // Cycle found
         }
     }
 
@@ -421,6 +415,23 @@ pub fn validate_is_dag<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_is_dag_deep_path_does_not_overflow_stack() {
+        use crate::core::types::Digraph;
+        use crate::core::validation::is_dag;
+
+        // A 100k-node directed path forces a DFS chain as deep as the graph;
+        // recursive cycle detection overflows the test thread's stack, so the
+        // check must be iterative.
+        let mut g: Digraph<i32, i32> = Digraph::new();
+        let nodes: Vec<_> = (0..100_000).map(|i| g.add_node(i)).collect();
+        for i in 0..nodes.len() - 1 {
+            g.add_edge(nodes[i], nodes[i + 1], 1);
+        }
+
+        assert!(is_dag(&g));
+    }
 
     #[test]
     fn test_dag_validation() {

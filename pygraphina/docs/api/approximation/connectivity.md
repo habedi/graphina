@@ -1,11 +1,11 @@
 # Local Node Connectivity
 
-Local node connectivity measures the maximum number of edge-disjoint paths between two nodes.
+Local node connectivity approximates the maximum number of vertex-disjoint paths between two nodes.
 
 ## Overview
 
-Local node connectivity between two nodes is the minimum number of edges that need to be removed to disconnect them.
-This is also known as the edge connectivity between two specific nodes.
+Local node connectivity between two nodes is the minimum number of other nodes that need to be removed to disconnect
+them. By Menger's theorem this equals the maximum number of paths between them that share no intermediate node.
 
 ## Function Signature
 
@@ -25,16 +25,17 @@ pg.approximation.local_node_connectivity(
 
 ## Returns
 
-Integer representing the minimum number of edges that must be removed to disconnect source from target.
+Integer approximating the number of vertex-disjoint paths from source to target: a direct edge counts once, and each
+further path shares no intermediate node with the paths already found.
 
 ## Algorithm
 
-Uses max-flow min-cut theorem:
-- Computes maximum flow from source to target
-- Flow capacity = 1 for each edge
-- Result equals the edge connectivity
+Greedy search for vertex-disjoint paths:
+- A direct source-target edge is counted first
+- Repeated BFS finds a shortest remaining path and blocks its intermediate nodes
+- The count of found paths is a lower bound on the true connectivity
 
-Time Complexity: O(V · E) using efficient flow algorithms  
+Time Complexity: O(k · (V + E)) for k found paths  
 Space Complexity: O(V + E)
 
 ## Example
@@ -62,20 +63,22 @@ for u, v in edges:
 # Check connectivity between different pairs
 pairs = [(0, 7), (0, 1), (1, 3), (4, 6)]
 
-print("Edge connectivity between node pairs:")
+print("Node connectivity between node pairs:")
 for source, target in pairs:
     conn = pg.approximation.local_node_connectivity(g, nodes[source], nodes[target])
-    print(f"  {source} → {target}: {conn} edge-disjoint paths")
+    print(f"  {source} → {target}: {conn} vertex-disjoint paths")
 
 # Practical example: Network reliability
-# Two cities connected by 2 independent routes = connectivity 2
+# Two cities connected by a direct highway and a route through a transfer hub
+# have connectivity 2: both the direct edge and the indirect path count.
 g_network = pg.PyGraph()
 city_a = g_network.add_node(0)
 city_b = g_network.add_node(1)
+hub = g_network.add_node(2)
 
-# Direct routes (highways)
-g_network.add_edge(city_a, city_b, 1.0)
-g_network.add_edge(city_a, city_b, 1.0)  # Second route
+g_network.add_edge(city_a, city_b, 1.0)  # Direct highway
+g_network.add_edge(city_a, hub, 1.0)  # Route through the hub
+g_network.add_edge(hub, city_b, 1.0)
 
 conn_ab = pg.approximation.local_node_connectivity(g_network, city_a, city_b)
 print(f"\nNetwork reliability (City A to City B): {conn_ab} independent routes")

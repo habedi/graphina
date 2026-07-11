@@ -188,6 +188,21 @@ class TestPagerankParallel:
         for node in [n0, n1, n2]:
             assert scores[node] > 0
 
+    def test_pagerank_parallel_respects_edge_weights(self):
+        g = pygraphina.PyDiGraph()
+        source = g.add_node(0)
+        heavy = g.add_node(1)
+        light = g.add_node(2)
+        g.add_edge(source, heavy, 10.0)
+        g.add_edge(source, light, 1.0)
+        g.add_edge(heavy, source, 1.0)
+        g.add_edge(light, source, 1.0)
+        scores = pygraphina.parallel.pagerank_parallel(g, 0.85, 100, 1e-09)
+        assert scores[heavy] > scores[light], (
+            f'target of the heavier edge must rank higher: '
+            f'heavy={scores[heavy]}, light={scores[light]}'
+        )
+
     def test_pagerank_parallel_vs_sequential(self):
         g = pygraphina.erdos_renyi(50, 0.1, 42)
         seq_scores = pygraphina.centrality.pagerank(g, 0.85, 100, 1e-06)

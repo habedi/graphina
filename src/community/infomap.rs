@@ -87,10 +87,13 @@ where
                     *val /= total_flow;
                 }
             }
-            if let Some((&best_module, _)) = flow
-                .iter()
-                .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
-            {
+            // Break flow ties by smallest module id; HashMap iteration order
+            // is process-random, so relying on it would defeat the seed.
+            if let Some((&best_module, _)) = flow.iter().max_by(|a, b| {
+                a.1.partial_cmp(b.1)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| b.0.cmp(a.0))
+            }) {
                 if best_module != modules[i] {
                     modules[i] = best_module;
                     changed = true;
@@ -103,4 +106,29 @@ where
         }
     }
     Ok(modules)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_infomap_seeded_runs_are_identical() {
+        use crate::community::infomap::infomap;
+        use crate::core::types::Graph;
+
+        // A 6-cycle with uniform weights: each node sees two neighbor modules
+        // with equal normalized flow (0.5 each), so every update hits a flow
+        // tie. Ties must resolve deterministically for a fixed seed;
+        // hash-order tie-breaking makes repeated runs diverge.
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..6).map(|i| g.add_node(i)).collect();
+        for i in 0..6 {
+            g.add_edge(nodes[i], nodes[(i + 1) % 6], 1.0);
+        }
+
+        let first = infomap(&g, 100, Some(68)).unwrap();
+        for _ in 0..99 {
+            let rerun = infomap(&g, 100, Some(68)).unwrap();
+            assert_eq!(first, rerun);
+        }
+    }
 }

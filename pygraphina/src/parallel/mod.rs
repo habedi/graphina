@@ -166,6 +166,8 @@ pub fn connected_components_parallel(graph: &PyGraph) -> PyResult<HashMap<usize,
 /// Compute PageRank scores in parallel.
 ///
 /// Uses multi-threaded computation for faster PageRank on large graphs.
+/// Rank is distributed in proportion to edge weight, so results match the
+/// sequential `pagerank` in the `centrality` module.
 ///
 /// Parameters
 /// ----------

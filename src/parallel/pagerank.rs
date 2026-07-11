@@ -11,6 +11,8 @@ use petgraph::EdgeType;
 /// Parallel PageRank computation.
 ///
 /// Computes PageRank scores for all nodes using parallel iterations.
+/// Rank is distributed in proportion to edge weight, matching the sequential
+/// `pagerank` in the `centrality` module.
 ///
 /// # Arguments
 /// * `graph` - The graph to analyze
@@ -45,7 +47,7 @@ pub fn pagerank_parallel<A, W, Ty>(
 ) -> HashMap<NodeId, f64>
 where
     A: Sync,
-    W: Sync,
+    W: Copy + Into<f64> + Sync,
     Ty: GraphConstructor<A, W> + EdgeType + Sync,
 {
     let n = graph.node_count();
@@ -84,20 +86,31 @@ where
         nodes.iter().map(|&node| (node, 1.0 / n as f64)).collect()
     };
 
-    // Precompute incoming edges list to avoid scanning all edges per node.
-    let mut incoming: HashMap<NodeId, Vec<NodeId>> = HashMap::with_capacity(n);
+    // Precompute weighted incoming edge lists and weighted out-degrees so rank
+    // is distributed in proportion to edge weight, mirroring the sequential
+    // pagerank in the centrality module.
+    let mut incoming: HashMap<NodeId, Vec<(NodeId, f64)>> = HashMap::with_capacity(n);
+    let mut weighted_out_degree: HashMap<NodeId, f64> = HashMap::with_capacity(n);
     for &node in &nodes {
         incoming.insert(node, Vec::new());
+        weighted_out_degree.insert(node, 0.0);
     }
 
     let is_directed = graph.is_directed();
-    for (src, tgt, _) in graph.edges() {
+    for (src, tgt, w) in graph.edges() {
+        let weight: f64 = (*w).into();
         if let Some(list) = incoming.get_mut(&tgt) {
-            list.push(src);
+            list.push((src, weight));
+        }
+        if let Some(deg) = weighted_out_degree.get_mut(&src) {
+            *deg += weight;
         }
         if !is_directed {
             if let Some(list) = incoming.get_mut(&src) {
-                list.push(tgt);
+                list.push((tgt, weight));
+            }
+            if let Some(deg) = weighted_out_degree.get_mut(&tgt) {
+                *deg += weight;
             }
         }
     }
@@ -106,12 +119,15 @@ where
         // Snapshot previous ranks for this iteration (immutable view for parallelism)
         let prev = ranks.clone();
 
-        // Compute sum of ranks of dangling nodes (out-degree == 0) for redistribution
+        // Compute sum of ranks of dangling nodes (weighted out-degree == 0) for redistribution
         let dangling_sum: f64 = nodes
             .par_iter()
             .map(|&node| {
-                let out_deg = graph.out_degree(node).unwrap_or(0);
-                if out_deg == 0 { prev[&node] } else { 0.0 }
+                if weighted_out_degree[&node] == 0.0 {
+                    prev[&node]
+                } else {
+                    0.0
+                }
             })
             .sum();
 
@@ -123,10 +139,13 @@ where
             .map(|&node| {
                 let rank_sum: f64 = incoming[&node]
                     .iter()
-                    .map(|&src| {
-                        let out_degree = graph.out_degree(src).unwrap_or(0);
-                        let denom = if out_degree == 0 { 1 } else { out_degree }; // safeguard
-                        prev[&src] / denom as f64
+                    .map(|&(src, weight)| {
+                        let out_weight = weighted_out_degree[&src];
+                        if out_weight > 0.0 {
+                            prev[&src] * weight / out_weight
+                        } else {
+                            0.0
+                        }
                     })
                     .sum();
                 let new_rank = base + damping * rank_sum;
@@ -155,7 +174,28 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::types::Graph;
+    use crate::core::types::{Digraph, Graph};
+
+    #[test]
+    fn test_pagerank_parallel_respects_edge_weights() {
+        let mut g = Digraph::<i32, f64>::new();
+        let source = g.add_node(0);
+        let heavy = g.add_node(1);
+        let light = g.add_node(2);
+        g.add_edge(source, heavy, 10.0);
+        g.add_edge(source, light, 1.0);
+        g.add_edge(heavy, source, 1.0);
+        g.add_edge(light, source, 1.0);
+
+        let ranks = pagerank_parallel(&g, 0.85, 100, 1e-9, None);
+
+        assert!(
+            ranks[&heavy] > ranks[&light],
+            "target of the heavier edge must rank higher: heavy={}, light={}",
+            ranks[&heavy],
+            ranks[&light]
+        );
+    }
 
     #[test]
     fn test_pagerank_parallel() {

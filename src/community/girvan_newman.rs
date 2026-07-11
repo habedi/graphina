@@ -60,10 +60,13 @@ where
     // Remove edges iteratively until we reach the desired number of components.
     while connected_components_count(&neighbors) < target_communities {
         let edge_btwn = compute_edge_betweenness(n, &neighbors);
-        if let Some((&(u, v), _)) = edge_btwn
-            .iter()
-            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
-        {
+        // Break betweenness ties by smallest edge key; HashMap iteration order
+        // is process-random, so relying on it would make results irreproducible.
+        if let Some((&(u, v), _)) = edge_btwn.iter().max_by(|a, b| {
+            a.1.partial_cmp(b.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| b.0.cmp(a.0))
+        }) {
             neighbors[u].remove(&v);
             neighbors[v].remove(&u);
             active_edges.retain(|&(a, b)| !(a == u && b == v));
@@ -174,6 +177,27 @@ fn compute_edge_betweenness(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn test_girvan_newman_repeated_runs_are_identical() {
+        use crate::community::girvan_newman::girvan_newman;
+        use crate::core::types::Graph;
+
+        // A 6-cycle: every edge has identical betweenness, so each removal step
+        // hits a tie. The algorithm takes no seed and must be deterministic;
+        // hash-order tie-breaking makes repeated runs diverge.
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..6).map(|i| g.add_node(i)).collect();
+        for i in 0..6 {
+            g.add_edge(nodes[i], nodes[(i + 1) % 6], 1.0);
+        }
+
+        let first = girvan_newman(&g, 2).unwrap();
+        for _ in 0..49 {
+            let rerun = girvan_newman(&g, 2).unwrap();
+            assert_eq!(first, rerun);
+        }
+    }
+
     #[test]
     fn test_girvan_newman_with_deleted_nodes() {
         use crate::community::girvan_newman::girvan_newman;

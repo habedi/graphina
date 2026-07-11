@@ -134,7 +134,9 @@ deliberately or keep it private.
   the
   path-based ones (`harmonic_centrality`, `closeness_centrality`, `greedy_tsp`) order distances internally.
 - Negative weights: `dijkstra` and `a_star` return an error on a negative weight; `bellman_ford`, `floyd_warshall`, and `johnson` accept negatives and
-  return `None` on a negative cycle. Pathfinding assumes a non-empty graph; validate with `core::validation` first.
+  return `None` on a negative cycle. Pathfinding assumes a non-empty graph; validate with `core::validation` first. A missing or removed
+  source or target node yields a `node_not_found` error from the `Result`-returning algorithms; `bellman_ford`, which returns `Option`,
+  reports every live node as unreachable instead.
 - Fixed attribute types in IO and generators: `core::io` reads and writes graphs with `i32` node attributes and `f32` edge weights; `core::generators`
   produces `u32` node attributes and `f32` edge weights. Convert with `BaseGraph::convert` or `map_node_attrs`/`map_edge_weights` if you need other
   types.
@@ -256,7 +258,8 @@ Heuristics for NP-hard problems. Set/value returning functions: `min_weighted_ve
 `Result` (except TSP).
 
 - TSP: `greedy_tsp(graph, start)` is a greedy nearest-neighbor heuristic over `f64` weights. The returned tour is a cycle (`tour[0] == tour[last]`).
-- `min_weighted_vertex_cover` is a greedy 2-approximation.
+- `min_weighted_vertex_cover` is a greedy maximum-degree heuristic; edge weights are ignored, and the guarantee is logarithmic, not a
+  constant factor.
 - `local_node_connectivity` takes an `f64`-weighted graph and finds vertex-disjoint paths by BFS, so edge weights are ignored.
 
 ### `parallel`
@@ -266,8 +269,10 @@ All return collections (`HashMap`/`Vec`), not `Result`, and produce results inde
 
 - `bfs_parallel(graph, starts)` and `shortest_paths_parallel(graph, sources)` run one search per source and return results in input order; shortest
   paths are unweighted (hop counts).
-- `degrees_parallel`, `clustering_coefficients_parallel`, `triangles_parallel`, `connected_components_parallel` (and its `_list` variant),
-  `pagerank_parallel` (takes `nstart: Option<&HashMap<NodeId, f64>>`), `closeness_centrality_parallel`, and `all_pairs_shortest_path_length_parallel`
+- `degrees_parallel`, `clustering_coefficients_parallel`, `triangles_parallel`, `connected_components_parallel` (and its `_list` variant;
+  currently a sequential BFS kept for API parity, since component discovery is inherently ordered),
+  `pagerank_parallel` (weight aware, matching the sequential `pagerank`; takes `nstart: Option<&HashMap<NodeId, f64>>`),
+  `closeness_centrality_parallel`, and `all_pairs_shortest_path_length_parallel`
   return per-node maps or path results.
 
 ### `subgraphs`

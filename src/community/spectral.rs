@@ -76,10 +76,19 @@ where
         lap[(vi, vi)] += weight;
     }
     let eig = lap.symmetric_eigen();
+    // nalgebra's symmetric eigendecomposition returns eigenpairs in no
+    // particular order, so sort column indices by ascending eigenvalue to make
+    // the first k columns the smallest-eigenvalue eigenvectors.
+    let mut cols: Vec<usize> = (0..n).collect();
+    cols.sort_by(|&a, &b| {
+        eig.eigenvalues[a]
+            .partial_cmp(&eig.eigenvalues[b])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     let mut embedding = vec![vec![0.0; k]; n];
     for (i, row) in embedding.iter_mut().enumerate() {
         for (j, val) in row.iter_mut().enumerate().take(k) {
-            *val = eig.eigenvectors[(i, j)];
+            *val = eig.eigenvectors[(i, cols[j])];
         }
     }
     Ok(embedding)
@@ -187,4 +196,62 @@ fn euclidean_distance(a: &[f64], b: &[f64]) -> f64 {
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()
         .sqrt()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::types::Graph;
+
+    #[test]
+    fn test_spectral_embeddings_first_column_is_laplacian_null_space() {
+        // For a connected graph the smallest Laplacian eigenvalue is 0 and its
+        // eigenvector is constant, so a k=1 embedding must give every node the
+        // same value. Unsorted eigenpairs put an arbitrary eigenvector first.
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..5).map(|i| g.add_node(i)).collect();
+        g.add_edge(nodes[0], nodes[1], 1.0);
+        g.add_edge(nodes[1], nodes[2], 1.0);
+        g.add_edge(nodes[2], nodes[3], 1.0);
+        g.add_edge(nodes[3], nodes[4], 1.0);
+        g.add_edge(nodes[0], nodes[2], 1.0);
+
+        let emb = spectral_embeddings(&g, 1).expect("embedding should succeed");
+        let first = emb[0][0];
+        for row in &emb {
+            assert!(
+                (row[0] - first).abs() < 1e-8,
+                "k=1 embedding must be constant, got {:?}",
+                emb
+            );
+        }
+    }
+
+    #[test]
+    fn test_spectral_clustering_separates_two_triangles() {
+        // Two triangles joined by a single bridge: the Fiedler vector separates
+        // them, so k=2 must recover the triangles as the two clusters.
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..6).map(|i| g.add_node(i)).collect();
+        for &(a, b) in &[(0, 1), (1, 2), (0, 2), (3, 4), (4, 5), (3, 5)] {
+            g.add_edge(nodes[a], nodes[b], 1.0);
+        }
+        g.add_edge(nodes[2], nodes[3], 1.0);
+
+        let clusters = spectral_clustering(&g, 2, Some(42)).expect("clustering should succeed");
+        let mut sorted: Vec<Vec<usize>> = clusters
+            .iter()
+            .map(|c| {
+                let mut ids: Vec<usize> = c.iter().map(|n| n.index()).collect();
+                ids.sort_unstable();
+                ids
+            })
+            .collect();
+        sorted.sort();
+        assert_eq!(
+            sorted,
+            vec![vec![0, 1, 2], vec![3, 4, 5]],
+            "clusters must match the two triangles"
+        );
+    }
 }

@@ -119,7 +119,7 @@ def plot_run(
     ax.set_ylim(len(algorithms) - 0.5, -0.5)
     ax.set_xscale("log")
     ax.set_xlabel("Median Wall Time (s, log scale; lower is better)", fontsize=10, fontweight="semibold", labelpad=8)
-    
+
     # Despine axes (remove top and right borders)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -130,7 +130,7 @@ def plot_run(
 
     # Style Title
     ax.set_title(title, fontsize=12, fontweight="bold", pad=16, color="#1e293b", loc="left")
-    
+
     # Style Legend
     ax.legend(
         loc="lower right",
@@ -142,11 +142,11 @@ def plot_run(
         borderpad=0.6,
         labelspacing=0.5,
     )
-    
+
     # Style Grid lines (put behind bars)
     ax.set_axisbelow(True)
     ax.grid(axis="x", which="both", color="#e2e8f0", linestyle=":", linewidth=0.5)
-    
+
     # Footnote/Caption for untimed algorithms
     if untimed:
         caption = f"* Not timed (skipped, mismatch, or error): {', '.join(untimed)}"

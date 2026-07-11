@@ -19,23 +19,23 @@ Set of node IDs that form the vertex cover.
 
 ## Description
 
-This implements a 2-approximation algorithm for the minimum vertex cover problem:
+This implements a greedy maximum-degree heuristic for the minimum vertex cover problem:
 
-- Solution is guaranteed to be within 2x the optimal
+- Edge weights are ignored
 - Runs in polynomial time
 
 ## Algorithm
 
-The algorithm uses a greedy approach based on finding maximum matchings:
+The algorithm greedily picks high-degree nodes:
 
 1. While uncovered edges exist:
-2. Pick an arbitrary uncovered edge
-3. Add both its endpoints to the cover
-4. Remove all edges incident to these nodes
+2. Pick the node covering the most still-uncovered edges
+3. Add it to the cover
+4. Mark all its incident edges as covered
 
 ## Time Complexity
 
-O(V + E)
+O((V + E) log V)
 
 ## Space Complexity
 
@@ -68,10 +68,10 @@ print("All edges covered!")
 
 ## Approximation Guarantee
 
-This is a 2-approximation algorithm, meaning:
+The maximum-degree heuristic carries a logarithmic guarantee:
 
-- Size of returned cover ≤ 2 × (size of optimal cover)
-- No polynomial algorithm is known to do better (unless P=NP)
+- Size of returned cover ≤ O(log V) × (size of optimal cover) in the worst case
+- In practice it often produces covers close to the optimum
 
 ## Use Cases
 

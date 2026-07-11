@@ -14,7 +14,7 @@ Welcome to PyGraphina documentation!
 - All algorithms and data structures are implemented in fast, safe Rust
 - A large collection of graph algorithms for graph mining and network science:
     - Centrality measures like betweenness, closeness, and eigenvector
-    - Community detection like Louvain, label propagation, and Girvan-Newman 
+    - Community detection like Louvain, label propagation, and Girvan-Newman
     - Link prediction like Jaccard coefficient, Adamic-Adar, and resource allocation
     - Path algorithms like Dijkstra, Bellman-Ford, A*, and Floyd-Warshall
     - Graph metrics like clustering coefficient, transitivity, diameter, and assortativity

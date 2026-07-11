@@ -99,6 +99,7 @@ for attr in node_attributes:
 ### pagerank_parallel()
 
 Compute PageRank scores using parallel processing.
+Rank is distributed in proportion to edge weight, so results match `pg.centrality.pagerank`.
 
 ```python
 import pygraphina.parallel as pgp

@@ -26,6 +26,9 @@ where
 /// Betweenness centrality: measures the extent to which a node lies on paths between other nodes.
 /// It is the sum of the fraction of all-pairs shortest paths that pass through the node.
 ///
+/// Shortest paths are computed with Brandes' algorithm over BFS, so edge
+/// weights are ignored; the `f64` weight type only fixes the graph type.
+///
 /// # Arguments
 ///
 /// * `graph`: the targeted graph.
@@ -145,6 +148,9 @@ where
 
 /// Edge betweenness centrality: measures the extent to which an edge lies on paths between other nodes.
 ///
+/// Shortest paths are computed with Brandes' algorithm over BFS, so edge
+/// weights are ignored; the `f64` weight type only fixes the graph type.
+///
 /// # Arguments
 ///
 /// * `graph`: the targeted graph.
@@ -240,11 +246,14 @@ where
         }
     }
 
-    if normalized && n > 2 {
+    if normalized && n > 1 {
+        // An edge can lie on paths that start or end at its own endpoints, so
+        // the divisor is the full pair count n(n-1) (halved for undirected),
+        // not the node-betweenness constant (n-1)(n-2). Matches NetworkX.
         let norm = if graph.is_directed() {
-            1.0 / ((n - 1) * (n - 2)) as f64
+            1.0 / (n * (n - 1)) as f64
         } else {
-            2.0 / ((n - 1) * (n - 2)) as f64
+            2.0 / (n * (n - 1)) as f64
         };
         for val in centrality.values_mut() {
             *val *= norm;
@@ -350,5 +359,36 @@ mod tests {
 
         let centrality = result.unwrap();
         assert!(!centrality.is_empty());
+    }
+
+    #[test]
+    fn test_edge_betweenness_normalization_uses_pair_count() {
+        // On the unit path 0-1-2, each edge lies on two of the three node
+        // pairs, so the normalized edge betweenness is 2 / (n(n-1)/2) = 2/3.
+        // Edges touch path endpoints, so the divisor is the full pair count
+        // n(n-1)/2, not the node-betweenness constant (n-1)(n-2)/2, which
+        // would give 1.0 here. Values verified against NetworkX.
+        let mut graph = Graph::<i32, f64>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n2, n3, 1.0);
+
+        let centrality = edge_betweenness_centrality(&graph, true).unwrap();
+        let expected = 2.0 / 3.0;
+        assert!(
+            (centrality[&(n1, n2)] - expected).abs() < 1e-9,
+            "edge (n1, n2): expected {}, got {}",
+            expected,
+            centrality[&(n1, n2)]
+        );
+        assert!(
+            (centrality[&(n2, n3)] - expected).abs() < 1e-9,
+            "edge (n2, n3): expected {}, got {}",
+            expected,
+            centrality[&(n2, n3)]
+        );
     }
 }

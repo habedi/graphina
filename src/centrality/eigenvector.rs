@@ -26,7 +26,9 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 ///
 /// # Errors
 ///
-/// Returns an error if the graph is empty or if the power iteration fails to converge.
+/// Returns an error if the power iteration fails to converge. An empty graph
+/// yields an empty map, and a graph with no edges yields a uniform `1/n`
+/// distribution.
 pub fn eigenvector_centrality<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     max_iter: usize,

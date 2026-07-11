@@ -220,9 +220,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.18"
+version = "0.9.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b82ac4a3c2ca9c3460964f020e1402edd5753411d7737aa39c3714ad1b5420e"
+checksum = "2d6914041f254d6e9176c01941b21115dcfb7089e55135a35411081bd106ef3f"
 dependencies = [
  "crossbeam-utils",
 ]
@@ -299,7 +299,7 @@ dependencies = [
 
 [[package]]
 name = "graphina"
-version = "0.4.0-alpha.4"
+version = "0.4.0-alpha.5"
 dependencies = [
  "bincode",
  "criterion",
@@ -659,7 +659,7 @@ dependencies = [
 
 [[package]]
 name = "pygraphina"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "graphina",
  "ordered-float",

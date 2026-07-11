@@ -79,3 +79,52 @@ fn test_shortest_path_algorithms_consistency() {
         }
     }
 }
+
+#[test]
+#[cfg(all(feature = "centrality", feature = "parallel"))]
+fn test_pagerank_sequential_and_parallel_agree_on_weighted_graphs() {
+    use graphina::centrality::pagerank::pagerank;
+    use graphina::core::types::Digraph;
+    use graphina::parallel::pagerank_parallel;
+
+    let mut dg: Digraph<i32, f64> = Digraph::new();
+    let dn: Vec<_> = (0..5).map(|i| dg.add_node(i)).collect();
+    dg.add_edge(dn[0], dn[1], 10.0);
+    dg.add_edge(dn[0], dn[2], 1.0);
+    dg.add_edge(dn[1], dn[3], 2.0);
+    dg.add_edge(dn[2], dn[3], 5.0);
+    dg.add_edge(dn[3], dn[4], 1.0);
+    dg.add_edge(dn[4], dn[0], 3.0);
+
+    let sequential = pagerank(&dg, 0.85, 500, 1e-12, None).unwrap();
+    let parallel = pagerank_parallel(&dg, 0.85, 500, 1e-12, None);
+    for &node in &dn {
+        assert!(
+            (sequential[&node] - parallel[&node]).abs() < 1e-6,
+            "directed: sequential and parallel PageRank disagree at {:?}: {} vs {}",
+            node,
+            sequential[&node],
+            parallel[&node]
+        );
+    }
+
+    let mut ug: Graph<i32, f64> = Graph::new();
+    let un: Vec<_> = (0..5).map(|i| ug.add_node(i)).collect();
+    ug.add_edge(un[0], un[1], 10.0);
+    ug.add_edge(un[0], un[2], 1.0);
+    ug.add_edge(un[1], un[3], 2.0);
+    ug.add_edge(un[2], un[3], 5.0);
+    ug.add_edge(un[3], un[4], 1.0);
+
+    let sequential = pagerank(&ug, 0.85, 500, 1e-12, None).unwrap();
+    let parallel = pagerank_parallel(&ug, 0.85, 500, 1e-12, None);
+    for &node in &un {
+        assert!(
+            (sequential[&node] - parallel[&node]).abs() < 1e-6,
+            "undirected: sequential and parallel PageRank disagree at {:?}: {} vs {}",
+            node,
+            sequential[&node],
+            parallel[&node]
+        );
+    }
+}

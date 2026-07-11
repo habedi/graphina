@@ -298,5 +298,52 @@ class TestNetworkXInteropBugFix:
         assert d.is_directed()
 
 
+class TestCorrectnessAuditFixes:
+    """Regressions for correctness bugs fixed in the core library audit."""
+
+    def test_floyd_warshall_negative_cycle_returns_none(self):
+        g = pg.PyDiGraph()
+        a = g.add_node(0)
+        b = g.add_node(1)
+        g.add_edge(a, b, -1.0)
+        g.add_edge(b, a, -1.0)
+        assert g.floyd_warshall() is None
+
+    def test_girvan_newman_repeated_runs_are_identical(self):
+        # A 6-cycle ties every edge's betweenness, so each removal step hits a
+        # tie; the tie-break must be deterministic across runs.
+        g = pg.PyGraph()
+        nodes = [g.add_node(i) for i in range(6)]
+        for i in range(6):
+            g.add_edge(nodes[i], nodes[(i + 1) % 6], 1.0)
+        first = pg.community.girvan_newman(g, 2)
+        for _ in range(25):
+            assert pg.community.girvan_newman(g, 2) == first
+
+    def test_spectral_clustering_separates_two_triangles(self):
+        # Two triangles joined by one bridge: k=2 must recover the triangles,
+        # which requires the smallest-eigenvalue eigenvectors, not arbitrary ones.
+        g = pg.PyGraph()
+        nodes = [g.add_node(i) for i in range(6)]
+        for u, v in [(0, 1), (1, 2), (0, 2), (3, 4), (4, 5), (3, 5)]:
+            g.add_edge(nodes[u], nodes[v], 1.0)
+        g.add_edge(nodes[2], nodes[3], 1.0)
+        clusters = pg.community.spectral_clustering(g, 2, seed=42)
+        sorted_clusters = sorted(sorted(c) for c in clusters)
+        assert sorted_clusters == [[0, 1, 2], [3, 4, 5]]
+
+    def test_local_node_connectivity_counts_direct_and_indirect_paths(self):
+        # A triangle has two vertex-disjoint paths between adjacent nodes: the
+        # direct edge and the path through the third node.
+        g = pg.PyGraph()
+        s = g.add_node(0)
+        t = g.add_node(1)
+        a = g.add_node(2)
+        g.add_edge(s, t, 1.0)
+        g.add_edge(s, a, 1.0)
+        g.add_edge(a, t, 1.0)
+        assert pg.approximation.local_node_connectivity(g, s, t) == 2
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

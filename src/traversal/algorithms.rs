@@ -125,39 +125,29 @@ where
         return Vec::new();
     }
 
-    // Index-keyed visited flags (see `bfs`); the recursion order is unchanged.
+    // Index-keyed visited flags (see `bfs`). The traversal is iterative with an
+    // explicit stack of neighbor iterators, which reproduces the recursive
+    // preorder exactly while keeping the stack depth on the heap: recursion one
+    // frame per node overflows the thread stack on deep graphs such as long
+    // paths.
     let mut visited = vec![false; graph.as_petgraph().node_bound()];
     let mut order = Vec::new();
-    dfs_util(graph, start, &mut visited, &mut order);
-    order
-}
 
-/// Recursive helper function for DFS.
-///
-/// # Arguments
-///
-/// * `graph` - A reference to a graph that implements `BaseGraph`.
-/// * `node` - The current node identifier.
-/// * `visited` - A mutable set to track visited nodes.
-/// * `order` - A mutable vector to record the visitation order.
-fn dfs_util<A, W, Ty>(
-    graph: &BaseGraph<A, W, Ty>,
-    node: NodeId,
-    visited: &mut [bool],
-    order: &mut Vec<NodeId>,
-) where
-    Ty: GraphConstructor<A, W>,
-{
-    if visited[node.index()] {
-        return;
-    }
-    visited[node.index()] = true;
-    order.push(node);
-    for neighbor in graph.neighbors(node) {
-        if !visited[neighbor.index()] {
-            dfs_util(graph, neighbor, visited, order);
+    visited[start.index()] = true;
+    order.push(start);
+    let mut stack = vec![graph.neighbors(start)];
+    while let Some(neighbors) = stack.last_mut() {
+        if let Some(next) = neighbors.next() {
+            if !visited[next.index()] {
+                visited[next.index()] = true;
+                order.push(next);
+                stack.push(graph.neighbors(next));
+            }
+        } else {
+            stack.pop();
         }
     }
+    order
 }
 
 /// Performs iterative deepening depth-first search (IDDFS) to find a path from `start` to `target`.
@@ -554,6 +544,23 @@ where
 mod tests {
     use super::*;
     use crate::core::types::Graph;
+
+    #[test]
+    fn test_dfs_deep_path_does_not_overflow_stack() {
+        // A 100k-node path forces a DFS chain as deep as the graph; recursive
+        // DFS overflows the test thread's stack, so traversal must be iterative.
+        let mut graph = Graph::<i32, ()>::new();
+        let nodes: Vec<_> = (0..100_000).map(|i| graph.add_node(i)).collect();
+        for i in 0..nodes.len() - 1 {
+            graph.add_edge(nodes[i], nodes[i + 1], ());
+        }
+
+        let order = dfs(&graph, nodes[0]);
+        assert_eq!(order.len(), nodes.len());
+        assert_eq!(order[0], nodes[0]);
+        assert_eq!(order[nodes.len() - 1], nodes[nodes.len() - 1]);
+    }
+
     #[test]
     fn test_bfs() {
         let mut graph = Graph::<i32, ()>::new();
