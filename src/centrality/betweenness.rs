@@ -26,6 +26,9 @@ where
 /// Betweenness centrality: measures the extent to which a node lies on paths between other nodes.
 /// It is the sum of the fraction of all-pairs shortest paths that pass through the node.
 ///
+/// Shortest paths are computed with Brandes' algorithm over BFS, so edge
+/// weights are ignored; the `f64` weight type only fixes the graph type.
+///
 /// # Arguments
 ///
 /// * `graph`: the targeted graph.
@@ -144,6 +147,9 @@ where
 }
 
 /// Edge betweenness centrality: measures the extent to which an edge lies on paths between other nodes.
+///
+/// Shortest paths are computed with Brandes' algorithm over BFS, so edge
+/// weights are ignored; the `f64` weight type only fixes the graph type.
 ///
 /// # Arguments
 ///

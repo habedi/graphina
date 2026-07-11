@@ -81,7 +81,12 @@ where
             for &nbr in &adjacency[i] {
                 *freq.entry(labels[nbr]).or_insert(0) += 1;
             }
-            if let Some((&best_label, _)) = freq.iter().max_by_key(|&(_, count)| count) {
+            // Break frequency ties by smallest label; HashMap iteration order
+            // is process-random, so relying on it would defeat the seed.
+            if let Some((&best_label, _)) = freq
+                .iter()
+                .max_by_key(|&(&label, &count)| (count, std::cmp::Reverse(label)))
+            {
                 if best_label != labels[i] {
                     labels[i] = best_label;
                     changed = true;
@@ -98,6 +103,28 @@ where
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn test_label_propagation_seeded_runs_are_identical() {
+        use crate::community::label_propagation::label_propagation;
+        use crate::core::types::Graph;
+
+        // A 6-cycle: each node has exactly two neighbors, whose labels are
+        // distinct in the first sweep, so every update hits a frequency tie.
+        // Ties must resolve deterministically for a fixed seed; hash-order
+        // tie-breaking makes repeated runs diverge.
+        let mut g: Graph<i32, f64> = Graph::new();
+        let nodes: Vec<_> = (0..6).map(|i| g.add_node(i)).collect();
+        for i in 0..6 {
+            g.add_edge(nodes[i], nodes[(i + 1) % 6], 1.0);
+        }
+
+        let first = label_propagation(&g, 100, Some(68)).unwrap();
+        for _ in 0..99 {
+            let rerun = label_propagation(&g, 100, Some(68)).unwrap();
+            assert_eq!(first, rerun);
+        }
+    }
+
     #[test]
     fn test_label_propagation_stability() {
         use crate::community::label_propagation::label_propagation;
