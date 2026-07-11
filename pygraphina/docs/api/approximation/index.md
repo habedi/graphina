@@ -12,7 +12,7 @@ approximation algorithms provide good solutions quickly instead of spending expo
 | Algorithm         | Problem                 | Approximation Ratio | Time Complexity |
 |-------------------|-------------------------|---------------------|-----------------|
 | Large Clique      | Maximum Clique          | Heuristic           | O(V²)           |
-| Vertex Cover      | Minimum Vertex Cover    | 2-approximation     | O(V + E)        |
+| Vertex Cover      | Minimum Vertex Cover    | Greedy, O(log V)    | O((V+E) log V)  |
 | Clustering        | Graph Clustering        | Approximation       | O(V²)           |
 | Connectivity      | Graph Connectivity      | Approximation       | O(V + E)        |
 | Diameter          | Graph Diameter          | Approximation       | O(V²)           |
