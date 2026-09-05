@@ -152,16 +152,15 @@ where
             .collect();
 
         // Merge and check convergence
-        let mut max_diff = 0.0;
+        // Stop on the L1 change, the same rule as the sequential `pagerank`, so
+        // both stop after the same iteration for a given tolerance.
+        let mut total_diff = 0.0;
         for (node, new_rank) in new_ranks_vec {
-            let diff = (new_rank - prev[&node]).abs();
-            if diff > max_diff {
-                max_diff = diff;
-            }
+            total_diff += (new_rank - prev[&node]).abs();
             ranks.insert(node, new_rank);
         }
 
-        if max_diff < tolerance {
+        if total_diff < tolerance {
             break;
         }
     }

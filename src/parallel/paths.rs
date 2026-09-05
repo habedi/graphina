@@ -10,7 +10,10 @@ use petgraph::EdgeType;
 
 /// Parallel shortest path distances from multiple sources.
 ///
-/// Computes shortest path distances from multiple source nodes in parallel.
+/// Computes unweighted shortest path distances (hop counts) from multiple source
+/// nodes in parallel. Results are returned in the order of `sources`; unreachable
+/// nodes are absent from a map, and a source that is not in the graph yields an
+/// empty map at its position.
 ///
 /// # Example
 ///
@@ -41,6 +44,11 @@ where
     sources
         .par_iter()
         .map(|&source| {
+            // A source that is not in the graph has no distances, not even to
+            // itself, so it yields an empty map at its position.
+            if !graph.contains_node(source) {
+                return HashMap::new();
+            }
             let mut distances = HashMap::new();
             let mut queue = VecDeque::new();
 
@@ -211,5 +219,18 @@ mod tests {
         let (par_nodes, par) = all_pairs_shortest_path_length_parallel(&g);
         assert_eq!(seq_nodes, par_nodes, "node ordering must match");
         assert_eq!(seq, par, "distance matrices must match cell for cell");
+    }
+
+    #[test]
+    fn test_shortest_paths_parallel_missing_source_yields_empty_map() {
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(1);
+        let b = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        let removed = g.add_node(3);
+        g.remove_node(removed);
+        let results = shortest_paths_parallel(&g, &[a, removed]);
+        assert_eq!(results[0][&b], 1);
+        assert!(results[1].is_empty());
     }
 }

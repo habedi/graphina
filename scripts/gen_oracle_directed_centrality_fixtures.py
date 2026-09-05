@@ -44,6 +44,10 @@ Each measure is pinned to the convention Graphina implements:
   - local reaching centrality          -> nx.local_reaching_centrality (unweighted)
     Proportion of other nodes reachable from each node; null for edgeless graphs.
 
+  - hop lengths                        -> nx.all_pairs_shortest_path_length
+    Unweighted directed distance matrix, null where a node is unreachable. Pins
+    the all-pairs and multi-source BFS functions, sequential and parallel.
+
 The graphs are simple (no self-loops and no parallel edges) with positive
 integer weights, so weighted shortest path sums are exact under f64.
 
@@ -113,6 +117,8 @@ def main():
             local_reaching = [float(nx.local_reaching_centrality(g, k)) for k in range(n)]
         else:
             local_reaching = None
+        lengths = dict(nx.all_pairs_shortest_path_length(g))
+        hop_lengths = [[lengths[i].get(j) for j in range(n)] for i in range(n)]
 
         cases.append(
             {
@@ -137,6 +143,7 @@ def main():
                 "transitivity": float(nx.transitivity(g)),
                 "assortativity": assort,
                 "local_reaching": local_reaching,
+                "hop_lengths": hop_lengths,
             }
         )
 

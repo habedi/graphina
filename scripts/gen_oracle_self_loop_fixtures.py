@@ -39,6 +39,8 @@ Measures and the matching NetworkX call:
   - degree                  -> nx.Graph.degree (self-loop counts two)
   - voterank                -> nx.voterank (unweighted election order)
   - assortativity           -> nx.degree_assortativity_coefficient (null when NaN)
+  - closeness               -> nx.closeness_centrality(distance="weight")
+  - hop_lengths             -> nx.all_pairs_shortest_path_length (unweighted)
 
 Regenerate with `make oracle-fixtures`.
 """
@@ -154,6 +156,9 @@ def main():
         eigenvector = nx.eigenvector_centrality(g, max_iter=NX_MAX_ITER, tol=1e-10, weight="weight")
         clustering = nx.clustering(g)
         triangles = nx.triangles(g)
+        closeness = nx.closeness_centrality(g, distance="weight")
+        lengths = dict(nx.all_pairs_shortest_path_length(g))
+        hop_lengths = [[lengths[i].get(j) for j in range(n)] for i in range(n)]
         assortativity = nx.degree_assortativity_coefficient(g)
         assort = None if math.isnan(assortativity) else float(assortativity)
 
@@ -174,6 +179,8 @@ def main():
                 "degree": [int(g.degree(k)) for k in range(n)],
                 "voterank": [int(x) for x in nx.voterank(g)],
                 "assortativity": assort,
+                "closeness": [closeness[k] for k in range(n)],
+                "hop_lengths": hop_lengths,
             }
         )
 

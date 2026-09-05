@@ -50,6 +50,8 @@ struct UndirectedCase {
     degree: Vec<f64>,
     voterank: Vec<usize>,
     assortativity: Option<f64>,
+    closeness: Vec<f64>,
+    hop_lengths: Vec<Vec<Option<u32>>>,
 }
 
 #[derive(Deserialize)]
@@ -317,5 +319,55 @@ fn oracle_self_loop_assortativity() {
             "assortativity: case {}: expected {want}, got {got}",
             case.id
         );
+    }
+}
+
+#[test]
+fn oracle_self_loop_closeness_and_hop_lengths() {
+    use graphina::centrality::closeness::closeness_centrality;
+    use graphina::core::paths::all_pairs_shortest_path_length;
+
+    for case in load_corpus().undirected {
+        let (g, ids) = build_undirected(&case);
+        let cc = closeness_centrality(&g)
+            .unwrap_or_else(|e| panic!("closeness failed in case {}: {e}", case.id));
+        assert_close(&cc, &case.closeness, &ids, "closeness", &case.id);
+        let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+        assert_eq!(nodes, ids, "node order: case {}", case.id);
+        assert_eq!(matrix, case.hop_lengths, "hop lengths: case {}", case.id);
+    }
+}
+
+#[cfg(feature = "parallel")]
+#[test]
+fn oracle_self_loop_closeness_and_hop_lengths_parallel() {
+    use graphina::parallel::{
+        all_pairs_shortest_path_length_parallel, closeness_centrality_parallel,
+        shortest_paths_parallel,
+    };
+
+    for case in load_corpus().undirected {
+        let (g, ids) = build_undirected(&case);
+        let cc = closeness_centrality_parallel(&g)
+            .unwrap_or_else(|e| panic!("closeness_parallel failed in case {}: {e}", case.id));
+        assert_close(&cc, &case.closeness, &ids, "closeness_parallel", &case.id);
+        let (nodes, matrix) = all_pairs_shortest_path_length_parallel(&g);
+        assert_eq!(nodes, ids, "node order: case {}", case.id);
+        assert_eq!(
+            matrix, case.hop_lengths,
+            "parallel hop lengths: case {}",
+            case.id
+        );
+        let maps = shortest_paths_parallel(&g, &ids);
+        for (i, map) in maps.iter().enumerate() {
+            for (j, node) in ids.iter().enumerate() {
+                assert_eq!(
+                    map.get(node).map(|&d| d as u32),
+                    case.hop_lengths[i][j],
+                    "shortest_paths_parallel: case {} from {i} to {j}",
+                    case.id
+                );
+            }
+        }
     }
 }

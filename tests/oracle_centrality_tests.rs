@@ -190,3 +190,20 @@ fn oracle_voterank() {
         );
     }
 }
+
+#[cfg(feature = "parallel")]
+#[test]
+fn oracle_closeness_centrality_parallel() {
+    use graphina::parallel::closeness_centrality_parallel;
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let cc = closeness_centrality_parallel(&g).unwrap_or_else(|e| {
+            panic!(
+                "closeness_centrality_parallel failed in case {}: {e}",
+                case.id
+            )
+        });
+        assert_close(&cc, &case.closeness, &ids, "closeness_parallel", &case.id);
+    }
+}

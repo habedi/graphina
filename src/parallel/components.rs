@@ -13,6 +13,8 @@ use petgraph::EdgeType;
 /// component: component discovery is inherently ordered, so the function exists
 /// here for API parity with the other parallel counterparts and produces the
 /// same result as the connected-component functions in the `community` module.
+/// A parallel implementation is planned for a future release; the name,
+/// signature, and result will stay the same.
 ///
 /// Returns a mapping from node to component ID.
 ///

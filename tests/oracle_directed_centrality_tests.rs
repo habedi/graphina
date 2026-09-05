@@ -16,7 +16,9 @@
 //! it also replays Fagiolo's directed clustering, average clustering,
 //! transitivity, and directed degree assortativity (source out-degree against
 //! target in-degree). Closeness and harmonic use distances out of each node, so
-//! the generator computes their reference on the reversed graph.
+//! the generator computes their reference on the reversed graph. The unweighted
+//! hop-length matrix pins the all-pairs and multi-source BFS functions, and with
+//! the `parallel` feature their Rayon twins and the parallel closeness.
 
 #![cfg(feature = "centrality")]
 
@@ -54,6 +56,7 @@ struct Case {
     transitivity: f64,
     assortativity: Option<f64>,
     local_reaching: Option<Vec<f64>>,
+    hop_lengths: Vec<Vec<Option<u32>>>,
 }
 
 #[derive(Deserialize)]
@@ -270,5 +273,63 @@ fn oracle_directed_assortativity() {
             "assortativity: case {}: expected {want}, got {got}",
             case.id
         );
+    }
+}
+
+#[test]
+fn oracle_directed_hop_lengths() {
+    use graphina::core::paths::all_pairs_shortest_path_length;
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+        assert_eq!(nodes, ids, "node order: case {}", case.id);
+        assert_eq!(matrix, case.hop_lengths, "hop lengths: case {}", case.id);
+    }
+}
+
+#[cfg(feature = "parallel")]
+#[test]
+fn oracle_directed_hop_lengths_parallel() {
+    use graphina::parallel::{all_pairs_shortest_path_length_parallel, shortest_paths_parallel};
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let (nodes, matrix) = all_pairs_shortest_path_length_parallel(&g);
+        assert_eq!(nodes, ids, "node order: case {}", case.id);
+        assert_eq!(
+            matrix, case.hop_lengths,
+            "parallel hop lengths: case {}",
+            case.id
+        );
+
+        let maps = shortest_paths_parallel(&g, &ids);
+        for (i, map) in maps.iter().enumerate() {
+            for (j, node) in ids.iter().enumerate() {
+                assert_eq!(
+                    map.get(node).map(|&d| d as u32),
+                    case.hop_lengths[i][j],
+                    "shortest_paths_parallel: case {} from {i} to {j}",
+                    case.id
+                );
+            }
+        }
+    }
+}
+
+#[cfg(feature = "parallel")]
+#[test]
+fn oracle_directed_closeness_centrality_parallel() {
+    use graphina::parallel::closeness_centrality_parallel;
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let cc = closeness_centrality_parallel(&g).unwrap_or_else(|e| {
+            panic!(
+                "closeness_centrality_parallel failed in case {}: {e}",
+                case.id
+            )
+        });
+        assert_close(&cc, &case.closeness, &ids, "closeness_parallel", &case.id);
     }
 }

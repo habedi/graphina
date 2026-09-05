@@ -130,3 +130,63 @@ fn test_pagerank_sequential_and_parallel_agree_on_weighted_graphs() {
         );
     }
 }
+
+#[test]
+#[cfg(all(feature = "parallel", feature = "centrality"))]
+fn test_pagerank_parallel_stops_on_same_rule_as_sequential() {
+    use graphina::centrality::pagerank::pagerank;
+    use graphina::core::generators::erdos_renyi_graph;
+    use graphina::core::types::Directed;
+    use graphina::parallel::pagerank_parallel;
+
+    // With a loose tolerance the stopping rule decides the answer: both versions
+    // must stop after the same iteration, so they agree far below the tolerance.
+    let g = erdos_renyi_graph::<Directed>(40, 0.1, 3).expect("generator");
+    let tolerance = 1e-4;
+    let sequential = pagerank(&g, 0.85, 1000, tolerance, None).expect("pagerank");
+    let parallel = pagerank_parallel(&g, 0.85, 1000, tolerance, None).expect("pagerank_parallel");
+    for (node, &s) in &sequential {
+        assert!(
+            (s - parallel[node]).abs() < 1e-9,
+            "sequential and parallel PageRank stopped differently at {:?}: {} vs {}",
+            node,
+            s,
+            parallel[node]
+        );
+    }
+}
+
+#[test]
+#[cfg(all(feature = "parallel", feature = "traversal"))]
+fn test_parallel_bfs_and_hop_counts_match_sequential() {
+    use graphina::core::generators::erdos_renyi_graph;
+    use graphina::core::paths::all_pairs_shortest_path_length;
+    use graphina::core::types::{NodeId, Undirected};
+    use graphina::parallel::{bfs_parallel, shortest_paths_parallel};
+    use graphina::traversal::algorithms::bfs;
+
+    let g = erdos_renyi_graph::<Undirected>(30, 0.08, 11).expect("generator");
+    let starts: Vec<NodeId> = g.node_ids().collect();
+    let orders = bfs_parallel(&g, &starts);
+    for (start, order) in starts.iter().zip(&orders) {
+        assert_eq!(
+            *order,
+            bfs(&g, *start),
+            "bfs order differs from {:?}",
+            start
+        );
+    }
+    let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+    let maps = shortest_paths_parallel(&g, &nodes);
+    for (i, map) in maps.iter().enumerate() {
+        for (j, node) in nodes.iter().enumerate() {
+            assert_eq!(
+                map.get(node).map(|&d| d as u32),
+                matrix[i][j],
+                "hop count from {:?} to {:?} differs",
+                nodes[i],
+                node
+            );
+        }
+    }
+}

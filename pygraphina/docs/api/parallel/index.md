@@ -131,7 +131,8 @@ results = pgp.bfs_parallel(
 
 ### connected_components_parallel()
 
-Find connected components using parallel union-find.
+Find connected components. The current implementation is sequential and kept for API parity; a parallel implementation is planned for a
+future release and will not change the API.
 
 ```python
 import pygraphina.parallel as pgp
