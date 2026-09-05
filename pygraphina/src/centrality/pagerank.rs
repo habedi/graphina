@@ -18,7 +18,8 @@ use graphina::core::types::NodeMap;
 /// max_iter : int
 ///     Maximum number of iterations.
 /// tolerance : float
-///     Error tolerance for convergence.
+///     Per-node convergence tolerance; iteration stops when the L1 change drops
+///     below ``tolerance * n``, as in NetworkX.
 /// nstart : dict, optional
 ///     Starting value for PageRank iteration for each node.
 ///
@@ -94,7 +95,7 @@ pub fn pagerank(
 /// damping : float
 ///     Damping factor, typically 0.85.
 /// tolerance : float
-///     Convergence tolerance.
+///     Per-node convergence tolerance, scaled by the node count as in NetworkX.
 /// max_iter : int
 ///     Maximum iterations.
 /// nstart : dict, optional

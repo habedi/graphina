@@ -188,7 +188,8 @@ looping forever.
 - `closeness_centrality`: Wasserman-Faust correction for disconnected graphs; a node with no reachable neighbors scores `0.0`.
 - `eigenvector_centrality`: power iteration on `A + I` for both directed and undirected graphs (the left eigenvector when directed);
   returns the unit-L2-norm vector as NetworkX does; a graph with no edges yields the uniform unit vector (`1/sqrt(n)` per node).
-- `pagerank`: takes `damping`, `max_iter`, `tolerance`, and optional `nstart`; result sums to `1.0`; dangling nodes redistribute uniformly; a single
+- `pagerank`: takes `damping`, `max_iter`, `tolerance`, and optional `nstart`; stops when the L1 change of the rank vector is below
+  `tolerance * n`, as NetworkX does (the same rule applies to `personalized_page_rank` and `pagerank_parallel`); result sums to `1.0`; dangling nodes redistribute uniformly; a single
   node scores `1.0`.
 - `personalized_page_rank` takes `personalization: Option<Vec<f64>>`, `damping`, `tol`, and `max_iter`, returning a raw `Vec<f64>` aligned to internal
   node order. It is re-exported as `personalized_pagerank_vec`; `personalized_pagerank` is the `NodeMap` facade over it. Both require `damping` in

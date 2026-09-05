@@ -19,7 +19,8 @@ use petgraph::EdgeType;
 /// * `graph` - The graph to analyze
 /// * `damping` - Damping factor (typically 0.85)
 /// * `max_iterations` - Maximum number of iterations
-/// * `tolerance` - Convergence threshold
+/// * `tolerance` - Per-node convergence tolerance; iteration stops when the L1 change
+///   drops below `tolerance * n`, as in NetworkX
 /// * `nstart` - Optional starting value for each node
 ///
 /// # Example
@@ -152,15 +153,15 @@ where
             .collect();
 
         // Merge and check convergence
-        // Stop on the L1 change, the same rule as the sequential `pagerank`, so
-        // both stop after the same iteration for a given tolerance.
+        // Stop when the L1 change is below tolerance * n, the same rule as the
+        // sequential `pagerank` and NetworkX, so all stop after the same iteration.
         let mut total_diff = 0.0;
         for (node, new_rank) in new_ranks_vec {
             total_diff += (new_rank - prev[&node]).abs();
             ranks.insert(node, new_rank);
         }
 
-        if total_diff < tolerance {
+        if total_diff < tolerance * n as f64 {
             break;
         }
     }
@@ -241,5 +242,22 @@ mod tests {
         g.add_edge(a, b, 1.0);
         let nstart: HashMap<NodeId, f64> = [(a, 0.0), (b, 0.0)].into_iter().collect();
         assert!(pagerank_parallel(&g, 0.85, 100, 1e-9, Some(&nstart)).is_err());
+    }
+
+    #[test]
+    fn test_pagerank_parallel_tolerance_is_scaled_by_node_count_like_networkx() {
+        // See `centrality::pagerank::tests::test_pagerank_tolerance_is_scaled_by_node_count_like_networkx`.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        let end = 0.05 + 0.85 / 6.0;
+        let mid = 0.05 + 0.85 * 2.0 / 3.0;
+        let pr = pagerank_parallel(&g, 0.85, 100, 0.2, None).unwrap();
+        assert!((pr[&a] - end).abs() < 1e-12, "a = {}", pr[&a]);
+        assert!((pr[&b] - mid).abs() < 1e-12, "b = {}", pr[&b]);
+        assert!((pr[&c] - end).abs() < 1e-12, "c = {}", pr[&c]);
     }
 }

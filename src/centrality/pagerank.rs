@@ -16,7 +16,8 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 /// * `graph`: the targeted graph.
 /// * `damping`: damping factor (usually 0.85).
 /// * `max_iter`: maximum number of iterations.
-/// * `tolerance`: convergence tolerance.
+/// * `tolerance`: per-node convergence tolerance; iteration stops when the L1 change of the
+///   rank vector drops below `tolerance * n`, as in NetworkX.
 /// * `nstart`: optional starting value for each node.
 ///
 /// # Returns
@@ -123,7 +124,8 @@ where
             .sum();
         pr.copy_from_slice(&pr_new);
 
-        if diff < tolerance {
+        // NetworkX rule: stop when the L1 change is below tolerance * n.
+        if diff < tolerance * n as f64 {
             break;
         }
     }
@@ -276,5 +278,27 @@ mod tests {
         let pr = pagerank(&g, 0.85, 1000, 1e-12, None).unwrap();
         assert!((pr[&a] - 0.925 / 1.425).abs() < 1e-6, "a = {}", pr[&a]);
         assert!((pr[&b] - 0.5 / 1.425).abs() < 1e-6, "b = {}", pr[&b]);
+    }
+
+    #[test]
+    fn test_pagerank_tolerance_is_scaled_by_node_count_like_networkx() {
+        use crate::centrality::pagerank::pagerank;
+        use crate::core::types::Graph;
+
+        // One power step from the uniform start on the path a-b-c changes the
+        // vector by 0.5667 in L1. NetworkX stops when the change is below
+        // tol * n, so tolerance 0.2 (0.6 total) stops after that single step.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        let end = 0.05 + 0.85 / 6.0;
+        let mid = 0.05 + 0.85 * 2.0 / 3.0;
+        let pr = pagerank(&g, 0.85, 100, 0.2, None).unwrap();
+        assert!((pr[&a] - end).abs() < 1e-12, "a = {}", pr[&a]);
+        assert!((pr[&b] - mid).abs() < 1e-12, "b = {}", pr[&b]);
+        assert!((pr[&c] - end).abs() < 1e-12, "c = {}", pr[&c]);
     }
 }
