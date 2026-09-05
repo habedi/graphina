@@ -28,6 +28,10 @@ Each measure is pinned to the convention Graphina implements:
   - PageRank                           -> nx.pagerank(alpha=0.85, weight)
     Directed, weighted, normalized to sum to 1; dangling nodes redistribute.
 
+  - VoteRank                           -> nx.voterank
+    Ordered list of elected nodes; unweighted. In a directed graph a node votes
+    for its in-neighbors, and the decay rate is the average out-degree.
+
 The graphs are simple (no self-loops and no parallel edges) with positive
 integer weights, so weighted shortest path sums are exact under f64.
 
@@ -100,6 +104,7 @@ def main():
                 "closeness": [closeness[k] for k in range(n)],
                 "harmonic": [harmonic[k] for k in range(n)],
                 "pagerank": [pagerank[k] for k in range(n)],
+                "voterank": [int(x) for x in nx.voterank(g)],
             }
         )
 

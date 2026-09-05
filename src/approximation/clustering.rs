@@ -17,7 +17,11 @@ where
     for (u, _) in graph.nodes() {
         if let Some(neighbors) = neighbor_cache.get(&u) {
             let k = neighbors.len();
+            // A node with fewer than two neighbors has coefficient 0 and still
+            // counts toward the average, matching NetworkX and
+            // `metrics::average_clustering_coefficient`.
             if k < 2 {
+                count += 1;
                 continue;
             }
             let mut links = 0;
@@ -54,5 +58,22 @@ mod tests {
         g.add_edge(hub, x, 1.0);
         g.add_edge(hub, y, 1.0);
         assert_eq!(average_clustering(&g), 0.0);
+    }
+
+    #[test]
+    fn average_clustering_counts_nodes_with_fewer_than_two_neighbors() {
+        // Triangle a-b-c with a pendant node d on a. Coefficients are 1/3, 1, 1,
+        // and 0, so the average over all four nodes is 7/12. Averaging only over
+        // nodes with two or more neighbors would give 7/9.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let d = g.add_node(3);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        g.add_edge(a, c, 1.0);
+        g.add_edge(a, d, 1.0);
+        assert!((average_clustering(&g) - 7.0 / 12.0).abs() < 1e-12);
     }
 }

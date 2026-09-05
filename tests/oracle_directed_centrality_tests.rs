@@ -9,9 +9,10 @@
 //! this test stays hermetic and needs no Python at build or run time.
 //!
 //! Scope: in/out/total degree, betweenness (unweighted, without endpoints, both
-//! normalizations), closeness and harmonic (weighted, out-distance), and
-//! PageRank (weighted). Closeness and harmonic use distances out of each node,
-//! so the generator computes their reference on the reversed graph.
+//! normalizations), closeness and harmonic (weighted, out-distance), PageRank
+//! (weighted), and VoteRank (unweighted, nodes vote for their in-neighbors).
+//! Closeness and harmonic use distances out of each node, so the generator
+//! computes their reference on the reversed graph.
 
 #![cfg(feature = "centrality")]
 
@@ -42,6 +43,7 @@ struct Case {
     closeness: Vec<f64>,
     harmonic: Vec<f64>,
     pagerank: Vec<f64>,
+    voterank: Vec<usize>,
 }
 
 #[derive(Deserialize)]
@@ -160,5 +162,20 @@ fn oracle_directed_pagerank() {
         let pr = pagerank(&g, 0.85, 2000, 1e-12, None)
             .unwrap_or_else(|e| panic!("pagerank failed in case {}: {e}", case.id));
         assert_close(&pr, &case.pagerank, &ids, "pagerank", &case.id);
+    }
+}
+
+#[test]
+fn oracle_directed_voterank() {
+    use graphina::centrality::other::voterank;
+
+    for case in load_corpus().cases {
+        let (g, _ids) = build_graph(&case);
+        let got: Vec<usize> = voterank(&g, case.n).iter().map(|n| n.index()).collect();
+        assert_eq!(
+            got, case.voterank,
+            "voterank election order mismatch in case {}",
+            case.id
+        );
     }
 }

@@ -12,6 +12,9 @@ Conventions aligned here:
   default pair sets differ (PyGraphina scores all pairs, NetworkX non-edges).
 - Graphs for Adamic-Adar carry a cycle backbone so every node has degree at
   least 2; NetworkX raises a division error on degree-1 common neighbors.
+- The `self_loops` variants add a self-loop to some nodes. A self-loop is a
+  single edge (one diagonal entry) and is not a neighbor for clustering, which
+  is the NetworkX convention both libraries follow.
 """
 
 import math
@@ -25,7 +28,7 @@ nx = pytest.importorskip('networkx')
 SEEDS = [7, 21, 42]
 
 
-def build_pair(n, p, seed, weighted=False, directed=False, backbone=False):
+def build_pair(n, p, seed, weighted=False, directed=False, backbone=False, self_loops=False):
     """Build the same random graph in PyGraphina and NetworkX."""
     rng = random.Random(seed)
     g = pg.PyDiGraph() if directed else pg.PyGraph()
@@ -48,6 +51,10 @@ def build_pair(n, p, seed, weighted=False, directed=False, backbone=False):
                 continue
             if rng.random() < p:
                 add(i, j)
+    if self_loops:
+        looped = [i for i in range(n) if rng.random() < 0.4] or [0]
+        for i in looped:
+            add(i, i)
     return g, G
 
 
@@ -100,9 +107,10 @@ class TestCentralityDifferential:
         reference = nx.closeness_centrality(G, distance='weight')
         assert_maps_close(ours, reference, 1e-6, f'closeness seed={seed}')
 
+    @pytest.mark.parametrize('self_loops', [False, True])
     @pytest.mark.parametrize('seed', SEEDS)
-    def test_eigenvector_matches_networkx(self, seed):
-        g, G = build_pair(12, 0.3, seed, backbone=True)
+    def test_eigenvector_matches_networkx(self, seed, self_loops):
+        g, G = build_pair(12, 0.3, seed, backbone=True, self_loops=self_loops)
         ours = l2_normalized(pg.centrality.eigenvector(g, 1000, 1e-10))
         reference = l2_normalized(nx.eigenvector_centrality(G, max_iter=1000, tol=1e-10))
         assert_maps_close(ours, reference, 1e-4, f'eigenvector seed={seed}')
@@ -114,9 +122,11 @@ class TestCentralityDifferential:
         reference = l2_normalized(nx.katz_centrality(G, alpha=0.05, max_iter=1000, tol=1e-10))
         assert_maps_close(ours, reference, 1e-4, f'katz seed={seed}')
 
+    @pytest.mark.parametrize('self_loops', [False, True])
+    @pytest.mark.parametrize('directed', [False, True])
     @pytest.mark.parametrize('seed', SEEDS)
-    def test_pagerank_weighted_matches_networkx(self, seed):
-        g, G = build_pair(12, 0.3, seed, weighted=True, directed=True)
+    def test_pagerank_weighted_matches_networkx(self, seed, directed, self_loops):
+        g, G = build_pair(12, 0.3, seed, weighted=True, directed=directed, self_loops=self_loops)
         ours = pg.centrality.pagerank(g, 0.85, 1000, 1e-12)
         reference = nx.pagerank(G, alpha=0.85, max_iter=1000, tol=1e-12, weight='weight')
         assert_maps_close(ours, reference, 1e-6, f'pagerank seed={seed}')
@@ -245,9 +255,10 @@ class TestCommunityDifferential:
 class TestParallelDifferential:
     """The parallel twins never had oracle coverage; compare against NetworkX."""
 
+    @pytest.mark.parametrize('self_loops', [False, True])
     @pytest.mark.parametrize('seed', SEEDS)
-    def test_triangles_parallel_matches_networkx(self, seed):
-        g, G = build_pair(12, 0.3, seed)
+    def test_triangles_parallel_matches_networkx(self, seed, self_loops):
+        g, G = build_pair(12, 0.3, seed, self_loops=self_loops)
         ours = pg.parallel.triangles_parallel(g)
         assert_maps_close(
             {k: float(v) for k, v in ours.items()},
@@ -256,9 +267,10 @@ class TestParallelDifferential:
             f'triangles seed={seed}',
         )
 
+    @pytest.mark.parametrize('self_loops', [False, True])
     @pytest.mark.parametrize('seed', SEEDS)
-    def test_clustering_parallel_matches_networkx(self, seed):
-        g, G = build_pair(12, 0.3, seed)
+    def test_clustering_parallel_matches_networkx(self, seed, self_loops):
+        g, G = build_pair(12, 0.3, seed, self_loops=self_loops)
         ours = pg.parallel.clustering_coefficients_parallel(g)
         reference = nx.clustering(G)
         assert_maps_close(ours, reference, 1e-9, f'clustering seed={seed}')

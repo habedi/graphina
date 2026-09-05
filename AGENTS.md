@@ -159,7 +159,8 @@ Every function listed is gated behind its module's feature flag.
   `convergence_failed`, and so on) and `From` impls for `io::Error`, `serde_json::Error`, and the bincode codec errors. `Result<T>` aliases
   `Result<T, GraphinaError>`.
 - Builders: `AdvancedGraphBuilder` (with `DirectedGraphBuilder`/`UndirectedGraphBuilder` aliases) validates on `build`, rejecting out-of-bounds edge
-  endpoints and, when configured, self-loops or parallel edges. `TopologyBuilder` has constructors (`complete`, `cycle`, `path`, `star`, `grid`) that
+  endpoints and, when configured, self-loops or parallel edges. The simpler `GraphBuilder` in `core::types` skips out-of-bounds edges in `build` and
+  rejects them in `try_build`. `TopologyBuilder` has constructors (`complete`, `cycle`, `path`, `star`, `grid`) that
   return the graph directly and yield an empty graph rather than erroring on degenerate sizes.
 - Serialization: `save_json`/`load_json`, `save_binary`/`load_binary`, and `save_graphml` round-trip through the index-based `SerializableGraph`. The
   `_strict` loaders (`load_json_strict`, `load_binary_strict` and `try_from_serializable`) additionally validate that the serialized directedness
@@ -190,10 +191,11 @@ looping forever.
   node scores `1.0`.
 - `personalized_page_rank` takes `personalization: Option<Vec<f64>>`, `damping`, `tol`, and `max_iter`, returning a raw `Vec<f64>` aligned to internal
   node order. It is re-exported as `personalized_pagerank_vec`; `personalized_pagerank` is the `NodeMap` facade over it. Both require `damping` in
-  `(0, 1)` and `max_iter > 0`.
+  `(0, 1)` and `max_iter > 0`, and a `personalization` vector must have exactly one entry per node (`InvalidArgument` otherwise).
 - `katz_centrality`: takes `alpha`, an optional per-node `beta` closure, `max_iter`, and `tolerance`; returns `Result<NodeMap<f64>, GraphinaError>` to
   handle convergence issues.
 - `voterank(graph, num_seeds) -> Vec<NodeId>`: selector-style, returns a plain vector, never a `Result`; stops early when no node has positive votes.
+  In directed graphs a node votes for its in-neighbors and the decay rate is the average out-degree, matching NetworkX.
 - `local_reaching_centrality`, `global_reaching_centrality`, `laplacian_centrality`: `Result<NodeMap<f64>>`.
 
 ### `community`
