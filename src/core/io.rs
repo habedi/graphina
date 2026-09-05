@@ -286,8 +286,10 @@ where
 /// Each line in the output file will be in the following format:
 ///
 /// ```text
-/// <node><sep><neighbor1>:<weight1><sep><neighbor2>:<weight2>...
+/// <node><sep><neighbor1><sep><weight1><sep><neighbor2><sep><weight2>...
 /// ```
+///
+/// This is the format `read_adjacency_list` expects, so a written file can be read back.
 ///
 /// # Arguments
 ///
@@ -351,7 +353,7 @@ where
         if let Some(neighbors) = adj_map.get(attr) {
             for (nbr, weight) in neighbors {
                 // Write neighbor and weight separated by a colon.
-                write!(writer, "{}{}:{}", sep, nbr, weight)?;
+                write!(writer, "{}{}{}{}", sep, nbr, sep, weight)?;
             }
         }
         writeln!(writer)?;
@@ -436,5 +438,36 @@ mod tests {
             .expect("Failed to read output file");
         assert!(!content.is_empty());
         fs::remove_file(tmp_path).expect("Failed to remove temporary file");
+    }
+
+    #[test]
+    fn test_adjacency_list_round_trip() {
+        let tmp_path = "tmp_adjacency_round_trip.txt";
+        let mut graph = Graph::<i32, f32>::new();
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n1, n2, 2.5);
+        graph.add_edge(n1, n3, 4.0);
+        write_adjacency_list(tmp_path, &graph, ' ').expect("write_adjacency_list failed");
+
+        let mut loaded = Graph::<i32, f32>::new();
+        read_adjacency_list(tmp_path, &mut loaded, ' ').expect("read_adjacency_list failed");
+        fs::remove_file(tmp_path).expect("remove tmp file");
+
+        assert_eq!(loaded.node_count(), 3);
+        assert_eq!(loaded.edge_count(), 2);
+        let mut weights: Vec<(i32, i32, f32)> = loaded
+            .edges()
+            .map(|(u, v, w)| {
+                (
+                    *loaded.node_attr(u).unwrap(),
+                    *loaded.node_attr(v).unwrap(),
+                    *w,
+                )
+            })
+            .collect();
+        weights.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert_eq!(weights, vec![(1, 2, 2.5), (1, 3, 4.0)]);
     }
 }

@@ -211,7 +211,8 @@ impl TopologyBuilder {
         A: Clone,
         W: Clone,
     {
-        let mut builder = AdvancedGraphBuilder::undirected().with_capacity(n, n * (n - 1) / 2);
+        let mut builder =
+            AdvancedGraphBuilder::undirected().with_capacity(n, n * n.saturating_sub(1) / 2);
 
         // Add nodes
         for _ in 0..n {
@@ -316,7 +317,8 @@ impl TopologyBuilder {
         W: Clone,
     {
         let n = rows * cols;
-        let mut builder = AdvancedGraphBuilder::undirected().with_capacity(n, 2 * n - rows - cols);
+        let mut builder = AdvancedGraphBuilder::undirected()
+            .with_capacity(n, (2 * n).saturating_sub(rows + cols));
 
         // Add nodes
         for _ in 0..n {
@@ -329,12 +331,12 @@ impl TopologyBuilder {
                 let current = i * cols + j;
 
                 // Connect to right neighbor
-                if j < cols - 1 {
+                if j + 1 < cols {
                     builder = builder.add_edge(current, current + 1, edge_weight.clone());
                 }
 
                 // Connect to bottom neighbor
-                if i < rows - 1 {
+                if i + 1 < rows {
                     builder = builder.add_edge(current, current + cols, edge_weight.clone());
                 }
             }
@@ -481,5 +483,20 @@ mod tests {
             .unwrap();
 
         assert_eq!(graph.edge_count(), 2);
+    }
+
+    #[test]
+    fn test_topology_degenerate_sizes_yield_empty_graphs() {
+        let complete = TopologyBuilder::complete::<i32, f64>(0, 0, 1.0);
+        assert_eq!(complete.node_count(), 0);
+        assert_eq!(complete.edge_count(), 0);
+
+        let no_rows = TopologyBuilder::grid::<i32, f64>(0, 3, 0, 1.0);
+        assert_eq!(no_rows.node_count(), 0);
+        assert_eq!(no_rows.edge_count(), 0);
+
+        let no_cols = TopologyBuilder::grid::<i32, f64>(3, 0, 0, 1.0);
+        assert_eq!(no_cols.node_count(), 0);
+        assert_eq!(no_cols.edge_count(), 0);
     }
 }

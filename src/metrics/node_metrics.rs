@@ -36,7 +36,7 @@ pub fn clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     node: NodeId,
 ) -> f64 {
-    let neighbors: Vec<NodeId> = graph.neighbors(node).collect();
+    let neighbors: Vec<NodeId> = graph.neighbors(node).filter(|&nb| nb != node).collect();
     let k = neighbors.len();
 
     if k < 2 {
@@ -66,7 +66,7 @@ pub fn triangles<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     node: NodeId,
 ) -> usize {
-    let neighbors: Vec<NodeId> = graph.neighbors(node).collect();
+    let neighbors: Vec<NodeId> = graph.neighbors(node).filter(|&nb| nb != node).collect();
     let k = neighbors.len();
     if k < 2 {
         return 0;
@@ -125,5 +125,25 @@ mod tests {
         assert_eq!(triangles(&g, n2), 1);
         assert_eq!(triangles(&g, n3), 1);
         assert_eq!(triangles(&g, n4), 0);
+    }
+
+    #[test]
+    fn test_self_loop_is_not_a_neighbor() {
+        // Star centered on hub with a self-loop: no triangles, so the
+        // coefficient is 0 and the self-loop must not be counted as a closed pair.
+        let mut g = Graph::<i32, f64>::new();
+        let hub = g.add_node(0);
+        let x = g.add_node(1);
+        let y = g.add_node(2);
+        g.add_edge(hub, hub, 1.0);
+        g.add_edge(hub, x, 1.0);
+        g.add_edge(hub, y, 1.0);
+        assert_eq!(triangles(&g, hub), 0);
+        assert_eq!(clustering_coefficient(&g, hub), 0.0);
+
+        // Closing the triangle gives coefficient 1 despite the self-loop.
+        g.add_edge(x, y, 1.0);
+        assert_eq!(triangles(&g, hub), 1);
+        assert_eq!(clustering_coefficient(&g, hub), 1.0);
     }
 }

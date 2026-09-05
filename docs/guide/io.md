@@ -30,7 +30,7 @@ read_edge_list("graph.txt", & mut loaded_graph, ' ').unwrap();
 
 ## Adjacency List
 
-Reads and writes an adjacency list format (in `Node` `Neighbor1` `Neighbor2` ...).
+Reads and writes an adjacency list format (each line is `Node` `Neighbor1` `Weight1` `Neighbor2` `Weight2` ...).
 
 ```rust
 use graphina::core::types::Graph;

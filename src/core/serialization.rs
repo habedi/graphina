@@ -33,6 +33,19 @@ pub struct SerializableGraph<A, W> {
     pub edges: Vec<(usize, usize, W)>,
 }
 
+fn check_edge_indices<A, W>(data: &SerializableGraph<A, W>) -> Result<(), GraphinaError> {
+    let n = data.nodes.len();
+    for (src, tgt, _) in &data.edges {
+        if *src >= n || *tgt >= n {
+            return Err(GraphinaError::invalid_argument(format!(
+                "Serialized edge ({}, {}) references a node index outside 0..{}",
+                src, tgt, n
+            )));
+        }
+    }
+    Ok(())
+}
+
 impl<A, W, Ty> BaseGraph<A, W, Ty>
 where
     A: Clone + Serialize,
@@ -102,6 +115,9 @@ where
     /// assert_eq!(graph.node_count(), 3);
     /// assert_eq!(graph.edge_count(), 2);
     /// ```
+    ///
+    /// Edges whose endpoint indices fall outside `0..nodes.len()` are skipped. Use
+    /// `try_from_serializable` to reject such data with an error instead.
     pub fn from_serializable(data: &SerializableGraph<A, W>) -> Self {
         let mut graph = Self::with_capacity(data.nodes.len(), data.edges.len());
 
@@ -114,7 +130,9 @@ where
 
         // Add edges
         for (src_idx, tgt_idx, weight) in &data.edges {
-            graph.add_edge(node_ids[*src_idx], node_ids[*tgt_idx], weight.clone());
+            if let (Some(&src), Some(&tgt)) = (node_ids.get(*src_idx), node_ids.get(*tgt_idx)) {
+                graph.add_edge(src, tgt, weight.clone());
+            }
         }
 
         graph
@@ -130,6 +148,7 @@ where
                 "Directedness mismatch between SerializableGraph and target graph type".into(),
             ));
         }
+        check_edge_indices(data)?;
         let mut graph = Self::with_capacity(data.nodes.len(), data.edges.len());
         let node_ids: Vec<NodeId> = data
             .nodes
@@ -137,7 +156,9 @@ where
             .map(|attr| graph.add_node(attr.clone()))
             .collect();
         for (src_idx, tgt_idx, weight) in &data.edges {
-            graph.add_edge(node_ids[*src_idx], node_ids[*tgt_idx], weight.clone());
+            if let (Some(&src), Some(&tgt)) = (node_ids.get(*src_idx), node_ids.get(*tgt_idx)) {
+                graph.add_edge(src, tgt, weight.clone());
+            }
         }
         Ok(graph)
     }
@@ -187,6 +208,7 @@ where
         let serializable: SerializableGraph<A, W> =
             serde_json::from_reader(reader).map_err(GraphinaError::from)?;
 
+        check_edge_indices(&serializable)?;
         Ok(Self::from_serializable(&serializable))
     }
 
@@ -257,6 +279,7 @@ where
             bincode::serde::decode_from_slice(&buffer, bincode::config::standard())
                 .map_err(GraphinaError::from)?;
 
+        check_edge_indices(&serializable)?;
         Ok(Self::from_serializable(&serializable))
     }
 
@@ -535,5 +558,32 @@ mod tests {
         let g = DGraph::try_from_serializable(&serializable).expect("directed should load");
         assert_eq!(g.node_count(), 2);
         assert_eq!(g.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_out_of_range_edge_index_is_an_error() {
+        use crate::core::types::Graph;
+
+        let data = SerializableGraph::<i32, f64> {
+            directed: false,
+            nodes: vec![1, 2],
+            edges: vec![(0, 1, 1.0), (0, 5, 2.0)],
+        };
+        assert!(Graph::<i32, f64>::try_from_serializable(&data).is_err());
+
+        // The infallible constructor keeps the valid edges and drops the bad one.
+        let g = Graph::<i32, f64>::from_serializable(&data);
+        assert_eq!(g.node_count(), 2);
+        assert_eq!(g.edge_count(), 1);
+
+        let path = std::env::temp_dir().join("graphina_bad_edge_index.json");
+        std::fs::write(
+            &path,
+            serde_json::to_string(&data).expect("serialize test data"),
+        )
+        .expect("write test file");
+        assert!(Graph::<i32, f64>::load_json(&path).is_err());
+        assert!(Graph::<i32, f64>::load_json_strict(&path).is_err());
+        let _ = std::fs::remove_file(&path);
     }
 }

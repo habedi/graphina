@@ -73,8 +73,9 @@ where
         let vi = node_to_idx[&v];
         let weight: f64 = (*w).into();
 
-        if directed {
-            // For directed graphs: v influences u (incoming edges)
+        // For directed graphs: v influences u (incoming edges). An undirected
+        // self-loop is a single diagonal entry, so it is also added once.
+        if directed || ui == vi {
             adj.push((vi, ui, weight));
         } else {
             // For undirected graphs the operator is symmetric.
@@ -343,5 +344,26 @@ mod tests {
             assert!(c[&node] > 0.0);
             assert!((c[&node] - c[&nodes[0]]).abs() < 1e-6);
         }
+    }
+
+    #[test]
+    fn test_eigenvector_undirected_self_loop_counts_once() {
+        use crate::centrality::eigenvector::eigenvector_centrality;
+        use crate::core::types::Graph;
+
+        // Adjacency [[1, 1], [1, 0]] has leading eigenvector (phi, 1) with
+        // phi the golden ratio. Doubling the self-loop would give (1 + sqrt 2, 1).
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, a, 1.0);
+        g.add_edge(a, b, 1.0);
+        let c = eigenvector_centrality(&g, 10_000, 1e-12).unwrap();
+        let phi = (1.0 + 5f64.sqrt()) / 2.0;
+        assert!(
+            (c[&a] / c[&b] - phi).abs() < 1e-6,
+            "ratio = {}",
+            c[&a] / c[&b]
+        );
     }
 }

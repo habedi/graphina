@@ -96,13 +96,13 @@ where
     }
     let directed = graph.is_directed();
 
-    // Average degree (in-degree for directed graphs) sets the rate at which a
+    // Average degree (out-degree for directed graphs) sets the rate at which a
     // selected node's neighbors lose voting ability.
     let total_degree: usize = node_list
         .iter()
         .map(|&v| {
             if directed {
-                graph.in_degree(v).unwrap_or(0)
+                graph.out_degree(v).unwrap_or(0)
             } else {
                 graph.degree(v).unwrap_or(0)
             }
@@ -120,13 +120,15 @@ where
 
     for _ in 0..num_seeds.min(n) {
         // Tally votes: each node's score is the sum of the voting ability of the
-        // nodes that vote for it (its neighbors, or in-neighbors when directed).
+        // nodes that vote for it. In a directed graph a node votes for its
+        // in-neighbors, so the source of an edge collects the target's vote
+        // (matching Zhang et al. and NetworkX); undirected edges vote both ways.
         let mut score = vec![0.0f64; n];
         for (u, v, _) in graph.edges() {
             let (ui, vi) = (node_to_idx[&u], node_to_idx[&v]);
-            score[vi] += ability[ui];
+            score[ui] += ability[vi];
             if !directed {
-                score[ui] += ability[vi];
+                score[vi] += ability[ui];
             }
         }
         for (i, &sel) in selected.iter().enumerate() {
@@ -260,5 +262,26 @@ mod tests {
         for _ in 0..5 {
             assert_eq!(voterank(&g, 4), first);
         }
+    }
+
+    #[test]
+    fn test_voterank_directed_nodes_vote_for_in_neighbors() {
+        use crate::centrality::other::voterank;
+        use crate::core::types::Digraph;
+
+        // In the directed VoteRank of Zhang et al. (and NetworkX), a node casts
+        // its vote for every node that points to it. The hub a points to b, c,
+        // and d, so it collects three votes and is elected first; afterwards its
+        // out-neighbors lose their voting ability and nobody else gets a vote.
+        let mut g = Digraph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let d = g.add_node(3);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(a, c, 1.0);
+        g.add_edge(a, d, 1.0);
+        assert_eq!(voterank(&g, 1), vec![a]);
+        assert_eq!(voterank(&g, 4), vec![a]);
     }
 }

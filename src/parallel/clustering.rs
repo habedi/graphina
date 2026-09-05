@@ -50,7 +50,7 @@ where
     nodes
         .par_iter()
         .map(|&node| {
-            let neighbors: Vec<NodeId> = graph.neighbors(node).collect();
+            let neighbors: Vec<NodeId> = graph.neighbors(node).filter(|&nb| nb != node).collect();
             let k = neighbors.len();
 
             let coefficient = if k < 2 {
@@ -93,5 +93,18 @@ mod tests {
         assert!((coefficients[&n1] - 1.0).abs() < 0.001);
         assert!((coefficients[&n2] - 1.0).abs() < 0.001);
         assert!((coefficients[&n3] - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_clustering_coefficients_parallel_ignores_self_loops() {
+        let mut g = Graph::<i32, f64>::new();
+        let hub = g.add_node(0);
+        let x = g.add_node(1);
+        let y = g.add_node(2);
+        g.add_edge(hub, hub, 1.0);
+        g.add_edge(hub, x, 1.0);
+        g.add_edge(hub, y, 1.0);
+        let coeffs = clustering_coefficients_parallel(&g);
+        assert_eq!(coeffs[&hub], 0.0);
     }
 }

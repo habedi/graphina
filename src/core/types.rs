@@ -733,6 +733,9 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> GraphBuilder<A, W, Ty> {
         self
     }
     /// Consumes the builder and constructs the graph.
+    ///
+    /// Edges whose endpoint indices fall outside `0..nodes.len()` are skipped. Use
+    /// `try_build` to reject such edges with an error instead.
     pub fn build(self) -> BaseGraph<A, W, Ty> {
         let mut graph = BaseGraph::with_capacity(self.nodes.len(), self.edges.len());
         let node_ids: Vec<NodeId> = self
@@ -741,9 +744,26 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> GraphBuilder<A, W, Ty> {
             .map(|attr| graph.add_node(attr))
             .collect();
         for (source, target, weight) in self.edges {
-            graph.add_edge(node_ids[source], node_ids[target], weight);
+            if let (Some(&src), Some(&tgt)) = (node_ids.get(source), node_ids.get(target)) {
+                graph.add_edge(src, tgt, weight);
+            }
         }
         graph
+    }
+
+    /// Consumes the builder and constructs the graph, returning an error if any edge
+    /// references a node index outside `0..nodes.len()`.
+    pub fn try_build(self) -> Result<BaseGraph<A, W, Ty>> {
+        let n = self.nodes.len();
+        for (source, target, _) in &self.edges {
+            if *source >= n || *target >= n {
+                return Err(GraphinaError::invalid_argument(format!(
+                    "Edge ({}, {}) references a node index outside 0..{}",
+                    source, target, n
+                )));
+            }
+        }
+        Ok(self.build())
     }
 }
 /// Extra util trait for graph-specific operations.
@@ -1143,5 +1163,31 @@ mod tests {
         // After removal only edges between existing nodes remain (none in this case)
         assert_eq!(mapped.edge_count(), 0);
         assert_eq!(mapped.node_count(), 2);
+    }
+
+    #[test]
+    fn test_graph_builder_out_of_range_edge_is_skipped_or_rejected() {
+        use crate::core::types::GraphBuilder;
+
+        let builder = || {
+            GraphBuilder::<i32, f64, Undirected>::new()
+                .add_node(1)
+                .add_node(2)
+                .add_edge(0, 1, 1.0)
+                .add_edge(0, 7, 2.0)
+        };
+        // The infallible constructor keeps the valid edge and drops the bad one.
+        let g = builder().build();
+        assert_eq!(g.node_count(), 2);
+        assert_eq!(g.edge_count(), 1);
+        // The fallible constructor reports the bad index instead.
+        assert!(builder().try_build().is_err());
+        let g = GraphBuilder::<i32, f64, Undirected>::new()
+            .add_node(1)
+            .add_node(2)
+            .add_edge(0, 1, 1.0)
+            .try_build()
+            .expect("valid builder");
+        assert_eq!(g.edge_count(), 1);
     }
 }

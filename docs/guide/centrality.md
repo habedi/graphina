@@ -136,6 +136,7 @@ let scores = personalized_pagerank(&g, Some(personalization), 0.85, 1e-6, 100).u
 ## VoteRank
 
 Identifies a set of influential node seeds using a voting mechanism where elected nodes weaken their neighbors' voting weights.
+In directed graphs a node votes for its in-neighbors, so a node with many outgoing edges collects many votes.
 
 ```rust
 use graphina::centrality::other::voterank;

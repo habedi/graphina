@@ -58,7 +58,8 @@ where
         out_degrees[ui] += weight;
         out_edges[ui].push((vi, weight));
 
-        if !is_directed {
+        // A self-loop is a single edge in both directions, so it is added once.
+        if !is_directed && ui != vi {
             out_degrees[vi] += weight;
             out_edges[vi].push((ui, weight));
         }
@@ -257,5 +258,23 @@ mod tests {
 
         let pr_partial = pagerank(&graph, 0.85, 100, 1e-6, Some(&partial_start)).unwrap();
         assert!((pr_partial[&n1] - 0.5).abs() < 1e-3);
+    }
+
+    #[test]
+    fn test_pagerank_undirected_self_loop_counts_once() {
+        use crate::centrality::pagerank::pagerank;
+        use crate::core::types::Graph;
+
+        // Node a has a self-loop and an edge to b. The self-loop is a single
+        // edge, so the walk leaves a with probability 1/2 in each direction and
+        // the stationary ranks are 0.925/1.425 for a and 0.5/1.425 for b.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, a, 1.0);
+        g.add_edge(a, b, 1.0);
+        let pr = pagerank(&g, 0.85, 1000, 1e-12, None).unwrap();
+        assert!((pr[&a] - 0.925 / 1.425).abs() < 1e-6, "a = {}", pr[&a]);
+        assert!((pr[&b] - 0.5 / 1.425).abs() < 1e-6, "b = {}", pr[&b]);
     }
 }

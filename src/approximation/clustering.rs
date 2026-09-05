@@ -12,7 +12,7 @@ where
     let mut count = 0;
     let neighbor_cache: HashMap<NodeId, HashSet<NodeId>> = graph
         .nodes()
-        .map(|(u, _)| (u, graph.neighbors(u).collect()))
+        .map(|(u, _)| (u, graph.neighbors(u).filter(|&v| v != u).collect()))
         .collect();
     for (u, _) in graph.nodes() {
         if let Some(neighbors) = neighbor_cache.get(&u) {
@@ -37,4 +37,22 @@ where
         }
     }
     if count > 0 { total / count as f64 } else { 0.0 }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::average_clustering;
+    use crate::core::types::Graph;
+
+    #[test]
+    fn average_clustering_ignores_self_loops() {
+        let mut g = Graph::<i32, f64>::new();
+        let hub = g.add_node(0);
+        let x = g.add_node(1);
+        let y = g.add_node(2);
+        g.add_edge(hub, hub, 1.0);
+        g.add_edge(hub, x, 1.0);
+        g.add_edge(hub, y, 1.0);
+        assert_eq!(average_clustering(&g), 0.0);
+    }
 }

@@ -164,7 +164,7 @@ pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     let bound = graph.as_petgraph().node_bound();
     let mut degree = vec![0usize; bound];
     for node in graph.node_ids() {
-        degree[node.index()] = graph.neighbors(node).count();
+        degree[node.index()] = graph.neighbors(node).filter(|&nbr| nbr != node).count();
     }
     let higher_rank =
         |a: usize, v: usize| degree[a] > degree[v] || (degree[a] == degree[v] && a > v);
@@ -493,5 +493,21 @@ mod tests {
         // Just check it returns a value in valid range
         let assort = assortativity(&g);
         assert!((-1.0..=1.0).contains(&assort));
+    }
+
+    #[test]
+    fn test_transitivity_ignores_self_loops() {
+        use crate::core::types::Graph;
+        use crate::metrics::graph_metrics::transitivity;
+
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        g.add_edge(a, c, 1.0);
+        g.add_edge(a, a, 1.0);
+        assert!((transitivity(&g) - 1.0).abs() < 1e-12);
     }
 }

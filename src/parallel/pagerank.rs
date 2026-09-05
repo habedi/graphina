@@ -105,7 +105,8 @@ where
         if let Some(deg) = weighted_out_degree.get_mut(&src) {
             *deg += weight;
         }
-        if !is_directed {
+        // A self-loop is a single edge in both directions, so it is added once.
+        if !is_directed && src != tgt {
             if let Some(list) = incoming.get_mut(&src) {
                 list.push((tgt, weight));
             }
@@ -219,5 +220,17 @@ mod tests {
         assert!((ranks[&n1] - avg).abs() < 0.1);
         assert!((ranks[&n2] - avg).abs() < 0.1);
         assert!((ranks[&n3] - avg).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_pagerank_parallel_undirected_self_loop_counts_once() {
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, a, 1.0);
+        g.add_edge(a, b, 1.0);
+        let pr = pagerank_parallel(&g, 0.85, 1000, 1e-12, None);
+        assert!((pr[&a] - 0.925 / 1.425).abs() < 1e-6, "a = {}", pr[&a]);
+        assert!((pr[&b] - 0.5 / 1.425).abs() < 1e-6, "b = {}", pr[&b]);
     }
 }
