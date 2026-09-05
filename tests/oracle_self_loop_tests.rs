@@ -11,9 +11,10 @@
 //! Conventions pinned: a self-loop is a single edge (one diagonal entry, added
 //! once to a node's strength in PageRank, personalized PageRank, and
 //! eigenvector centrality), and a self-loop does not make a node its own
-//! neighbor for clustering, triangle counts, or transitivity. The parallel
-//! twins and the approximation module's average clustering are checked on the
-//! same corpus.
+//! neighbor for clustering, triangle counts, or transitivity, but it does add
+//! two to the node's degree, which feeds degree centrality, assortativity, and
+//! VoteRank. The parallel twins and the approximation module's average
+//! clustering are checked on the same corpus.
 
 #![cfg(all(feature = "centrality", feature = "metrics"))]
 
@@ -46,6 +47,9 @@ struct UndirectedCase {
     average_clustering: f64,
     clustering: Vec<f64>,
     triangles: Vec<usize>,
+    degree: Vec<f64>,
+    voterank: Vec<usize>,
+    assortativity: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -214,7 +218,8 @@ fn oracle_self_loop_parallel_twins() {
     let corpus = load_corpus();
     for case in &corpus.undirected {
         let (g, ids) = build_undirected(case);
-        let pr = pagerank_parallel(&g, 0.85, 5000, 1e-12, None);
+        let pr = pagerank_parallel(&g, 0.85, 5000, 1e-12, None)
+            .expect("pagerank_parallel should succeed");
         assert_close(&pr, &case.pagerank, &ids, "pagerank_parallel", &case.id);
         let cc = clustering_coefficients_parallel(&g);
         assert_close(&cc, &case.clustering, &ids, "clustering_parallel", &case.id);
@@ -229,7 +234,8 @@ fn oracle_self_loop_parallel_twins() {
     }
     for case in &corpus.directed {
         let (g, ids) = build_directed(case);
-        let pr = pagerank_parallel(&g, 0.85, 5000, 1e-12, None);
+        let pr = pagerank_parallel(&g, 0.85, 5000, 1e-12, None)
+            .expect("pagerank_parallel should succeed");
         assert_close(&pr, &case.pagerank, &ids, "pagerank_parallel", &case.id);
     }
 }
@@ -247,6 +253,69 @@ fn oracle_self_loop_approximation_average_clustering() {
             "approximation average_clustering: case {}: expected {}, got {ac}",
             case.id,
             case.average_clustering
+        );
+    }
+}
+
+#[test]
+fn oracle_self_loop_degree() {
+    use graphina::centrality::degree::{
+        degree_centrality, in_degree_centrality, out_degree_centrality,
+    };
+
+    for case in load_corpus().undirected {
+        let (g, ids) = build_undirected(&case);
+        for (i, &want) in case.degree.iter().enumerate() {
+            let got = g.degree(ids[i]).unwrap_or(0) as f64;
+            assert_eq!(got, want, "degree: case {} node {i}", case.id);
+        }
+        let dc = degree_centrality(&g)
+            .unwrap_or_else(|e| panic!("degree_centrality failed in case {}: {e}", case.id));
+        assert_close(&dc, &case.degree, &ids, "degree_centrality", &case.id);
+        let indeg = in_degree_centrality(&g)
+            .unwrap_or_else(|e| panic!("in_degree_centrality failed in case {}: {e}", case.id));
+        assert_close(&indeg, &case.degree, &ids, "in_degree_centrality", &case.id);
+        let outdeg = out_degree_centrality(&g)
+            .unwrap_or_else(|e| panic!("out_degree_centrality failed in case {}: {e}", case.id));
+        assert_close(
+            &outdeg,
+            &case.degree,
+            &ids,
+            "out_degree_centrality",
+            &case.id,
+        );
+    }
+}
+
+#[test]
+fn oracle_self_loop_voterank() {
+    use graphina::centrality::other::voterank;
+
+    for case in load_corpus().undirected {
+        let (g, _ids) = build_undirected(&case);
+        let got: Vec<usize> = voterank(&g, case.n).iter().map(|n| n.index()).collect();
+        assert_eq!(
+            got, case.voterank,
+            "voterank election order mismatch in case {}",
+            case.id
+        );
+    }
+}
+
+#[test]
+fn oracle_self_loop_assortativity() {
+    use graphina::metrics::assortativity;
+
+    for case in load_corpus().undirected {
+        let Some(want) = case.assortativity else {
+            continue;
+        };
+        let (g, _ids) = build_undirected(&case);
+        let got = assortativity(&g);
+        assert!(
+            (got - want).abs() < EPS,
+            "assortativity: case {}: expected {want}, got {got}",
+            case.id
         );
     }
 }

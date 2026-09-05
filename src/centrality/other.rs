@@ -11,7 +11,8 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-/// Local reaching centrality: measures the ability of a node to reach other nodes within a certain distance.
+/// Local reaching centrality: the proportion of the other nodes that a node can reach within
+/// `distance` hops (Mones et al.), following the NetworkX definition for unweighted graphs.
 ///
 /// # Arguments
 ///
@@ -28,6 +29,7 @@ pub fn local_reaching_centrality<A, W, Ty>(
 where
     Ty: GraphConstructor<A, W>,
 {
+    let n = graph.node_count();
     let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
         let mut reached = HashSet::new();
@@ -48,12 +50,22 @@ where
             current = next;
         }
 
-        centrality.insert(node, reached.len() as f64);
+        // Proportion of the other nodes reachable within `distance` hops (Mones
+        // et al., the definition NetworkX uses). A single node has nothing to
+        // reach, so it scores 0.
+        let others = (reached.len() - 1) as f64;
+        let score = if n > 1 {
+            others / (n as f64 - 1.0)
+        } else {
+            0.0
+        };
+        centrality.insert(node, score);
     }
     Ok(centrality)
 }
 
-/// Global reaching centrality: similar to local but considers the entire graph.
+/// Global reaching centrality: the proportion of the other nodes reachable from each node with
+/// no hop limit (the local measure over the whole graph).
 ///
 /// # Arguments
 ///
@@ -283,5 +295,36 @@ mod tests {
         g.add_edge(a, d, 1.0);
         assert_eq!(voterank(&g, 1), vec![a]);
         assert_eq!(voterank(&g, 4), vec![a]);
+    }
+
+    #[test]
+    fn test_local_reaching_centrality_is_proportion_of_other_nodes() {
+        use crate::centrality::other::{global_reaching_centrality, local_reaching_centrality};
+        use crate::core::types::{Digraph, Graph};
+
+        // NetworkX: {0: 2/3, 1: 2/3, 2: 2/3, 3: 1.0} for this digraph.
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for (u, v) in [(0, 1), (1, 2), (2, 0), (0, 2), (3, 0)] {
+            g.add_edge(n[u], n[v], 1.0);
+        }
+        let all = global_reaching_centrality(&g).unwrap();
+        for i in 0..3 {
+            assert!(
+                (all[&n[i]] - 2.0 / 3.0).abs() < 1e-12,
+                "node {i} = {}",
+                all[&n[i]]
+            );
+        }
+        assert!((all[&n[3]] - 1.0).abs() < 1e-12);
+
+        // With a hop limit of one, node 3 reaches only node 0.
+        let one_hop = local_reaching_centrality(&g, 1).unwrap();
+        assert!((one_hop[&n[3]] - 1.0 / 3.0).abs() < 1e-12);
+
+        // A single node has no other nodes to reach.
+        let mut single = Graph::<i32, f64>::new();
+        let s = single.add_node(0);
+        assert_eq!(global_reaching_centrality(&single).unwrap()[&s], 0.0);
     }
 }

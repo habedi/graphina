@@ -152,7 +152,8 @@ Every function listed is gated behind its module's feature flag.
 
 - `BaseGraph<A, W, Ty>` is the central type; `A` is the node attribute, `W` the edge weight, and `Ty` the `Directed` or `Undirected` marker.
   `Graph<A, W>` and `Digraph<A, W>` are the undirected and directed aliases. `degree`, `in_degree`, and `out_degree` return `Option<usize>` (`None`
-  for a missing node); for undirected graphs in-degree and out-degree both equal the total degree. `density` returns `0.0` for fewer than two nodes.
+  for a missing node); for undirected graphs in-degree and out-degree both equal the total degree. A self-loop counts twice toward the degree in
+  both directed and undirected graphs, as in NetworkX. `density` returns `0.0` for fewer than two nodes.
   Graphs are simple: `add_edge` updates the weight of an existing edge instead of creating a parallel edge, and `add_edge_if_absent` inserts without
   overwriting an existing weight. `add_edge`, `add_edge_if_absent`, and `find_edge` check both directions on undirected graphs.
 - `GraphinaError` (in `core::error`) is the single error type, with constructor helpers (`invalid_graph`, `node_not_found`, `no_path`,
@@ -168,7 +169,7 @@ Every function listed is gated behind its module's feature flag.
 - Paths: `dijkstra`/`dijkstra_path_f64` (nonnegative weights, return `Result`), `bellman_ford` (negatives, returns `Option`, `None` on negative
   cycle), `a_star` (admissible heuristic, returns `Result<Option<(W, Vec<NodeId>)>>`), `floyd_warshall`, and `johnson` (all-pairs, return `Option`,
   `None` on negative cycle). Distance maps use `None` for unreachable nodes; the source has distance `Some(0)` (or `Some(0.0)`) and no predecessor.
-- Generators: `erdos_renyi_graph`, `complete_graph`, `bipartite_graph`, `star_graph`, `cycle_graph` (requires `n >= 3`), `watts_strogatz_graph` (`k`
+- Generators: `erdos_renyi_graph`, `complete_graph`, `bipartite_graph`, `star_graph`, `cycle_graph` (`n >= 1`; `n = 1` is a self-loop and `n = 2` a single edge, as in NetworkX), `watts_strogatz_graph` (`k`
   even and `< n`), and `barabasi_albert_graph` (`n >= m`). Each takes a `seed` where randomized and returns `InvalidArgument` on out-of-range
   parameters.
 - Validation: boolean predicates (`is_empty`, `is_connected`, `has_negative_weights`, `has_self_loops`, `is_dag`, `is_bipartite`, `count_components`)
@@ -185,8 +186,8 @@ looping forever.
 - `betweenness_centrality` and `edge_betweenness_centrality`: take a `normalized: bool` and an `f64`-weighted graph; Brandes' algorithm over BFS, so
   edge weights are ignored; error on an empty graph. Edge betweenness stores both `(u, v)` and `(v, u)` for undirected graphs.
 - `closeness_centrality`: Wasserman-Faust correction for disconnected graphs; a node with no reachable neighbors scores `0.0`.
-- `eigenvector_centrality`: power iteration for both directed and undirected graphs; L2-normalizes the centrality vector each iteration (except for
-  zero-edge/isolated graphs which yield a uniform `1/n` distribution).
+- `eigenvector_centrality`: power iteration on `A + I` for both directed and undirected graphs (the left eigenvector when directed);
+  returns the unit-L2-norm vector as NetworkX does; a graph with no edges yields the uniform unit vector (`1/sqrt(n)` per node).
 - `pagerank`: takes `damping`, `max_iter`, `tolerance`, and optional `nstart`; result sums to `1.0`; dangling nodes redistribute uniformly; a single
   node scores `1.0`.
 - `personalized_page_rank` takes `personalization: Option<Vec<f64>>`, `damping`, `tol`, and `max_iter`, returning a raw `Vec<f64>` aligned to internal
@@ -196,7 +197,9 @@ looping forever.
   handle convergence issues.
 - `voterank(graph, num_seeds) -> Vec<NodeId>`: selector-style, returns a plain vector, never a `Result`; stops early when no node has positive votes.
   In directed graphs a node votes for its in-neighbors and the decay rate is the average out-degree, matching NetworkX.
-- `local_reaching_centrality`, `global_reaching_centrality`, `laplacian_centrality`: `Result<NodeMap<f64>>`.
+- `local_reaching_centrality`, `global_reaching_centrality`, `laplacian_centrality`: `Result<NodeMap<f64>>`. Local reaching is the
+  proportion of the other nodes reachable within `distance` hops (Mones et al., the NetworkX definition for unweighted graphs);
+  global reaching is the same measure with no hop limit.
 
 ### `community`
 
@@ -226,18 +229,22 @@ graphs, treat pairs as undirected, and return a plain `Vec<((NodeId, NodeId), f6
 - `common_neighbor_centrality(graph, ebunch, alpha)`: `|N(u) ∩ N(v)|^alpha`.
 - `common_neighbors(graph, u, v) -> usize`: plain count, not a scorer.
 - Community-aware variants (`ra_index_soundarajan_hopcroft`, `cn_soundarajan_hopcroft`, `within_inter_cluster`) take a `community: Fn(NodeId) -> C`
-  closure; `within_inter_cluster` also takes a `delta` smoothing constant that keeps the score finite when there are no inter-cluster neighbors.
+  closure; `within_inter_cluster` scores `0.0` for a pair in different communities and otherwise `within / (inter + delta)` as in NetworkX,
+  where the positive `delta` keeps the score finite when there are no inter-cluster common neighbors.
 
 ### `metrics`
 
 Distance metrics return `Option` (`None` for empty or disconnected); ratio metrics return plain `f64` (`0.0` on degenerate input). Weights are ignored
-by the BFS-based metrics; only `assortativity` uses degree.
+by the BFS-based metrics; only `assortativity` uses degree. On directed graphs `assortativity` correlates the out-degree of each edge's
+source with the in-degree of its target, as NetworkX does.
 
 - `diameter`, `radius`, `average_path_length`: `Option<usize>`/`Option<f64>`; `None` if empty or disconnected; a single node gives `Some(0)`/
   `Some(0.0)`.
 - `average_clustering_coefficient`, `transitivity`, `assortativity`: plain `f64` in a bounded range; `0.0` when undefined (no triangles, no triples,
   or a zero-variance degree sequence).
-- `clustering_coefficient(graph, node) -> f64` and `triangles(graph, node) -> usize`: per-node; `0.0`/`0` for degree below 2.
+- `clustering_coefficient(graph, node) -> f64` and `triangles(graph, node) -> usize`: per-node; `0.0`/`0` for degree below 2. On directed
+  graphs `clustering_coefficient` is Fagiolo's directed clustering and `transitivity` the successor-triad ratio, both as in NetworkX;
+  `triangles` counts closed pairs among out-neighbors, which NetworkX does not define.
 
 ### `mst`
 
@@ -268,7 +275,8 @@ Heuristics for NP-hard problems. Set/value returning functions: `min_weighted_ve
 ### `parallel`
 
 Rayon-backed counterparts that mirror sequential algorithms over `core` and require `A: Sync` and `W: Sync`.
-All return collections (`HashMap`/`Vec`), not `Result`, and produce results independent of thread count.
+All return collections (`HashMap`/`Vec`) rather than `Result`, except `pagerank_parallel`, which returns `Result` and rejects an `nstart`
+that sums to zero like the sequential `pagerank`. Results are independent of thread count.
 
 - `bfs_parallel(graph, starts)` and `shortest_paths_parallel(graph, sources)` run one search per source and return results in input order; shortest
   paths are unweighted (hop counts).

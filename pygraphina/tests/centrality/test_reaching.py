@@ -24,4 +24,5 @@ def test_global_reaching_centrality():
     centrality = pygraphina.centrality.global_reaching_centrality(g)
     assert isinstance(centrality, dict)
     assert len(centrality) == 5
-    assert all((val == 5.0 for val in centrality.values()))
+    # Every node of a path reaches all four other nodes.
+    assert all((val == 1.0 for val in centrality.values()))

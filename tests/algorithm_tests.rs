@@ -281,9 +281,9 @@ mod centrality_tests {
 
         let result = global_reaching_centrality(&graph).unwrap();
         assert_eq!(result.len(), 4);
-        // In complete graph, all nodes reach all nodes
+        // In a complete graph every node reaches all of the other nodes.
         for val in result.values() {
-            assert_eq!(*val, 4.0); // Reaches self and all others
+            assert_eq!(*val, 1.0);
         }
     }
 

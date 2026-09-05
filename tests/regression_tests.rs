@@ -97,7 +97,8 @@ fn test_pagerank_sequential_and_parallel_agree_on_weighted_graphs() {
     dg.add_edge(dn[4], dn[0], 3.0);
 
     let sequential = pagerank(&dg, 0.85, 500, 1e-12, None).unwrap();
-    let parallel = pagerank_parallel(&dg, 0.85, 500, 1e-12, None);
+    let parallel =
+        pagerank_parallel(&dg, 0.85, 500, 1e-12, None).expect("pagerank_parallel should succeed");
     for &node in &dn {
         assert!(
             (sequential[&node] - parallel[&node]).abs() < 1e-6,
@@ -117,7 +118,8 @@ fn test_pagerank_sequential_and_parallel_agree_on_weighted_graphs() {
     ug.add_edge(un[3], un[4], 1.0);
 
     let sequential = pagerank(&ug, 0.85, 500, 1e-12, None).unwrap();
-    let parallel = pagerank_parallel(&ug, 0.85, 500, 1e-12, None);
+    let parallel =
+        pagerank_parallel(&ug, 0.85, 500, 1e-12, None).expect("pagerank_parallel should succeed");
     for &node in &un {
         assert!(
             (sequential[&node] - parallel[&node]).abs() < 1e-6,

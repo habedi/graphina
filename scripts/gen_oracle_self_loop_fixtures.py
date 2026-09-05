@@ -20,6 +20,9 @@ Conventions pinned here:
     Per-node clustering, per-node triangle counts, transitivity, and average
     clustering all ignore self-loops.
 
+  - A self-loop adds two to a node's degree (once per edge end), which feeds
+    degree centrality, degree assortativity, and the VoteRank decay rate.
+
 Undirected cases are connected (a random spanning tree plus extra edges), so
 eigenvector centrality is well defined. Directed cases pin weighted PageRank
 only. Every case has at least one self-loop.
@@ -33,6 +36,9 @@ Measures and the matching NetworkX call:
   - average_clustering      -> nx.average_clustering
   - clustering (per node)   -> nx.clustering
   - triangles (per node)    -> nx.triangles
+  - degree                  -> nx.Graph.degree (self-loop counts two)
+  - voterank                -> nx.voterank (unweighted election order)
+  - assortativity           -> nx.degree_assortativity_coefficient (null when NaN)
 
 Regenerate with `make oracle-fixtures`.
 """
@@ -100,6 +106,20 @@ def build_directed_graph(rng, n, density):
     return g
 
 
+def canonical(g):
+    """Rebuild `g` with nodes and edges inserted in sorted order.
+
+    The Rust replay inserts edges in this order, and VoteRank accumulates
+    floating-point votes in edge order, so an exact tie between two nodes is
+    broken the same way on both sides only when the summation order matches.
+    """
+    h = g.__class__()
+    h.add_nodes_from(range(g.number_of_nodes()))
+    for u, v in sorted((int(a), int(b)) for a, b in g.edges()):
+        h.add_edge(u, v, weight=g[u][v]["weight"])
+    return h
+
+
 def edge_lists(g):
     edges = sorted((int(u), int(v)) for u, v in g.edges())
     weights = [int(g[u][v]["weight"]) for u, v in edges]
@@ -117,7 +137,7 @@ def main():
     for i in range(NUM_UNDIRECTED):
         n = rng.randint(MIN_NODES, MAX_NODES)
         density = rng.choice(EXTRA_EDGE_DENSITIES)
-        g = build_connected_graph(rng, n, density)
+        g = canonical(build_connected_graph(rng, n, density))
         edges, weights = edge_lists(g)
 
         pagerank = nx.pagerank(g, alpha=ALPHA, tol=NX_TOL, max_iter=NX_MAX_ITER, weight="weight")
@@ -134,6 +154,8 @@ def main():
         eigenvector = nx.eigenvector_centrality(g, max_iter=NX_MAX_ITER, tol=1e-10, weight="weight")
         clustering = nx.clustering(g)
         triangles = nx.triangles(g)
+        assortativity = nx.degree_assortativity_coefficient(g)
+        assort = None if math.isnan(assortativity) else float(assortativity)
 
         undirected.append(
             {
@@ -149,6 +171,9 @@ def main():
                 "average_clustering": float(nx.average_clustering(g)),
                 "clustering": [float(clustering[k]) for k in range(n)],
                 "triangles": [int(triangles[k]) for k in range(n)],
+                "degree": [int(g.degree(k)) for k in range(n)],
+                "voterank": [int(x) for x in nx.voterank(g)],
+                "assortativity": assort,
             }
         )
 
@@ -156,7 +181,7 @@ def main():
     for i in range(NUM_DIRECTED):
         n = rng.randint(MIN_NODES, MAX_NODES)
         density = rng.choice(DIRECTED_DENSITIES)
-        g = build_directed_graph(rng, n, density)
+        g = canonical(build_directed_graph(rng, n, density))
         edges, weights = edge_lists(g)
         pagerank = nx.pagerank(g, alpha=ALPHA, tol=NX_TOL, max_iter=NX_MAX_ITER, weight="weight")
         directed.append(

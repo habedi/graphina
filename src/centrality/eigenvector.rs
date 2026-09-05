@@ -12,7 +12,9 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 /// of the adjacency matrix.
 ///
 /// For directed graphs, computes the left eigenvector (based on incoming edges).
-/// For undirected graphs, computes the standard eigenvector centrality.
+/// For undirected graphs, computes the standard eigenvector centrality. Both use
+/// power iteration on `A + I`, which converges even when the adjacency matrix has
+/// an eigenvalue of maximum modulus that is negative or complex.
 ///
 /// # Arguments
 ///
@@ -26,9 +28,10 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 ///
 /// # Errors
 ///
-/// Returns an error if the power iteration fails to converge. An empty graph
-/// yields an empty map, and a graph with no edges yields a uniform `1/n`
-/// distribution.
+/// Returns an error if the power iteration fails to converge. The returned vector
+/// has unit L2 norm and nonnegative entries, as in NetworkX. An empty graph yields
+/// an empty map, and a graph with no edges yields the uniform unit vector (every
+/// entry `1/sqrt(n)`).
 pub fn eigenvector_centrality<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     max_iter: usize,
@@ -43,125 +46,74 @@ where
         return Ok(NodeMap::default());
     }
 
-    // Fast path: graphs with no edges yield uniform centrality
+    let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
+    // Every node is equivalent when there are no edges, and the uniform unit
+    // vector is the fixed point of the (A + I) iteration, matching NetworkX.
+    let uniform = || -> NodeMap<f64> {
+        let value = 1.0 / (n as f64).sqrt();
+        node_list.iter().map(|&node| (node, value)).collect()
+    };
     if graph.edge_count() == 0 {
-        let mut centrality = NodeMap::default();
-        let uniform_value = 1.0 / n as f64;
-        for (node, _) in graph.nodes() {
-            centrality.insert(node, uniform_value);
-        }
-        return Ok(centrality);
+        return Ok(uniform());
     }
 
-    // Build node index mapping
-    let node_list: Vec<NodeId> = graph.nodes().map(|(node, _)| node).collect();
     let mut node_to_idx = std::collections::HashMap::new();
     for (idx, &node) in node_list.iter().enumerate() {
         node_to_idx.insert(node, idx);
     }
 
-    // Store the adjacency as a sparse edge list rather than a dense n x n matrix.
-    // Each entry is (row, col, weight), and the operator product accumulates
-    // `out[row] += weight * x[col]`. This costs O(E) per iteration and O(E)
-    // memory instead of O(n^2). For directed graphs the entry orients so an
-    // incoming edge influences the target (v influences u); for undirected
-    // graphs both orientations are stored to keep the operator symmetric.
+    // Entries (row, col, weight) of the operator applied each iteration:
+    // y[row] += weight * x[col]. For a directed edge u -> v the centrality of v
+    // accumulates that of its predecessor u (the left eigenvector, as in
+    // NetworkX). An undirected edge contributes in both directions, and a
+    // self-loop is a single diagonal entry in either case.
     let directed = graph.is_directed();
-    let mut adj: Vec<(usize, usize, f64)> = Vec::with_capacity(graph.edge_count());
+    let mut adj: Vec<(usize, usize, f64)> = Vec::with_capacity(2 * graph.edge_count());
     for (u, v, w) in graph.edges() {
         let ui = node_to_idx[&u];
         let vi = node_to_idx[&v];
         let weight: f64 = (*w).into();
-
-        // For directed graphs: v influences u (incoming edges). An undirected
-        // self-loop is a single diagonal entry, so it is also added once.
-        if directed || ui == vi {
-            adj.push((vi, ui, weight));
-        } else {
-            // For undirected graphs the operator is symmetric.
+        adj.push((vi, ui, weight));
+        if !directed && ui != vi {
             adj.push((ui, vi, weight));
-            adj.push((vi, ui, weight));
         }
     }
 
-    // Sparse power iteration. For undirected graphs iterate on the shifted
-    // operator (A + I): shifting by the identity moves every eigenvalue up by one
-    // without changing the eigenvectors, which makes the dominant eigenvalue
-    // strictly largest in magnitude and removes the |lambda_max| == |lambda_min|
-    // oscillation that bipartite graphs cause. This replaces the dense symmetric
-    // eigendecomposition the undirected path used before. Directed graphs iterate
-    // on A itself and keep the zero-norm and sign-oscillation guards, since the
-    // shift would make a defective directed operator converge only linearly.
-    let shift = if directed { 0.0 } else { 1.0 };
+    // Power iteration on (A + I). The shift keeps the eigenvectors but moves the
+    // spectrum, so the iteration converges even when an eigenvalue of maximum
+    // modulus is negative or complex (bipartite or periodic graphs).
     let mut x = vec![1.0 / (n as f64).sqrt(); n];
-    let mut converged = false;
-
-    for iter in 0..max_iter {
-        // y = (A + shift * I) x
-        let mut y: Vec<f64> = x.iter().map(|&xi| shift * xi).collect();
+    let mut y = vec![0.0; n];
+    for _ in 0..max_iter {
+        y.copy_from_slice(&x);
         for &(row, col, weight) in &adj {
             y[row] += weight * x[col];
         }
 
         let norm: f64 = y.iter().map(|v| v * v).sum::<f64>().sqrt();
         if norm < 1e-10 {
-            // Degenerate operator (disconnected, all-zero weights, or a defective
-            // directed structure): fall back to a uniform distribution.
-            let mut centrality = NodeMap::default();
-            let uniform_value = 1.0 / n as f64;
-            for &node in &node_list {
-                centrality.insert(node, uniform_value);
-            }
-            return Ok(centrality);
+            return Ok(uniform());
         }
 
         let mut diff_sq = 0.0;
-        let mut diff_neg_sq = 0.0;
-        for (xi, yi) in x.iter().zip(&y) {
-            let normalized = yi / norm;
-            let d = normalized - xi;
-            diff_sq += d * d;
-            let dn = normalized + xi;
-            diff_neg_sq += dn * dn;
-        }
         for (xi, yi) in x.iter_mut().zip(&y) {
-            *xi = yi / norm;
+            let next = yi / norm;
+            let d = next - *xi;
+            diff_sq += d * d;
+            *xi = next;
         }
 
         if diff_sq.sqrt() < tolerance {
-            converged = true;
-            break;
-        }
-
-        // Directed graphs can oscillate between x and -x on a negative dominant
-        // eigenvalue; detect the sign flip and converge on the magnitudes.
-        if directed && iter > 10 && diff_neg_sq.sqrt() < tolerance {
-            converged = true;
-            break;
+            // `x` has unit L2 norm and nonnegative entries, the normalization
+            // NetworkX returns.
+            return Ok(node_list.iter().copied().zip(x).collect());
         }
     }
 
-    if !converged {
-        return Err(GraphinaError::convergence_failed(
-            max_iter,
-            "Eigenvector centrality failed to converge within maximum iterations",
-        ));
-    }
-
-    // Normalize so values sum to the number of nodes, matching the prior
-    // convention, and report magnitudes (eigenvector orientation is arbitrary).
-    let sum: f64 = x.iter().map(|v| v.abs()).sum();
-    if sum > 0.0 {
-        for v in x.iter_mut() {
-            *v = v.abs() * (n as f64) / sum;
-        }
-    }
-
-    let mut centrality = NodeMap::default();
-    for (idx, &val) in x.iter().enumerate() {
-        centrality.insert(node_list[idx], val);
-    }
-    Ok(centrality)
+    Err(GraphinaError::convergence_failed(
+        max_iter,
+        "Eigenvector centrality failed to converge within maximum iterations",
+    ))
 }
 
 #[cfg(test)]
@@ -232,16 +184,17 @@ mod tests {
 
     #[test]
     fn eigenvector_directed_vs_undirected_basic() {
-        // Directed: 0 -> 1
+        // Directed two-cycle 0 <-> 1. (A single directed edge 0 -> 1 has no
+        // positive dominant eigenvector, and NetworkX fails to converge on it
+        // too, so it is not a meaningful input here.)
         let mut dg: Digraph<i32, f64> = Digraph::new();
         let n0 = dg.add_node(0);
         let n1 = dg.add_node(1);
         dg.add_edge(n0, n1, 1.0);
+        dg.add_edge(n1, n0, 1.0);
         let c_dir = eigenvector_centrality(&dg, 100, 1e-9).unwrap();
-        // For directed graphs with incoming edges: node 0 (source) gets centrality from n1
-        // In a single edge graph, both nodes should have positive centrality
-        assert!(c_dir[&n0] >= 0.0);
-        assert!(c_dir[&n1] >= 0.0);
+        assert!(c_dir[&n0] > 0.0);
+        assert!((c_dir[&n0] - c_dir[&n1]).abs() < 1e-6);
 
         // Undirected: 0 -- 1
         let mut ug: Graph<i32, f64> = Graph::new();
@@ -365,5 +318,60 @@ mod tests {
             "ratio = {}",
             c[&a] / c[&b]
         );
+    }
+
+    #[test]
+    fn test_eigenvector_has_unit_l2_norm_like_networkx() {
+        use crate::centrality::eigenvector::eigenvector_centrality;
+        use crate::core::types::Graph;
+
+        // NetworkX documents the path graph P4 as (0.37, 0.60, 0.60, 0.37).
+        let mut g = Graph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for i in 0..3 {
+            g.add_edge(n[i], n[i + 1], 1.0);
+        }
+        let c = eigenvector_centrality(&g, 10_000, 1e-12).unwrap();
+        let norm: f64 = c.values().map(|v| v * v).sum::<f64>().sqrt();
+        assert!((norm - 1.0).abs() < 1e-9, "norm = {norm}");
+        assert!((c[&n[0]] - 0.3717).abs() < 1e-3, "end = {}", c[&n[0]]);
+        assert!((c[&n[1]] - 0.6015).abs() < 1e-3, "inner = {}", c[&n[1]]);
+    }
+
+    #[test]
+    fn test_eigenvector_no_edges_is_uniform_unit_vector() {
+        use crate::centrality::eigenvector::eigenvector_centrality;
+        use crate::core::types::Graph;
+
+        let mut g = Graph::<i32, f64>::new();
+        let n: Vec<_> = (0..3).map(|i| g.add_node(i)).collect();
+        let c = eigenvector_centrality(&g, 100, 1e-9).unwrap();
+        for node in &n {
+            assert!((c[node] - 1.0 / 3f64.sqrt()).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn test_eigenvector_directed_matches_networkx() {
+        use crate::centrality::eigenvector::eigenvector_centrality;
+        use crate::core::types::Digraph;
+
+        // Cycle 0 -> 1 -> 2 -> 0 with a source node 3 -> 0. NetworkX gives the
+        // three cycle nodes 1/sqrt(3) each and node 3 zero: nothing points to it.
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        g.add_edge(n[0], n[1], 1.0);
+        g.add_edge(n[1], n[2], 1.0);
+        g.add_edge(n[2], n[0], 1.0);
+        g.add_edge(n[3], n[0], 1.0);
+        let c = eigenvector_centrality(&g, 10_000, 1e-12).unwrap();
+        for i in 0..3 {
+            assert!(
+                (c[&n[i]] - 1.0 / 3f64.sqrt()).abs() < 1e-6,
+                "node {i} = {}",
+                c[&n[i]]
+            );
+        }
+        assert!(c[&n[3]].abs() < 1e-6, "source = {}", c[&n[3]]);
     }
 }

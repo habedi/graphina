@@ -47,13 +47,16 @@ where
         .map(|&node| (node, graph.neighbors(node).collect()))
         .collect();
 
+    let directed = graph.is_directed();
     nodes
         .par_iter()
         .map(|&node| {
             let neighbors: Vec<NodeId> = graph.neighbors(node).filter(|&nb| nb != node).collect();
             let k = neighbors.len();
 
-            let coefficient = if k < 2 {
+            let coefficient = if directed {
+                directed_clustering_coefficient(graph, node)
+            } else if k < 2 {
                 0.0
             } else {
                 let mut triangles = 0;
@@ -72,6 +75,40 @@ where
             (node, coefficient)
         })
         .collect()
+}
+
+/// Fagiolo's directed clustering coefficient, matching NetworkX and the
+/// sequential `metrics::clustering_coefficient` (reimplemented here because an
+/// extension may depend only on `core`).
+fn directed_clustering_coefficient<A, W, Ty: GraphConstructor<A, W>>(
+    graph: &BaseGraph<A, W, Ty>,
+    node: NodeId,
+) -> f64 {
+    let preds: HashSet<NodeId> = graph
+        .incoming_neighbors(node)
+        .filter(|&v| v != node)
+        .collect();
+    let succs: HashSet<NodeId> = graph.neighbors(node).filter(|&v| v != node).collect();
+    let d_tot = preds.len() + succs.len();
+    if d_tot < 2 {
+        return 0.0;
+    }
+    let d_bi = preds.intersection(&succs).count();
+
+    let mut triangles = 0usize;
+    for &j in preds.iter().chain(succs.iter()) {
+        let j_preds: HashSet<NodeId> = graph.incoming_neighbors(j).filter(|&v| v != j).collect();
+        let j_succs: HashSet<NodeId> = graph.neighbors(j).filter(|&v| v != j).collect();
+        triangles += preds.intersection(&j_preds).count()
+            + preds.intersection(&j_succs).count()
+            + succs.intersection(&j_preds).count()
+            + succs.intersection(&j_succs).count();
+    }
+    if triangles == 0 {
+        return 0.0;
+    }
+    let possible = 2 * (d_tot * (d_tot - 1) - 2 * d_bi);
+    triangles as f64 / possible as f64
 }
 
 #[cfg(test)]
@@ -106,5 +143,25 @@ mod tests {
         g.add_edge(hub, y, 1.0);
         let coeffs = clustering_coefficients_parallel(&g);
         assert_eq!(coeffs[&hub], 0.0);
+    }
+
+    #[test]
+    fn test_clustering_coefficients_parallel_directed_matches_networkx() {
+        use crate::core::types::Digraph;
+
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for (u, v) in [(0, 1), (1, 2), (2, 0), (0, 2), (3, 0)] {
+            g.add_edge(n[u], n[v], 1.0);
+        }
+        let coeffs = clustering_coefficients_parallel(&g);
+        let want = [0.2, 1.0, 0.5, 0.0];
+        for (i, w) in want.iter().enumerate() {
+            assert!(
+                (coeffs[&n[i]] - w).abs() < 1e-12,
+                "node {i}: got {}",
+                coeffs[&n[i]]
+            );
+        }
     }
 }

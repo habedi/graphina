@@ -224,6 +224,9 @@ pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
 
 /// Generates a cycle graph.
 ///
+/// Follows NetworkX for small sizes: `n = 1` yields a single node with a self-loop and
+/// `n = 2` a single edge (two opposite edges in a directed graph).
+///
 /// # Arguments
 ///
 /// * `n` - The number of nodes (must be > 0).
@@ -238,9 +241,9 @@ pub fn star_graph<Ty: GraphConstructor<u32, f32>>(
 pub fn cycle_graph<Ty: GraphConstructor<u32, f32>>(
     n: usize,
 ) -> Result<BaseGraph<u32, f32, Ty>, GraphinaError> {
-    if n < 3 {
+    if n == 0 {
         return Err(GraphinaError::InvalidArgument(
-            "Cycle graph must have at least three nodes.".into(),
+            "Number of nodes must be greater than zero.".into(),
         ));
     }
     let mut graph = BaseGraph::<u32, f32, Ty>::new();
@@ -623,8 +626,23 @@ mod tests {
     #[test]
     fn test_cycle_graph_invalid_n() {
         assert!(cycle_graph::<Undirected>(0).is_err());
-        assert!(cycle_graph::<Undirected>(1).is_err());
-        assert!(cycle_graph::<Undirected>(2).is_err());
+    }
+
+    #[test]
+    fn test_cycle_graph_small_n_matches_networkx() {
+        // NetworkX: cycle_graph(1) is a single node with a self-loop and
+        // cycle_graph(2) a single edge (two opposite edges when directed).
+        let one = cycle_graph::<Undirected>(1).expect("n = 1");
+        assert_eq!(one.node_count(), 1);
+        assert_eq!(one.edge_count(), 1);
+        assert!(one.edges().all(|(u, v, _)| u == v));
+
+        let two = cycle_graph::<Undirected>(2).expect("n = 2");
+        assert_eq!(two.node_count(), 2);
+        assert_eq!(two.edge_count(), 1);
+
+        let two_directed = cycle_graph::<Directed>(2).expect("directed n = 2");
+        assert_eq!(two_directed.edge_count(), 2);
     }
 
     #[test]
@@ -682,7 +700,7 @@ mod tests {
     #[test]
     fn invalid_cycle_rejected() {
         assert!(matches!(
-            cycle_graph::<Undirected>(2),
+            cycle_graph::<Undirected>(0),
             Err(GraphinaError::InvalidArgument(_))
         ));
     }

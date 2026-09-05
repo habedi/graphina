@@ -10,11 +10,9 @@
 //! run time.
 //!
 //! Eigenvector and Katz centrality are defined only up to a positive scale
-//! factor, and Graphina and NetworkX normalize differently (Graphina scales the
-//! eigenvector to sum to n and returns Katz unnormalized; NetworkX uses unit L2
-//! norm). The corpus stores the L2-normalized reference, and these tests
-//! L2-normalize Graphina's output before comparing, so the comparison checks the
-//! centrality structure rather than the normalization convention.
+//! factor. Graphina returns the eigenvector with unit L2 norm like NetworkX but
+//! returns Katz unnormalized, so the corpus stores the L2-normalized reference
+//! and these tests L2-normalize Graphina's output before comparing.
 
 #![cfg(feature = "centrality")]
 

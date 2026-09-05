@@ -29,6 +29,10 @@ fn neighbor_adjacency<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 /// Computes the local clustering coefficient for a specific node.
 ///
 /// Measures the probability that two neighbors of a node are also connected.
+/// For directed graphs this is Fagiolo's directed clustering, as in NetworkX: the
+/// number of directed triangles through the node divided by
+/// `2 * (d_tot * (d_tot - 1) - 2 * d_bi)`, where `d_tot` is in-degree plus out-degree
+/// and `d_bi` the number of reciprocal neighbors. Self-loops are ignored.
 ///
 /// # Time Complexity
 /// O(d²) where d is the node's degree
@@ -36,6 +40,9 @@ pub fn clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     node: NodeId,
 ) -> f64 {
+    if graph.is_directed() {
+        return directed_clustering_coefficient(graph, node);
+    }
     let neighbors: Vec<NodeId> = graph.neighbors(node).filter(|&nb| nb != node).collect();
     let k = neighbors.len();
 
@@ -84,6 +91,41 @@ pub fn triangles<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     }
 
     count
+}
+
+/// Fagiolo's directed clustering coefficient, matching NetworkX's
+/// `_directed_triangles_and_degree_iter`. Each neighbor `j` is visited once as a
+/// predecessor and once as a successor, so reciprocal neighbors count twice, and
+/// the four intersections count every directed triangle pattern through `node`.
+fn directed_clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+    node: NodeId,
+) -> f64 {
+    let preds: HashSet<NodeId> = graph
+        .incoming_neighbors(node)
+        .filter(|&v| v != node)
+        .collect();
+    let succs: HashSet<NodeId> = graph.neighbors(node).filter(|&v| v != node).collect();
+    let d_tot = preds.len() + succs.len();
+    if d_tot < 2 {
+        return 0.0;
+    }
+    let d_bi = preds.intersection(&succs).count();
+
+    let mut triangles = 0usize;
+    for &j in preds.iter().chain(succs.iter()) {
+        let j_preds: HashSet<NodeId> = graph.incoming_neighbors(j).filter(|&v| v != j).collect();
+        let j_succs: HashSet<NodeId> = graph.neighbors(j).filter(|&v| v != j).collect();
+        triangles += preds.intersection(&j_preds).count()
+            + preds.intersection(&j_succs).count()
+            + succs.intersection(&j_preds).count()
+            + succs.intersection(&j_succs).count();
+    }
+    if triangles == 0 {
+        return 0.0;
+    }
+    let possible = 2 * (d_tot * (d_tot - 1) - 2 * d_bi);
+    triangles as f64 / possible as f64
 }
 
 #[cfg(test)]
@@ -145,5 +187,23 @@ mod tests {
         g.add_edge(x, y, 1.0);
         assert_eq!(triangles(&g, hub), 1);
         assert_eq!(clustering_coefficient(&g, hub), 1.0);
+    }
+
+    #[test]
+    fn test_clustering_coefficient_directed_matches_networkx() {
+        use crate::core::types::Digraph;
+
+        // Fagiolo's directed clustering, as NetworkX computes it:
+        // {0: 0.2, 1: 1.0, 2: 0.5, 3: 0}.
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for (u, v) in [(0, 1), (1, 2), (2, 0), (0, 2), (3, 0)] {
+            g.add_edge(n[u], n[v], 1.0);
+        }
+        let want = [0.2, 1.0, 0.5, 0.0];
+        for (i, w) in want.iter().enumerate() {
+            let got = clustering_coefficient(&g, n[i]);
+            assert!((got - w).abs() < 1e-12, "node {i}: expected {w}, got {got}");
+        }
     }
 }

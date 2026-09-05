@@ -219,7 +219,8 @@ pub fn pagerank_parallel(
             max_iterations,
             tolerance,
             nstart_map.as_ref(),
-        );
+        )
+        .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
         let py_ranks: HashMap<usize, f64> = ranks
             .into_iter()
             .filter_map(|(nid, rank)| {
@@ -247,7 +248,8 @@ pub fn pagerank_parallel(
             max_iterations,
             tolerance,
             nstart_map.as_ref(),
-        );
+        )
+        .map_err(|e| crate::GraphinaError::new_err(e.to_string()))?;
         let py_ranks: HashMap<usize, f64> = ranks
             .into_iter()
             .filter_map(|(nid, rank)| {

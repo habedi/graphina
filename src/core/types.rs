@@ -200,9 +200,10 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn contains_edge(&self, source: NodeId, target: NodeId) -> bool {
         self.find_edge(source, target).is_some()
     }
-    /// Returns the degree of a node (number of incident edges).
+    /// Returns the degree of a node (number of incident edge ends).
     ///
-    /// For directed graphs, this returns the sum of in-degree and out-degree.
+    /// For directed graphs, this returns the sum of in-degree and out-degree. A
+    /// self-loop counts twice in both directed and undirected graphs, as in NetworkX.
     /// Returns None if the node doesn't exist.
     pub fn degree(&self, node: NodeId) -> Option<usize> {
         if !self.contains_node(node) {
@@ -211,7 +212,14 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         if self.is_directed() {
             Some(self.in_degree(node).unwrap_or(0) + self.out_degree(node).unwrap_or(0))
         } else {
-            Some(self.inner.edges(node.0).count())
+            // A self-loop is incident to its node at both ends, so it adds two to
+            // the degree, matching the usual graph-theoretic convention and NetworkX.
+            Some(
+                self.inner
+                    .edges(node.0)
+                    .map(|e| if e.source() == e.target() { 2 } else { 1 })
+                    .sum(),
+            )
         }
     }
     /// Returns the in-degree of a node (number of incoming edges).
@@ -241,6 +249,11 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn out_degree(&self, node: NodeId) -> Option<usize> {
         if !self.contains_node(node) {
             return None;
+        }
+        if !self.is_directed() {
+            // Undirected out-degree is the total degree, including the double count
+            // for self-loops.
+            return self.degree(node);
         }
         Some(self.inner.edges(node.0).count())
     }
@@ -1189,5 +1202,31 @@ mod tests {
             .try_build()
             .expect("valid builder");
         assert_eq!(g.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_degree_counts_self_loop_twice() {
+        use crate::core::types::{Digraph, Graph};
+
+        // A self-loop is incident to its node at both ends, so it adds two to the
+        // degree, as in NetworkX.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, a, 1.0);
+        g.add_edge(a, b, 1.0);
+        assert_eq!(g.degree(a), Some(3));
+        assert_eq!(g.in_degree(a), Some(3));
+        assert_eq!(g.out_degree(a), Some(3));
+        assert_eq!(g.degree(b), Some(1));
+
+        let mut d = Digraph::<i32, f64>::new();
+        let a = d.add_node(0);
+        let b = d.add_node(1);
+        d.add_edge(a, a, 1.0);
+        d.add_edge(a, b, 1.0);
+        assert_eq!(d.degree(a), Some(3));
+        assert_eq!(d.in_degree(a), Some(1));
+        assert_eq!(d.out_degree(a), Some(2));
     }
 }

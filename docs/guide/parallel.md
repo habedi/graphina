@@ -31,7 +31,7 @@ let n1 = g.add_node("A");
 let n2 = g.add_node("B");
 g.add_edge(n1, n2, 1.0);
 
-let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
+let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None).unwrap();
 ```
 
 ### Parallel Connected Components
