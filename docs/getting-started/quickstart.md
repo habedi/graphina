@@ -70,6 +70,7 @@ Graphina provides standard algorithms in its extensions (or modules) like `centr
 
 ```rust
 use graphina::centrality::pagerank::pagerank;
+use graphina::core::types::Graph;
 
     // Create a simple graph for the example
     let mut graph = Graph::<String, f64>::new();

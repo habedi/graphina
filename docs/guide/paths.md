@@ -84,10 +84,13 @@ let all_paths = floyd_warshall(&graph);
 ## Johnson's Algorithm
 
 Computes all-pairs shortest paths in sparse graphs that may contain negative weights (but no negative cycles).
-It uses Bellman-Ford to reweight the graph, then runs Dijkstra from every node.
+It uses Bellman-Ford to reweight the graph, then runs Dijkstra from every node. Like `dijkstra`, it
+requires a totally ordered weight type, so convert `f64` weights to `OrderedFloat<f64>` first.
 
 ```rust
 use graphina::core::paths::johnson;
+use ordered_float::OrderedFloat;
 
-let all_paths = johnson(&graph);
+let g_ord = graph.convert::<OrderedFloat<f64>>();
+let all_paths = johnson(&g_ord);
 ```

@@ -106,6 +106,7 @@ graph*.json
 graph*.html
 graph*.graphml
 graph*.txt
+graph*.tsv
 *.bin
 *.log
 site/

@@ -57,9 +57,13 @@ Edge weights `W` need only implement `PartialOrd`, so plain `f64` works. The wei
 is rejected with an `InvalidArgument` error. Wrappers such as `OrderedFloat` continue to work.
 
 ```rust
-use ordered_float::OrderedFloat;
-let mut g = Graph::<i32, OrderedFloat<f64>>::new();
+use graphina::core::types::Graph;
+use graphina::mst::kruskal_mst;
+
+let mut g = Graph::<i32, f64>::new();
 let u = g.add_node(1);
 let v = g.add_node(2);
-g.add_edge(u, v, OrderedFloat(1.5));
+g.add_edge(u, v, 1.5);
+let (edges, total) = kruskal_mst(&g).unwrap();
+assert_eq!(total, 1.5);
 ```

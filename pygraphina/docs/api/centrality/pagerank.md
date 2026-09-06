@@ -19,7 +19,8 @@ pg.centrality.pagerank(
 - graph: The graph to analyze (directed or undirected)
 - damping: Damping factor (probability of following a link vs random jump). Default: 0.85
 - max_iter: Maximum number of iterations. Default: 100
-- tolerance: Convergence tolerance. Default: 1e-6
+- tolerance: Per-node convergence tolerance. Iteration stops when the total change of the scores drops below
+  `tolerance * n`, as in NetworkX. Default: 1e-6
 - nstart (optional): Starting values for PageRank iteration
   - Type: `Dict[int, float]` - Maps node IDs to initial values
   - Default: `None` (uniform distribution)

@@ -180,7 +180,7 @@ paths = pgp.shortest_paths_parallel(graph, sources=[0, 1, 2])
 Interested in parallel algorithms or optimizations? We welcome contributions!
 
 1. Check [open issues](https://github.com/habedi/graphina/issues) for parallel algorithm tasks
-2. See [CONTRIBUTING.md](../../contributing.md) for guidelines
+2. See [CONTRIBUTING.md](https://github.com/habedi/graphina/blob/main/CONTRIBUTING.md) for guidelines
 3. Parallel implementations should maintain API compatibility
 
 ## See Also

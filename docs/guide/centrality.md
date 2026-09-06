@@ -20,6 +20,8 @@ pub fn pagerank<A, W, Ty>(
 ) -> Result<NodeMap<f64>>
 ```
 
+Iteration stops when the total change of the rank vector drops below `tolerance` times the node count, the same rule NetworkX uses.
+
 ### Example
 
 ```rust
@@ -128,8 +130,15 @@ Computes a PageRank vector biased towards a set of target nodes defined by a per
 
 ```rust
 use graphina::centrality::personalized::personalized_pagerank;
+use graphina::core::types::Graph;
 
-let personalization = vec![0.8, 0.2]; // mapped to nodes in order
+let mut g = Graph::<i32, f64>::new();
+let a = g.add_node(1);
+let b = g.add_node(2);
+g.add_edge(a, b, 1.0);
+
+// One entry per node, in node order; a vector of the wrong length is an error.
+let personalization = vec![0.8, 0.2];
 let scores = personalized_pagerank(&g, Some(personalization), 0.85, 1e-6, 100).unwrap();
 ```
 
