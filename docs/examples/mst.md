@@ -12,7 +12,7 @@ use graphina::mst::prim_mst;
 use ordered_float::OrderedFloat;
 
 fn main() {
-    // Note: Weights must be Ord (OrderedFloat for f64)
+    // Plain f64 weights work too; OrderedFloat is shown for compatibility with older code.
     let mut graph = Graph::<&str, OrderedFloat<f64>>::new();
 
     let n1 = graph.add_node("A");

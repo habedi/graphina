@@ -53,7 +53,8 @@ let (mst_edges, total_weight) = boruvka_mst(&g).unwrap();
 
 ## Weight Type Requirements
 
-Edge weights `W` must implement `Ord`. For floating point numbers, use `OrderedFloat` or a similar wrapper to provide total ordering.
+Edge weights `W` need only implement `PartialOrd`, so plain `f64` works. The weights must still be totally ordered in practice: a `NaN` weight
+is rejected with an `InvalidArgument` error. Wrappers such as `OrderedFloat` continue to work.
 
 ```rust
 use ordered_float::OrderedFloat;

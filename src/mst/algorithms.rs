@@ -14,7 +14,7 @@ It provides the following algorithms:
 - **Borůvka's Algorithm (Parallel):**
   A parallel implementation using Rayon to process each component concurrently.
 
-**Note:** The weight type `W` must implement `Ord`. If you wish to use floating‑point weights (e.g. `f32` or `f64`), consider wrapping them in a type that provides a total order (e.g. [`ordered_float::OrderedFloat`](https://docs.rs/ordered-float/)).
+**Note:** The weight type `W` needs only `PartialOrd`, so plain `f32` and `f64` weights work directly. The weights must still be totally ordered in practice: an unordered weight such as `NaN` is rejected with `GraphinaError::InvalidArgument`.
 
 All algorithms assume that the graph's nodes are indexed from 0 to \(n-1\) and that edge weights satisfy the required ordering and arithmetic properties.
 They use a union–find (disjoint-set) data structure with path compression and union by rank for cycle detection and component merging.
@@ -56,6 +56,138 @@ where
 }
 
 /// A simple union–find (disjoint-set) data structure.
+/// Rejects a graph whose weights are not totally ordered. `PartialOrd` admits
+/// values such as `NaN` that compare unequal to themselves; sorting or heap
+/// ordering with such a value is inconsistent, so the algorithms refuse it up
+/// front instead of producing an arbitrary tree.
+fn reject_unordered_weights<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<()>
+where
+    W: PartialOrd,
+    Ty: GraphConstructor<A, W>,
+{
+    if graph
+        .edges()
+        .any(|(_, _, w)| w.partial_cmp(w) != Some(Ordering::Equal))
+    {
+        return Err(GraphinaError::invalid_argument(
+            "MST weights must be totally ordered; found an unordered (NaN) weight.",
+        ));
+    }
+    Ok(())
+}
+
+/// Indexed binary min-heap over node indices for Prim's algorithm. Each node
+/// appears at most once, keyed by the lightest edge found so far into it, and
+/// `decrease` moves it up in place, so the heap never holds more than one entry
+/// per node and no stale entries need to be skipped. Keys are compared with
+/// `PartialOrd`; the weights are known to be totally ordered by the time the heap
+/// is used (see `reject_unordered_weights`).
+struct IndexedMinHeap<W> {
+    heap: Vec<usize>,
+    pos: Vec<usize>,
+    key: Vec<Option<W>>,
+}
+
+impl<W: Copy + PartialOrd> IndexedMinHeap<W> {
+    const ABSENT: usize = usize::MAX;
+
+    fn new(bound: usize) -> Self {
+        Self {
+            heap: Vec::new(),
+            pos: vec![Self::ABSENT; bound],
+            key: vec![None; bound],
+        }
+    }
+
+    fn contains(&self, node: usize) -> bool {
+        self.pos[node] != Self::ABSENT
+    }
+
+    fn key(&self, node: usize) -> Option<W> {
+        self.key[node]
+    }
+
+    fn less(&self, a: usize, b: usize) -> bool {
+        match (self.key[a], self.key[b]) {
+            (Some(x), Some(y)) => x < y,
+            _ => false,
+        }
+    }
+
+    fn swap(&mut self, i: usize, j: usize) {
+        self.heap.swap(i, j);
+        self.pos[self.heap[i]] = i;
+        self.pos[self.heap[j]] = j;
+    }
+
+    fn sift_up(&mut self, mut i: usize) {
+        while i > 0 {
+            let parent = (i - 1) / 2;
+            if self.less(self.heap[i], self.heap[parent]) {
+                self.swap(i, parent);
+                i = parent;
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn sift_down(&mut self, mut i: usize) {
+        let len = self.heap.len();
+        loop {
+            let left = 2 * i + 1;
+            let right = left + 1;
+            let mut smallest = i;
+            if left < len && self.less(self.heap[left], self.heap[smallest]) {
+                smallest = left;
+            }
+            if right < len && self.less(self.heap[right], self.heap[smallest]) {
+                smallest = right;
+            }
+            if smallest == i {
+                break;
+            }
+            self.swap(i, smallest);
+            i = smallest;
+        }
+    }
+
+    /// Inserts `node` with `weight`, or lowers its key if it is already present
+    /// with a heavier one. Returns whether the key changed.
+    fn push_or_decrease(&mut self, node: usize, weight: W) -> bool {
+        if self.contains(node) {
+            match self.key[node] {
+                Some(current) if weight < current => {
+                    self.key[node] = Some(weight);
+                    self.sift_up(self.pos[node]);
+                    true
+                }
+                _ => false,
+            }
+        } else {
+            self.key[node] = Some(weight);
+            self.pos[node] = self.heap.len();
+            self.heap.push(node);
+            self.sift_up(self.heap.len() - 1);
+            true
+        }
+    }
+
+    fn pop_min(&mut self) -> Option<usize> {
+        if self.heap.is_empty() {
+            return None;
+        }
+        let last = self.heap.len() - 1;
+        self.swap(0, last);
+        let node = self.heap.pop()?;
+        self.pos[node] = Self::ABSENT;
+        if !self.heap.is_empty() {
+            self.sift_down(0);
+        }
+        Some(node)
+    }
+}
+
 struct UnionFind {
     parent: Vec<usize>,
     rank: Vec<usize>,
@@ -166,8 +298,17 @@ where
     // `bound` sizes index-keyed structures for the possibly-sparse index space;
     // `components` counts actual nodes, so it reaches 1 when the real nodes are
     // merged even though gap indices remain singletons in the union-find.
+    reject_unordered_weights(graph)?;
+
     let bound = index_bound(graph);
     let all_edges: Vec<(NodeId, NodeId, W)> = graph.edges().map(|(u, v, w)| (u, v, *w)).collect();
+    // One candidate table per worker chunk. Rayon's `fold` would allocate a fresh
+    // node-sized table for every internal split, which dominated the runtime on
+    // graphs with a few hundred thousand edges.
+    let chunk_len = all_edges
+        .len()
+        .div_ceil(rayon::current_num_threads().max(1))
+        .max(1);
 
     let mut uf = UnionFind::new(bound);
     let mut mst_edges = Vec::new();
@@ -197,30 +338,28 @@ where
         let cheapest: Vec<Option<(NodeId, NodeId, W)>> =
             if all_edges.len() >= BORUVKA_PARALLEL_MIN_EDGES {
                 all_edges
-                    .par_iter()
-                    .fold(
-                        || vec![None::<(NodeId, NodeId, W)>; bound],
-                        |mut acc, &(u, v, w)| {
+                    .par_chunks(chunk_len)
+                    .map(|chunk| {
+                        let mut acc = vec![None::<(NodeId, NodeId, W)>; bound];
+                        for &(u, v, w) in chunk {
                             let ru = roots[u.index()];
                             let rv = roots[v.index()];
                             if ru != rv {
                                 keep_lighter(&mut acc[ru], (u, v, w));
                                 keep_lighter(&mut acc[rv], (u, v, w));
                             }
-                            acc
-                        },
-                    )
-                    .reduce(
-                        || vec![None::<(NodeId, NodeId, W)>; bound],
-                        |mut a, b| {
-                            for (slot, other) in a.iter_mut().zip(b) {
-                                if let Some(cand) = other {
-                                    keep_lighter(slot, cand);
-                                }
+                        }
+                        acc
+                    })
+                    .reduce_with(|mut a, b| {
+                        for (slot, other) in a.iter_mut().zip(b) {
+                            if let Some(cand) = other {
+                                keep_lighter(slot, cand);
                             }
-                            a
-                        },
-                    )
+                        }
+                        a
+                    })
+                    .unwrap_or_else(|| vec![None::<(NodeId, NodeId, W)>; bound])
             } else {
                 let mut acc = vec![None::<(NodeId, NodeId, W)>; bound];
                 for &(u, v, w) in &all_edges {
@@ -262,7 +401,8 @@ where
 ///
 /// # Type Bounds
 ///
-/// - `W` must implement `Copy`, `PartialOrd`, `Add`, `AddAssign`, `From<u8>`, and `Ord`.
+/// - `W` must implement `Copy`, `PartialOrd`, `Add`, `AddAssign`, and `From<u8>`; weights must be
+///   totally ordered in practice (a `NaN` weight is rejected with `InvalidArgument`).
 /// - `Ty` must implement `GraphConstructor`.
 ///
 /// # Complexity
@@ -294,7 +434,7 @@ where
 /// ```
 pub fn kruskal_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<(Vec<MstEdge<W>>, W)>
 where
-    W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
+    W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8>,
     Ty: GraphConstructor<A, W>,
 {
     if graph.node_count() == 0 {
@@ -303,8 +443,11 @@ where
         ));
     }
 
+    reject_unordered_weights(graph)?;
+
     let mut edges: Vec<(NodeId, NodeId, W)> = graph.edges().map(|(u, v, w)| (u, v, *w)).collect();
-    edges.sort_by(|a, b| a.2.cmp(&b.2));
+    // Weights are totally ordered after the check above, so the fallback never fires.
+    edges.sort_by(|a, b| a.2.partial_cmp(&b.2).unwrap_or(Ordering::Equal));
 
     // Size union-find by the index bound, not `node_count`: after node removals a
     // remaining node's index can exceed the count, and `find(index)` must stay in
@@ -333,9 +476,9 @@ where
 ///
 /// # Type Bounds
 ///
-/// - `W` must implement `Copy`, `PartialOrd`, `Add`, `AddAssign`, `From<u8>`, and `Ord`.
+/// - `W` must implement `Copy`, `PartialOrd`, `Add`, `AddAssign`, and `From<u8>`; weights must be
+///   totally ordered in practice (a `NaN` weight is rejected with `InvalidArgument`).
 /// - `Ty` must implement `GraphConstructor`.
-/// - `NodeId` must implement `Ord`.
 ///
 /// # Complexity
 ///
@@ -366,71 +509,73 @@ where
 /// ```
 pub fn prim_mst<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<(Vec<MstEdge<W>>, W)>
 where
-    W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8> + Ord,
+    W: Copy + PartialOrd + Add<Output = W> + AddAssign + From<u8>,
     Ty: GraphConstructor<A, W>,
-    NodeId: Ord,
 {
     if graph.node_count() == 0 {
         return Err(GraphinaError::invalid_graph(
             "Graph is empty, cannot compute MST.",
         ));
     }
+    reject_unordered_weights(graph)?;
 
     let mut mst_edges = Vec::new();
     let mut total_weight = W::from(0u8);
 
-    // Dense, index-keyed state (`BaseGraph` wraps a `StableGraph`, so indices are
-    // stable but sparse after removals; size by the index bound). `in_tree` and
-    // the incident-edge adjacency are plain `Vec`s indexed by `NodeId::index()`,
-    // so the inner-loop membership checks and neighbor lookups are hash-free. The
-    // previous version used `HashSet`/`HashMap` keyed by `NodeId`, whose default
-    // SipHash hashing dominated the runtime. Adjacency is built once (O(E)) with
-    // each edge stored from both endpoints.
     let bound = index_bound(graph);
     let mut in_tree = vec![false; bound];
+    let mut parent: Vec<Option<NodeId>> = vec![None; bound];
     let mut adjacency: Vec<Vec<(NodeId, W)>> = vec![Vec::new(); bound];
     for (u, v, w) in graph.edges() {
         adjacency[u.index()].push((v, *w));
         adjacency[v.index()].push((u, *w));
     }
 
-    // Process each connected component.
+    // One tree per connected component. The indexed heap holds each frontier
+    // node once, keyed by the lightest edge into it, so a pop always yields a
+    // tree edge and the heap never exceeds the node count.
+    let mut heap = IndexedMinHeap::new(bound);
     for start in graph.node_ids() {
         if in_tree[start.index()] {
             continue;
         }
         in_tree[start.index()] = true;
-        let mut heap = std::collections::BinaryHeap::new();
+        prim_relax(&adjacency, &in_tree, &mut parent, &mut heap, start);
 
-        for &(neighbor, weight) in &adjacency[start.index()] {
-            heap.push(std::cmp::Reverse((weight, start, neighbor)));
-        }
-
-        while let Some(std::cmp::Reverse((w, u, v))) = heap.pop() {
-            // Skip if both endpoints are already in the MST.
-            if in_tree[u.index()] && in_tree[v.index()] {
-                continue;
-            }
-            let (from, to) = if in_tree[u.index()] { (u, v) } else { (v, u) };
-            if !in_tree[to.index()] {
-                in_tree[to.index()] = true;
+        while let Some(vi) = heap.pop_min() {
+            in_tree[vi] = true;
+            let to = NodeId::new(petgraph::graph::NodeIndex::new(vi));
+            if let (Some(from), Some(weight)) = (parent[vi], heap.key(vi)) {
                 mst_edges.push(MstEdge {
                     u: from,
                     v: to,
-                    weight: w,
+                    weight,
                 });
-                total_weight += w;
-                // Add all edges incident to the newly added node.
-                for &(neighbor, weight) in &adjacency[to.index()] {
-                    if !in_tree[neighbor.index()] {
-                        heap.push(std::cmp::Reverse((weight, to, neighbor)));
-                    }
-                }
+                total_weight += weight;
             }
+            prim_relax(&adjacency, &in_tree, &mut parent, &mut heap, to);
         }
     }
 
     Ok((mst_edges, total_weight))
+}
+
+/// Offers every edge leaving `node` to the frontier heap: a neighbor outside the
+/// tree is inserted, or has its key lowered, when this edge is lighter than the
+/// best one seen so far, and `parent` records where that edge came from.
+fn prim_relax<W: Copy + PartialOrd>(
+    adjacency: &[Vec<(NodeId, W)>],
+    in_tree: &[bool],
+    parent: &mut [Option<NodeId>],
+    heap: &mut IndexedMinHeap<W>,
+    node: NodeId,
+) {
+    for &(neighbor, weight) in &adjacency[node.index()] {
+        let ni = neighbor.index();
+        if !in_tree[ni] && heap.push_or_decrease(ni, weight) {
+            parent[ni] = Some(node);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -615,5 +760,41 @@ mod tests {
         graph.add_edge(n2, n3, OrderedFloat(2.0));
         let mst = prim_mst(&graph).expect("MST should exist");
         assert_eq!(mst.0.len(), 2);
+    }
+
+    #[test]
+    fn test_mst_accepts_plain_f64_weights() {
+        use crate::core::types::Graph;
+
+        // Floating-point weights no longer need an `OrderedFloat` wrapper.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.5);
+        g.add_edge(b, c, 2.5);
+        g.add_edge(a, c, 10.0);
+        let (k_edges, k_total) = kruskal_mst(&g).expect("kruskal");
+        let (p_edges, p_total) = prim_mst(&g).expect("prim");
+        let (b_edges, b_total) = boruvka_mst(&g).expect("boruvka");
+        assert_eq!((k_edges.len(), p_edges.len(), b_edges.len()), (2, 2, 2));
+        assert_eq!(k_total, 4.0);
+        assert_eq!(p_total, 4.0);
+        assert_eq!(b_total, 4.0);
+    }
+
+    #[test]
+    fn test_mst_rejects_unordered_weights() {
+        use crate::core::types::Graph;
+
+        // A NaN weight has no place in a total order, so every algorithm reports
+        // an invalid argument instead of sorting inconsistently.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, b, f64::NAN);
+        assert!(kruskal_mst(&g).is_err());
+        assert!(prim_mst(&g).is_err());
+        assert!(boruvka_mst(&g).is_err());
     }
 }

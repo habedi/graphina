@@ -129,8 +129,8 @@ deliberately or keep it private.
   collections instead: `voterank` (`Vec<NodeId>`), `connected_components`, `weakly_connected_components`, `strongly_connected_components` (
   `Vec<Vec<NodeId>>`), and `connected_components_map` (`NodeMap<usize>`). Some metrics return `Option` (`diameter`, `radius`, `average_path_length`
   return `None` for an empty or disconnected graph).
-- Weight totality: the `mst` family (`kruskal_mst`, `prim_mst`, `boruvka_mst`) is generic over a totally-ordered weight `W: Ord`, so floating-point
-  callers wrap weights in `ordered_float::OrderedFloat`. The `centrality` and `approximation` functions, by contrast, all accept a plain
+- Weight totality: the `mst` family (`kruskal_mst`, `prim_mst`, `boruvka_mst`) needs only `W: PartialOrd`, so plain `f64` weights work; the
+  weights must still be totally ordered in practice, and an unordered (`NaN`) weight is rejected with `InvalidArgument`. The `centrality` and `approximation` functions, by contrast, all accept a plain
   `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`, `local_node_connectivity`) ignore weights, and
   the
   path-based ones (`harmonic_centrality`, `closeness_centrality`, `greedy_tsp`) order distances internally.
@@ -251,7 +251,8 @@ source with the in-degree of its target, as NetworkX does.
 
 `kruskal_mst`, `prim_mst`, and `boruvka_mst` each return `Result<(Vec<MstEdge<W>>, W)>` (edges plus total weight). They error only on an empty graph
 and return a spanning forest (not an error) for a disconnected graph; a single node yields an empty edge set with zero weight. Weights need a total
-order (use `OrderedFloat<f64>` for floats); `boruvka_mst` additionally requires `Send + Sync` and runs its cheapest-edge search in parallel.
+order in practice (plain `f64` works; a `NaN` weight is an `InvalidArgument` error); `boruvka_mst` additionally requires `Send + Sync` and runs
+its cheapest-edge search in parallel.
 
 ### `traversal`
 
