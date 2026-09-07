@@ -2,8 +2,8 @@
 
 [![Python version](https://img.shields.io/badge/python-%3E=3.10-3776ab?style=flat&labelColor=282c34&logo=python)](https://github.com/habedi/graphina)
 [![PyPI version](https://img.shields.io/pypi/v/pygraphina?style=flat&labelColor=282c34&color=3775a9&logo=pypi)](https://badge.fury.io/py/pygraphina)
-[![Documentation](https://img.shields.io/badge/docs-read-2b7de9?style=flat&labelColor=282c34&logo=readthedocs)](https://habedi.github.io/graphina/python)
-[![License: MIT](https://img.shields.io/badge/license-MIT-6e7681?style=flat&labelColor=282c34&logo=open-source-initiative)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-read-007ec6?style=flat&labelColor=282c34&logo=readthedocs)](https://habedi.github.io/graphina/python)
+[![License: MIT](https://img.shields.io/badge/license-MIT-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](LICENSE)
 
 PyGraphina provides Python bindings for [Graphina](https://github.com/habedi/graphina).
 
