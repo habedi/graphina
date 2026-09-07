@@ -75,14 +75,14 @@ Or add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-graphina = "0.4.0-alpha.5"
+graphina = "0.4.0-alpha.6"
 ```
 
 Or enable all features with:
 
 ```toml
 [dependencies]
-graphina = { version = "0.4.0-alpha.5", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "links", "metrics"] }
+graphina = { version = "0.4.0-alpha.6", features = ["centrality", "community", "approximation", "mst", "traversal", "subgraphs", "parallel", "links", "metrics"] }
 ```
 
 > [!NOTE]
