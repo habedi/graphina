@@ -27,7 +27,7 @@ fn main() {
     }
 
     // Arguments: graph, damping, iteration, tolerance, nstart
-    let scores = pagerank_parallel(&graph, 0.85, 100, 1e-6, None);
+    let scores = pagerank_parallel(&graph, 0.85, 100, 1e-6, None).unwrap();
     println!("Computed {} ranks.", scores.len());
 }
 ```

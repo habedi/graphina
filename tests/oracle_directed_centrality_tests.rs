@@ -9,9 +9,16 @@
 //! this test stays hermetic and needs no Python at build or run time.
 //!
 //! Scope: in/out/total degree, betweenness (unweighted, without endpoints, both
-//! normalizations), closeness and harmonic (weighted, out-distance), and
-//! PageRank (weighted). Closeness and harmonic use distances out of each node,
-//! so the generator computes their reference on the reversed graph.
+//! normalizations), closeness and harmonic (weighted, out-distance), PageRank
+//! (weighted), VoteRank (unweighted, nodes vote for their in-neighbors),
+//! eigenvector centrality (left eigenvector, unit L2 norm), and local reaching
+//! centrality (proportion of other nodes reachable). With the `metrics` feature
+//! it also replays Fagiolo's directed clustering, average clustering,
+//! transitivity, and directed degree assortativity (source out-degree against
+//! target in-degree). Closeness and harmonic use distances out of each node, so
+//! the generator computes their reference on the reversed graph. The unweighted
+//! hop-length matrix pins the all-pairs and multi-source BFS functions, and with
+//! the `parallel` feature their Rayon twins and the parallel closeness.
 
 #![cfg(feature = "centrality")]
 
@@ -42,6 +49,14 @@ struct Case {
     closeness: Vec<f64>,
     harmonic: Vec<f64>,
     pagerank: Vec<f64>,
+    voterank: Vec<usize>,
+    eigenvector: Option<Vec<f64>>,
+    clustering: Vec<f64>,
+    average_clustering: f64,
+    transitivity: f64,
+    assortativity: Option<f64>,
+    local_reaching: Option<Vec<f64>>,
+    hop_lengths: Vec<Vec<Option<u32>>>,
 }
 
 #[derive(Deserialize)]
@@ -160,5 +175,161 @@ fn oracle_directed_pagerank() {
         let pr = pagerank(&g, 0.85, 2000, 1e-12, None)
             .unwrap_or_else(|e| panic!("pagerank failed in case {}: {e}", case.id));
         assert_close(&pr, &case.pagerank, &ids, "pagerank", &case.id);
+    }
+}
+
+#[test]
+fn oracle_directed_voterank() {
+    use graphina::centrality::other::voterank;
+
+    for case in load_corpus().cases {
+        let (g, _ids) = build_graph(&case);
+        let got: Vec<usize> = voterank(&g, case.n).iter().map(|n| n.index()).collect();
+        assert_eq!(
+            got, case.voterank,
+            "voterank election order mismatch in case {}",
+            case.id
+        );
+    }
+}
+
+#[test]
+fn oracle_directed_eigenvector_centrality() {
+    use graphina::centrality::eigenvector::eigenvector_centrality;
+
+    for case in load_corpus().cases {
+        let Some(want) = &case.eigenvector else {
+            // NetworkX did not converge on this graph (for example a DAG), so
+            // there is no reference to pin.
+            continue;
+        };
+        let (g, ids) = build_graph(&case);
+        let ec = eigenvector_centrality(&g, 50_000, 1e-12)
+            .unwrap_or_else(|e| panic!("eigenvector failed in case {}: {e}", case.id));
+        assert_close(&ec, want, &ids, "eigenvector", &case.id);
+    }
+}
+
+#[test]
+fn oracle_directed_local_reaching_centrality() {
+    use graphina::centrality::other::global_reaching_centrality;
+
+    for case in load_corpus().cases {
+        let Some(want) = &case.local_reaching else {
+            continue;
+        };
+        let (g, ids) = build_graph(&case);
+        let reach = global_reaching_centrality(&g)
+            .unwrap_or_else(|e| panic!("reaching failed in case {}: {e}", case.id));
+        assert_close(&reach, want, &ids, "local_reaching", &case.id);
+    }
+}
+
+#[cfg(feature = "metrics")]
+#[test]
+fn oracle_directed_clustering_and_transitivity() {
+    use graphina::metrics::{average_clustering_coefficient, clustering_coefficient, transitivity};
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        for (i, &want) in case.clustering.iter().enumerate() {
+            let got = clustering_coefficient(&g, ids[i]);
+            assert!(
+                (got - want).abs() < EPS,
+                "clustering: case {} node {i}: expected {want}, got {got}",
+                case.id
+            );
+        }
+        let ac = average_clustering_coefficient(&g);
+        assert!(
+            (ac - case.average_clustering).abs() < EPS,
+            "average_clustering: case {}: expected {}, got {ac}",
+            case.id,
+            case.average_clustering
+        );
+        let t = transitivity(&g);
+        assert!(
+            (t - case.transitivity).abs() < EPS,
+            "transitivity: case {}: expected {}, got {t}",
+            case.id,
+            case.transitivity
+        );
+    }
+}
+
+#[cfg(feature = "metrics")]
+#[test]
+fn oracle_directed_assortativity() {
+    use graphina::metrics::assortativity;
+
+    for case in load_corpus().cases {
+        let Some(want) = case.assortativity else {
+            continue;
+        };
+        let (g, _ids) = build_graph(&case);
+        let got = assortativity(&g);
+        assert!(
+            (got - want).abs() < EPS,
+            "assortativity: case {}: expected {want}, got {got}",
+            case.id
+        );
+    }
+}
+
+#[test]
+fn oracle_directed_hop_lengths() {
+    use graphina::core::paths::all_pairs_shortest_path_length;
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let (nodes, matrix) = all_pairs_shortest_path_length(&g);
+        assert_eq!(nodes, ids, "node order: case {}", case.id);
+        assert_eq!(matrix, case.hop_lengths, "hop lengths: case {}", case.id);
+    }
+}
+
+#[cfg(feature = "parallel")]
+#[test]
+fn oracle_directed_hop_lengths_parallel() {
+    use graphina::parallel::{all_pairs_shortest_path_length_parallel, shortest_paths_parallel};
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let (nodes, matrix) = all_pairs_shortest_path_length_parallel(&g);
+        assert_eq!(nodes, ids, "node order: case {}", case.id);
+        assert_eq!(
+            matrix, case.hop_lengths,
+            "parallel hop lengths: case {}",
+            case.id
+        );
+
+        let maps = shortest_paths_parallel(&g, &ids);
+        for (i, map) in maps.iter().enumerate() {
+            for (j, node) in ids.iter().enumerate() {
+                assert_eq!(
+                    map.get(node).map(|&d| d as u32),
+                    case.hop_lengths[i][j],
+                    "shortest_paths_parallel: case {} from {i} to {j}",
+                    case.id
+                );
+            }
+        }
+    }
+}
+
+#[cfg(feature = "parallel")]
+#[test]
+fn oracle_directed_closeness_centrality_parallel() {
+    use graphina::parallel::closeness_centrality_parallel;
+
+    for case in load_corpus().cases {
+        let (g, ids) = build_graph(&case);
+        let cc = closeness_centrality_parallel(&g).unwrap_or_else(|e| {
+            panic!(
+                "closeness_centrality_parallel failed in case {}: {e}",
+                case.id
+            )
+        });
+        assert_close(&cc, &case.closeness, &ids, "closeness_parallel", &case.id);
     }
 }

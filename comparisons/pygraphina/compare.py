@@ -422,6 +422,10 @@ def l2_sign_normalize(v: list[float]) -> list[float]:
     return out
 
 
+# Per-node PageRank tolerance shared by all libraries (see the pagerank rows).
+PR_TOL = 1e-10
+
+
 def within_tolerance(a: list[float], b: list[float], eps: float) -> bool:
     if len(a) != len(b):
         return False
@@ -881,18 +885,25 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
     # PageRank: both sum to 1.0; compare the distributions within tolerance. rustworkx
     # PageRank takes a directed graph only, so the rustworkx side runs on a bidirected
     # copy of the same edges, which matches pygraphina's undirected PageRank.
+    #
+    # All three libraries stop when the L1 change drops below ``tol * n``. With the
+    # default 1e-6 that is a few percent relative error on graphs with more than about
+    # 10k nodes, which showed up as a spurious DIFF between differently converged
+    # results, so every side runs to the same tight criterion instead.
     if hasattr(rustworkx, "pagerank"):
         rwx_dg = build_rustworkx_digraph(data)
         rows.append(
             diff_and_bench(
                 cfg,
                 "pagerank",
-                lambda: pygraphina.centrality.pagerank(pyg_g),
-                lambda: rustworkx.pagerank(rwx_dg, alpha=0.85),
+                lambda: pygraphina.centrality.pagerank(pyg_g, 0.85, 1000, PR_TOL),
+                lambda: rustworkx.pagerank(rwx_dg, alpha=0.85, tol=PR_TOL, max_iter=1000),
                 lambda r: canon_map(r, n),
                 lambda r: canon_map(r, n),
                 1e-4,
-                nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85)) if nx_g is not None else None,
+                nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85, tol=PR_TOL, max_iter=1000))
+                if nx_g is not None
+                else None,
                 nx_canon=lambda r: canon_map(r, n),
             )
         )
@@ -1566,12 +1577,14 @@ def run_at(cfg: Config, data: Dataset, source: str, max_dense: int) -> list[Row]
         diff_and_bench(
             cfg,
             "pagerank (parallel)",
-            lambda: pygraphina.parallel.pagerank_parallel(pyg_g),
+            lambda: pygraphina.parallel.pagerank_parallel(pyg_g, 0.85, 1000, PR_TOL),
             None,
             lambda r: canon_map(r, n),
             None,
             1e-4,
-            nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85)) if nx_g is not None else None,
+            nx_run=(lambda: nx.pagerank(nx_g, alpha=0.85, tol=PR_TOL, max_iter=1000))
+            if nx_g is not None
+            else None,
             nx_canon=lambda r: canon_map(r, n),
         )
     )

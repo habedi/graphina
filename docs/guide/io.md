@@ -30,7 +30,7 @@ read_edge_list("graph.txt", & mut loaded_graph, ' ').unwrap();
 
 ## Adjacency List
 
-Reads and writes an adjacency list format (in `Node` `Neighbor1` `Neighbor2` ...).
+Reads and writes an adjacency list format (each line is `Node` `Neighbor1` `Weight1` `Neighbor2` `Weight2` ...).
 
 ```rust
 use graphina::core::types::Graph;
@@ -63,8 +63,15 @@ Compact and fast binary format.
 ```rust
 use graphina::core::types::Graph;
 
+let mut graph = Graph::<i32, f32>::new();
+let a = graph.add_node(1);
+let b = graph.add_node(2);
+graph.add_edge(a, b, 1.0);
+
+// Load with the same attribute and weight types that were saved.
 graph.save_binary("graph.bin").unwrap();
 let g = Graph::<i32, f32>::load_binary("graph.bin").unwrap();
+assert_eq!(g.edge_count(), 1);
 ```
 
 ## GraphML (Export-only)

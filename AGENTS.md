@@ -46,6 +46,7 @@ Quick examples:
 
 ## Writing Style
 
+- Write in simple, plain English. Use short sentences and everyday words.
 - Use Oxford commas in inline lists: "a, b, and c" not "a, b, c".
 - Do not use em dashes. Restructure the sentence, or use a colon or semicolon instead.
 - Avoid colorful adjectives and adverbs. Write "graph generator" not "powerful graph generator".
@@ -56,23 +57,6 @@ Quick examples:
 - Avoid made-up words, abbreviations, and colons in the middle of sentences.
 - Don't use pretentious language and made-up words.
 
-## Repository Layout
-
-- `src/core/`: Always-enabled core library. Basic graph types, builders, IO, serialization, shortest paths, validation, and generators.
-- `src/centrality/`, `src/community/`, `src/links/`, `src/metrics/`, `src/mst/`, `src/traversal/`, `src/approximation/`, `src/parallel/`,
-  `src/subgraphs/`: Optional extensions, each behind a Cargo feature of the same name. The `all` feature enables them together.
-- `src/lib.rs`: Crate root with module declarations, crate-level docs, and API conventions.
-- `pygraphina/`: PyGraphina, the Python bindings crate built with maturin and published to PyPI as `pygraphina`. Contains its own `Cargo.toml`,
-  `src/`, `tests/`, a `pygraphina/` type-stub package (`__init__.pyi` plus one `.pyi` per submodule, with `py.typed`), and docs.
-- `benches/`: Criterion micro-benchmarks (`graph_benchmarks`, `algorithm_benchmarks`, `project_benchmarks`) that track Graphina's own performance over
-  time, run by `make bench`.
-- `comparisons/`: standalone comparison harnesses that measure Graphina against other libraries: `comparisons/graphina` (versus rustworkx-core) and
-  `comparisons/pygraphina` (versus rustworkx and NetworkX), run by `make bench-graphina` and `make bench-pygraphina`.
-- `tests/`: Workspace integration, end-to-end, regression, and property-based tests, plus `tests/testdata/` (downloaded via `make testdata`).
-- `docs/`, `mkdocs.yml`: MkDocs documentation site.
-- `Makefile`: GNU Make wrapper around `cargo`, maturin, and tooling commands.
-- `rust-toolchain.toml`: Pinned Rust toolchain (1.85.0 as MSRV) with `rustfmt` and `clippy`.
-
 ## Architecture
 
 The crate is split into a core library and a set of independent extensions.
@@ -82,7 +66,6 @@ The crate is split into a core library and a set of independent extensions.
   GraphML), `Paths` (Dijkstra, Bellman-Ford, Floyd-Warshall, Johnson, A*, and IDA*), `Generators`, and `Validation`.
 - Extensions are feature-gated modules outside `core` for higher-level tasks: centrality, community detection, link prediction, metrics, minimum
   spanning trees, traversal, approximation of NP-hard problems, parallel algorithms, and subgraph extraction.
-- Graphina builds on `petgraph` for the underlying graph storage and uses `nalgebra`, `sprs`, and `rayon` for numerical and parallel work.
 
 ### Key Design Decisions
 
@@ -128,8 +111,8 @@ deliberately or keep it private.
   collections instead: `voterank` (`Vec<NodeId>`), `connected_components`, `weakly_connected_components`, `strongly_connected_components` (
   `Vec<Vec<NodeId>>`), and `connected_components_map` (`NodeMap<usize>`). Some metrics return `Option` (`diameter`, `radius`, `average_path_length`
   return `None` for an empty or disconnected graph).
-- Weight totality: the `mst` family (`kruskal_mst`, `prim_mst`, `boruvka_mst`) is generic over a totally-ordered weight `W: Ord`, so floating-point
-  callers wrap weights in `ordered_float::OrderedFloat`. The `centrality` and `approximation` functions, by contrast, all accept a plain
+- Weight totality: the `mst` family (`kruskal_mst`, `prim_mst`, `boruvka_mst`) needs only `W: PartialOrd`, so plain `f64` weights work; the
+  weights must still be totally ordered in practice, and an unordered (`NaN`) weight is rejected with `InvalidArgument`. The `centrality` and `approximation` functions, by contrast, all accept a plain
   `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`, `local_node_connectivity`) ignore weights, and
   the
   path-based ones (`harmonic_centrality`, `closeness_centrality`, `greedy_tsp`) order distances internally.
@@ -147,161 +130,12 @@ Signatures are self-describing; read them from the source rather than this file.
 choice, and the edge-case behavior a caller cannot infer from the type.
 Every function listed is gated behind its module's feature flag.
 
-### `core` (Always Compiled)
-
-- `BaseGraph<A, W, Ty>` is the central type; `A` is the node attribute, `W` the edge weight, and `Ty` the `Directed` or `Undirected` marker.
-  `Graph<A, W>` and `Digraph<A, W>` are the undirected and directed aliases. `degree`, `in_degree`, and `out_degree` return `Option<usize>` (`None`
-  for a missing node); for undirected graphs in-degree and out-degree both equal the total degree. `density` returns `0.0` for fewer than two nodes.
-  Graphs are simple: `add_edge` updates the weight of an existing edge instead of creating a parallel edge, and `add_edge_if_absent` inserts without
-  overwriting an existing weight. `add_edge`, `add_edge_if_absent`, and `find_edge` check both directions on undirected graphs.
-- `GraphinaError` (in `core::error`) is the single error type, with constructor helpers (`invalid_graph`, `node_not_found`, `no_path`,
-  `convergence_failed`, and so on) and `From` impls for `io::Error`, `serde_json::Error`, and the bincode codec errors. `Result<T>` aliases
-  `Result<T, GraphinaError>`.
-- Builders: `AdvancedGraphBuilder` (with `DirectedGraphBuilder`/`UndirectedGraphBuilder` aliases) validates on `build`, rejecting out-of-bounds edge
-  endpoints and, when configured, self-loops or parallel edges. `TopologyBuilder` has constructors (`complete`, `cycle`, `path`, `star`, `grid`) that
-  return the graph directly and yield an empty graph rather than erroring on degenerate sizes.
-- Serialization: `save_json`/`load_json`, `save_binary`/`load_binary`, and `save_graphml` round-trip through the index-based `SerializableGraph`. The
-  `_strict` loaders (`load_json_strict`, `load_binary_strict` and `try_from_serializable`) additionally validate that the serialized directedness
-  matches the target type; the plain loaders do not.
-- Paths: `dijkstra`/`dijkstra_path_f64` (nonnegative weights, return `Result`), `bellman_ford` (negatives, returns `Option`, `None` on negative
-  cycle), `a_star` (admissible heuristic, returns `Result<Option<(W, Vec<NodeId>)>>`), `floyd_warshall`, and `johnson` (all-pairs, return `Option`,
-  `None` on negative cycle). Distance maps use `None` for unreachable nodes; the source has distance `Some(0)` (or `Some(0.0)`) and no predecessor.
-- Generators: `erdos_renyi_graph`, `complete_graph`, `bipartite_graph`, `star_graph`, `cycle_graph` (requires `n >= 3`), `watts_strogatz_graph` (`k`
-  even and `< n`), and `barabasi_albert_graph` (`n >= m`). Each takes a `seed` where randomized and returns `InvalidArgument` on out-of-range
-  parameters.
-- Validation: boolean predicates (`is_empty`, `is_connected`, `has_negative_weights`, `has_self_loops`, `is_dag`, `is_bipartite`, `count_components`)
-  and the `require_*` and `validate_*` validator families that return a `Result<(), GraphinaError>` (for use as algorithm preconditions).
-
-### `centrality`
-
-Most functions return `Result<NodeMap<f64>>`. Iterative methods take explicit `max_iter` and `tolerance` and return `ConvergenceFailed` rather than
-looping forever.
-
-- `degree_centrality`, `in_degree_centrality`, `out_degree_centrality`: raw counts, not normalized. In undirected graphs, total degree, in-degree, and
-  out-degree all count self-loops as 2. In directed graphs, a self-loop counts as 1 for in-degree and 1 for out-degree (summing to 2 for total
-  degree). Succeed on an empty graph with an empty map.
-- `betweenness_centrality` and `edge_betweenness_centrality`: take a `normalized: bool` and an `f64`-weighted graph; Brandes' algorithm over BFS, so
-  edge weights are ignored; error on an empty graph. Edge betweenness stores both `(u, v)` and `(v, u)` for undirected graphs.
-- `closeness_centrality`: Wasserman-Faust correction for disconnected graphs; a node with no reachable neighbors scores `0.0`.
-- `eigenvector_centrality`: power iteration for both directed and undirected graphs; L2-normalizes the centrality vector each iteration (except for
-  zero-edge/isolated graphs which yield a uniform `1/n` distribution).
-- `pagerank`: takes `damping`, `max_iter`, `tolerance`, and optional `nstart`; result sums to `1.0`; dangling nodes redistribute uniformly; a single
-  node scores `1.0`.
-- `personalized_page_rank` takes `personalization: Option<Vec<f64>>`, `damping`, `tol`, and `max_iter`, returning a raw `Vec<f64>` aligned to internal
-  node order. It is re-exported as `personalized_pagerank_vec`; `personalized_pagerank` is the `NodeMap` facade over it. Both require `damping` in
-  `(0, 1)` and `max_iter > 0`.
-- `katz_centrality`: takes `alpha`, an optional per-node `beta` closure, `max_iter`, and `tolerance`; returns `Result<NodeMap<f64>, GraphinaError>` to
-  handle convergence issues.
-- `voterank(graph, num_seeds) -> Vec<NodeId>`: selector-style, returns a plain vector, never a `Result`; stops early when no node has positive votes.
-- `local_reaching_centrality`, `global_reaching_centrality`, `laplacian_centrality`: `Result<NodeMap<f64>>`.
-
-### `community`
-
-Detection functions return `Result<Vec<Vec<NodeId>>>` (communities) or `Result<Vec<usize>>` (per-node labels in internal node order); the
-connected-component family returns plain collections.
-
-- `louvain(graph, seed)`: modularity optimization with aggregation; nonnegative `f64` weights; a graph with no edges puts each node in its own
-  community.
-- `label_propagation(graph, max_iter, seed)` and `infomap(graph, max_iter, seed)`: return `Result<Vec<usize>>`; treat the graph as undirected; error
-  on an empty graph or `max_iter == 0`. `label_propagation_map` and `infomap_map` are the `NodeMap<usize>` facades.
-- `connected_components`, `weakly_connected_components`, `strongly_connected_components`: plain `Vec<Vec<NodeId>>` (no `Result`);
-  `connected_components_map` returns `NodeMap<usize>`. SCC uses Tarjan; the undirected and weak variants coincide on undirected graphs.
-- `girvan_newman(graph, target_communities)`: iterative edge-betweenness removal; expensive, not for large graphs; errors if it cannot reach
-  `target_communities`.
-- `spectral_embeddings(graph, k)` and `spectral_clustering(graph, k, seed)`: unnormalized Laplacian; require `0 < k <= n`; clustering applies k-means
-  over the embedding.
-
-### `links`
-
-All link-prediction scorers take an optional `ebunch: Option<&[(NodeId, NodeId)]>` (defaulting to all unordered node pairs), operate on `f64`-weighted
-graphs, treat pairs as undirected, and return a plain `Vec<((NodeId, NodeId), f64)>` (never a `Result`).
-
-- `resource_allocation_index`, `adamic_adar_index`: sum over common neighbors; Adamic-Adar skips neighbors of degree `<= 1` (avoids `ln(1) = 0`). No
-  common neighbors yields `0.0`.
-- `jaccard_coefficient`: intersection over union of neighbor sets; `0.0` when the union is empty.
-- `preferential_attachment`: `degree(u) * degree(v)`.
-- `common_neighbor_centrality(graph, ebunch, alpha)`: `|N(u) ∩ N(v)|^alpha`.
-- `common_neighbors(graph, u, v) -> usize`: plain count, not a scorer.
-- Community-aware variants (`ra_index_soundarajan_hopcroft`, `cn_soundarajan_hopcroft`, `within_inter_cluster`) take a `community: Fn(NodeId) -> C`
-  closure; `within_inter_cluster` also takes a `delta` smoothing constant that keeps the score finite when there are no inter-cluster neighbors.
-
-### `metrics`
-
-Distance metrics return `Option` (`None` for empty or disconnected); ratio metrics return plain `f64` (`0.0` on degenerate input). Weights are ignored
-by the BFS-based metrics; only `assortativity` uses degree.
-
-- `diameter`, `radius`, `average_path_length`: `Option<usize>`/`Option<f64>`; `None` if empty or disconnected; a single node gives `Some(0)`/
-  `Some(0.0)`.
-- `average_clustering_coefficient`, `transitivity`, `assortativity`: plain `f64` in a bounded range; `0.0` when undefined (no triangles, no triples,
-  or a zero-variance degree sequence).
-- `clustering_coefficient(graph, node) -> f64` and `triangles(graph, node) -> usize`: per-node; `0.0`/`0` for degree below 2.
-
-### `mst`
-
-`kruskal_mst`, `prim_mst`, and `boruvka_mst` each return `Result<(Vec<MstEdge<W>>, W)>` (edges plus total weight). They error only on an empty graph
-and return a spanning forest (not an error) for a disconnected graph; a single node yields an empty edge set with zero weight. Weights need a total
-order (use `OrderedFloat<f64>` for floats); `boruvka_mst` additionally requires `Send + Sync` and runs its cheapest-edge search in parallel.
-
-### `traversal`
-
-- `bfs(graph, start) -> Vec<NodeId>` and `dfs(graph, start) -> Vec<NodeId>`: visitation order; empty vector for a missing start node.
-- `iddfs(graph, start, target, max_depth) -> Option<Vec<NodeId>>` and `bidis(graph, start, target) -> Option<Vec<NodeId>>`: return the path or `None`;
-  `bidis` returns the unweighted shortest path. The `try_iddfs` and `try_bidirectional_search` variants return `Result<Vec<NodeId>>`, validating node
-  existence (`node_not_found`) and distinguishing `no_path`.
-
-### `approximation`
-
-Heuristics for NP-hard problems. Set/value returning functions: `min_weighted_vertex_cover`, `maximum_independent_set`, `max_clique`,
-`clique_removal` (returns `Vec<HashSet<NodeId>>`), `large_clique_size` (returns `usize`), `average_clustering` (returns `f64`),
-`min_maximal_matching` (returns `HashSet<(NodeId, NodeId)>`), `ramsey_r2` (returns `(HashSet, HashSet)`), `densest_subgraph`, `treewidth_min_degree`/
-`treewidth_min_fill_in` (return `(usize, Vec<NodeId>)`), and `local_node_connectivity` (returns `usize`) return collections or plain values with no
-`Result` (except TSP).
-
-- TSP: `greedy_tsp(graph, start)` is a greedy nearest-neighbor heuristic over `f64` weights. The returned tour is a cycle (`tour[0] == tour[last]`).
-- `min_weighted_vertex_cover` is a greedy maximum-degree heuristic; edge weights are ignored, and the guarantee is logarithmic, not a
-  constant factor.
-- `local_node_connectivity` takes an `f64`-weighted graph and finds vertex-disjoint paths by BFS, so edge weights are ignored.
-
-### `parallel`
-
-Rayon-backed counterparts that mirror sequential algorithms over `core` and require `A: Sync` and `W: Sync`.
-All return collections (`HashMap`/`Vec`), not `Result`, and produce results independent of thread count.
-
-- `bfs_parallel(graph, starts)` and `shortest_paths_parallel(graph, sources)` run one search per source and return results in input order; shortest
-  paths are unweighted (hop counts).
-- `degrees_parallel`, `clustering_coefficients_parallel`, `triangles_parallel`, `connected_components_parallel` (and its `_list` variant;
-  currently a sequential BFS kept for API parity, since component discovery is inherently ordered),
-  `pagerank_parallel` (weight aware, matching the sequential `pagerank`; takes `nstart: Option<&HashMap<NodeId, f64>>`),
-  `closeness_centrality_parallel`, and `all_pairs_shortest_path_length_parallel`
-  return per-node maps or path results.
-
-### `subgraphs`
-
-The `SubgraphOps` trait is implemented for `BaseGraph`. Extraction methods that build a new graph (`subgraph`, `induced_subgraph`, `ego_graph`,
-`component_subgraph`) return `Result` and remap `NodeId`s in the result; `filter_nodes` and `filter_edges` also remap but return the graph directly.
-Query methods (`k_hop_neighbors`, `connected_component`) return `Vec<NodeId>` over the original ids, with `radius`/`k` of 0 returning just the start
-node.
+Per-module semantics live in `src/<module>/AGENTS.md` (for example `src/centrality/AGENTS.md`). Read the file for a module before working
+under that directory.
 
 ## Required Validation
 
-Run `make lint` and `make test` for any change. Key targets:
-
-| Target       | Command                  | What It Runs                                                                    |
-|--------------|--------------------------|---------------------------------------------------------------------------------|
-| Format       | `make format`            | `cargo fmt`                                                                     |
-| Format Check | `make format-check`      | `cargo fmt --all --check` (non-mutating, used in CI)                            |
-| Lint         | `make lint`              | `cargo clippy` with `-D warnings -D clippy::unwrap_used -D clippy::expect_used` |
-| Test         | `make test`              | All workspace tests with `--features all --all-targets`, plus doctests          |
-| Doctest      | `make doctest`           | Doc-comment code examples (`cargo test --doc --features all`)                   |
-| Nextest      | `make nextest`           | Tests via `cargo nextest` with `--features all`                                 |
-| Module Deps  | `make check-module-deps` | Verifies extensions depend only on `core`                                       |
-| Build        | `make build`             | Release build                                                                   |
-| Bench        | `make bench`             | Criterion benchmarks with `--features all`                                      |
-| Coverage     | `make coverage`          | `cargo tarpaulin` with XML and HTML output                                      |
-| Audit        | `make audit`             | `cargo audit` on dependencies                                                   |
-| Deny         | `make deny`              | `cargo deny check` for advisories, license compliance, and bans                 |
-| Careful      | `make careful`           | `cargo careful test --features all` for undefined-behavior checks               |
-| Test Data    | `make testdata`          | Downloads datasets used in integration tests                                    |
+Run `make lint` and `make test` for any change. `make help` lists every target with a one-line description.
 
 PyGraphina targets: `make develop-py` (build and install into the active environment with maturin), `make test-py` (pytest), `make wheel` /
 `make wheel-manylinux` (build wheels), and `make rundoc` (test Python doc examples). The Python toolchain uses `uv`.

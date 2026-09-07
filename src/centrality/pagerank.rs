@@ -16,7 +16,8 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 /// * `graph`: the targeted graph.
 /// * `damping`: damping factor (usually 0.85).
 /// * `max_iter`: maximum number of iterations.
-/// * `tolerance`: convergence tolerance.
+/// * `tolerance`: per-node convergence tolerance; iteration stops when the L1 change of the
+///   rank vector drops below `tolerance * n`, as in NetworkX.
 /// * `nstart`: optional starting value for each node.
 ///
 /// # Returns
@@ -58,7 +59,8 @@ where
         out_degrees[ui] += weight;
         out_edges[ui].push((vi, weight));
 
-        if !is_directed {
+        // A self-loop is a single edge in both directions, so it is added once.
+        if !is_directed && ui != vi {
             out_degrees[vi] += weight;
             out_edges[vi].push((ui, weight));
         }
@@ -122,7 +124,8 @@ where
             .sum();
         pr.copy_from_slice(&pr_new);
 
-        if diff < tolerance {
+        // NetworkX rule: stop when the L1 change is below tolerance * n.
+        if diff < tolerance * n as f64 {
             break;
         }
     }
@@ -257,5 +260,45 @@ mod tests {
 
         let pr_partial = pagerank(&graph, 0.85, 100, 1e-6, Some(&partial_start)).unwrap();
         assert!((pr_partial[&n1] - 0.5).abs() < 1e-3);
+    }
+
+    #[test]
+    fn test_pagerank_undirected_self_loop_counts_once() {
+        use crate::centrality::pagerank::pagerank;
+        use crate::core::types::Graph;
+
+        // Node a has a self-loop and an edge to b. The self-loop is a single
+        // edge, so the walk leaves a with probability 1/2 in each direction and
+        // the stationary ranks are 0.925/1.425 for a and 0.5/1.425 for b.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, a, 1.0);
+        g.add_edge(a, b, 1.0);
+        let pr = pagerank(&g, 0.85, 1000, 1e-12, None).unwrap();
+        assert!((pr[&a] - 0.925 / 1.425).abs() < 1e-6, "a = {}", pr[&a]);
+        assert!((pr[&b] - 0.5 / 1.425).abs() < 1e-6, "b = {}", pr[&b]);
+    }
+
+    #[test]
+    fn test_pagerank_tolerance_is_scaled_by_node_count_like_networkx() {
+        use crate::centrality::pagerank::pagerank;
+        use crate::core::types::Graph;
+
+        // One power step from the uniform start on the path a-b-c changes the
+        // vector by 0.5667 in L1. NetworkX stops when the change is below
+        // tol * n, so tolerance 0.2 (0.6 total) stops after that single step.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        let end = 0.05 + 0.85 / 6.0;
+        let mid = 0.05 + 0.85 * 2.0 / 3.0;
+        let pr = pagerank(&g, 0.85, 100, 0.2, None).unwrap();
+        assert!((pr[&a] - end).abs() < 1e-12, "a = {}", pr[&a]);
+        assert!((pr[&b] - mid).abs() < 1e-12, "b = {}", pr[&b]);
+        assert!((pr[&c] - end).abs() < 1e-12, "c = {}", pr[&c]);
     }
 }

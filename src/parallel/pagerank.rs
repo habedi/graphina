@@ -5,6 +5,7 @@ Parallel PageRank computation
 use rayon::prelude::*;
 use std::collections::HashMap;
 
+use crate::core::error::{GraphinaError, Result};
 use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 use petgraph::EdgeType;
 
@@ -18,7 +19,8 @@ use petgraph::EdgeType;
 /// * `graph` - The graph to analyze
 /// * `damping` - Damping factor (typically 0.85)
 /// * `max_iterations` - Maximum number of iterations
-/// * `tolerance` - Convergence threshold
+/// * `tolerance` - Per-node convergence tolerance; iteration stops when the L1 change
+///   drops below `tolerance * n`, as in NetworkX
 /// * `nstart` - Optional starting value for each node
 ///
 /// # Example
@@ -35,7 +37,7 @@ use petgraph::EdgeType;
 /// g.add_edge(n2, n3, 1.0);
 /// g.add_edge(n3, n1, 1.0);
 ///
-/// let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
+/// let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None).expect("pagerank_parallel should succeed");
 /// assert!(ranks[&n1] > 0.0);
 /// ```
 pub fn pagerank_parallel<A, W, Ty>(
@@ -44,7 +46,7 @@ pub fn pagerank_parallel<A, W, Ty>(
     max_iterations: usize,
     tolerance: f64,
     nstart: Option<&HashMap<NodeId, f64>>,
-) -> HashMap<NodeId, f64>
+) -> Result<HashMap<NodeId, f64>>
 where
     A: Sync,
     W: Copy + Into<f64> + Sync,
@@ -52,7 +54,7 @@ where
 {
     let n = graph.node_count();
     if n == 0 {
-        return HashMap::new();
+        return Ok(HashMap::new());
     }
 
     let nodes: Vec<NodeId> = graph.node_ids().collect();
@@ -69,19 +71,15 @@ where
             sum += val;
         }
 
-        // Normalize
-        if sum.abs() > 1e-9 {
-            for val in temp_ranks.values_mut() {
-                *val /= sum;
-            }
-            temp_ranks
-        } else {
-            // Fallback to uniform if sum is zero (or could return empty/panic)
-            // Sticking to uniform fallback to avoid error handling change in parallelism for now
-            // or we just allow it to fail silently/produce 0s?
-            // Better to respect nstart logic: if 0 sum, maybe fallback to uniform is safest for stability
-            nodes.iter().map(|&node| (node, 1.0 / n as f64)).collect()
+        // Match the sequential `pagerank`: a start vector with no mass cannot be
+        // normalized, so it is an error rather than a silent uniform fallback.
+        if sum.abs() < 1e-9 {
+            return Err(GraphinaError::invalid_argument("nstart sum is zero"));
         }
+        for val in temp_ranks.values_mut() {
+            *val /= sum;
+        }
+        temp_ranks
     } else {
         nodes.iter().map(|&node| (node, 1.0 / n as f64)).collect()
     };
@@ -105,7 +103,8 @@ where
         if let Some(deg) = weighted_out_degree.get_mut(&src) {
             *deg += weight;
         }
-        if !is_directed {
+        // A self-loop is a single edge in both directions, so it is added once.
+        if !is_directed && src != tgt {
             if let Some(list) = incoming.get_mut(&src) {
                 list.push((tgt, weight));
             }
@@ -154,21 +153,20 @@ where
             .collect();
 
         // Merge and check convergence
-        let mut max_diff = 0.0;
+        // Stop when the L1 change is below tolerance * n, the same rule as the
+        // sequential `pagerank` and NetworkX, so all stop after the same iteration.
+        let mut total_diff = 0.0;
         for (node, new_rank) in new_ranks_vec {
-            let diff = (new_rank - prev[&node]).abs();
-            if diff > max_diff {
-                max_diff = diff;
-            }
+            total_diff += (new_rank - prev[&node]).abs();
             ranks.insert(node, new_rank);
         }
 
-        if max_diff < tolerance {
+        if total_diff < tolerance * n as f64 {
             break;
         }
     }
 
-    ranks
+    Ok(ranks)
 }
 
 #[cfg(test)]
@@ -187,7 +185,8 @@ mod tests {
         g.add_edge(heavy, source, 1.0);
         g.add_edge(light, source, 1.0);
 
-        let ranks = pagerank_parallel(&g, 0.85, 100, 1e-9, None);
+        let ranks =
+            pagerank_parallel(&g, 0.85, 100, 1e-9, None).expect("pagerank_parallel should succeed");
 
         assert!(
             ranks[&heavy] > ranks[&light],
@@ -207,7 +206,8 @@ mod tests {
         g.add_edge(n2, n3, 1.0);
         g.add_edge(n3, n1, 1.0);
 
-        let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
+        let ranks =
+            pagerank_parallel(&g, 0.85, 100, 1e-6, None).expect("pagerank_parallel should succeed");
 
         // Verify all nodes have positive rank
         assert!(ranks[&n1] > 0.0);
@@ -219,5 +219,45 @@ mod tests {
         assert!((ranks[&n1] - avg).abs() < 0.1);
         assert!((ranks[&n2] - avg).abs() < 0.1);
         assert!((ranks[&n3] - avg).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_pagerank_parallel_undirected_self_loop_counts_once() {
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, a, 1.0);
+        g.add_edge(a, b, 1.0);
+        let pr = pagerank_parallel(&g, 0.85, 1000, 1e-12, None)
+            .expect("pagerank_parallel should succeed");
+        assert!((pr[&a] - 0.925 / 1.425).abs() < 1e-6, "a = {}", pr[&a]);
+        assert!((pr[&b] - 0.5 / 1.425).abs() < 1e-6, "b = {}", pr[&b]);
+    }
+
+    #[test]
+    fn test_pagerank_parallel_rejects_zero_nstart_like_sequential() {
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, b, 1.0);
+        let nstart: HashMap<NodeId, f64> = [(a, 0.0), (b, 0.0)].into_iter().collect();
+        assert!(pagerank_parallel(&g, 0.85, 100, 1e-9, Some(&nstart)).is_err());
+    }
+
+    #[test]
+    fn test_pagerank_parallel_tolerance_is_scaled_by_node_count_like_networkx() {
+        // See `centrality::pagerank::tests::test_pagerank_tolerance_is_scaled_by_node_count_like_networkx`.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        let end = 0.05 + 0.85 / 6.0;
+        let mid = 0.05 + 0.85 * 2.0 / 3.0;
+        let pr = pagerank_parallel(&g, 0.85, 100, 0.2, None).unwrap();
+        assert!((pr[&a] - end).abs() < 1e-12, "a = {}", pr[&a]);
+        assert!((pr[&b] - mid).abs() < 1e-12, "b = {}", pr[&b]);
+        assert!((pr[&c] - end).abs() < 1e-12, "c = {}", pr[&c]);
     }
 }

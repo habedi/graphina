@@ -224,6 +224,7 @@ oracle-fixtures: ## Regenerate the NetworkX oracle corpora (for the oracle tests
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_spectral_fixtures.py tests/oracle/networkx_spectral_oracle.json
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_links_fixtures.py tests/oracle/networkx_links_oracle.json
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_metrics_fixtures.py tests/oracle/networkx_metrics_oracle.json
+	@$(PY_DEP_MNGR) run python scripts/gen_oracle_self_loop_fixtures.py tests/oracle/networkx_self_loop_oracle.json
 	@$(PY_DEP_MNGR) run python scripts/gen_oracle_community_fixtures.py tests/oracle/networkx_community_oracle.json
 
 .PHONY: publish

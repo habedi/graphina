@@ -7,12 +7,10 @@ and Katz centrality. The corpus is committed to the repository and replayed by a
 hermetic Rust test (`tests/oracle_spectral_tests.rs`); the NetworkX dependency
 lives here, in the generator, and never in the Rust test path.
 
-Eigenvector and Katz centrality are defined only up to a positive scale factor,
-and Graphina and NetworkX choose different normalizations (Graphina scales the
-eigenvector to sum to n and returns Katz unnormalized; NetworkX scales both to
-unit L2 norm). The corpus therefore stores the L2-normalized reference vector,
-and the Rust test L2-normalizes Graphina's output before comparing, so the test
-checks the centrality structure rather than the normalization convention.
+Eigenvector and Katz centrality are defined only up to a positive scale factor.
+Graphina returns the eigenvector with unit L2 norm like NetworkX but returns Katz
+unnormalized, so the corpus stores the L2-normalized reference vector and the
+Rust test L2-normalizes Graphina's output before comparing.
 
   - eigenvector centrality -> nx.eigenvector_centrality, L2-normalized
   - Katz centrality        -> nx.katz_centrality(alpha=ALPHA), L2-normalized

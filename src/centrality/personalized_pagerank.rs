@@ -8,7 +8,8 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId};
 
 /// Production-level Personalized PageRank.
 ///
-/// Computes a ranking vector for nodes using a damping factor, convergence tolerance, and a maximum
+/// Computes a ranking vector for nodes using a damping factor, a per-node convergence tolerance
+/// (iteration stops when the L1 change drops below `tol * n`, as in NetworkX), and a maximum
 /// number of iterations. An optional personalization vector can be supplied; if not, a uniform vector is used.
 ///
 /// Update rule:
@@ -48,6 +49,15 @@ where
             "PersonalizedPageRank: max_iter=0",
         ));
     }
+    if let Some(vec) = &personalization {
+        if vec.len() != n {
+            return Err(GraphinaError::invalid_argument(format!(
+                "PersonalizedPageRank: personalization has {} entries but the graph has {} nodes",
+                vec.len(),
+                n
+            )));
+        }
+    }
     let p = if let Some(mut vec) = personalization {
         let sum: f64 = vec.iter().sum();
         if sum > 0.0 {
@@ -77,7 +87,8 @@ where
         let weight: f64 = w.into();
         outdegree[ui] += weight;
         neighbors[ui].push((vi, weight));
-        if undirected {
+        // A self-loop is a single edge in both directions, so it is added once.
+        if undirected && ui != vi {
             outdegree[vi] += weight;
             neighbors[vi].push((ui, weight));
         }
@@ -111,10 +122,68 @@ where
             .map(|(a, b)| (a - b).abs())
             .sum();
         rank = new_rank;
-        if diff < tol {
+        // NetworkX rule: stop when the L1 change is below tol * n.
+        if diff < tol * n as f64 {
             break;
         }
     }
     // rank vector aligned with node_list order
     Ok(rank)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::personalized_page_rank;
+    use crate::core::types::Graph;
+
+    fn path_graph() -> Graph<i32, f64> {
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        g
+    }
+
+    #[test]
+    fn personalization_length_mismatch_is_an_error() {
+        let g = path_graph();
+        assert!(personalized_page_rank(&g, Some(vec![1.0]), 0.85, 1e-9, 100).is_err());
+        assert!(personalized_page_rank(&g, Some(vec![1.0; 4]), 0.85, 1e-9, 100).is_err());
+        assert!(personalized_page_rank(&g, Some(vec![1.0; 3]), 0.85, 1e-9, 100).is_ok());
+    }
+
+    #[test]
+    fn undirected_self_loop_counts_once() {
+        // Node a has a self-loop and an edge to b. With the self-loop counted once
+        // the walk leaves a with probability 1/2 in each direction, so the
+        // stationary ranks are 0.925/1.425 for a and 0.5/1.425 for b.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        g.add_edge(a, a, 1.0);
+        g.add_edge(a, b, 1.0);
+        let ranks = personalized_page_rank(&g, None, 0.85, 1e-12, 1000).unwrap();
+        assert!((ranks[0] - 0.925 / 1.425).abs() < 1e-6, "a = {}", ranks[0]);
+        assert!((ranks[1] - 0.5 / 1.425).abs() < 1e-6, "b = {}", ranks[1]);
+    }
+
+    #[test]
+    fn tolerance_is_scaled_by_node_count_like_networkx() {
+        // See `pagerank::tests::test_pagerank_tolerance_is_scaled_by_node_count_like_networkx`.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        let end = 0.05 + 0.85 / 6.0;
+        let mid = 0.05 + 0.85 * 2.0 / 3.0;
+        let ranks = personalized_page_rank(&g, None, 0.85, 0.2, 100).unwrap();
+        assert!((ranks[0] - end).abs() < 1e-12, "a = {}", ranks[0]);
+        assert!((ranks[1] - mid).abs() < 1e-12, "b = {}", ranks[1]);
+        assert!((ranks[2] - end).abs() < 1e-12, "c = {}", ranks[2]);
+        let _ = (a, b, c);
+    }
 }

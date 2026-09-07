@@ -28,6 +28,26 @@ Each measure is pinned to the convention Graphina implements:
   - PageRank                           -> nx.pagerank(alpha=0.85, weight)
     Directed, weighted, normalized to sum to 1; dangling nodes redistribute.
 
+  - VoteRank                           -> nx.voterank
+    Ordered list of elected nodes; unweighted. In a directed graph a node votes
+    for its in-neighbors, and the decay rate is the average out-degree.
+
+  - eigenvector centrality             -> nx.eigenvector_centrality(weight), L2 norm
+    Left eigenvector via power iteration on A + I. Stored as null when NetworkX
+    does not converge (for example on acyclic graphs), and skipped on replay.
+
+  - clustering (per node)              -> nx.clustering (directed, Fagiolo)
+  - average clustering                 -> nx.average_clustering
+  - transitivity                       -> nx.transitivity (successor-based triads)
+  - degree assortativity               -> nx.degree_assortativity_coefficient
+    Out-degree of the source against in-degree of the target; null when NaN.
+  - local reaching centrality          -> nx.local_reaching_centrality (unweighted)
+    Proportion of other nodes reachable from each node; null for edgeless graphs.
+
+  - hop lengths                        -> nx.all_pairs_shortest_path_length
+    Unweighted directed distance matrix, null where a node is unreachable. Pins
+    the all-pairs and multi-source BFS functions, sequential and parallel.
+
 The graphs are simple (no self-loops and no parallel edges) with positive
 integer weights, so weighted shortest path sums are exact under f64.
 
@@ -35,6 +55,7 @@ Regenerate with `make oracle-fixtures`.
 """
 
 import json
+import math
 import random
 import sys
 
@@ -83,6 +104,21 @@ def main():
         closeness = nx.closeness_centrality(rev, distance="weight")
         harmonic = nx.harmonic_centrality(rev, distance="weight")
         pagerank = nx.pagerank(g, alpha=ALPHA, tol=NX_TOL, max_iter=NX_MAX_ITER, weight="weight")
+        try:
+            eig = nx.eigenvector_centrality(g, max_iter=10000, tol=1e-12, weight="weight")
+            norm = math.sqrt(sum(v * v for v in eig.values()))
+            eigenvector = [eig[k] / norm for k in range(n)]
+        except nx.PowerIterationFailedConvergence:
+            eigenvector = None
+        clustering = nx.clustering(g)
+        assortativity = nx.degree_assortativity_coefficient(g)
+        assort = None if math.isnan(assortativity) else float(assortativity)
+        if g.number_of_edges() > 0:
+            local_reaching = [float(nx.local_reaching_centrality(g, k)) for k in range(n)]
+        else:
+            local_reaching = None
+        lengths = dict(nx.all_pairs_shortest_path_length(g))
+        hop_lengths = [[lengths[i].get(j) for j in range(n)] for i in range(n)]
 
         cases.append(
             {
@@ -100,6 +136,14 @@ def main():
                 "closeness": [closeness[k] for k in range(n)],
                 "harmonic": [harmonic[k] for k in range(n)],
                 "pagerank": [pagerank[k] for k in range(n)],
+                "voterank": [int(x) for x in nx.voterank(g)],
+                "eigenvector": eigenvector,
+                "clustering": [float(clustering[k]) for k in range(n)],
+                "average_clustering": float(nx.average_clustering(g)),
+                "transitivity": float(nx.transitivity(g)),
+                "assortativity": assort,
+                "local_reaching": local_reaching,
+                "hop_lengths": hop_lengths,
             }
         )
 

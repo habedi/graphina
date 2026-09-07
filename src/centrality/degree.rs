@@ -12,14 +12,11 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 /// work is a single pass over the nodes writing into the Fx-hashed result rather
 /// than an intermediate `std` `HashMap` populated by scanning every edge.
 ///
-/// petgraph counts an undirected self-loop as one incident edge, but the degree
-/// convention here counts it as two, so the undirected paths add a correction of
-/// one per self-loop. Directed degrees already count a self-loop as two (one in and
-/// one out), so no correction is needed there.
+/// `BaseGraph::degree` and its in/out variants already count a self-loop as two
+/// (once per edge end), so no separate self-loop correction is needed.
 fn degree_map<A, W, Ty>(
     graph: &BaseGraph<A, W, Ty>,
     node_degree: impl Fn(NodeId) -> usize,
-    correct_undirected_self_loops: bool,
 ) -> NodeMap<f64>
 where
     Ty: GraphConstructor<A, W>,
@@ -28,15 +25,6 @@ where
         NodeMap::with_capacity_and_hasher(graph.node_count(), Default::default());
     for node in graph.node_ids() {
         centrality.insert(node, node_degree(node) as f64);
-    }
-    if correct_undirected_self_loops && !graph.is_directed() {
-        for (u, v, _w) in graph.edges() {
-            if u == v {
-                if let Some(d) = centrality.get_mut(&u) {
-                    *d += 1.0;
-                }
-            }
-        }
     }
     centrality
 }
@@ -86,13 +74,7 @@ pub fn in_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<Nod
 where
     Ty: GraphConstructor<A, W>,
 {
-    // On undirected graphs in-degree equals total degree, so the self-loop
-    // correction applies; on directed graphs incoming self-loops already count once.
-    Ok(degree_map(
-        graph,
-        |node| graph.in_degree(node).unwrap_or(0),
-        true,
-    ))
+    Ok(degree_map(graph, |node| graph.in_degree(node).unwrap_or(0)))
 }
 
 /// Out-degree centrality: number of outgoing edges (raw count).
@@ -104,13 +86,9 @@ pub fn out_degree_centrality<A, W, Ty>(graph: &BaseGraph<A, W, Ty>) -> Result<No
 where
     Ty: GraphConstructor<A, W>,
 {
-    // On undirected graphs out-degree equals total degree, so the self-loop
-    // correction applies; on directed graphs outgoing self-loops already count once.
-    Ok(degree_map(
-        graph,
-        |node| graph.out_degree(node).unwrap_or(0),
-        true,
-    ))
+    Ok(degree_map(graph, |node| {
+        graph.out_degree(node).unwrap_or(0)
+    }))
 }
 
 #[cfg(test)]

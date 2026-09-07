@@ -48,7 +48,7 @@ where
     nodes
         .par_iter()
         .map(|&node| {
-            let neighbors: Vec<NodeId> = graph.neighbors(node).collect();
+            let neighbors: Vec<NodeId> = graph.neighbors(node).filter(|&nb| nb != node).collect();
             let mut count = 0;
 
             for i in 0..neighbors.len() {
@@ -88,5 +88,18 @@ mod tests {
         assert_eq!(triangles[&n2], 1);
         assert_eq!(triangles[&n3], 1);
         assert_eq!(triangles[&n4], 0);
+    }
+
+    #[test]
+    fn test_triangles_parallel_ignores_self_loops() {
+        let mut g = Graph::<i32, f64>::new();
+        let hub = g.add_node(0);
+        let x = g.add_node(1);
+        let y = g.add_node(2);
+        g.add_edge(hub, hub, 1.0);
+        g.add_edge(hub, x, 1.0);
+        g.add_edge(hub, y, 1.0);
+        let counts = triangles_parallel(&g);
+        assert_eq!(counts[&hub], 0);
     }
 }

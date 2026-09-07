@@ -154,7 +154,15 @@ class TestGenerators:
 
     def test_invalid_cycle_too_small(self):
         with pytest.raises(ValueError):
-            pygraphina.cycle_graph(2)
+            pygraphina.cycle_graph(0)
+
+    def test_cycle_graph_small_n_matches_networkx(self):
+        one = pygraphina.cycle_graph(1)
+        assert one.node_count() == 1
+        assert one.edge_count() == 1
+        two = pygraphina.cycle_graph(2)
+        assert two.node_count() == 2
+        assert two.edge_count() == 1
 
     def test_invalid_bipartite_zero_partition(self):
         with pytest.raises(ValueError):

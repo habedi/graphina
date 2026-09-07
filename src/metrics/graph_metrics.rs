@@ -143,10 +143,17 @@ pub fn average_clustering_coefficient<A, W, Ty: GraphConstructor<A, W> + EdgeTyp
 ///
 /// # Time Complexity
 /// O(E^1.5) via degree-ordered forward triangle counting, down from O(V * d²).
+/// On directed graphs this follows NetworkX: the triads are ordered pairs of
+/// successors of each node and a triad is closed when an edge joins the pair in
+/// that order, so the value is generally not `3 * triangles / triads`.
 pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
 ) -> f64 {
     use petgraph::visit::NodeIndexable;
+
+    if graph.is_directed() {
+        return directed_transitivity(graph);
+    }
 
     // Adjacency test via a single Fx-hashed set of canonical (low, high) endpoint
     // pairs, so an edge lookup is one integer-tuple hash rather than an O(degree)
@@ -164,7 +171,7 @@ pub fn transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     let bound = graph.as_petgraph().node_bound();
     let mut degree = vec![0usize; bound];
     for node in graph.node_ids() {
-        degree[node.index()] = graph.neighbors(node).count();
+        degree[node.index()] = graph.neighbors(node).filter(|&nbr| nbr != node).count();
     }
     let higher_rank =
         |a: usize, v: usize| degree[a] > degree[v] || (degree[a] == degree[v] && a > v);
@@ -273,22 +280,44 @@ pub fn assortativity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     let mut sum_k = 0.0;
     let mut sum_j2 = 0.0;
     let mut sum_k2 = 0.0;
-    // Degree assortativity (Newman) is the Pearson correlation over the joint
-    // degree distribution of edge endpoints, which is symmetric: each
-    // undirected edge contributes both orderings (j, k) and (k, j). Counting a
-    // single ordering would give the two endpoints different means and yield a
-    // different, direction-dependent coefficient.
-    let m = (graph.edge_count() * 2) as f64;
+    let m: f64;
 
-    for (u, v, _) in graph.edges() {
-        let j = graph.degree(u).unwrap_or(0) as f64;
-        let k = graph.degree(v).unwrap_or(0) as f64;
-
-        sum_jk += 2.0 * j * k;
-        sum_j += j + k;
-        sum_k += j + k;
-        sum_j2 += j * j + k * k;
-        sum_k2 += j * j + k * k;
+    if graph.is_directed() {
+        // Directed degree assortativity (NetworkX's default x = "out", y = "in")
+        // is the Pearson correlation between the out-degree of each edge's
+        // source and the in-degree of its target, over the edges taken once in
+        // their direction.
+        m = graph.edge_count() as f64;
+        for (u, v, _) in graph.edges() {
+            let j = graph.out_degree(u).unwrap_or(0) as f64;
+            let k = graph.in_degree(v).unwrap_or(0) as f64;
+            sum_jk += j * k;
+            sum_j += j;
+            sum_k += k;
+            sum_j2 += j * j;
+            sum_k2 += k * k;
+        }
+    } else {
+        // Undirected degree assortativity (Newman) is the Pearson correlation
+        // over the joint degree distribution of edge endpoints, which is
+        // symmetric: each edge contributes both orderings (j, k) and (k, j).
+        // Counting a single ordering would give the two endpoints different
+        // means and yield a different, direction-dependent coefficient. A
+        // self-loop has only one ordering, so it contributes a single (j, j)
+        // pair, as in NetworkX.
+        let mut pairs = 0usize;
+        for (u, v, _) in graph.edges() {
+            let j = graph.degree(u).unwrap_or(0) as f64;
+            let k = graph.degree(v).unwrap_or(0) as f64;
+            let orderings = if u == v { 1.0 } else { 2.0 };
+            pairs += orderings as usize;
+            sum_jk += orderings * j * k;
+            sum_j += if u == v { j } else { j + k };
+            sum_k += if u == v { k } else { j + k };
+            sum_j2 += if u == v { j * j } else { j * j + k * k };
+            sum_k2 += if u == v { k * k } else { j * j + k * k };
+        }
+        m = pairs as f64;
     }
 
     let numerator = sum_jk / m - (sum_j / m) * (sum_k / m);
@@ -303,6 +332,34 @@ pub fn assortativity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
 }
 
 /// Helper function: Computes BFS distances from a start node.
+/// Directed transitivity as NetworkX computes it. For each node `v` with successor
+/// set `S(v)` (excluding `v`), the triads are `|S(v)| * (|S(v)| - 1)` and the closed
+/// triads are the sum over `w` in `S(v)` of `|S(v) ∩ S(w)|`.
+fn directed_transitivity<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
+    graph: &BaseGraph<A, W, Ty>,
+) -> f64 {
+    let successors: HashMap<NodeId, HashSet<NodeId>> = graph
+        .node_ids()
+        .map(|v| (v, graph.neighbors(v).filter(|&w| w != v).collect()))
+        .collect();
+    let mut triads = 0usize;
+    let mut closed = 0usize;
+    for succ_v in successors.values() {
+        let d = succ_v.len();
+        triads += d * d.saturating_sub(1);
+        for w in succ_v {
+            if let Some(succ_w) = successors.get(w) {
+                closed += succ_v.intersection(succ_w).count();
+            }
+        }
+    }
+    if closed == 0 {
+        0.0
+    } else {
+        closed as f64 / triads as f64
+    }
+}
+
 fn bfs_distances<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
     graph: &BaseGraph<A, W, Ty>,
     start: NodeId,
@@ -493,5 +550,71 @@ mod tests {
         // Just check it returns a value in valid range
         let assort = assortativity(&g);
         assert!((-1.0..=1.0).contains(&assort));
+    }
+
+    #[test]
+    fn test_transitivity_ignores_self_loops() {
+        use crate::core::types::Graph;
+        use crate::metrics::graph_metrics::transitivity;
+
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(b, c, 1.0);
+        g.add_edge(a, c, 1.0);
+        g.add_edge(a, a, 1.0);
+        assert!((transitivity(&g) - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_assortativity_directed_uses_source_out_and_target_in_degree() {
+        use crate::core::types::Digraph;
+        use crate::metrics::graph_metrics::assortativity;
+
+        // NetworkX degree_assortativity_coefficient gives -0.6123724356957942:
+        // the Pearson correlation of (out-degree of source, in-degree of target)
+        // over the five directed edges, each taken once.
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for (u, v) in [(0, 1), (1, 2), (2, 0), (0, 2), (3, 0)] {
+            g.add_edge(n[u], n[v], 1.0);
+        }
+        assert!((assortativity(&g) + 0.6123724356957942).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_average_clustering_directed_uses_fagiolo_definition() {
+        use crate::core::types::Digraph;
+        use crate::metrics::graph_metrics::average_clustering_coefficient;
+
+        // NetworkX clustering: {0: 0.2, 1: 1.0, 2: 0.5, 3: 0}, average 0.425.
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for (u, v) in [(0, 1), (1, 2), (2, 0), (0, 2), (3, 0)] {
+            g.add_edge(n[u], n[v], 1.0);
+        }
+        assert!((average_clustering_coefficient(&g) - 0.425).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_transitivity_directed_matches_networkx() {
+        use crate::core::types::Digraph;
+        use crate::metrics::graph_metrics::transitivity;
+
+        // NetworkX transitivity on a DiGraph counts, for every node v, the pairs
+        // of successors (w, x) with an edge w -> x, over all ordered successor
+        // pairs: 0.5 for this graph.
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for (u, v) in [(0, 1), (1, 2), (2, 0), (0, 2), (3, 0)] {
+            g.add_edge(n[u], n[v], 1.0);
+        }
+        assert!(
+            (transitivity(&g) - 0.5).abs() < 1e-12,
+            "got {}",
+            transitivity(&g)
+        );
     }
 }

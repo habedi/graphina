@@ -14,7 +14,7 @@ Graphina provides two primary graph structures, both of which are generic over n
 Unlike Python where a graph can hold mixed types (like strings, ints, objects), Graphina graphs are strongly typed,
 which means that all nodes and edges must have the same type.
 
-```rust
+```rust,ignore
 // A social network: Nodes are people (String), Edges are relationship strength (f64)
 let g = Graph::<String, f64>::new();
 

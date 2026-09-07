@@ -31,12 +31,13 @@ let n1 = g.add_node("A");
 let n2 = g.add_node("B");
 g.add_edge(n1, n2, 1.0);
 
-let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None);
+let ranks = pagerank_parallel(&g, 0.85, 100, 1e-6, None).unwrap();
 ```
 
 ### Parallel Connected Components
 
-Finds connected components in parallel.
+Finds connected components. The current implementation is a sequential breadth-first search kept for API parity with the other
+parallel functions; a parallel implementation is planned for a future release and will not change the API.
 
 ```rust
 use graphina::parallel::connected_components_parallel;

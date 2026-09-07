@@ -11,7 +11,9 @@ use petgraph::EdgeType;
 /// Parallel breadth-first search from multiple starting nodes.
 ///
 /// Processes multiple BFS searches in parallel, useful for computing shortest paths
-/// from multiple sources simultaneously.
+/// from multiple sources simultaneously. Results are returned in the order of
+/// `starts`; a start node that is not in the graph yields an empty order at its
+/// position, matching the sequential `bfs`.
 ///
 /// # Example
 ///
@@ -39,6 +41,11 @@ where
     starts
         .par_iter()
         .map(|&start| {
+            // Match the sequential `bfs`: a start node that is not in the graph
+            // yields an empty visitation order.
+            if !graph.contains_node(start) {
+                return Vec::new();
+            }
             let mut visited = Vec::new();
             let mut queue = VecDeque::new();
             let mut seen = HashSet::new();
@@ -79,5 +86,20 @@ mod tests {
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].len(), 3);
         assert_eq!(results[1].len(), 3);
+    }
+
+    #[test]
+    fn test_bfs_parallel_missing_start_yields_empty_order() {
+        // Matches the sequential `bfs`, which returns an empty order for a start
+        // node that is not in the graph.
+        let mut g = Graph::<i32, f64>::new();
+        let a = g.add_node(1);
+        let b = g.add_node(2);
+        g.add_edge(a, b, 1.0);
+        let removed = g.add_node(3);
+        g.remove_node(removed);
+        let results = bfs_parallel(&g, &[a, removed]);
+        assert_eq!(results[0], vec![a, b]);
+        assert!(results[1].is_empty());
     }
 }

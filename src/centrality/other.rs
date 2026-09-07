@@ -11,7 +11,8 @@ use crate::core::types::{BaseGraph, GraphConstructor, NodeId, NodeMap};
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-/// Local reaching centrality: measures the ability of a node to reach other nodes within a certain distance.
+/// Local reaching centrality: the proportion of the other nodes that a node can reach within
+/// `distance` hops (Mones et al.), following the NetworkX definition for unweighted graphs.
 ///
 /// # Arguments
 ///
@@ -28,6 +29,7 @@ pub fn local_reaching_centrality<A, W, Ty>(
 where
     Ty: GraphConstructor<A, W>,
 {
+    let n = graph.node_count();
     let mut centrality = NodeMap::default();
     for (node, _) in graph.nodes() {
         let mut reached = HashSet::new();
@@ -48,12 +50,22 @@ where
             current = next;
         }
 
-        centrality.insert(node, reached.len() as f64);
+        // Proportion of the other nodes reachable within `distance` hops (Mones
+        // et al., the definition NetworkX uses). A single node has nothing to
+        // reach, so it scores 0.
+        let others = (reached.len() - 1) as f64;
+        let score = if n > 1 {
+            others / (n as f64 - 1.0)
+        } else {
+            0.0
+        };
+        centrality.insert(node, score);
     }
     Ok(centrality)
 }
 
-/// Global reaching centrality: similar to local but considers the entire graph.
+/// Global reaching centrality: the proportion of the other nodes reachable from each node with
+/// no hop limit (the local measure over the whole graph).
 ///
 /// # Arguments
 ///
@@ -96,13 +108,13 @@ where
     }
     let directed = graph.is_directed();
 
-    // Average degree (in-degree for directed graphs) sets the rate at which a
+    // Average degree (out-degree for directed graphs) sets the rate at which a
     // selected node's neighbors lose voting ability.
     let total_degree: usize = node_list
         .iter()
         .map(|&v| {
             if directed {
-                graph.in_degree(v).unwrap_or(0)
+                graph.out_degree(v).unwrap_or(0)
             } else {
                 graph.degree(v).unwrap_or(0)
             }
@@ -120,13 +132,15 @@ where
 
     for _ in 0..num_seeds.min(n) {
         // Tally votes: each node's score is the sum of the voting ability of the
-        // nodes that vote for it (its neighbors, or in-neighbors when directed).
+        // nodes that vote for it. In a directed graph a node votes for its
+        // in-neighbors, so the source of an edge collects the target's vote
+        // (matching Zhang et al. and NetworkX); undirected edges vote both ways.
         let mut score = vec![0.0f64; n];
         for (u, v, _) in graph.edges() {
             let (ui, vi) = (node_to_idx[&u], node_to_idx[&v]);
-            score[vi] += ability[ui];
+            score[ui] += ability[vi];
             if !directed {
-                score[ui] += ability[vi];
+                score[vi] += ability[ui];
             }
         }
         for (i, &sel) in selected.iter().enumerate() {
@@ -260,5 +274,57 @@ mod tests {
         for _ in 0..5 {
             assert_eq!(voterank(&g, 4), first);
         }
+    }
+
+    #[test]
+    fn test_voterank_directed_nodes_vote_for_in_neighbors() {
+        use crate::centrality::other::voterank;
+        use crate::core::types::Digraph;
+
+        // In the directed VoteRank of Zhang et al. (and NetworkX), a node casts
+        // its vote for every node that points to it. The hub a points to b, c,
+        // and d, so it collects three votes and is elected first; afterwards its
+        // out-neighbors lose their voting ability and nobody else gets a vote.
+        let mut g = Digraph::<i32, f64>::new();
+        let a = g.add_node(0);
+        let b = g.add_node(1);
+        let c = g.add_node(2);
+        let d = g.add_node(3);
+        g.add_edge(a, b, 1.0);
+        g.add_edge(a, c, 1.0);
+        g.add_edge(a, d, 1.0);
+        assert_eq!(voterank(&g, 1), vec![a]);
+        assert_eq!(voterank(&g, 4), vec![a]);
+    }
+
+    #[test]
+    fn test_local_reaching_centrality_is_proportion_of_other_nodes() {
+        use crate::centrality::other::{global_reaching_centrality, local_reaching_centrality};
+        use crate::core::types::{Digraph, Graph};
+
+        // NetworkX: {0: 2/3, 1: 2/3, 2: 2/3, 3: 1.0} for this digraph.
+        let mut g = Digraph::<i32, f64>::new();
+        let n: Vec<_> = (0..4).map(|i| g.add_node(i)).collect();
+        for (u, v) in [(0, 1), (1, 2), (2, 0), (0, 2), (3, 0)] {
+            g.add_edge(n[u], n[v], 1.0);
+        }
+        let all = global_reaching_centrality(&g).unwrap();
+        for i in 0..3 {
+            assert!(
+                (all[&n[i]] - 2.0 / 3.0).abs() < 1e-12,
+                "node {i} = {}",
+                all[&n[i]]
+            );
+        }
+        assert!((all[&n[3]] - 1.0).abs() < 1e-12);
+
+        // With a hop limit of one, node 3 reaches only node 0.
+        let one_hop = local_reaching_centrality(&g, 1).unwrap();
+        assert!((one_hop[&n[3]] - 1.0 / 3.0).abs() < 1e-12);
+
+        // A single node has no other nodes to reach.
+        let mut single = Graph::<i32, f64>::new();
+        let s = single.add_node(0);
+        assert_eq!(global_reaching_centrality(&single).unwrap()[&s], 0.0);
     }
 }

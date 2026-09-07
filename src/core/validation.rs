@@ -145,7 +145,9 @@ pub fn is_bipartite<A, W, Ty: GraphConstructor<A, W> + EdgeType>(
             let current_color = color[&node];
             let next_color = 1 - current_color;
 
-            for neighbor in graph.neighbors(node) {
+            // Bipartiteness is a property of the underlying undirected graph, so
+            // walk edges in both directions.
+            for neighbor in graph.inner.neighbors_undirected(node.0).map(NodeId::new) {
                 if let Some(&neighbor_color) = color.get(&neighbor) {
                     if neighbor_color == current_color {
                         return false; // Same color - not bipartite
@@ -612,5 +614,26 @@ mod tests {
 
         g.remove_node(n2);
         assert!(validate_node_exists(&g, n2).is_err());
+    }
+
+    #[test]
+    fn test_is_bipartite_directed_ignores_edge_direction() {
+        use crate::core::types::Digraph;
+        use crate::core::validation::is_bipartite;
+
+        // The underlying undirected graph is the path n2 - n0 - n1, which is
+        // bipartite. Coloring only along outgoing edges would start a fresh
+        // color at n2 and then clash with the already colored n0.
+        let mut g: Digraph<i32, f64> = Digraph::new();
+        let n0 = g.add_node(0);
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n2, n0, 1.0);
+        g.add_edge(n0, n1, 1.0);
+        assert!(is_bipartite(&g));
+
+        // A directed triangle is still an odd cycle.
+        g.add_edge(n1, n2, 1.0);
+        assert!(!is_bipartite(&g));
     }
 }

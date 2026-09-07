@@ -95,6 +95,9 @@ where
 
         // Add nodes
         for &node in nodes {
+            if node_mapping.contains_key(&node) {
+                continue;
+            }
             if let Some(attr) = self.node_attr(node) {
                 let new_id = subgraph.add_node(attr.clone());
                 node_mapping.insert(node, new_id);
@@ -532,5 +535,16 @@ mod tests {
         let induced = g.induced_subgraph(&nodes).unwrap();
         assert_eq!(induced.node_count(), 2);
         assert_eq!(induced.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_subgraph_deduplicates_requested_nodes() {
+        let mut g = Graph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_edge(n1, n2, 1.0);
+        let sub = g.subgraph(&[n1, n1, n2]).unwrap();
+        assert_eq!(sub.node_count(), 2);
+        assert_eq!(sub.edge_count(), 1);
     }
 }

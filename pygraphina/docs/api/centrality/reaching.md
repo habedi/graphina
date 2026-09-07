@@ -1,6 +1,6 @@
 # Reaching Centrality
 
-Reaching centrality measures how many nodes a node can reach within a given distance.
+Reaching centrality measures the proportion of the other nodes a node can reach within a given distance.
 
 ## Function Signatures
 
@@ -20,10 +20,11 @@ Dictionary mapping node IDs to reaching centrality scores.
 
 ## Description
 
-Reaching centrality counts nodes reachable within a distance threshold:
+Reaching centrality is the fraction of the other nodes reachable within a distance threshold, following the
+NetworkX definition for unweighted graphs:
 
-- Local Reaching: Limited to immediate neighborhood
-- Global Reaching: All reachable nodes in connected component
+- Local Reaching: Limited to the given number of hops
+- Global Reaching: All reachable nodes, with no hop limit
 
 ## Time Complexity
 
