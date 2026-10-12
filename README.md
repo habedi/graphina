@@ -10,8 +10,8 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/habedi/graphina/tests.yml?label=tests&style=flat&labelColor=282c34&logo=github)](https://github.com/habedi/graphina/actions/workflows/tests.yml)
 [![Code Coverage](https://img.shields.io/codecov/c/github/habedi/graphina?style=flat&labelColor=282c34&logo=codecov)](https://codecov.io/gh/habedi/graphina)
 [![Crates.io](https://img.shields.io/crates/v/graphina.svg?style=flat&labelColor=282c34&color=f74c00&logo=rust)](https://crates.io/crates/graphina)
-[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-2b7de9?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
-[![Docs](https://img.shields.io/badge/docs-read-007ec6?style=flat&labelColor=282c34&logo=readthedocs)](https://habedi.github.io/graphina)
+[![Docs.rs](https://img.shields.io/badge/docs.rs-graphina-507ec6?style=flat&labelColor=282c34&logo=docs.rs)](https://docs.rs/graphina)
+[![Docs](https://img.shields.io/badge/docs-read-507ec6?style=flat&labelColor=282c34&logo=readthedocs)](https://habedi.github.io/graphina)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/habedi/graphina)
 
 Graphina is a graph data science library for Rust.
