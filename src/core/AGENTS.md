@@ -9,6 +9,11 @@ root AGENTS.md; every function here is gated behind the module's feature flag un
   both directed and undirected graphs, as in NetworkX. `density` returns `0.0` for fewer than two nodes.
   Graphs are simple: `add_edge` updates the weight of an existing edge instead of creating a parallel edge, and `add_edge_if_absent` inserts without
   overwriting an existing weight. `add_edge`, `add_edge_if_absent`, and `find_edge` check both directions on undirected graphs.
+  Node IDs are not reused after removal or `clear`. Insertion into a graph with removed-node slots rebuilds the backing graph while preserving live
+  node and edge IDs; its cost is proportional to the node and edge index bounds rather than constant time.
+- Matrix constructors: `from_adjacency_matrix` and `from_sparse_adjacency_matrix` return `Result<Self>` and reject nonsquare matrices with
+  `InvalidArgument`. Empty matrices produce empty graphs. Sparse constructors accept CSR and CSC storage without changing edge direction.
+  Undirected constructors use the upper triangle, including diagonal self-loops.
 - `GraphinaError` (in `core::error`) is the single error type, with constructor helpers (`invalid_graph`, `node_not_found`, `no_path`,
   `convergence_failed`, and so on) and `From` impls for `io::Error`, `serde_json::Error`, and the bincode codec errors. `Result<T>` aliases
   `Result<T, GraphinaError>`.
@@ -18,7 +23,7 @@ root AGENTS.md; every function here is gated behind the module's feature flag un
   return the graph directly and yield an empty graph rather than erroring on degenerate sizes.
 - Serialization: `save_json`/`load_json`, `save_binary`/`load_binary`, and `save_graphml` round-trip through the index-based `SerializableGraph`. The
   `_strict` loaders (`load_json_strict`, `load_binary_strict` and `try_from_serializable`) additionally validate that the serialized directedness
-  matches the target type; the plain loaders do not.
+  matches the target type; the plain loaders do not. Save operations flush their buffered writers and propagate flush errors before reporting success.
 - Paths: `dijkstra`/`dijkstra_path_f64` (nonnegative weights, return `Result`), `bellman_ford` (negatives, returns `Option`, `None` on negative
   cycle), `a_star` (admissible heuristic, returns `Result<Option<(W, Vec<NodeId>)>>`), `floyd_warshall`, and `johnson` (all-pairs, return `Option`,
   `None` on negative cycle). Distance maps use `None` for unreachable nodes; the source has distance `Some(0)` (or `Some(0.0)`) and no predecessor.

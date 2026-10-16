@@ -13,3 +13,5 @@ Heuristics for NP-hard problems. Set/value returning functions: `min_weighted_ve
 - `min_weighted_vertex_cover` is a greedy maximum-degree heuristic; edge weights are ignored, and the guarantee is logarithmic, not a
   constant factor.
 - `local_node_connectivity` takes an `f64`-weighted graph and finds vertex-disjoint paths by BFS, so edge weights are ignored.
+- `clique_removal` selects cliques from the remaining nodes until every live node is covered exactly once. It leaves the input graph unchanged
+  and preserves its node IDs, including gaps left by deleted nodes.
