@@ -299,7 +299,7 @@ dependencies = [
 
 [[package]]
 name = "graphina"
-version = "0.4.0-alpha.6"
+version = "0.4.0-alpha.7"
 dependencies = [
  "bincode",
  "criterion",
@@ -659,7 +659,7 @@ dependencies = [
 
 [[package]]
 name = "pygraphina"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "graphina",
  "pyo3",

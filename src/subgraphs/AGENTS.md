@@ -7,3 +7,6 @@ The `SubgraphOps` trait is implemented for `BaseGraph`. Extraction methods that 
 `component_subgraph`) return `Result` and remap `NodeId`s in the result; `filter_nodes` and `filter_edges` also remap but return the graph directly.
 Query methods (`k_hop_neighbors`, `connected_component`) return `Vec<NodeId>` over the original ids, with `radius`/`k` of 0 returning just the start
 node.
+
+`connected_component` and `component_subgraph` use weak connectivity for directed graphs, ignoring edge direction when finding component nodes.
+`component_subgraph` preserves the original edge directions and weights in the returned graph.

@@ -180,9 +180,10 @@ where
     pub fn save_json<P: AsRef<Path>>(&self, path: P) -> Result<(), GraphinaError> {
         let serializable = self.to_serializable();
         let file = File::create(path).map_err(GraphinaError::from)?;
-        let writer = BufWriter::new(file);
+        let mut writer = BufWriter::new(file);
 
-        serde_json::to_writer_pretty(writer, &serializable).map_err(GraphinaError::from)?;
+        serde_json::to_writer_pretty(&mut writer, &serializable).map_err(GraphinaError::from)?;
+        writer.flush().map_err(GraphinaError::from)?;
 
         Ok(())
     }
@@ -250,6 +251,7 @@ where
             .map_err(GraphinaError::from)?;
 
         std::io::Write::write_all(&mut writer, &encoded).map_err(GraphinaError::from)?;
+        writer.flush().map_err(GraphinaError::from)?;
 
         Ok(())
     }
@@ -400,6 +402,7 @@ where
         // Close graph and graphml
         writeln!(writer, "  </graph>").map_err(GraphinaError::from)?;
         writeln!(writer, "</graphml>").map_err(GraphinaError::from)?;
+        writer.flush().map_err(GraphinaError::from)?;
 
         Ok(())
     }
@@ -426,6 +429,36 @@ mod tests {
     use super::*;
     use crate::core::types::{Digraph, Graph};
     use std::fs;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_save_json_propagates_flush_error() {
+        let graph = Graph::<i32, f64>::new();
+        assert!(matches!(
+            graph.save_json("/dev/full"),
+            Err(GraphinaError::IoError(_))
+        ));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_save_binary_propagates_flush_error() {
+        let graph = Graph::<i32, f64>::new();
+        assert!(matches!(
+            graph.save_binary("/dev/full"),
+            Err(GraphinaError::IoError(_))
+        ));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_save_graphml_propagates_flush_error() {
+        let graph = Graph::<i32, f64>::new();
+        assert!(matches!(
+            graph.save_graphml("/dev/full"),
+            Err(GraphinaError::IoError(_))
+        ));
+    }
 
     #[test]
     fn test_to_serializable() {

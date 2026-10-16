@@ -4,27 +4,27 @@ version = "0.1.0"
 description = "The Python environment for the Graphina project"
 requires-python = ">=3.10,<4.0"
 dependencies = [
-  "maturin[zig] (>=1.8.3,<2.0.0)",
-  "huggingface-hub (>=0.29.3,<0.30.0)",
-  "networkx (>=3.4.2,<4.0.0)",
-  "numpy (>=2.2.6,<3.0.0)",
-  "scipy (>=1.13.0,<2.0.0)",
-  "pandas (>=2.3.3,<4.0.0)",
+  "maturin[zig]>=1.8.3",
+  "huggingface-hub>=0.29.3",
+  "networkx>=3.4.2",
+  "numpy>=2.2.6",
+  "scipy>=1.13.0",
+  "pandas>=2.3.3",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest (>=8.3.5,<10.0.0)",
-  "pytest-cov (>=6.0.0,<8.0.0)",
-  "pytest-mock (>=3.14.0,<5.0.0)",
-  "mypy (>=1.11.1,<3.0.0)",
-  "ruff (>=0.11.0,<1.0.0)",
-  "twine (>=6.1.0,<7.0.0)",
-  "mkdocs (>=1.6.1,<2.0.0)",
-  "mkdocs-material (>=9.6.12,<10.0.0)",
-  "mkdocstrings-python (>=1.16.10,<2.0.0)",
-  "pyyaml == 6.0.3", # For MkDocs compatibility
-  "rundoc (>=0.2.3,<0.3.0)",
+  "pytest>=8.3.5",
+  "pytest-cov>=6.0.0",
+  "pytest-mock>=3.14.0",
+  "mypy>=1.11.1",
+  "ruff>=0.11.0",
+  "twine>=6.1.0",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.6.12",
+  "mkdocstrings-python>=1.16.10",
+  "pyyaml==6.0.3", # For MkDocs compatibility
+  "rundoc>=0.2.3",
 ]
 
 [tool.pytest.ini_options]
