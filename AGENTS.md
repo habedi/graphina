@@ -51,8 +51,8 @@ Quick examples:
 - Do not use em dashes. Restructure the sentence, or use a colon or semicolon instead.
 - Avoid colorful adjectives and adverbs. Write "graph generator" not "powerful graph generator".
 - Prefer using noun phrases for checklist items, not imperative verbs. Write "negative weight detection" not "detect negative weights".
-- Headings in Markdown files must be in title case: "Build from Source" not "Build from source". Minor words
-  (a, an, the, and, but, or, for, in, on, at, to, by, of, with, from) stay lowercase unless they are the first word.
+- Headings in Markdown files must be in title case: "Build from Source" not "Build from source". Minor words (a, an, the, and, but, or, for, in, on,
+  at, to, by, of, with, from) stay lowercase unless they are the first word.
 - Write correct and complete sentences.
 - Avoid made-up words, abbreviations, and colons in the middle of sentences.
 - Don't use pretentious language and made-up words.
@@ -112,7 +112,8 @@ deliberately or keep it private.
   `Vec<Vec<NodeId>>`), and `connected_components_map` (`NodeMap<usize>`). Some metrics return `Option` (`diameter`, `radius`, `average_path_length`
   return `None` for an empty or disconnected graph).
 - Weight totality: the `mst` family (`kruskal_mst`, `prim_mst`, `boruvka_mst`) needs only `W: PartialOrd`, so plain `f64` weights work; the
-  weights must still be totally ordered in practice, and an unordered (`NaN`) weight is rejected with `InvalidArgument`. The `centrality` and `approximation` functions, by contrast, all accept a plain
+  weights must still be totally ordered in practice, and an unordered (`NaN`) weight is rejected with `InvalidArgument`. The `centrality` and
+  `approximation` functions, by contrast, all accept a plain
   `f64`-weighted graph: the BFS-based ones (`betweenness_centrality`, `edge_betweenness_centrality`, `local_node_connectivity`) ignore weights, and
   the
   path-based ones (`harmonic_centrality`, `closeness_centrality`, `greedy_tsp`) order distances internally.
