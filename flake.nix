@@ -7,7 +7,7 @@
 
   outputs = { self, nixpkgs }:
     let
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
@@ -18,27 +18,16 @@
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              # Rust toolchain (rustup honors the pinned rust-toolchain.toml)
               rustup
-
-              # Build dependencies
               pkg-config
-
-              # Rust development tools
               cargo-nextest
               cargo-tarpaulin
               cargo-audit
               cargo-careful
-
-              # Python bindings (PyGraphina) toolchain
-              python3
+              python315
               uv
               maturin
-
-              # Documentation
               python3Packages.mkdocs-material
-
-              # Git hooks
               pre-commit
             ];
           };

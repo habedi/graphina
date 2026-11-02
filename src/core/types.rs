@@ -68,7 +68,6 @@ pub trait GraphConstructor<A, W>: EdgeType + Sized {
 }
 impl<A, W> GraphConstructor<A, W> for Directed {
     fn new_graph() -> PetGraph<A, W, Self> {
-        // Using StableGraph prevents node index recycling.
         PetGraph::<A, W, Directed>::with_capacity(0, 0)
     }
     fn is_directed() -> bool {
@@ -139,6 +138,7 @@ pub type NodeSet = std::collections::HashSet<NodeId, rustc_hash::FxBuildHasher>;
 #[derive(Debug, Clone)]
 pub struct BaseGraph<A, W, Ty: GraphConstructor<A, W> + EdgeType> {
     pub(crate) inner: PetGraph<A, W, Ty>,
+    next_node_index: usize,
 }
 impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> Default for BaseGraph<A, W, Ty> {
     fn default() -> Self {
@@ -150,6 +150,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn new() -> Self {
         Self {
             inner: Ty::new_graph(),
+            next_node_index: 0,
         }
     }
     /// Creates a new graph with pre-allocated capacity for nodes and edges.
@@ -158,6 +159,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
     pub fn with_capacity(nodes: usize, edges: usize) -> Self {
         Self {
             inner: PetGraph::<A, W, Ty>::with_capacity(nodes, edges),
+            next_node_index: 0,
         }
     }
     /// Returns a builder for constructing a graph with a fluent API.
@@ -258,8 +260,27 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         Some(self.inner.edges(node.0).count())
     }
     /// Adds a node with the specified attribute to the graph.
+    ///
+    /// Node IDs are never reused, even after `clear`. When removed nodes leave
+    /// vacant slots, insertion rebuilds the backing graph in time proportional
+    /// to its node and edge index bounds, preserving all live node and edge IDs.
     pub fn add_node(&mut self, attr: A) -> NodeId {
-        NodeId::new(self.inner.add_node(attr))
+        let index = if self.inner.node_count() == self.next_node_index {
+            self.inner.add_node(attr)
+        } else {
+            // Temporarily occupy vacant slots so StableGraph appends instead
+            // of recycling a removed ID. Option avoids Clone or Default bounds.
+            let mut graph = std::mem::replace(&mut self.inner, Ty::new_graph())
+                .map_owned(|_, value| Some(value), |_, weight| weight);
+            while graph.node_count() < self.next_node_index {
+                graph.add_node(None);
+            }
+            let index = graph.add_node(Some(attr));
+            self.inner = graph.filter_map_owned(|_, value| value, |_, weight| Some(weight));
+            index
+        };
+        self.next_node_index = index.index() + 1;
+        NodeId::new(index)
     }
     /// Updates the attribute of an existing node.
     pub fn update_node(&mut self, node: NodeId, new_attr: A) -> bool {
@@ -453,6 +474,7 @@ impl<A, W, Ty: GraphConstructor<A, W> + EdgeType> BaseGraph<A, W, Ty> {
         self.inner.find_edge(source.0, target.0).map(EdgeId::new)
     }
     /// Clears all nodes and edges from the graph.
+    /// Previously assigned node IDs remain invalid after new nodes are added.
     pub fn clear(&mut self) {
         self.inner.clear();
     }
@@ -553,11 +575,28 @@ where
         matrix
     }
     /// Constructs a new graph from an adjacency matrix.
-    pub fn from_adjacency_matrix(matrix: &[Vec<Option<W>>]) -> Self
+    ///
+    /// Returns `InvalidArgument` if the matrix is not square. An empty matrix
+    /// produces an empty graph. Undirected graphs use the upper triangle.
+    ///
+    /// ```
+    /// use graphina::core::types::Digraph;
+    ///
+    /// let matrix = vec![vec![None, Some(3)], vec![None, None]];
+    /// let graph = Digraph::<i32, i32>::from_adjacency_matrix(&matrix)?;
+    /// assert_eq!(graph.edge_count(), 1);
+    /// # Ok::<(), graphina::core::error::GraphinaError>(())
+    /// ```
+    pub fn from_adjacency_matrix(matrix: &[Vec<Option<W>>]) -> Result<Self>
     where
         A: Default,
     {
         let n = matrix.len();
+        if matrix.iter().any(|row| row.len() != n) {
+            return Err(GraphinaError::invalid_argument(
+                "Adjacency matrix must be square",
+            ));
+        }
         let mut graph = Self::new();
         let nodes: Vec<NodeId> = (0..n).map(|_| graph.add_node(A::default())).collect();
         for i in 0..n {
@@ -569,7 +608,7 @@ where
                 }
             }
         }
-        graph
+        Ok(graph)
     }
 }
 /// Sparse matrix API using sprs for efficient representation on large graphs.
@@ -599,21 +638,38 @@ where
         triplet.to_csr()
     }
     /// Constructs a new graph from a sparse adjacency matrix.
-    pub fn from_sparse_adjacency_matrix(sparse: &CsMat<W>) -> Self
+    ///
+    /// Accepts CSR and CSC storage. Returns `InvalidArgument` if the matrix is
+    /// not square. Undirected graphs use the upper triangle.
+    ///
+    /// ```
+    /// use graphina::core::types::Digraph;
+    /// use sprs::TriMat;
+    ///
+    /// let mut matrix = TriMat::new((2, 2));
+    /// matrix.add_triplet(0, 1, 3);
+    /// let graph = Digraph::<i32, i32>::from_sparse_adjacency_matrix(&matrix.to_csc())?;
+    /// assert_eq!(graph.edge_count(), 1);
+    /// # Ok::<(), graphina::core::error::GraphinaError>(())
+    /// ```
+    pub fn from_sparse_adjacency_matrix(sparse: &CsMat<W>) -> Result<Self>
     where
         A: Default,
     {
         let n = sparse.rows();
+        if sparse.cols() != n {
+            return Err(GraphinaError::invalid_argument(
+                "Adjacency matrix must be square",
+            ));
+        }
         let mut graph = Self::new();
         let nodes: Vec<NodeId> = (0..n).map(|_| graph.add_node(A::default())).collect();
-        for (i, row) in sparse.outer_iterator().enumerate() {
-            for (&j, weight) in row.indices().iter().zip(row.data().iter()) {
-                if <Ty as GraphConstructor<A, W>>::is_directed() || i <= j {
-                    graph.add_edge(nodes[i], nodes[j], weight.clone());
-                }
+        for (weight, (i, j)) in sparse.iter() {
+            if <Ty as GraphConstructor<A, W>>::is_directed() || i <= j {
+                graph.add_edge(nodes[i], nodes[j], weight.clone());
             }
         }
-        graph
+        Ok(graph)
     }
 }
 /// Conversion method for graphs with f64 weights to a new weight type U.
@@ -628,9 +684,7 @@ where
         A: Clone,
         Ty: GraphConstructor<A, U>,
     {
-        let mut new_graph = BaseGraph::<A, U, Ty> {
-            inner: <Ty as GraphConstructor<A, U>>::new_graph(),
-        };
+        let mut new_graph = BaseGraph::<A, U, Ty>::new();
         let mut mapping: HashMap<NodeId, NodeId> = HashMap::new();
         for (node, attr) in self.nodes() {
             let new_node = new_graph.add_node(attr.clone());
@@ -657,9 +711,7 @@ where
         Ty: GraphConstructor<B, W>,
     {
         // Use mapping HashMap to handle non-contiguous NodeIndex values.
-        let mut new_graph = BaseGraph::<B, W, Ty> {
-            inner: <Ty as GraphConstructor<B, W>>::new_graph(),
-        };
+        let mut new_graph = BaseGraph::<B, W, Ty>::new();
         let mut id_map: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, a) in self.nodes() {
             let nb = f(nid, a);
@@ -679,9 +731,7 @@ where
         A: Clone,
         Ty: GraphConstructor<A, U>,
     {
-        let mut new_graph = BaseGraph::<A, U, Ty> {
-            inner: <Ty as GraphConstructor<A, U>>::new_graph(),
-        };
+        let mut new_graph = BaseGraph::<A, U, Ty>::new();
         let mut id_map: HashMap<NodeId, NodeId> = HashMap::new();
         for (nid, a) in self.nodes() {
             let new_id = new_graph.add_node(a.clone());
@@ -891,6 +941,185 @@ impl<T> IntoIterator for OrderedNodeMap<T> {
 }
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_node_ids_are_not_reused_after_removal() {
+        #[derive(Debug, PartialEq)]
+        struct Attribute(i32);
+
+        let mut graph = Graph::<Attribute, i32>::new();
+        let nodes: Vec<_> = (0..5)
+            .map(|value| graph.add_node(Attribute(value)))
+            .collect();
+        let removed_edge = graph.add_edge(nodes[0], nodes[1], 10);
+        let preserved_edge = graph.add_edge(nodes[2], nodes[4], 20);
+        assert_eq!(graph.remove_node(nodes[1]), Some(Attribute(1)));
+        assert_eq!(graph.try_remove_node(nodes[3]).unwrap(), Attribute(3));
+        let added = graph.add_node(Attribute(5));
+
+        assert!(added.index() > nodes[4].index());
+        assert!(!graph.contains_node(nodes[1]));
+        assert!(!graph.contains_node(nodes[3]));
+        assert_eq!(graph.node_attr(nodes[1]), None);
+        assert!(!graph.update_node(nodes[1], Attribute(99)));
+        assert!(graph.try_update_node(nodes[3], Attribute(99)).is_err());
+        assert_eq!(graph.remove_node(nodes[1]), None);
+        assert!(graph.try_remove_node(nodes[3]).is_err());
+        assert_eq!(graph.node_attr(added), Some(&Attribute(5)));
+        assert_eq!(graph.node_attr(nodes[2]), Some(&Attribute(2)));
+        assert_eq!(graph.edge_weight(preserved_edge), Some(&20));
+        assert_eq!(graph.find_edge(nodes[2], nodes[4]), Some(preserved_edge));
+        assert_eq!(graph.edge_weight(removed_edge), None);
+        assert_eq!(graph.node_count(), 4);
+        assert_eq!(graph.edge_count(), 1);
+        assert!(graph.add_node(Attribute(6)).index() > added.index());
+    }
+
+    #[test]
+    fn test_node_ids_are_not_reused_after_removing_all_nodes() {
+        let mut graph = Digraph::<i32, i32>::with_capacity(3, 0);
+        let nodes = graph.add_nodes_bulk(&[0, 1, 2]);
+        for node in &nodes {
+            graph.remove_node(*node);
+        }
+        assert!(graph.is_empty());
+        let added = graph.add_node(3);
+        assert!(added.index() > nodes[2].index());
+        assert!(nodes.iter().all(|node| !graph.contains_node(*node)));
+    }
+
+    #[test]
+    fn test_node_ids_are_not_reused_after_clear() {
+        let mut graph = Graph::<i32, i32>::new();
+        let removed = graph.add_node(0);
+        graph.clear();
+        let added = graph.add_node(1);
+        assert!(added.index() > removed.index());
+        assert!(!graph.contains_node(removed));
+    }
+
+    #[test]
+    fn test_adjacency_matrix_rejects_extra_columns_without_panicking() {
+        let matrix = vec![vec![None, Some(1)]];
+        let result = std::panic::catch_unwind(|| Graph::<i32, i32>::from_adjacency_matrix(&matrix));
+        assert!(result.is_ok(), "invalid dimensions must not panic");
+        assert!(matches!(
+            result.unwrap(),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn test_adjacency_matrix_rejects_missing_columns() {
+        let matrix = vec![vec![None], vec![Some(1), None]];
+        assert!(matches!(
+            Graph::<i32, i32>::from_adjacency_matrix(&matrix),
+            Err(GraphinaError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn test_adjacency_matrix_empty_and_self_loop() {
+        assert!(
+            Graph::<i32, i32>::from_adjacency_matrix(&[])
+                .unwrap()
+                .is_empty()
+        );
+        let matrix = vec![vec![Some(4), None], vec![None, None]];
+        let graph = Graph::<i32, i32>::from_adjacency_matrix(&matrix).unwrap();
+        assert_eq!(graph.to_adjacency_matrix(), matrix);
+        assert_eq!(graph.node_count(), 2);
+        assert_eq!(graph.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_sparse_adjacency_matrix_rejects_rectangular_shapes() {
+        for shape in [(1, 2), (2, 1), (0, 1), (1, 0)] {
+            let matrix = CsMat::<i32>::zero(shape);
+            assert!(matches!(
+                Graph::<i32, i32>::from_sparse_adjacency_matrix(&matrix),
+                Err(GraphinaError::InvalidArgument(_))
+            ));
+            assert!(matches!(
+                Digraph::<i32, i32>::from_sparse_adjacency_matrix(&matrix.to_csc()),
+                Err(GraphinaError::InvalidArgument(_))
+            ));
+        }
+    }
+
+    #[test]
+    fn test_sparse_adjacency_matrix_csr_and_csc_agree() {
+        let mut matrix = TriMat::new((3, 3));
+        matrix.add_triplet(0, 1, 7);
+        matrix.add_triplet(1, 0, 2);
+        matrix.add_triplet(1, 1, 5);
+        let directed = vec![
+            vec![None, Some(7), None],
+            vec![Some(2), Some(5), None],
+            vec![None; 3],
+        ];
+        let undirected = vec![
+            vec![None, Some(7), None],
+            vec![Some(7), Some(5), None],
+            vec![None; 3],
+        ];
+        for sparse in [matrix.to_csr(), matrix.to_csc()] {
+            let graph = Digraph::<i32, i32>::from_sparse_adjacency_matrix(&sparse).unwrap();
+            assert_eq!(graph.to_adjacency_matrix(), directed);
+            let graph = Graph::<i32, i32>::from_sparse_adjacency_matrix(&sparse).unwrap();
+            assert_eq!(graph.to_adjacency_matrix(), undirected);
+        }
+        assert!(
+            Graph::<i32, i32>::from_sparse_adjacency_matrix(&CsMat::zero((0, 0)))
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn prop_node_ids_are_never_reused(operations in proptest::collection::vec(proptest::bool::ANY, 1..100)) {
+            let mut graph = Graph::<(), ()>::new();
+            let mut live = Vec::new();
+            let mut seen = std::collections::HashSet::new();
+            let mut removed = Vec::new();
+            for add in operations {
+                if add {
+                    let node = graph.add_node(());
+                    proptest::prop_assert!(seen.insert(node));
+                    live.push(node);
+                } else if let Some(node) = live.pop() {
+                    graph.remove_node(node);
+                    removed.push(node);
+                }
+                proptest::prop_assert!(live.iter().all(|node| graph.contains_node(*node)));
+                proptest::prop_assert!(removed.iter().all(|node| !graph.contains_node(*node)));
+                proptest::prop_assert_eq!(graph.node_count(), live.len());
+            }
+        }
+    }
+
+    #[test]
+    fn test_sparse_adjacency_matrix_csc_preserves_directed_edges() {
+        let mut triplet = TriMat::new((2, 2));
+        triplet.add_triplet(0, 1, 7);
+        let graph = Digraph::<i32, i32>::from_sparse_adjacency_matrix(&triplet.to_csc()).unwrap();
+        assert_eq!(
+            graph.to_adjacency_matrix(),
+            vec![vec![None, Some(7)], vec![None, None]]
+        );
+    }
+
+    #[test]
+    fn test_sparse_adjacency_matrix_csc_preserves_undirected_edges() {
+        let mut triplet = TriMat::new((2, 2));
+        triplet.add_triplet(0, 1, 7);
+        let graph = Graph::<i32, i32>::from_sparse_adjacency_matrix(&triplet.to_csc()).unwrap();
+        assert_eq!(
+            graph.to_adjacency_matrix(),
+            vec![vec![None, Some(7)], vec![Some(7), None]]
+        );
+    }
 
     #[test]
     fn test_undirected_degree_consistency() {

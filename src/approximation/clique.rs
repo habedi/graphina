@@ -8,15 +8,32 @@ pub fn max_clique<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> HashSet<NodeId>
 where
     Ty: GraphConstructor<A, f64>,
 {
+    let nodes = graph.nodes().map(|(u, _)| u).collect();
+    max_clique_in_nodes(graph, &nodes)
+}
+
+fn max_clique_in_nodes<A, Ty>(
+    graph: &BaseGraph<A, f64, Ty>,
+    nodes: &HashSet<NodeId>,
+) -> HashSet<NodeId>
+where
+    Ty: GraphConstructor<A, f64>,
+{
     let mut best = HashSet::new();
 
     // Build neighbor cache - this is guaranteed to contain all nodes
     let neighbor_cache: HashMap<NodeId, HashSet<NodeId>> = graph
         .nodes()
-        .map(|(u, _)| (u, graph.neighbors(u).collect()))
+        .filter(|(u, _)| nodes.contains(u))
+        .map(|(u, _)| {
+            (
+                u,
+                graph.neighbors(u).filter(|v| nodes.contains(v)).collect(),
+            )
+        })
         .collect();
 
-    for (node, _) in graph.nodes() {
+    for (node, _) in graph.nodes().filter(|(u, _)| nodes.contains(u)) {
         let mut clique = HashSet::new();
         clique.insert(node);
 
@@ -53,7 +70,8 @@ where
     best
 }
 
-/// Repeatedly remove a clique (found via max_clique) from the graph until no nodes remain.
+/// Repeatedly select a clique from the remaining nodes until every node is covered.
+/// The graph is unchanged, and the cliques contain its original node IDs.
 pub fn clique_removal<A, Ty>(graph: &BaseGraph<A, f64, Ty>) -> Vec<HashSet<NodeId>>
 where
     Ty: GraphConstructor<A, f64>,
@@ -61,10 +79,7 @@ where
     let mut cliques = Vec::new();
     let mut remaining: HashSet<NodeId> = graph.nodes().map(|(u, _)| u).collect();
     while !remaining.is_empty() {
-        let clique = max_clique(graph)
-            .into_iter()
-            .filter(|u| remaining.contains(u))
-            .collect::<HashSet<_>>();
+        let clique = max_clique_in_nodes(graph, &remaining);
         if clique.is_empty() {
             break;
         }
@@ -125,6 +140,32 @@ mod tests {
         let graph: Graph<i32, f64> = Graph::new();
         let cliques = clique_removal(&graph);
         assert!(cliques.is_empty());
+    }
+
+    #[test]
+    fn test_clique_removal_covers_disjoint_edges_with_deleted_node() {
+        let mut graph = Graph::new();
+        let n1 = graph.add_node(1);
+        let deleted = graph.add_node(0);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n1, n2, 1.0);
+        graph.add_edge(n3, n4, 1.0);
+        graph.remove_node(deleted);
+
+        let cliques = clique_removal(&graph);
+
+        assert_eq!(cliques.len(), 2);
+        assert!(cliques.contains(&HashSet::from([n1, n2])));
+        assert!(cliques.contains(&HashSet::from([n3, n4])));
+        let covered: HashSet<_> = cliques.iter().flatten().copied().collect();
+        assert_eq!(covered, HashSet::from([n1, n2, n3, n4]));
+        assert_eq!(cliques.iter().map(HashSet::len).sum::<usize>(), 4);
+        assert_eq!(
+            graph.nodes().map(|(u, _)| u).collect::<HashSet<_>>(),
+            covered
+        );
     }
 
     #[test]

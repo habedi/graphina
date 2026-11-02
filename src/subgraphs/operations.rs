@@ -43,10 +43,10 @@ where
     /// Returns the k-hop neighborhood of a node.
     fn k_hop_neighbors(&self, start: NodeId, k: usize) -> Vec<NodeId>;
 
-    /// Returns nodes connected to the given node (including itself).
+    /// Returns nodes connected to the given node (including itself), ignoring edge direction.
     fn connected_component(&self, start: NodeId) -> Vec<NodeId>;
 
-    /// Extracts the subgraph of a connected component.
+    /// Extracts the subgraph of a connected component, using weak connectivity for directed graphs.
     fn component_subgraph(&self, start: NodeId) -> Result<BaseGraph<A, W, Ty>>;
 }
 
@@ -363,6 +363,13 @@ where
             return vec![];
         }
 
+        let mut incoming: NodeMap<Vec<NodeId>> = NodeMap::default();
+        if <Ty as EdgeType>::is_directed() {
+            for (src, tgt, _) in self.edges() {
+                incoming.entry(tgt).or_default().push(src);
+            }
+        }
+
         let mut visited = NodeSet::default();
         let mut stack = vec![start];
         let mut result = vec![];
@@ -371,7 +378,10 @@ where
             if visited.insert(node) {
                 result.push(node);
 
-                for neighbor in self.neighbors(node) {
+                for neighbor in self
+                    .neighbors(node)
+                    .chain(incoming.get(&node).into_iter().flatten().copied())
+                {
                     if !visited.contains(&neighbor) {
                         stack.push(neighbor);
                     }
@@ -409,7 +419,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::types::Graph;
+    use crate::core::types::{Digraph, Graph};
 
     #[test]
     fn test_subgraph() {
@@ -505,6 +515,41 @@ mod tests {
 
         let component = g.connected_component(n1);
         assert_eq!(component.len(), 3); // n1, n2, n3
+    }
+
+    #[test]
+    fn test_connected_component_directed_weak_connectivity() {
+        let mut g = Digraph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_node(3);
+        g.add_edge(n1, n2, 1.0);
+
+        for start in [n2, n1] {
+            let component = g.connected_component(start);
+            assert_eq!(component.len(), 2);
+            assert_eq!(
+                component.into_iter().collect::<NodeSet>(),
+                NodeSet::from_iter([n1, n2])
+            );
+        }
+    }
+
+    #[test]
+    fn test_component_subgraph_directed_weak_connectivity() {
+        let mut g = Digraph::<i32, f64>::new();
+        let n1 = g.add_node(1);
+        let n2 = g.add_node(2);
+        g.add_node(3);
+        g.add_edge(n1, n2, 2.5);
+
+        let sub = g.component_subgraph(n2).unwrap();
+        assert_eq!(sub.node_count(), 2);
+        assert_eq!(sub.edge_count(), 1);
+        let (src, tgt, weight) = sub.edges().next().unwrap();
+        assert_eq!(sub.node_attr(src), Some(&1));
+        assert_eq!(sub.node_attr(tgt), Some(&2));
+        assert_eq!(*weight, 2.5);
     }
 
     #[test]
