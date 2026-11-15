@@ -38,6 +38,7 @@ With Nix and flakes enabled, enter a development shell from the repository root.
 | `nix develop` | Rust development with the compiler and components from `rust-toolchain.toml`, Python, and project tools. |
 | `nix develop .#verification` | Lean and Lake from `verification/lean-toolchain`. |
 | `nix develop .#publishing` | uv for uploads and Twine for the isolated package metadata and README check. |
+| `nix develop .#python310` through `.#python315` | Development tools with a selected Python version for compatibility tests. |
 | `nix develop .#extraction` | Pinned Aeneas, Charon, its Rust nightly toolchain, and the matching Lean backend version. |
 
 #### Code Style

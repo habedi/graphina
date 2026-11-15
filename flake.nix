@@ -37,9 +37,9 @@
               aarch64-darwin.hash = "sha256:800c09adb81ac667fd9e8e4211d54bdc5cc5e193b107599f6ae72f69ee9b91ad";
             };
           };
-        in
-        {
-          default = pkgs.mkShell {
+          # The main package set predates stable Python 3.15.
+          python315 = aeneas.inputs.nixpkgs.legacyPackages.${system}.python315;
+          developmentShell = python: pkgs.mkShell {
             packages = with pkgs; [
               (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
               git
@@ -49,13 +49,16 @@
               cargo-audit
               cargo-deny
               cargo-careful
-              python315
+              python
               uv
               maturin
               python3Packages.mkdocs-material
               pre-commit
             ];
           };
+        in
+        {
+          default = developmentShell python315;
           verification = pkgs.mkShell {
             packages = [ leanPkgs.lean pkgs.git pkgs.gnumake pkgs.curl ];
           };
@@ -74,7 +77,9 @@
               pkgs.pkg-config
             ];
           };
-        }
+        } // pkgs.lib.genAttrs
+          [ "python310" "python311" "python312" "python313" "python314" "python315" ]
+          (name: developmentShell (if name == "python315" then python315 else pkgs.${name}))
       );
 
       checks = forAllSystems (system:
