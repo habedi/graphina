@@ -8,11 +8,17 @@ on:
       - 'verification/**'
       - '.github/workflows/verification.yml'
       - 'Makefile'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
   pull_request:
     paths:
       - 'verification/**'
       - '.github/workflows/verification.yml'
       - 'Makefile'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
 
 permissions:
   contents: read
@@ -26,11 +32,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Check Verification and Extraction Tools
+        run: nix flake check
+      - name: Fetch Mathlib Cache
+        working-directory: verification
+        run: nix develop ..#verification --command lake exe cache get Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
       - name: Build and Test Lean Specifications
-        uses: leanprover/lean-action@v1
-        with:
-          lake-package-directory: verification
-          test: true
-          build-args: '--wfail'
-          test-args: '--wfail'
-          use-mathlib-cache: true
+        run: nix develop .#verification --command make verify

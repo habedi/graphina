@@ -54,7 +54,9 @@ and petgraph's node indices, node bounds, and neighbor iterators.
 | Charon Rust toolchain | `nightly-2026-09-17` |
 | Aeneas Lean backend | `leanprover/lean4:v4.36.0-rc2` |
 
-The Aeneas release bundles the matching Charon binaries.
+The original pilot used the Aeneas release, which bundles the matching Charon binaries.
+The Nix extraction shell builds the same commits and supplies Charon's Rust toolchain directly.
+Its Aeneas version output uses the commit identifier rather than the release tag.
 Its Lean backend requires a different Lean/mathlib version from the existing verification project, which uses 4.35.0.
 This experiment does not change that project.
 The mismatch did not cause the translation errors.
@@ -62,27 +64,25 @@ Aeneas failed before producing Lean files or invoking Lean.
 
 ### Reproduction
 
-The commands below use the Linux x86_64 release. Other platforms need their matching release asset.
-Run them from the Graphina repository root.
-Rustup, Cargo, curl, tar, and sha256sum must be available.
-Charon installs its required Rust toolchain and components on first use, which requires network access and writes to the Rustup installation.
+Run the commands below from the Graphina repository root.
+The extraction shell provides the pinned Aeneas and Charon binaries, the matching Rust nightly, and Lean 4.36.0-rc2.
+It does not require Rustup or Elan.
+The flake declares x86_64 Linux, aarch64 Linux, and aarch64 macOS environments.
 
 ```sh
-mkdir -p verification/extraction/.build/tools
-curl -fL -o verification/extraction/.build/aeneas.tar.gz \
-  https://github.com/AeneasVerif/aeneas/releases/download/nightly-2026.11.15-1dc8ad3/aeneas-linux-x86_64.tar.gz
-echo '191cda720af3f0ad72f54dced18eb12772f28f97f7c06ad1d981c93ca8266c1f  verification/extraction/.build/aeneas.tar.gz' | sha256sum -c -
-tar -xzf verification/extraction/.build/aeneas.tar.gz \
-  -C verification/extraction/.build/tools
-verification/extraction/.build/tools/charon version
-verification/extraction/.build/tools/aeneas -version
+nix develop .#extraction
+charon version
+aeneas -version
+rustc --version
+lean --version
+mkdir -p verification/extraction/.build
 ```
 
 Extract the actual Rust entry point, enabling only the traversal extension.
 The remaining unconditional crate dependencies still compile.
 
 ```sh
-verification/extraction/.build/tools/charon cargo \
+charon cargo \
   --preset=aeneas \
   --start-from graphina::traversal::algorithms::bfs \
   --dest-file verification/extraction/.build/bfs.llbc \
@@ -93,7 +93,7 @@ Then attempt translation. This command is expected to fail with the pinned tools
 
 ```sh
 mkdir -p verification/extraction/.build/lean
-verification/extraction/.build/tools/aeneas \
+aeneas \
   -backend lean verification/extraction/.build/bfs.llbc \
   -dest verification/extraction/.build/lean \
   -split-files -namespace GraphinaBfs -warnings-as-errors -no-progress-bar
@@ -104,7 +104,7 @@ then pass that file to Aeneas.
 Charon's pretty printer can inspect which definitions are opaque.
 
 ```sh
-verification/extraction/.build/tools/charon pretty-print \
+charon pretty-print \
   verification/extraction/.build/bfs.llbc
 ```
 
@@ -136,6 +136,7 @@ This would help determine whether an upstream fix or a small change to iteration
 Changing the production queue or graph representation is not justified by this pilot alone.
 
 The existing `make verify` continues to check the Lean setup.
+`nix flake check` exercises the extraction tools on a small identity function, not BFS.
 The failing extraction experiment is not added as a passing CI check.
 A Rust equivalence claim, termination proof, and reachability proof remain outstanding.
 

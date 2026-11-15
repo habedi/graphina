@@ -23,11 +23,11 @@ There is no BFS correctness proof yet.
 
 ### Build and Test
 
-Install [elan](https://github.com/leanprover/elan), and ensure `lake` is on your `PATH`.
-Elan selects the Lean version in `lean-toolchain`.
+Nix provides the Lean and Lake versions selected by `lean-toolchain`.
 From the repository root, run the following commands.
 
 ```sh
+nix develop .#verification
 cd verification
 lake exe cache get Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 lake --wfail build
@@ -37,9 +37,11 @@ lake --wfail test
 The cache command downloads compiled mathlib dependencies to avoid building them from source.
 Commit `lake-manifest.json` when updating dependencies.
 Keep the Lean toolchain and mathlib versions compatible.
+Commit `flake.lock` when changing the Nix tool inputs.
+Without Nix, [elan](https://github.com/leanprover/elan) can select the same Lean version from `lean-toolchain`.
 
 After the dependencies are available, `make verify` from the repository root builds the library and runs the Lean test driver.
-The separate verification workflow runs these checks in GitHub Actions.
+The separate verification workflow uses the Nix shells to run these checks in GitHub Actions.
 Rust builds do not require Lean.
 Warnings are treated as errors, including warnings for incomplete proofs using `sorry`.
 

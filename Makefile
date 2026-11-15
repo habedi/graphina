@@ -1,5 +1,4 @@
 # Variables
-PATH            := /snap/bin:$(PATH)
 RUST_LOG        := info
 RUST_BACKTRACE  := full
 WHEEL_DIR       := dist

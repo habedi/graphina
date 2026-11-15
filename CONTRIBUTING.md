@@ -29,6 +29,16 @@ would like to work on or if it has already been resolved.
 
 ### Development Workflow
 
+#### Nix Environments
+
+With Nix and flakes enabled, enter a development shell from the repository root.
+
+| Command | Environment |
+| --- | --- |
+| `nix develop` | Rust development with the compiler and components from `rust-toolchain.toml`, Python, and project tools. |
+| `nix develop .#verification` | Lean and Lake from `verification/lean-toolchain`. |
+| `nix develop .#extraction` | Pinned Aeneas, Charon, its Rust nightly toolchain, and the matching Lean backend version. |
+
 #### Code Style
 
 - Use the `make format` command to format the code.
