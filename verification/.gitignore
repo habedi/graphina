@@ -1,0 +1,5 @@
+.lake/
+*.olean
+*.ilean
+*.trace
+/extraction/.build/

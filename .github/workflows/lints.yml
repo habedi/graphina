@@ -37,26 +37,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: '1.85.0' # Pinned to project's MSRV
-          cache: true
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang curl pkg-config libssl-dev make
-          make install-deps
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Check formatting
-        run: make format-check
+        run: nix develop --command make format-check
 
       - name: Check module dependencies
-        run: make check-module-deps
+        run: nix develop --command make check-module-deps
+
+      - name: Check Local Publishing Command
+        run: nix develop --command python scripts/test_publish.py
 
       - name: Run linters
-        run: make lint
+        run: nix develop --command make lint
 
       - name: Check dependency advisories, licenses, and bans
-        uses: EmbarkStudios/cargo-deny-action@v2
+        run: nix develop --command make deny

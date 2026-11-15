@@ -3,3 +3,4 @@ ignore:
   - "benches/*"
   - "tests/*"
   - "pygraphina/tests/*"
+  - "verification/*"

@@ -1,5 +1,4 @@
 # Variables
-PATH            := /snap/bin:$(PATH)
 RUST_LOG        := info
 RUST_BACKTRACE  := full
 WHEEL_DIR       := dist
@@ -17,7 +16,7 @@ CAREFUL_VERSION=0.4.8
 DENY_VERSION=0.16.4
 
 # Find the latest built Python wheel file
-WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
+WHEEL_FILE = $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
 
 # Default target
 .DEFAULT_GOAL := help
@@ -139,7 +138,7 @@ clean: ## Remove generated and temporary files
 .PHONY: coverage
 coverage: format doctest ## Generate test coverage report (excludes the pygraphina cdylib crate)
 	@echo "Generating test coverage report..."
-	@cargo tarpaulin --workspace --exclude pygraphina --features all --out Xml --out Html
+	@cargo tarpaulin --engine Llvm --workspace --exclude pygraphina --features all --out Xml --out Html
 
 .PHONY: deny
 deny: ## Check dependencies for advisories, license compliance, and duplicates
@@ -262,14 +261,14 @@ develop-py: ## Build and install PyGraphina in the current Python environment
 	# Install into the root .venv (the canonical environment that test-py,
 	# stubtest, and rundoc use). Honor an already-active VIRTUAL_ENV in CI.
 	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set.
-	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
-		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop)
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX UV_PYTHON && \
+		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --strip)
 
 .PHONY: develop-py-release
 develop-py-release: ## Build and install PyGraphina in release mode in the current Python environment
 	@echo "Building and installing PyGraphina in release mode..."
-	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
-		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --release)
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX UV_PYTHON && \
+		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --release --strip)
 
 .PHONY: docs-build
 docs-build: ## Generate Graphina MkDocs documentation
@@ -304,7 +303,7 @@ publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PY
 	   exit 1; \
 	fi
 	@echo "Found wheel file: $(WHEEL_FILE)"
-	@twine upload -u __token__ -p $(PYPI_TOKEN) $(WHEEL_FILE)
+	@UV_PUBLISH_TOKEN="$${PYPI_TOKEN}" $(PY_DEP_MNGR) publish "$(WHEEL_FILE)"
 
 .PHONY: rundoc
 rundoc: develop-py ## Test all code examples in PyGraphina documentation using rundoc
@@ -350,6 +349,11 @@ wheel-manylinux: ## Build the manylinux wheel file for PyGraphina (using Zig)
 ########################################################################################
 ## Additional targets
 ########################################################################################
+
+.PHONY: verify
+verify: ## Build and test the Lean specifications in `verification/` directory
+	@lake -d verification --wfail build
+	@lake -d verification --wfail test
 
 .PHONY: setup-hooks
 setup-hooks: ## Install Git hooks (pre-commit and pre-push)

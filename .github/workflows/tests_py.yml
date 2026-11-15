@@ -13,6 +13,10 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'pyproject.toml'
+      - 'uv.lock'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
       - '.github/workflows/tests_py.yml'
   push:
     branches:
@@ -24,6 +28,10 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'pyproject.toml'
+      - 'uv.lock'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
       - '.github/workflows/tests_py.yml'
     tags:
       - 'v*'
@@ -37,35 +45,37 @@ permissions:
 
 jobs:
   test-py:
+    name: Python ${{ matrix.python }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: '3.10'
+            shell: python310
+          - python: '3.11'
+            shell: python311
+          - python: '3.12'
+            shell: python312
+          - python: '3.13'
+            shell: python313
+          - python: '3.14'
+            shell: python314
+          - python: '3.15'
+            shell: python315
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-          cache: true
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang pkg-config libssl-dev libfontconfig1-dev make
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Run Python tests and generate coverage report
         run: |
-          pip install uv
-          uv sync --extra dev
-          source .venv/bin/activate
-          uv pip install maturin
-          make test-py
+          nix develop .#${{ matrix.shell }} --command uv sync --locked --extra dev
+          nix develop .#${{ matrix.shell }} --command uv run --locked python -c "import sys, numpy, pandas, scipy; assert '.'.join(map(str, sys.version_info[:2])) == '${{ matrix.python }}', sys.version"
+          nix develop .#${{ matrix.shell }} --command make test-py
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

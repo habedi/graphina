@@ -1,0 +1,47 @@
+name: Lean Verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'verification/**'
+      - '.github/workflows/verification.yml'
+      - 'Makefile'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
+  pull_request:
+    paths:
+      - 'verification/**'
+      - '.github/workflows/verification.yml'
+      - 'Makefile'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            extra-substituters = https://hacl.cachix.org
+            extra-trusted-public-keys = hacl.cachix.org-1:FzsZ2xsByOwKwIWNPII7yMOelJNDZ12mDAj3d1eGX0c=
+      - name: Check Verification and Extraction Tools
+        run: nix flake check
+      - name: Fetch Mathlib Cache
+        working-directory: verification
+        run: nix develop ..#verification --command lake exe cache get Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+      - name: Build and Test Lean Specifications
+        run: nix develop .#verification --command make verify

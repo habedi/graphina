@@ -1,5 +1,3 @@
-# https://EditorConfig.org
-
 root = true
 
 [*]
@@ -10,20 +8,14 @@ indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{rs,py,pyi,nix}]
+[*.{rs,py,pyi,nix,lean}]
 max_line_length = 100
 
 [*.md]
 max_line_length = 150
 trim_trailing_whitespace = false
 
-[*.sh]
-indent_size = 2
-
-[*.{yaml,yml,json}]
-indent_size = 2
-
-[*.toml]
+[*.{yaml,yml,json,sh,toml}]
 indent_size = 2
 
 [Makefile]
