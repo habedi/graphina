@@ -2,3 +2,4 @@
 *.olean
 *.ilean
 *.trace
+/extraction/.build/

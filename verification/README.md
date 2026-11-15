@@ -1,5 +1,8 @@
 ## Graphina Verification
 
+> [!WARNING]
+> Verifying Graphina's algorithms is in early stage and very experimental for now.
+
 This directory is a separate Lean 4 project within the Graphina repository.
 It reuses the Lake library, test driver, and pinned Lean and mathlib versions
 from [template-lean-project](https://github.com/habedi/template-lean-project).
@@ -13,7 +16,10 @@ These are build checks, not proofs about Graphina's algorithms.
 
 Mathlib's `SimpleGraph` models undirected graphs without self-loops or parallel edges.
 It is not yet a model of Graphina's directed and undirected graph types.
-The first algorithm pilot is BFS reachability. Its specification and connection to the Rust implementation remain to be developed.
+The first algorithm pilot is BFS reachability.
+The [extraction report](extraction/README.md) records its contract, pinned tools, reproduction commands, and observed blockers.
+Charon extracted the Rust entry point, but Aeneas failed to translate it to Lean.
+There is no BFS correctness proof yet.
 
 ### Build and Test
 
@@ -41,4 +47,4 @@ Warnings are treated as errors, including warnings for incomplete proofs using `
 
 A theorem about a handwritten Lean model does not establish correctness of the Rust implementation.
 Each future algorithm proof must document its Rust source, assumptions, graph semantics, and any unproved connection to Rust.
-There is no Aeneas extraction or Rust equivalence proof in this setup.
+The extraction experiment is separate from the Lean build and does not establish Rust equivalence.
