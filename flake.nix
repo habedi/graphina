@@ -119,6 +119,13 @@
             test -s generated/Smoke.lean
             touch $out
           '';
+        } // pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+          python-wheel-runtime = pkgs.runCommand "graphina-python-wheel-runtime" {
+            inherit (self.devShells.${system}.python310) LD_LIBRARY_PATH;
+          } ''
+            ${self.devShells.${system}.python310.UV_PYTHON} -c 'import ctypes; ctypes.CDLL("libz.so.1"); ctypes.CDLL("libstdc++.so.6")'
+            touch $out
+          '';
         }
       );
 
