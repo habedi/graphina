@@ -43,7 +43,7 @@ jobs:
 
       - name: Download test datasets (for integration and E2E tests)
         run: |
-          nix develop --command uv sync --locked --extra dev
+          nix develop --command uv sync --locked --extra dev --python python3
           nix develop --command uv run --locked make testdata
         continue-on-error: true
 

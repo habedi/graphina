@@ -56,7 +56,7 @@ jobs:
 
       - name: Run Python tests and generate coverage report
         run: |
-          nix develop --command uv sync --locked --extra dev
+          nix develop --command uv sync --locked --extra dev --python python3
           nix develop --command make test-py
 
       - name: Upload coverage reports to Codecov
