@@ -26,25 +26,17 @@ jobs:
         with:
           lfs: true
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          version: "latest"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: nix develop --command uv sync --locked --extra dev
 
       - name: Build Graphina docs
-        run: uv run mkdocs build
+        run: nix develop --command uv run --locked mkdocs build
 
       - name: Build PyGraphina docs
-        run: uv run mkdocs build --config-file pygraphina/mkdocs.yml
+        run: nix develop --command uv run --locked mkdocs build --config-file pygraphina/mkdocs.yml
 
       - name: Merge documentation sites
         run: |

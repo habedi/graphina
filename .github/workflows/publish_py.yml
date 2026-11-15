@@ -105,14 +105,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Install uv
-        run: |
-          pip install uv twine
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Download all wheels
         uses: actions/download-artifact@v4
@@ -121,11 +115,10 @@ jobs:
           merge-multiple: true
 
       - name: Verify wheels
-        run: |
-          ls -la wheels/
-          twine check wheels/*
+        run: nix develop .#publishing --command twine check wheels/*
 
       - name: Publish wheels to PyPI
-        run: |
-          twine upload wheels/* -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: nix develop .#publishing --command uv publish wheels/*
         if: success()

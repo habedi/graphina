@@ -13,6 +13,10 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'pyproject.toml'
+      - 'uv.lock'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
       - '.github/workflows/tests_py.yml'
   push:
     branches:
@@ -24,6 +28,10 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'pyproject.toml'
+      - 'uv.lock'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'rust-toolchain.toml'
       - '.github/workflows/tests_py.yml'
     tags:
       - 'v*'
@@ -43,29 +51,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-          cache: true
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang pkg-config libssl-dev libfontconfig1-dev make
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Run Python tests and generate coverage report
         run: |
-          pip install uv
-          uv sync --extra dev
-          source .venv/bin/activate
-          uv pip install maturin
-          make test-py
+          nix develop --command uv sync --locked --extra dev
+          nix develop --command make test-py
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

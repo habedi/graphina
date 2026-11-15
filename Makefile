@@ -16,7 +16,7 @@ CAREFUL_VERSION=0.4.8
 DENY_VERSION=0.16.4
 
 # Find the latest built Python wheel file
-WHEEL_FILE := $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
+WHEEL_FILE = $(shell ls $(PYGRAPHINA_DIR)/$(WHEEL_DIR)/pygraphina-*.whl 2>/dev/null | head -n 1)
 
 # Default target
 .DEFAULT_GOAL := help
@@ -303,7 +303,7 @@ publish-py: wheel-manylinux ## Publish the PyGraphina wheel to PyPI (requires PY
 	   exit 1; \
 	fi
 	@echo "Found wheel file: $(WHEEL_FILE)"
-	@twine upload -u __token__ -p $(PYPI_TOKEN) $(WHEEL_FILE)
+	@UV_PUBLISH_TOKEN="$${PYPI_TOKEN}" $(PY_DEP_MNGR) publish "$(WHEEL_FILE)"
 
 .PHONY: rundoc
 rundoc: develop-py ## Test all code examples in PyGraphina documentation using rundoc

@@ -47,6 +47,7 @@
               cargo-nextest
               cargo-tarpaulin
               cargo-audit
+              cargo-deny
               cargo-careful
               python315
               uv
@@ -57,6 +58,9 @@
           };
           verification = pkgs.mkShell {
             packages = [ leanPkgs.lean pkgs.git pkgs.gnumake pkgs.curl ];
+          };
+          publishing = pkgs.mkShell {
+            packages = [ pkgs.uv pkgs.python3Packages.twine ];
           };
           extraction = pkgs.mkShell {
             # Charon's sysroot differs from Rustup's even at the same Rust version.

@@ -38,28 +38,17 @@ jobs:
         with:
           lfs: true
 
-      - name: Set up Rust (stable)
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-          cache: true
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y make
-          make install-deps
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Download test datasets (for integration and E2E tests)
         run: |
-          pip install uv
-          uv sync --extra dev
-          source .venv/bin/activate
-          make testdata
+          nix develop --command uv sync --locked --extra dev
+          nix develop --command uv run --locked make testdata
         continue-on-error: true
 
       - name: Run tests and generate coverage report
-        run: make coverage
+        run: nix develop --command make coverage
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
@@ -122,17 +111,8 @@ jobs:
         with:
           lfs: true
 
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: '1.85.0'
-          cache: true
-          cache-key: msrv
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang curl pkg-config libssl-dev libfontconfig1-dev make
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Check that the workspace compiles on the MSRV
-        run: cargo check --workspace --all-targets --all-features --locked
+        run: nix develop --command cargo check --workspace --all-targets --all-features --locked
