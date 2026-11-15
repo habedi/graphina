@@ -42,6 +42,8 @@
           python315 = aeneas.inputs.nixpkgs.legacyPackages.${system}.python315;
           developmentShell = python: pkgs.mkShell {
             UV_PYTHON = "${python}/bin/python3";
+            LD_LIBRARY_PATH = pkgs.lib.optionalString pkgs.stdenv.isLinux
+              (pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]);
             # Keep Nix applications' Python libraries out of uv environments.
             shellHook = ''unset PYTHONPATH'';
             packages = with pkgs; [
