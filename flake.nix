@@ -41,6 +41,9 @@
           # The main package set predates stable Python 3.15.
           python315 = aeneas.inputs.nixpkgs.legacyPackages.${system}.python315;
           developmentShell = python: pkgs.mkShell {
+            UV_PYTHON = "${python}/bin/python3";
+            # Keep Nix applications' Python libraries out of uv environments.
+            shellHook = ''unset PYTHONPATH'';
             packages = with pkgs; [
               (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
               git
@@ -53,7 +56,6 @@
               python
               uv
               maturin
-              python3Packages.mkdocs-material
               pre-commit
             ];
           };

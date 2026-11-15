@@ -63,8 +63,6 @@ jobs:
             shell: python314
           - python: '3.15'
             shell: python315
-    env:
-      UV_PYTHON: python3
 
     steps:
       - name: Checkout repository
@@ -76,6 +74,7 @@ jobs:
       - name: Run Python tests and generate coverage report
         run: |
           nix develop .#${{ matrix.shell }} --command uv sync --locked --extra dev
+          nix develop .#${{ matrix.shell }} --command uv run --locked python -c "import sys; assert '.'.join(map(str, sys.version_info[:2])) == '${{ matrix.python }}', sys.version"
           nix develop .#${{ matrix.shell }} --command make test-py
 
       - name: Upload coverage reports to Codecov

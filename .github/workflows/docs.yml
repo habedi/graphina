@@ -30,7 +30,7 @@ jobs:
         uses: cachix/install-nix-action@v31
 
       - name: Install dependencies
-        run: nix develop --command uv sync --locked --extra dev --python python3
+        run: nix develop --command uv sync --locked --extra dev
 
       - name: Build Graphina docs
         run: nix develop --command uv run --locked mkdocs build

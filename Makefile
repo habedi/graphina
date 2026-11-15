@@ -261,14 +261,14 @@ develop-py: ## Build and install PyGraphina in the current Python environment
 	# Install into the root .venv (the canonical environment that test-py,
 	# stubtest, and rundoc use). Honor an already-active VIRTUAL_ENV in CI.
 	# Note: Maturin does not work when CONDA_PREFIX and VIRTUAL_ENV are both set.
-	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
-		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop)
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX UV_PYTHON && \
+		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --strip)
 
 .PHONY: develop-py-release
 develop-py-release: ## Build and install PyGraphina in release mode in the current Python environment
 	@echo "Building and installing PyGraphina in release mode..."
-	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX && \
-		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --release)
+	@(cd $(PYGRAPHINA_DIR) && unset CONDA_PREFIX UV_PYTHON && \
+		VIRTUAL_ENV=$${VIRTUAL_ENV:-$(CURDIR)/.venv} maturin develop --release --strip)
 
 .PHONY: docs-build
 docs-build: ## Generate Graphina MkDocs documentation
