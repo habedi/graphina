@@ -351,6 +351,11 @@ wheel-manylinux: ## Build the manylinux wheel file for PyGraphina (using Zig)
 ## Additional targets
 ########################################################################################
 
+.PHONY: verify
+verify: ## Build and test the Lean specifications in `verification/` directory
+	@lake -d verification --wfail build
+	@lake -d verification --wfail test
+
 .PHONY: setup-hooks
 setup-hooks: ## Install Git hooks (pre-commit and pre-push)
 	@echo "Installing Git hooks..."

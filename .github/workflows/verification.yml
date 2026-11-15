@@ -1,0 +1,36 @@
+name: Lean Verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'verification/**'
+      - '.github/workflows/verification.yml'
+      - 'Makefile'
+  pull_request:
+    paths:
+      - 'verification/**'
+      - '.github/workflows/verification.yml'
+      - 'Makefile'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and Test Lean Specifications
+        uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: verification
+          test: true
+          build-args: '--wfail'
+          test-args: '--wfail'
+          use-mathlib-cache: true
