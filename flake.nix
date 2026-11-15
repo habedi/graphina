@@ -42,6 +42,7 @@
           default = pkgs.mkShell {
             packages = with pkgs; [
               (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
+              git
               pkg-config
               cargo-nextest
               cargo-tarpaulin
@@ -58,6 +59,8 @@
             packages = [ leanPkgs.lean pkgs.git pkgs.gnumake pkgs.curl ];
           };
           extraction = pkgs.mkShell {
+            # Charon's sysroot differs from Rustup's even at the same Rust version.
+            CARGO_TARGET_DIR = "target/charon";
             packages = [
               aeneas.packages.${system}.aeneas
               aeneas.inputs.charon.packages.${system}.rustToolchain

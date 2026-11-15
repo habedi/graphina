@@ -65,9 +65,6 @@ Aeneas failed before producing Lean files or invoking Lean.
 ### Reproduction
 
 Run the commands below from the Graphina repository root.
-The extraction shell provides the pinned Aeneas and Charon binaries, the matching Rust nightly, and Lean 4.36.0-rc2.
-It does not require Rustup or Elan.
-The flake declares x86_64 Linux, aarch64 Linux, and aarch64 macOS environments.
 
 ```sh
 nix develop .#extraction
