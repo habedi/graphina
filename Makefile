@@ -138,7 +138,7 @@ clean: ## Remove generated and temporary files
 .PHONY: coverage
 coverage: format doctest ## Generate test coverage report (excludes the pygraphina cdylib crate)
 	@echo "Generating test coverage report..."
-	@cargo tarpaulin --workspace --exclude pygraphina --features all --out Xml --out Html
+	@cargo tarpaulin --engine Llvm --workspace --exclude pygraphina --features all --out Xml --out Html
 
 .PHONY: deny
 deny: ## Check dependencies for advisories, license compliance, and duplicates
