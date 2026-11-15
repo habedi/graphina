@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-python310.url = "github:NixOS/nixpkgs/nixos-25.05";
     lean4-nix = {
       url = "github:lenianiva/lean4-nix/2ad74592e34c2e6ff5e8bec9d8abab8f4e9c3a37";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -10,7 +11,7 @@
     aeneas.url = "github:AeneasVerif/aeneas/1dc8ad31b1b062a77c50e29144a6c7bba955fa09";
   };
 
-  outputs = { self, nixpkgs, lean4-nix, aeneas }:
+  outputs = { self, nixpkgs, nixpkgs-python310, lean4-nix, aeneas }:
     let
       supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
@@ -79,7 +80,11 @@
           };
         } // pkgs.lib.genAttrs
           [ "python310" "python311" "python312" "python313" "python314" "python315" ]
-          (name: developmentShell (if name == "python315" then python315 else pkgs.${name}))
+          (name: developmentShell (
+            if name == "python310" then nixpkgs-python310.legacyPackages.${system}.python310
+            else if name == "python315" then python315
+            else pkgs.${name}
+          ))
       );
 
       checks = forAllSystems (system:
